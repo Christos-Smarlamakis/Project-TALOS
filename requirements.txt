@@ -1,0 +1,37 @@
+# Project TALOS - Dependencies
+# Εγκατάσταση: pip install -r requirements.txt
+
+# === Core: AI, Environment & Networking ===
+google-generativeai       # Επικοινωνία με Google Gemini API
+openai                    # Επικοινωνία με DeepSeek/OpenAI API
+python-dotenv             # Διαχείριση Environment Variables (.env)
+requests                  # HTTP Requests (General)
+
+# === Sources: Academic APIs & Integrations ===
+arxiv                     # ArXiv API Client
+semanticscholar           # Semantic Scholar API Client
+elsapy                    # Elsevier/Scopus API Client
+pymed                     # PubMed API Client
+pyzotero                  # Zotero Web API Client
+
+# === Data Science: Analysis & ML ===
+numpy                     # Numerical operations & Embeddings calculation
+pandas>=2.1.0             # Data Manipulation (DataFrames)
+scikit-learn              # Machine Learning (Clustering, TF-IDF)
+
+# === Visualization & Scientometrics (v4.8.0) ===
+matplotlib>=3.8.0         # Basic Plotting Library
+seaborn>=0.13.0           # Advanced Statistical Data Visualization
+wordcloud>=1.9.0          # Word Cloud Generation
+networkx                  # Knowledge Graph Creation
+pyvis                     # Interactive Network Visualization
+
+# === Interface & UX ===
+questionary               # Terminal UI (Interactive Menus)
+tqdm                      # Progress Bars
+
+# === Reporting & Web Dashboard ===
+Flask                     # Web Server for Interactive Dashboard
+Jinja2                    # Templating Engine (HTML Reports)
+python-docx               # Word Document Generation
+tabulate                  # Markdown Table Formatting

@@ -1,0 +1,59 @@
+{
+  "model_for_daily_search": "gemini-3-pro-preview",
+  "pre_screening_model": "gemini-flash-latest",
+  "deepseek_model_chat": "deepseek-chat",
+  "grey_research_model": "deep-research-pro-preview-12-2025",
+  "ai_provider_priority": ["gemini", "deepseek"],
+  "failure_threshold": 3,
+
+  "min_pre_screening_score": 6,
+  "reevaluation_days_window": 7,
+  "api_call_limit_flash": 950,
+  "api_call_limit_pro": 95,
+  "ai_request_delay": 5,
+
+  "days_to_search_daily": 7,
+  "days_to_search_historic": 365,
+  "mailto": "your_email@example.com",
+  
+  "max_results_config": {
+    "arxiv": 100, 
+	"ieee": 50, 
+	"semantic_scholar": 50,
+    "springer": 50, 
+	"openalex": 50, 
+	"dblp": 100,
+    "elsevier": 50, 
+	"crossref": 100, 
+	"openarchives": 50,
+    "pubmed": 50, 
+	"osti": 50, 
+	"scigov": 50, 
+	"core": 50,
+	"plos" : 100
+  },
+  
+  "arxiv_query": "all:\"artificial intelligence\"",
+  "semantic_scholar_query": "\"artificial intelligence\"",
+  "ieee_query": "\"artificial intelligence\"",
+  "springer_query": "keyword:\"artificial intelligence\"",
+  "openalex_query": "\"artificial intelligence\"",
+  "dblp_query": "\"artificial intelligence\"",
+  "core_query": "\"artificial intelligence\"",
+  "elsevier_query": "TITLE-ABS-KEY(\"artificial intelligence\")",
+  "crossref_query": "\"artificial intelligence\"",
+  "openarchives_query": "\"artificial intelligence\"",
+  "pubmed_query": "\"artificial intelligence\"",
+  "osti_query": "\"artificial intelligence\"",
+  "scigov_query": "\"artificial intelligence\"",
+  "plos_query": "\"artificial intelligence\"",
+
+  "phd_focus_system_prompt": "**Act as an expert Research Analyst.** Analyze the paper's relevance to the user's research goal. Output strictly JSON.",
+  "pre_screening_prompt": "**Act as a screening AI.** Filter papers based on relevance. Output strictly JSON.",
+  "trajectory_analyzer_prompt": "**Act as a Research Strategist.** Analyze the author's trajectory.",
+  "orpheus_references_prompt_instruction": "Analyze these references based on the research context.",
+  "orpheus_citations_prompt_instruction": "Analyze these citations based on the research context.",
+  "chiron_synthesizer_prompt": "**Act as a Research Mentor.** Create a narrative reading path.",
+  
+  "query_translator_prompt": "**Act as an expert Research Architect.** Your goal is to fully configure a research assistant system called TALOS for a specific user topic.\n\nBased on the USER RESEARCH GOAL provided below, you must generate a JSON object containing:\n\n1. **Optimized Search Queries** for specific APIs (keeping their syntax rules).\n2. **Customized System Prompts** that define how the AI should evaluate papers for this specific topic.\n\n**CRITICAL RULES FOR PROMPTS:**\n- You must REWRITE the 'CORE RESEARCH FRAMEWORK' section in the prompts to match the user's goal.\n- You must KEEP the 'REQUIRED OUTPUT FORMAT' (JSON structure) EXACTLY as is.\n\n**Output Structure (JSON keys):**\n- `arxiv_query`, `ieee_query`, ... (all queries)\n- `phd_focus_system_prompt`: The full prompt for deep analysis.\n- `pre_screening_prompt`: The brief prompt for initial filtering.\n- `trajectory_analyzer_prompt`: The prompt for analyzing author careers."
+}
