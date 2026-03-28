@@ -1,0 +1,13 @@
+# Αρχείο αγνόησης ευαίσθητων δεδομένων για το Project TALOS
+.env
+*.db
+talos_research.db
+talos_backup*.db
+_profiles/
+_library/
+reports/
+__pycache__/
+.DS_Store
+*.log
+.vscode/
+config.json

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <link href="https://unpkg.com/tabulator-tables@5.5.0/dist/css/tabulator_simple.min.css" rel="stylesheet">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; padding: 20px; background-color: #f4f6f8; color: #333; }
+        h1 { color: #2c3e50; display: inline-block; margin-right: 20px; }
+        
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        
+        .controls-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+        .filter-buttons button { background-color: #27ae60; color: white; border: none; padding: 10px 15px; margin-right: 5px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background-color 0.2s; }
+        .filter-buttons button:hover { background-color: #229954; }
+        
+        /* Κουμπί Εξόδου */
+        #shutdown-btn { background-color: #c0392b; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        #shutdown-btn:hover { background-color: #a93226; }
+
+        .semantic-search-container { display: flex; align-items: center; }
+        .semantic-search-container input { font-size: 14px; padding: 10px; border-radius: 5px 0 0 5px; border: 1px solid #ccc; width: 300px; }
+        .semantic-search-container button { font-size: 14px; padding: 10px 15px; border-radius: 0 5px 5px 0; border: 1px solid #3498db; background-color: #3498db; color: white; cursor: pointer; }
+        
+        #report-table { border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .tabulator-cell { display: flex; align-items: center; }
+        .tabulator-cell input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; margin: auto; }
+        
+        .dna-container { display: flex; flex-direction: column; width: 100%; padding: 4px 0; }
+        .dna-bar-container { display: flex; align-items: center; margin-bottom: 2px; height: 8px; }
+        .dna-label { font-size: 9px; font-weight: bold; width: 15px; color: #555; }
+        .dna-bar { height: 8px; border-radius: 4px; background-color: #e0e0e0; }
+        .strategic-bar { background-color: #e74c3c !important; }
+        .operational-bar { background-color: #9b59b6 !important; }
+        .tactical-bar { background-color: #3498db !important; }
+        .playground-bar { background-color: #f1c40f !important; }
+
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.6); animation: fadeIn 0.3s; }
+        .modal-content { background-color: #fefefe; margin: 5% auto; padding: 25px; border: 1px solid #888; width: 80%; max-width: 800px; border-radius: 10px; color: #333; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .close-button { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 1; }
+        .modal-content h2 { margin-top: 0; color: #2c3e50; border-bottom: 2px solid #27ae60; padding-bottom: 10px; }
+        .modal-content .modal-section { margin-top: 15px; }
+        .modal-content .modal-section strong { color: #27ae60; display: block; margin-bottom: 5px; }
+        .modal-content p { line-height: 1.6; margin: 0; }
+        .modal-content .tag { background-color: #e0e0e0; color: #333; padding: 3px 8px; border-radius: 12px; font-size: 12px; margin-right: 5px; display: inline-block; }
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <h1>TALOS Dashboard v4.0</h1>
+        <button id="shutdown-btn">🔴 Έξοδος & Επιστροφή στο Μενού</button>
+    </div>
+    
+    <p>Κάντε κλικ στις επικεφαλίδες για ταξινόμηση. Χρησιμοποιήστε τα πεδία φίλτρων κάτω από τις επικεφαλίδες για αναζήτηση.</p>
+
+    <div class="controls-container">
+        <div class="filter-buttons">
+            <button id="filter-core">Core Papers (Overall ≥ 7)</button>
+            <button id="filter-strategic">Strategic Focus (Str ≥ 7)</button>
+            <button id="filter-operational">Operational Focus (Opr ≥ 7)</button>
+            <button id="filter-tactical">Tactical Focus (Tac ≥ 7)</button>        
+            <button id="filter-simulation">Simulation Focus (Sim ≥ 7)</button>
+            <button id="filter-clear">Clear All</button>
+        </div>
+        <div class="semantic-search-container">
+            <input type="text" id="semantic-search-box" placeholder="Σημασιολογική Αναζήτηση...">
+            <button id="semantic-search-button">Αναζήτηση</button>
+        </div>
+    </div>
+
+    <div id="report-table"></div>
+
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2 id="modal-title"></h2>
+            <div class="modal-section"><strong>Authors:</strong> <span id="modal-authors"></span></div>
+            <div class="modal-section"><strong>Source:</strong> <span id="modal-source"></span> (<span id="modal-year"></span>)</div>
+            <div class="modal-section"><strong>Link:</strong> <a id="modal-link" href="#" target="_blank">Open Link</a></div>
+            <div class="modal-section"><strong>Scores (Str/Opr/Tac/Sim):</strong> <span id="modal-scores"></span></div>
+            <div class="modal-section"><strong>Abstract:</strong><p id="modal-abstract"></p></div>
+            <hr>
+            <div class="modal-section"><strong>AI Reasoning:</strong><p id="modal-reasoning"></p></div>
+            <div class="modal-section"><strong>Key Contribution:</strong><p id="modal-contribution"></p></div>
+            <div class="modal-section"><strong>Potential Utilization:</strong><p id="modal-utilization"></p></div>
+            <div class="modal-section"><strong>Suggested Tags:</strong><div id="modal-tags"></div></div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@5.5.0/dist/js/tabulator.min.js"></script>
+    <script>
+        // --- SHUTDOWN LOGIC ---
+        document.getElementById('shutdown-btn').addEventListener('click', async () => {
+            if(confirm("Είστε σίγουροι ότι θέλετε να κλείσετε το Dashboard και να επιστρέψετε στο μενού;")) {
+                try {
+                    await fetch('/api/shutdown', { method: 'POST' });
+                    document.body.innerHTML = "<div style='display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;font-family:sans-serif;color:#2c3e50;'><h1>Το Dashboard τερματίστηκε.</h1><h2>Μπορείτε να κλείσετε αυτή την καρτέλα και να επιστρέψετε στο τερματικό.</h2></div>";
+                } catch (e) {
+                    alert("Σφάλμα κατά τον τερματισμό.");
+                }
+            }
+        });
+
+        // ... (Ο υπόλοιπος κώδικας παραμένει ίδιος με v3.0) ...
+        async function updateZoteroStatus(paperId, isChecked) {
+            try { await fetch('/api/update_zotero', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: paperId, status: isChecked }), }); } catch (error) { console.error('Error:', error); }
+        }
+        
+        async function showInfoCard(paperId) {
+            try {
+                const response = await fetch(`/api/paper/${paperId}`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                const row = table.getRow(paperId);
+                const rowData = row ? row.getData() : {};
+                const scoresStr = `${rowData.strategic_score || 0} / ${rowData.operational_score || 0} / ${rowData.tactical_score || 0} / ${rowData.playground_score || 0}`;
+
+                document.getElementById('modal-title').textContent = data.title || 'N/A';
+                document.getElementById('modal-authors').textContent = data.authors || 'N/A';
+                document.getElementById('modal-source').textContent = data.source || 'N/A';
+                document.getElementById('modal-year').textContent = data.publication_year || 'N/A';
+                document.getElementById('modal-abstract').textContent = data.abstract || 'No abstract available.';
+                document.getElementById('modal-scores').textContent = scoresStr;
+                
+                const linkElement = document.getElementById('modal-link');
+                linkElement.href = data.url || '#';
+                linkElement.textContent = data.doi ? `DOI: ${data.doi}` : 'Open Link';
+
+                document.getElementById('modal-reasoning').textContent = data.evaluation_reasoning || 'N/A';
+                document.getElementById('modal-contribution').textContent = data.evaluation_contribution || 'N/A';
+                document.getElementById('modal-utilization').textContent = data.evaluation_utilization || 'N/A';
+
+                const tagsContainer = document.getElementById('modal-tags');
+                tagsContainer.innerHTML = '';
+                if (data.suggested_tags && data.suggested_tags.length > 0) {
+                    data.suggested_tags.split(',').forEach(tagStr => {
+                        if (tagStr.trim()) {
+                            const tagElement = document.createElement('span');
+                            tagElement.className = 'tag';
+                            tagElement.textContent = tagStr.trim();
+                            tagsContainer.appendChild(tagElement);
+                        }
+                    });
+                } else {
+                    tagsContainer.textContent = 'N/A';
+                }
+
+                document.getElementById('info-modal').style.display = 'block';
+            } catch (error) { console.error(error); alert("Failed to load paper details."); }
+        }
+        
+        const zoteroCheckboxFormatter = function(cell, formatterParams, onRendered){
+            const paperId = cell.getRow().getData().id;
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox"; checkbox.checked = cell.getValue() == 1;
+            checkbox.addEventListener("change", function(){ updateZoteroStatus(paperId, this.checked); });
+            return checkbox;
+        };
+        const infoButtonFormatter = function(cell, formatterParams, onRendered){
+            const paperId = cell.getRow().getData().id;
+            const button = document.createElement("button"); button.innerHTML = "Info";
+            button.style.cssText = "padding: 4px 8px; cursor: pointer; border-radius: 3px; border: 1px solid #ccc; background-color: #f0f0f0;";
+            button.addEventListener("click", function(){ showInfoCard(paperId); }); return button;
+        };
+        const dnaFormatter = function(cell, formatterParams, onRendered){
+            const data = cell.getRow().getData();
+            const str = data.strategic_score || 0; const opr = data.operational_score || 0;
+            const tac = data.tactical_score || 0; const sim = data.playground_score || 0;
+            return `<div class="dna-container">
+                        <div class="dna-bar-container"><div class="dna-label">S:</div><div class="dna-bar strategic-bar" style="width: ${str * 10}%" title="Strategic: ${str}"></div></div>
+                        <div class="dna-bar-container"><div class="dna-label">O:</div><div class="dna-bar operational-bar" style="width: ${opr * 10}%" title="Operational: ${opr}"></div></div>
+                        <div class="dna-bar-container"><div class="dna-label">T:</div><div class="dna-bar tactical-bar" style="width: ${tac * 10}%" title="Tactical: ${tac}"></div></div>
+                        <div class="dna-bar-container"><div class="dna-label">P:</div><div class="dna-bar playground-bar" style="width: ${sim * 10}%" title="Playground: ${sim}"></div></div>
+                    </div>`;
+        };
+        
+        const tableColumns = [
+            {title:"In Zotero", field:"in_zotero", hozAlign:"center", formatter:zoteroCheckboxFormatter, headerSort:true, width:90, headerFilter:"tickCross", headerFilterParams:{"tristate":true}},
+            {title:"Info", formatter:infoButtonFormatter, hozAlign:"center", width:70, headerSort:false},
+            {title:"ID", field:"id", headerFilter:"input", width:70},
+            {title:"Overall", field:"overall_score", hozAlign:"center", sorter:"number", headerFilter:"input", width:90},
+            {title:"Article DNA (S/O/T/P)", formatter:dnaFormatter, headerSort:false, width:140},
+            {title:"S", field:"strategic_score", hozAlign:"center", sorter:"number", headerFilter:true, width:50},
+            {title:"O", field:"operational_score", hozAlign:"center", sorter:"number", headerFilter:true, width:50},
+            {title:"T", field:"tactical_score", hozAlign:"center", sorter:"number", headerFilter:true, width:50},
+            {title:"P", field:"playground_score", hozAlign:"center", sorter:"number", headerFilter:true, width:50},
+            {title:"Title", field:"title", headerFilter:"input", minWidth:300, formatter:"textarea"},
+            {title:"Authors", field:"authors", headerFilter:"input", minWidth:200, formatter:"textarea"},
+            {title:"Source", field:"source", headerFilter:"input", width:150},
+            {title:"Year", field:"publication_year", hozAlign:"center", sorter:"number", headerFilter:"input", width:90},
+            {title:"Link", field:"doi", formatter:"link", formatterParams:{label:"DOI", urlPrefix:"https://doi.org/", target:"_blank"}, headerSort:false, width:80},
+        ];
+
+        const table = new Tabulator("#report-table", {
+            height:"75vh", layout:"fitDataStretch", placeholder:"Loading data from TALOS database...",
+            ajaxURL:"/api/data", columns:tableColumns, pagination:"local", paginationSize:50,
+            paginationSizeSelector:[25, 50, 100, 250, 1000], initialSort:[ {column:"overall_score", dir:"desc"} ]
+        });
+
+        const searchBox = document.getElementById('semantic-search-box');
+        const searchButton = document.getElementById('semantic-search-button');
+        
+        document.getElementById("filter-core").addEventListener("click", () => { table.clearFilter(true); table.addFilter("overall_score", ">=", 7); });
+        document.getElementById("filter-tactical").addEventListener("click", () => { table.clearFilter(true); table.addFilter("tactical_score", ">=", 7); });
+        document.getElementById("filter-strategic").addEventListener("click", () => { table.clearFilter(true); table.addFilter("strategic_score", ">=", 7); });
+        document.getElementById("filter-operational").addEventListener("click", () => { table.clearFilter(true); table.addFilter("operational_score", ">=", 7); });
+        document.getElementById("filter-simulation").addEventListener("click", () => { table.clearFilter(true); table.addFilter("playground_score", ">=", 7); });
+        
+        document.getElementById("filter-clear").addEventListener("click", () => { 
+            document.getElementById('semantic-search-box').value = "";
+            table.setData("/api/data").then(() => { table.clearFilter(true); table.setSort("overall_score", "desc"); });
+        });
+
+        document.querySelector(".close-button").addEventListener("click", () => { document.getElementById('info-modal').style.display = 'none'; });
+        window.addEventListener("click", (event) => { if (event.target == document.getElementById('info-modal')) { document.getElementById('info-modal').style.display = 'none'; } });
+        
+        async function performSemanticSearch() {
+            const query = searchBox.value.trim();
+            if (!query) return;
+            table.placeholder = "Performing semantic search... Please wait."; table.clearData();
+            try {
+                const response = await fetch('/api/semantic_search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query: query }), });
+                const result = await response.json();
+                if (result.error) { table.placeholder = `Search failed: ${result.error}`; } else if (result && result.length > 0) { table.setData(result); } else { table.placeholder = "No relevant semantic results found."; }
+            } catch (error) { console.error('Semantic search failed:', error); table.placeholder = "Search failed. Check server logs."; }
+        }
+        searchButton.addEventListener("click", performSemanticSearch);
+        searchBox.addEventListener("keydown", function(event) { if (event.key === "Enter") { performSemanticSearch(); } });
+    </script>
+</body>
+</html>
