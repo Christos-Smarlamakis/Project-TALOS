@@ -68,8 +68,6 @@ If you use **TALOS** in your work, please cite it as follows:
 }
 ```
 
-**⚠️ A formal paper presenting the methodology and agentic framework of TALOS is currently in preparation.**
-
 ---
 
 ## ⚖️ License & Commercial Use
