@@ -51,7 +51,7 @@ TALOS acts as an autonomous "Research Architect," filtering noise and highlighti
 
 ## 📄 Citation & Academic Use
 
-This software is part of ongoing PhD research. If you use **TALOS** in your work, please cite it as follows:
+If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
 > C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v4.8.0, Mar. 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
