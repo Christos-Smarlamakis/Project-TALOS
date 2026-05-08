@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  talos:
+    build: .
+    container_name: project_talos
+    # Απαραίτητο για το διαδραστικό μενού
+    stdin_open: true
+    tty: true
+    # Συνδέουμε τον φάκελό μας για να μην χάνονται τα δεδομένα
+    volumes:
+      - .:/app
+    # Ανοίγουμε την πόρτα για το Web Dashboard
+    ports:
+      - "5000:5000"
+    # Φορτώνουμε τα API Keys
+    env_file:
+      - .env
