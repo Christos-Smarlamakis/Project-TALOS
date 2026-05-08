@@ -1,5 +1,8 @@
-# Project TALOS (v4.8.0)
+
+# Project TALOS (v4.8.1)
+
 ### **Tactical Agentic Literature Orchestration System**
+*(Τακτικό Πρακτορικό Σύστημα Ενορχήστρωσης Βιβλιογραφίας)*
 
 > **An Autonomous Research Intelligence Platform for the AI Era.**
 
@@ -7,7 +10,9 @@
 ![License](https://img.shields.io/badge/License-AGPLv3-red)
 [![DOI](https://zenodo.org/badge/1191928488.svg)](https://doi.org/10.5281/zenodo.19224912)
 ![Status](https://img.shields.io/badge/Status-Active%20Research-green)
+![Methodology](https://img.shields.io/badge/Methodology-Scientometrics%20%7C%20AI%20Evaluation-teal)
 ![Maintained](https://img.shields.io/badge/Maintained%3F-yes-brightgreen.svg)
+![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?logo=docker)
 
 ---
 
@@ -38,14 +43,33 @@ TALOS acts as an autonomous "Research Architect," filtering noise and highlighti
 
 ---
 
-## 3. Installation & Usage
-1.  **Clone & Install:**
-    ```bash
-    git clone https://github.com/Christos-Smarlamakis/Project-TALOS.git
-    pip install -r requirements.txt
-    ```
-2.  **Configure:** Rename `env.example` to `.env` and add your keys.
-3.  **Run:** Launch the Command Center: `python talos.py`
+## 3. Installation & Zero-Friction Usage
+
+Project TALOS is designed to run seamlessly across all operating systems. Choose your preferred method:
+
+### 🐳 Method A: Docker (Recommended)
+Run TALOS in a completely isolated environment without installing Python or dependencies.
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+2. Create your `.env` file (see `env.example`).
+3. Open your terminal in the project folder and run:
+   ```bash
+   docker-compose run --rm talos
+   ```
+*(If you launch the interactive dashboard via this menu, it will be available at `http://localhost:5000`)*
+
+### 🖱️ Method B: 1-Click Launcher (Windows)
+For users without Docker.
+1. Set up your `.env` file.
+2. Double-click **`start_talos.bat`**. The script will automatically create a virtual environment, install dependencies, and launch the platform.
+
+### 💻 Method C: Traditional Python Environment (Linux/Mac)
+```bash
+git clone https://github.com/Christos-Smarlamakis/Project-TALOS.git
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python talos.py
+```
 
 ---
 
@@ -54,7 +78,7 @@ TALOS acts as an autonomous "Research Architect," filtering noise and highlighti
 This software is part of ongoing PhD research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v4.8.0, Mar. 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v4.8.1, May 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -63,7 +87,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v4.8.0},
+  version = {v4.8.1},
   year = {2026}
 }
 ```
@@ -83,7 +107,9 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 
 ---
 
-# Project TALOS (v4.8.0)
+# ΕΛΛΗΝΙΚΗ ΕΚΔΟΣΗ
+
+# Project TALOS (v4.8.1)
 ### **Tactical Agentic Literature Orchestration System**
 
 > **Μια Αυτόνομη Πλατφόρμα Ερευνητικής Νοημοσύνης για την Εποχή του AI.**
@@ -95,20 +121,28 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 
 ---
 
-## 2. Τεχνική Αρχιτεκτονική & Οικοσύστημα
+## 2. Εγκατάσταση & Χρήση (Zero-Friction)
 
-### **Α. Επίπεδο Νοημοσύνης (Core Layer)**
-*   **Database Manager (The Knowledge Hub):** Κεντρικός κόμβος γνώσης σε SQLite3 με βελτιστοποιημένη ευρετηρίαση. Λειτουργεί ως γέφυρα μεταξύ βάσεων δεδομένων αποθηκεύοντας αναγνωριστικά `DOI`, `OpenAlex ID` και `PMID`.
-*   **AI Manager (The Cognitive Engine):** "Εγκέφαλος" αγνωστικιστικός ως προς το μοντέλο (Gemini, DeepSeek, Ollama). Διαθέτει μηχανισμούς **Circuit Breaker** για ανθεκτικότητα και **Surgical JSON Extraction** για την ακεραιότητα των δεδομένων.
-*   **Quad-Layer Evaluation Framework:** Μεθοδολογία αξιολόγησης σε 4 επίπεδα: **Strategic**, **Operational**, **Tactical** και **Playground**.
+Επιλέξτε τη μέθοδο που σας εξυπηρετεί καλύτερα:
 
-### **Β. Επίπεδο Συλλογής & Εμπλουτισμού**
-*   **Operation "Genesis":** Χρήση **Custom Native Agents** για ταυτόχρονη σάρωση σε 12+ πηγές (ArXiv, Scopus, IEEE, PubMed κ.α.).
-*   **Project "HERMES" (Data Enricher):** Αυτόματος εντοπισμός νόμιμων **Open Access** PDF links μέσω του Unpaywall API και εμπλουτισμός μεταδεδομένων (v4.8).
+### 🐳 Μέθοδος Α: Εκτέλεση με Docker (Προτεινόμενο)
+Χωρίς ανάγκη εγκατάστασης Python ή βιβλιοθηκών στο σύστημά σας.
+1. Εγκαταστήστε το [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+2. Συμπληρώστε το αρχείο `.env` με τα API Keys σας.
+3. Ανοίξτε το τερματικό σας στον φάκελο του project και τρέξτε:
+   ```bash
+   docker-compose run --rm talos
+   ```
 
-### **Γ. Στρατηγική Ανάλυση & Οπτικοποίηση**
-*   **Project "VISUALIZER":** Σουίτα επιστημομετρίας που παράγει reports με διαγράμματα για την εξέλιξη του πεδίου, την ποιότητα και τις θεματικές τάσεις (WordClouds).
-*   **Project "NAFSIKA":** Διαδραστικό Web Dashboard (Flask) με οπτικοποίηση **Article DNA** και Σημασιολογική Αναζήτηση σε πραγματικό χρόνο.
+### 🖱️ Μέθοδος Β: 1-Click Launcher (Για Windows)
+1. Συμπληρώστε το αρχείο `.env`.
+2. Κάντε διπλό κλικ στο αρχείο **`start_talos.bat`**. Θα δημιουργήσει αυτόματα το εικονικό περιβάλλον και θα ξεκινήσει το μενού.
+
+### 💻 Μέθοδος Γ: Παραδοσιακό Περιβάλλον Python
+```bash
+pip install -r requirements.txt
+python talos.py
+```
 
 ---
 
@@ -116,7 +150,7 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 Εάν χρησιμοποιήσετε το TALOS στην έρευνά σας, παρακαλούμε να το αναφέρετε ως εξής:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v4.8.0, Mar. 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v4.8.1, May 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -125,7 +159,7 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v4.8.0},
+  version = {v4.8.1},
   year = {2026}
 }
 ```
@@ -136,7 +170,10 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 Το λογισμικό διατίθεται υπό την άδεια **GNU Affero General Public License v3.0 (AGPLv3)**.
 *   **Ακαδημαϊκή Χρήση:** Ελεύθερη, με την προϋπόθεση ότι τυχόν τροποποιήσεις θα παραμείνουν ανοιχτού κώδικα υπό την ίδια άδεια.
 *   **Εμπορική Χρήση:** Απαιτείται η αγορά **Εμπορικής Άδειας (Commercial License)**.
-*   **Επικοινωνία:** [christossmarlamakis@gmail.com](mailto:christossmarlamakis@gmail.com)
+*   **Επικοινωνία:**[christossmarlamakis@gmail.com](mailto:christossmarlamakis@gmail.com)
 
 ---
-*Designed & AI-Augmented Developed by Christos Smarlamakis.*
+Designed & AI-Augmented Developed by Christos Smarlamakis.
+
+
+
