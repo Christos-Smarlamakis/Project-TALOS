@@ -9,11 +9,11 @@
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/License-AGPLv3-red)
 [![DOI](https://zenodo.org/badge/1191928488.svg)](https://doi.org/10.5281/zenodo.19224912)
-[![DOI](https://zenodo.org/badge/1191928488.svg?v=1)](https://doi.org/10.5281/zenodo.19224912)
 ![Status](https://img.shields.io/badge/Status-Active%20Research-green)
 ![Methodology](https://img.shields.io/badge/Methodology-Scientometrics%20%7C%20AI%20Evaluation-teal)
 ![Maintained](https://img.shields.io/badge/Maintained%3F-yes-brightgreen.svg)
 ![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?logo=docker)
+[![DOI](https://zenodo.org/badge/1191928488.svg?v=1)](https://doi.org/10.5281/zenodo.19224912)
 
 ---
 
