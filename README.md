@@ -13,7 +13,6 @@
 ![Methodology](https://img.shields.io/badge/Methodology-Scientometrics%20%7C%20AI%20Evaluation-teal)
 ![Maintained](https://img.shields.io/badge/Maintained%3F-yes-brightgreen.svg)
 ![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?logo=docker)
-[![DOI](https://zenodo.org/badge/1191928488.svg?v=1)](https://doi.org/10.5281/zenodo.19224912)
 
 ---
 
