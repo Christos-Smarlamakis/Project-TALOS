@@ -2,6 +2,55 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v4.8.2] - 2026-06-27 - The "Local AI & Resilience" Update
+
+This release focuses on **autonomy** and **resilience**. It introduces **local AI model support (Ollama)** enabling fully offline operation without cloud dependencies, while also fixing **16 critical bugs** that impacted system stability.
+
+### Added
+- **Local AI Model Support (Ollama):**
+  - Integration of Ollama as a third AI provider in `AIManager`, alongside Gemini and DeepSeek.
+  - Uses Ollama's **OpenAI-compatible API** for seamless compatibility with existing code (`/v1/chat/completions`).
+  - **Auto-install:** If the selected model is not found locally, TALOS automatically runs `ollama pull`.
+  - **Local Embeddings:** Support for Ollama Embeddings API (`/api/embed`) using `nomic-embed-text` for semantic search without cloud dependency.
+  - **Interactive Mode Selection:** `talos.py` prompts the user at the start of each session to choose between local or cloud model.
+  - **Graceful Degradation:** If the Ollama server is unreachable or the model fails, it automatically disables and falls back to cloud providers.
+  - **New environment variables:** `TALOS_USE_LOCAL`, `LOCAL_MODEL_NAME`, `LOCAL_MODEL_BASE_URL`, `LOCAL_EMBEDDING_MODEL`, `LOCAL_MODEL_API_KEY`.
+
+### Fixed
+- **CRITICAL: `db_stats.py` KeyError Crash:**
+  - `get_database_statistics()` was missing `elite_papers`, `missing_doi`, and `embedded_papers` fields, causing a `KeyError` crash in `db_stats.py`. All missing fields have been added.
+- **CRITICAL: Source Agents Crash Without API Keys:**
+  - Agents `elsevier_source`, `ieee_source`, `springer_source`, and `openarchives_source` raised `ValueError` during `__init__` if API keys were missing, killing the entire `daily_search.py` even when the other 10 agents were functional.
+  - **Fix:** Added `self.enabled` flag with graceful skip. Added guard `if not getattr(self, "enabled", True): return []` to every `fetch_new_papers()`.
+- **HIGH: `recommender.py` — Missing `operational_score`:**
+  - The SQL query in Recommender was not selecting `operational_score`, causing operational evaluations to be completely ignored in the Reading Recommendation report. Added the missing field.
+- **HIGH: `interactive_dashboard.py` — ValueError in Semantic Search Sort:**
+  - When a paper ID from the database was not present in semantic search results, `.index()` threw a `ValueError`. Replaced with dictionary-based lookup.
+- **HIGH: `daily_search.py` — Silent Loss of Papers Without DOI:**
+  - Deduplication used only DOI as key, silently dropping papers without DOI (e.g., from DBLP, OpenArchives). Added URL fallback, aligning logic with `historic_search.py`.
+- **MEDIUM: `crossref_source.py` — IndexError on Empty Title:**
+  - If the Crossref API returned `"title": []`, `[][0]` caused an `IndexError`. Added empty list check.
+- **MEDIUM: `openalex_source.py` — KeyError on Missing `meta`:**
+  - `data['meta']` access replaced with `data.get('meta', {})` for safe handling of malformed API responses.
+- **MEDIUM: `plos_source.py` — Dead Code `title_display`:**
+  - The `title_display` field was not included in the `fl` parameter of the API request, making `doc.get("title_display", ...)` always return `None`. Fixed fallback order.
+- **MEDIUM: `database_manager.py` — `duplicate column name` Warning:**
+  - The `ALTER TABLE` for `operational_score` ran without an existence check, producing noisy error messages at every startup. Added `PRAGMA table_info` check before ALTER.
+
+### Changed
+- **`ai_manager.py` v3.4 → v3.5:**
+  - Complete reorganization of the provider system with local model support.
+  - `generate_embeddings()` now supports fallback to local embedding model.
+  - `_execute_request()` supports the `local` provider alongside Gemini and DeepSeek.
+- **`talos.py`:**
+  - Added interactive prompt for Local/Cloud selection at the start of each session.
+  - Automatic propagation of selection to all subprocesses via `TALOS_USE_LOCAL` environment variable.
+- **`database_manager.py`:**
+  - `get_database_statistics()` now returns `elite_papers`, `missing_doi`, and `embedded_papers`.
+
+---
+
+
 ## [v4.8.1] - 2026-05-08 - The Dockerization & Portability Update
 
 This update focuses on zero-friction deployment, ensuring that Project TALOS is environment-agnostic and accessible to researchers regardless of their technical background.

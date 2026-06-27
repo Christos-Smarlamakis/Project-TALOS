@@ -126,8 +126,19 @@ def main():
         PLOSSource(config)
     ]
     all_new_papers = [p for source in sources_to_search for p in source.fetch_new_papers() if p]
-    unique_papers_dict = {p['doi']: p for p in all_new_papers if p.get('doi')}
-    papers_to_process = [p for p in unique_papers_dict.values() if not db_manager.paper_exists_by_doi(p['doi'])]
+    unique_papers_dict = {}
+    for p in all_new_papers:
+        key = p.get('doi') if p.get('doi') else p.get('url')
+        if key:
+            unique_papers_dict[key] = p
+    papers_to_process = []
+    for p in unique_papers_dict.values():
+        if p.get('doi'):
+            if not db_manager.paper_exists_by_doi(p['doi']):
+                papers_to_process.append(p)
+        elif p.get('url'):
+            if not db_manager.paper_exists_by_url(p['url']):
+                papers_to_process.append(p)
 
     if not papers_to_process:
         print("\nNo new articles found. Terminating.")

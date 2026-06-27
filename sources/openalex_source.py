@@ -88,7 +88,7 @@ class OpenAlexSource:
                     break
                 
                 # Ελέγχουμε αν υπάρχει επόμενη σελίδα (cursor pagination)
-                if 'next_page' not in data['meta'] or not data['meta']['next_page']:
+                if 'next_page' not in data.get('meta', {}) or not data.get('meta', {}).get('next_page'):
                     break
                 
                 page += 1

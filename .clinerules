@@ -1,0 +1,54 @@
+# TALOS Project Instructions for AI Coding Agents
+# Version: v4.8.2
+
+## CRITICAL: Editor Limitations
+- The editor CANNOT match or replace Greek/Unicode text reliably.
+- ALWAYS use `insert_line` instead of `old_text`/`new_text` for edits involving Greek comments.
+- PREFER creating new files (clean) over patching corrupted ones.
+- When using `insert_line`, be aware that all subsequent line numbers shift.
+- Large files (>6K chars) must be split across multiple edits.
+- NEVER use `python -c "..."` inline commands via PowerShell - use a .py script file instead.
+- The `run_commands` tool does not capture stdout reliably - write results to files for verification.
+
+## Architecture
+- Entry point: `talos.py` (CLI menu, orchestrates subprocesses)
+- Core modules: `core/ai_manager.py` (multi-provider LLM interface), `core/database_manager.py` (SQLite + embeddings)
+- Search agents: `sources/*.py` (14 APIs, standardized output format)
+- Feature scripts: `scripts/*.py` (daily search, recommendation, CHIRON, ORPHEUS, etc.)
+- Configuration: `config.json` (queries, prompts)
+- Secrets: `.env` (API keys)
+- Profiles: `_profiles/<name>/` (isolated config.json + talos_research.db per research topic)
+
+## Provider System (ai_manager.py)
+- Three providers: Gemini (primary), DeepSeek (fallback), Local/Ollama (offline)
+- Circuit breaker: 3+ consecutive failures → opens circuit → skips provider
+- System Prompt Override: used by PYTHIA (query_translator.py) to act as "Research Architect" instead of "PhD Advisor"
+- All providers must handle: JSON mode, text mode, embedding mode
+- Ollama uses OpenAI-compatible API at `http://localhost:11434/v1`
+- Ollama embeddings use native API at `http://localhost:11434/api/embed`
+
+## Database (database_manager.py)
+- SQLite with 20+ columns including 4-layer scores (strategic, operational, tactical, playground)
+- Embeddings stored as pickled numpy arrays in BLOB column
+- Semantic search via cosine similarity
+- Enrichment status: 0=Pending, 1=Enriched, 2=Failed (state machine)
+- Profile-aware: accepts optional db_path for multi-profile support
+
+## Search Agents (sources/*.py)
+- Standardized output: {doi, url, title, authors_str, publication_year, abstract, source}
+- Each agent reads its query dynamically from config.json (PYTHIA-compatible)
+- Missing API keys → print warning, set self.enabled=False, skip gracefully (NEVER raise)
+- Exponential backoff for rate-limited APIs
+
+## Known Gotchas
+- Greek comments in source files break the editor's text matching
+- `.env` values should NOT have quotes (load_dotenv doesn't strip them)
+- `daily_search.py` and `historic_search.py` must be kept in sync for dedup logic
+- The 4-layer framework (strategic, operational, tactical, playground) is the INVARIANT schema - PYTHIA redefines semantics, not keys
+- `recommender.py` reads from SQLite directly (not DatabaseManager) - check queries are up to date
+
+## Testing
+- `python -m py_compile <file>` for syntax validation
+- `python talos.py` for full integration test
+- `python scripts/db_stats.py` for database health check
+- Local mode: `ollama pull gemma3:12b && ollama pull nomic-embed-text` then set TALOS_USE_LOCAL=1

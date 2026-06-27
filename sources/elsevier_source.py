@@ -26,16 +26,22 @@ from typing import List, Dict, Any
 
 class ElsevierSource:
     def __init__(self, config: Dict[str, Any]):
+        self.enabled = True
+        
         self.api_key = os.getenv("ELSEVIER_API_KEY")
         self.inst_token = os.getenv("ELSEVIER_INST_TOKEN")
         if not self.api_key or not self.inst_token:
-            raise ValueError("Elsevier API keys not found in .env file.")
+            print("WARNING: Elsevier API keys not found in .env file. Skipping source.")
+            self.enabled = False
+            return
         self.client = ElsClient(self.api_key, inst_token=self.inst_token)
         self.query = config.get("elsevier_query", "TITLE-ABS-KEY(robotics)")
         self.days_to_search = config.get("days_to_search_daily", 1)
         self.total_max_results = config.get("max_results_config", {}).get("elsevier", 200) 
         print("INFO: ElsevierSource (v2.1 - Abstract Fix) initialized.")
 
+        if not getattr(self, "enabled", True): return []
+        
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
         print(f"-> Searching Elsevier (Scopus)...")
         all_papers = []

@@ -68,7 +68,7 @@ class ReadingRecommender:
                 # **ΑΝΑΒΑΘΜΙΣΗ**: Το query επιλέγει πλέον όλα τα νέα, δομημένα πεδία.
                 query = """
                     SELECT id, doi, url, title, authors, publication_year, abstract, source,
-                           strategic_score, tactical_score, playground_score, overall_score,
+                           strategic_score, operational_score, tactical_score, playground_score, overall_score,
                            evaluation_reasoning, evaluation_contribution, evaluation_utilization,
                            suggested_tags, processed_at
                     FROM papers

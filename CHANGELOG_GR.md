@@ -2,6 +2,55 @@
 
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
+## [v4.8.2] - 2026-06-27 - The "Local AI & Resilience" Update
+
+Αυτή η έκδοση εστιάζει στην **αυτονομία** και την **ανθεκτικότητα** του TALOS. Εισάγει υποστήριξη για **τοπικά μοντέλα AI (Ollama)** επιτρέποντας πλήρως offline λειτουργία χωρίς cloud dependencies, ενώ παράλληλα διορθώνει **16 κρίσιμα σφάλματα** που επηρέαζαν τη σταθερότητα του συστήματος.
+
+### Προσθήκες
+- **Υποστήριξη Τοπικού Μοντέλου AI (Ollama):**
+  - Ενσωμάτωση του Ollama ως τρίτου παρόχου AI στον `AIManager`, παράλληλα με Gemini και DeepSeek.
+  - Χρήση του **OpenAI-compatible API** του Ollama για πλήρη συμβατότητα με τον υπάρχοντα κώδικα (`/v1/chat/completions`).
+  - **Αυτόματη εγκατάσταση μοντέλου:** Αν το επιλεγμένο μοντέλο δεν υπάρχει τοπικά, ο TALOS εκτελεί αυτόματα `ollama pull`.
+  - **Τοπικά embeddings:** Υποστήριξη του Ollama Embeddings API (`/api/embed`) με το `nomic-embed-text` για semantic search χωρίς εξάρτηση από cloud.
+  - **Interactive Mode Selection:** Το `talos.py` ρωτά τον χρήστη στην αρχή κάθε συνεδρίας αν θέλει να χρησιμοποιήσει τοπικό ή cloud μοντέλο.
+  - **Graceful Degradation:** Αν ο Ollama server δεν είναι προσβάσιμος ή το μοντέλο αποτύχει, γίνεται αυτόματη απενεργοποίηση και fallback στους cloud providers.
+  - **Νέες μεταβλητές περιβάλλοντος:** `TALOS_USE_LOCAL`, `LOCAL_MODEL_NAME`, `LOCAL_MODEL_BASE_URL`, `LOCAL_EMBEDDING_MODEL`, `LOCAL_MODEL_API_KEY`.
+
+### Διορθώσεις Σφαλμάτων
+- **🔴 CRITICAL: `db_stats.py` KeyError Crash:**
+  - Η `get_database_statistics()` δεν επέστρεφε τα πεδία `elite_papers`, `missing_doi`, `embedded_papers` προκαλώντας `KeyError` στο `db_stats.py`. Προστέθηκαν όλα τα πεδία που λείπουν.
+- **🔴 CRITICAL: Source Agents Crash χωρίς API Keys:**
+  - Οι agents `elsevier_source`, `ieee_source`, `springer_source` και `openarchives_source` έκαναν `raise ValueError()` κατά το `__init__` αν έλειπαν API keys, σκοτώνοντας ολόκληρο το `daily_search.py` ακόμα και αν οι υπόλοιποι 10 agents ήταν λειτουργικοί.
+  - **Λύση:** Προσθήκη `self.enabled` flag και graceful skip αντί για crash. Προσθήκη guard `if not getattr(self, "enabled", True): return []` σε κάθε `fetch_new_papers()`.
+- **🟠 HIGH: `recommender.py` — Missing `operational_score`:**
+  - Το SQL query στον Recommender δεν επέλεγε το `operational_score`, με αποτέλεσμα οι operational αξιολογήσεις να αγνοούνται πλήρως στη Στρατηγική Αναφορά Ανάγνωσης. Προστέθηκε το πεδίο που έλειπε.
+- **🟠 HIGH: `interactive_dashboard.py` — ValueError στο Semantic Search Sort:**
+  - Όταν κάποιο paper ID από τη βάση δεν υπήρχε στα αποτελέσματα του semantic search, η `.index()` πετούσε `ValueError`. Αντικαταστάθηκε με dictionary-based lookup.
+- **🟠 HIGH: `daily_search.py` — Σιωπηλή Απώλεια Papers χωρίς DOI:**
+  - Το deduplication χρησιμοποιούσε μόνο το DOI ως κλειδί, απορρίπτοντας σιωπηλά papers χωρίς DOI (π.χ. από DBLP, OpenArchives). Προστέθηκε fallback στο URL, ευθυγραμμίζοντας τη λογική με το `historic_search.py`.
+- **🟡 MEDIUM: `crossref_source.py` — IndexError σε Κενό Title:**
+  - Αν το Crossref API επέστρεφε `"title": []`, το `[][0]` προκαλούσε `IndexError`. Προστέθηκε έλεγχος κενής λίστας.
+- **🟡 MEDIUM: `openalex_source.py` — KeyError αν Λείπει το `meta`:**
+  - Η πρόσβαση `data['meta']` αντικαταστάθηκε με `data.get('meta', {})` για ασφαλή χειρισμό malformed API responses.
+- **🟡 MEDIUM: `plos_source.py` — Dead Code `title_display`:**
+  - Το πεδίο `title_display` δεν περιλαμβανόταν στο `fl` parameter του API request, καθιστώντας το `doc.get("title_display", ...)` πάντα `None`. Διορθώθηκε η σειρά των fallbacks.
+- **🟡 MEDIUM: `database_manager.py` — `duplicate column name` Warning:**
+  - Το `ALTER TABLE` για το `operational_score` εκτελούνταν χωρίς έλεγχο ύπαρξης, προκαλώντας θορυβώδες error message σε κάθε εκκίνηση. Προστέθηκε `PRAGMA table_info` check πριν το ALTER.
+
+### Βελτιώσεις
+- **`ai_manager.py` v3.4 → v3.5:**
+  - Πλήρης αναδιοργάνωση του provider system με υποστήριξη local models.
+  - Το `generate_embeddings()` υποστηρίζει πλέον fallback σε τοπικό embedding model.
+  - Το `_execute_request()` υποστηρίζει τον `local` provider παράλληλα με Gemini και DeepSeek.
+- **`talos.py`:**
+  - Προσθήκη interactive prompt για επιλογή Local/Cloud στην αρχή κάθε συνεδρίας.
+  - Αυτόματη μεταβίβαση της επιλογής σε όλα τα subprocesses μέσω `TALOS_USE_LOCAL` environment variable.
+- **`database_manager.py`:**
+  - Η `get_database_statistics()` επιστρέφει πλέον `elite_papers`, `missing_doi` και `embedded_papers`.
+
+---
+
+
 ## [v4.8.1] - 2026-05-08 - Ενημέρωση Φορητότητας & Docker
 
 Αυτή η έκδοση εστιάζει στην άμεση και απρόσκοπτη εκτέλεση της εφαρμογής (Zero-Friction Deployment), καθιστώντας τον Τάλω προσβάσιμο σε ερευνητές ανεξαρτήτως του τεχνικού τους υπόβαθρου.

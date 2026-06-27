@@ -105,7 +105,8 @@ class CrossrefSource:
         """
         try:
             # Ο τίτλος είναι μια λίστα, παίρνουμε το πρώτο στοιχείο.
-            title = item.get("title", ["N/A"])[0]
+            title_list = item.get("title", ["N/A"])
+            title = title_list[0] if title_list else "N/A"
             
             # Συνθέτουμε τη λίστα των συγγραφέων.
             authors_list = item.get('author', [])

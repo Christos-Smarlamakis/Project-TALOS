@@ -114,7 +114,7 @@ class PLOSSource:
             return {
                 "doi": doi,
                 "url": url,
-                "title": doc.get("title_display", doc.get("title", "N/A")),
+                "title": doc.get("title", doc.get("title_display", "N/A")),
                 "authors_str": authors,
                 "publication_year": pub_year,
                 "abstract": abstract,

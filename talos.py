@@ -29,6 +29,9 @@ import shutil
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'scripts')))
 from scripts.profile_manager import get_active_profile_name, save_current_state_to_profile, set_active_profile_name
 
+USE_LOCAL_MODEL = False
+
+
 def safe_select(message, choices):
     
     try:
@@ -45,6 +48,9 @@ def run_script(script_name: str, python_exe: str, args: list = None, capture: bo
     print(f"\n--- Εκκίνηση του '{script_name}'... ---\n")
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
+    
+    if USE_LOCAL_MODEL:
+        env["TALOS_USE_LOCAL"] = "1"
     
     try:
         if capture:
@@ -186,6 +192,22 @@ def main_menu():
     check_first_run(python_exe)
     
     time.sleep(1)
+
+    time.sleep(1)
+
+    # --- Ask for local model preference ---
+    global USE_LOCAL_MODEL
+    if not USE_LOCAL_MODEL:
+        choice = safe_select(
+            "Where to run AI calls?",
+            choices=[
+                "LOCAL  (Ollama / Gemma 3 12B)",
+                "CLOUD  (Gemini + DeepSeek)"
+            ]
+        )
+        USE_LOCAL_MODEL = (choice and "LOCAL" in choice)
+        if USE_LOCAL_MODEL:
+            print("✅ Local mode enabled. Ollama will be used for all AI calls.\n")
 
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')

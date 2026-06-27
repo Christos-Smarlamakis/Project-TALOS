@@ -26,7 +26,11 @@ from typing import List, Dict, Any
 class IEEEXploreSource:
     def __init__(self, config: Dict[str, Any]):
         self.api_key = os.getenv("IEEE_API_KEY")
-        if not self.api_key: raise ValueError("IEEE_API_KEY not found in .env file.")
+        self.enabled = True
+        if not self.api_key:
+            print("WARNING: IEEE_API_KEY not found in .env file. Skipping source.")
+            self.enabled = False
+            return
         self.query = config.get("ieee_query", "robotics")
         self.days_to_search = config.get("days_to_search_daily", 1)
         self.total_max_results = config.get("max_results_config", {}).get("ieee", 100)
@@ -52,6 +56,8 @@ class IEEEXploreSource:
         return None
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
+        if not getattr(self, "enabled", True): return []
+        
         print(f"-> Αναζήτηση στο IEEE Xplore...")
         all_papers = []
         start_record = 1

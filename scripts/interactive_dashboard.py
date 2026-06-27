@@ -83,7 +83,8 @@ def semantic_search():
         results_data = db_manager.get_papers_by_ids(sorted_paper_ids)
         
         if results_data:
-            results_data.sort(key=lambda x: sorted_paper_ids.index(x['id']))
+            id_order = {pid: i for i, pid in enumerate(sorted_paper_ids)}
+        results_data.sort(key=lambda x: id_order.get(x['id'], len(sorted_paper_ids)))
         return jsonify(results_data)
     except Exception as e:
         return jsonify({'error': str(e)}), 500

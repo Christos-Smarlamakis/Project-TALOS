@@ -137,10 +137,15 @@ class DatabaseManager:
         self.execute_query("CREATE INDEX IF NOT EXISTS idx_papers_url ON papers(url);", commit=True)
         
         # Legacy check για πολύ παλιές βάσεις που μπορεί να μην έχουν το operational_score
+        cols = self.execute_query("PRAGMA table_info(papers);", fetch_all=True)
+        if cols and not any(col[1] == 'operational_score' for col in cols):
+            self.execute_query("ALTER TABLE papers ADD COLUMN operational_score INTEGER DEFAULT 0;", commit=True)
+        
         try:
             self.execute_query("ALTER TABLE papers ADD COLUMN operational_score INTEGER DEFAULT 0;", commit=True)
         except sqlite3.OperationalError:
             pass
+
 
     # --- CORE METHODS ---
 
@@ -312,6 +317,14 @@ class DatabaseManager:
             cursor.execute("SELECT AVG(overall_score) FROM papers")
             avg = cursor.fetchone()[0]
             stats['avg_score'] = round(avg, 2) if avg else 0.0
+            # B1 FIX: Compute elite_papers, missing_doi, embedded_papers (used by db_stats.py)
+            cursor.execute("SELECT COUNT(*) FROM papers WHERE overall_score > 7")
+            stats['elite_papers'] = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM papers WHERE doi IS NULL OR doi = ''")
+            stats['missing_doi'] = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM papers WHERE embedding IS NOT NULL")
+            stats['embedded_papers'] = cursor.fetchone()[0]
+            
             
         return stats
     
