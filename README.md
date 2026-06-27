@@ -1,5 +1,5 @@
 
-# Project TALOS (v4.8.2)
+# Project TALOS (v4.8.3)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Τακτικό Πρακτορικό Σύστημα Ενορχήστρωσης Βιβλιογραφίας)*
@@ -109,7 +109,7 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 
 # ΕΛΛΗΝΙΚΗ ΕΚΔΟΣΗ
 
-# Project TALOS (v4.8.2)
+# Project TALOS (v4.8.3)
 ### **Tactical Agentic Literature Orchestration System**
 
 > **Μια Αυτόνομη Πλατφόρμα Ερευνητικής Νοημοσύνης για την Εποχή του AI.**
