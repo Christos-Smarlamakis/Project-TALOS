@@ -50,13 +50,16 @@ class AIManager:
         if self.local_enabled:
             self.providers['local'] = {
                 'client': openai.OpenAI(api_key=os.getenv("LOCAL_MODEL_API_KEY", "ollama"), base_url=local_url),
-                'model_name': os.getenv("LOCAL_MODEL_NAME", "gemma3:12b"),
+                'model_name': os.getenv("LOCAL_MODEL_NAME", "gemma3:12b"),      
                 'embedding_model': os.getenv("LOCAL_EMBEDDING_MODEL", "nomic-embed-text"),
                 'ollama_url': local_url.replace("/v1", ""),
                 'consecutive_failures': 0, 'circuit_open': False
             }
-            self._ensure_local_model()
+            if not os.getenv("TALOS_MODELS_VERIFIED"):
+                self._ensure_local_model()
             print(f"INFO: Local provider initialized ({self.providers['local']['model_name']}).")
+            self.provider_priority.insert(0, 'local')  # local first when enabled
+            
             
         self.FAILURE_THRESHOLD = config.get("failure_threshold", 5)
         print(f"INFO: AIManager v3.5 (Local Model Support) initialized.")
@@ -82,28 +85,29 @@ class AIManager:
         result = self._execute_request(full_prompt, 'pro', response_format='text')
         return result if result is not None else "All AI providers failed to generate a response."
 
-    def generate_embeddings(self, texts: List[str], task_type: str = "RETRIEVAL_DOCUMENT") -> Union[List[Any], None]:
-        if 'gemini' in self.providers and not self.providers['gemini']['circuit_open']:
-            try:
-                result = genai.embed_content(
-                    model=self.providers['gemini']['embedding_model'],
-                    content=texts, task_type=task_type)
-                return result['embedding']
-            except Exception as e:
-                print(f"  >!> Gemini embedding failed: {e}")
-                self._handle_failure('gemini')
-        if 'local' in self.providers and not self.providers['local']['circuit_open']:
+    def generate_embeddings(self, texts, task_type=None):
+        # Try local first
+        if 'local' in self.providers:
             try:
                 p = self.providers['local']
                 resp = requests.post(f"{p['ollama_url']}/api/embed",
                     json={"model": p['embedding_model'], "input": texts}, timeout=60)
                 if resp.status_code == 200:
                     return resp.json().get('embeddings')
+                print(f"  >!> Local embedding status: {resp.status_code}")
             except Exception as e:
-                print(f"  >!> Local embedding failed: {e}")
-                self._handle_failure('local')
-        print("ERROR: No available provider for embeddings.")
-        return None
+                print(f"  >!> Local embedding error: {e}")
+        # Fallback to Gemini
+        if 'gemini' in self.providers:
+            try:
+                result = genai.embed_content(
+                    model=self.providers['gemini']['embedding_model'],
+                    content=texts, task_type="RETRIEVAL_DOCUMENT")
+                return result['embedding']
+            except Exception as e:
+                print(f"  >!> Gemini embedding failed: {e}")
+        print("ERROR: No embedding provider available.")
+        return None           
 
     def _execute_request(self, prompt: str, model_type: str, response_format: str = 'text') -> Union[Dict[str, Any], str, None]:
         for provider_name in self.provider_priority:
@@ -119,6 +123,11 @@ class AIManager:
                 if result is not None:
                     self.providers[provider_name]['consecutive_failures'] = 0
                     return result
+                    # SECURITY: local->cloud fallback requires consent
+                    if provider_name == 'local' and os.getenv("TALOS_ALLOW_CLOUD_FALLBACK") != "1":
+                        print("  >!> Local model failed. Cloud fallback DENIED.")
+                        return None
+                    
                 else:
                     print(f"  >!> Provider {provider_name.upper()} failed. Trying next provider...")
                     continue
@@ -205,6 +214,12 @@ class AIManager:
                 print(f"  >> Local model '{p['model_name']}' not found. Pulling...")
                 subprocess.run(["ollama", "pull", p['model_name']], check=True)
                 print(f"  >> Model '{p['model_name']}' installed.")
+            emb_model = p['embedding_model']
+            if emb_model not in models:
+                print(f"  >> Embedding model '{emb_model}' not found. Pulling...")
+                subprocess.run(["ollama", "pull", emb_model], check=True)
+                print(f"  >> Model '{emb_model}' installed.")
+            
         except Exception as e:
             print(f"WARNING: Local model setup failed: {e}. Disabling local provider.")
             if 'local' in self.providers: del self.providers['local']

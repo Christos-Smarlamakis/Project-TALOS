@@ -51,6 +51,15 @@ def run_script(script_name: str, python_exe: str, args: list = None, capture: bo
     
     if USE_LOCAL_MODEL:
         env["TALOS_USE_LOCAL"] = "1"
+    if os.environ.get("TALOS_MODELS_VERIFIED"):
+        env["TALOS_MODELS_VERIFIED"] = "1"  
+        env["TALOS_MODELS_VERIFIED"] = "1"
+    if os.environ.get("TALOS_ALLOW_CLOUD_FALLBACK"):
+        env["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
+    if os.environ.get("TALOS_ALLOW_LOCAL_FALLBACK"):
+        env["TALOS_ALLOW_LOCAL_FALLBACK"] = "1"
+    
+        
     
     try:
         if capture:
@@ -177,12 +186,35 @@ def maintenance_menu(python_exe: str):
     elif choice.startswith("2."): run_script("metadata_enricher.py", python_exe)
     elif choice.startswith("3."): run_script("zotero_connector.py", python_exe)
     elif choice.startswith("4."):
-        if questionary.confirm("Αυτή η διαδικασία θα κάνει πολλαπλές κλήσεις στο Gemini API. Συνέχεια;", default=False).ask():
             run_script("embedding_generator.py", python_exe)
+            
     elif choice.startswith("5."): run_script("reevaluate_database.py", python_exe)
-    elif choice.startswith("6."): run_script("recalculate_scores.py", python_exe)
-    elif choice.startswith("7."): run_script("data_enricher.py", python_exe, args=[target_db])
+    elif choice.startswith("7."): run_script("data_enricher.py", python_exe)
     elif choice.startswith("8."): run_script("trend_analyzer.py", python_exe, args=[target_db])
+    
+
+
+def _verify_local_models():
+    import requests, subprocess
+    print("\n[Verifying local models...]")
+    base = "http://localhost:11434"
+    try:
+        resp = requests.get(f"{base}/api/tags", timeout=5)
+        if resp.status_code != 200:
+            print("WARNING: Ollama not reachable.")
+            return
+        models = [m['name'] for m in resp.json().get('models', [])]
+        for model in ["gemma3:12b", "nomic-embed-text"]:
+            if model not in models:
+                print(f"  >> Pulling {model}...")
+                subprocess.run(["ollama", "pull", model], check=True)
+            else:
+                print(f"  >> {model} already installed.")
+        os.environ["TALOS_MODELS_VERIFIED"] = "1"
+        print("[All local models ready.]")
+    except Exception as e:
+        print(f"WARNING: Model verification failed: {e}")
+        
 # --- ΚΥΡΙΟ ΜΕΝΟΥ ---
 
 def main_menu():
@@ -207,7 +239,22 @@ def main_menu():
         )
         USE_LOCAL_MODEL = (choice and "LOCAL" in choice)
         if USE_LOCAL_MODEL:
-            print("✅ Local mode enabled. Ollama will be used for all AI calls.\n")
+            print("Local mode enabled.")
+            _verify_local_models()
+            
+            fallback = safe_select("Allow cloud fallback if local fails?",
+                choices=["NO - Keep data offline", "YES - Allow cloud as backup"])
+            if fallback and "YES" in fallback:
+                os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
+                print("Cloud fallback ALLOWED.")
+            else:
+                print("Cloud fallback BLOCKED.")
+        else:
+            fallback = safe_select("Allow local fallback if cloud fails?",
+                choices=["NO - Cloud only", "YES - Allow local as backup"])
+            if fallback and "YES" in fallback:
+                os.environ["TALOS_ALLOW_LOCAL_FALLBACK"] = "1"
+                print("Local fallback ALLOWED.")
 
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')

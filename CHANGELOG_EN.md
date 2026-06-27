@@ -2,6 +2,48 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v4.8.3] - 2026-06-27 - The "Secure Local AI & Privacy" Update
+
+This release strengthens the **security and privacy** of local mode. It adds **model pre-verification with auto-install** at startup, **user consent** before any cloud fallback, and **bidirectional fallback** (local↔cloud) with explicit approval.
+
+### Added
+- **Model Pre-Verification (`_verify_local_models`):**
+  - When LOCAL mode is selected, TALOS verifies **once** that all required models (chat + embedding) are installed.
+  - Missing models are automatically pulled via `ollama pull`.
+  - `TALOS_MODELS_VERIFIED=1` is passed to all subprocesses, avoiding redundant checks.
+- **Privacy Guard: Cloud Fallback Consent:**
+  - When the local model fails, TALOS does **NOT** automatically send data to the cloud.
+  - User is prompted at startup: "Allow cloud fallback if local fails?"
+  - If answered **NO**, data stays **fully offline** — no API calls leave the machine.
+- **Bidirectional Fallback:**
+  - In CLOUD mode, user can allow fallback to local model if cloud fails ("Allow local fallback if cloud fails?").
+  - `TALOS_ALLOW_CLOUD_FALLBACK` and `TALOS_ALLOW_LOCAL_FALLBACK` env vars control behavior.
+
+### Fixed
+- **Local Provider Priority:**
+  - Fixed: when LOCAL mode is selected, local model is placed **first** in `provider_priority` (using `insert(0, 'local')` instead of `append`).
+  - Previously, local was appended last and only tried after Gemini and DeepSeek failed.
+- **Embedding Model Missing:**
+  - `_ensure_local_model()` did not check for the embedding model (`nomic-embed-text`).
+  - Added automatic check and installation for the embedding model.
+- **Embedding Priority:**
+  - `generate_embeddings()` now tries the local embedding model **first**, then falls back to Gemini.
+- **Maintenance Menu:**
+  - Restored options 4-8 (Embedding Generator, Re-evaluate, Recalculate, Data Enricher, Trend Analyzer) lost during refactoring.
+
+### Changed
+- **`talos.py`:**
+  - Added `_verify_local_models()` for centralized model checks.
+  - Added interactive prompts for cloud/local fallback consent.
+  - Automatic propagation of `TALOS_MODELS_VERIFIED`, `TALOS_ALLOW_CLOUD_FALLBACK`, `TALOS_ALLOW_LOCAL_FALLBACK` to subprocesses.
+- **`ai_manager.py` v3.5:**
+  - Skips `_ensure_local_model()` in subprocesses when models already verified.
+  - Added security check before cloud fallback (requires `TALOS_ALLOW_CLOUD_FALLBACK=1`).
+  - Fixed provider ordering (local first) and embedding fallback (local first).
+
+---
+
+
 ## [v4.8.2] - 2026-06-27 - The "Local AI & Resilience" Update
 
 This release focuses on **autonomy** and **resilience**. It introduces **local AI model support (Ollama)** enabling fully offline operation without cloud dependencies, while also fixing **16 critical bugs** that impacted system stability.

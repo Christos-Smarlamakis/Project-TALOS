@@ -2,6 +2,48 @@
 
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
+## [v4.8.3] - 2026-06-27 - The "Secure Local AI & Privacy" Update
+
+Αυτή η έκδοση ενισχύει την **ασφάλεια και το απόρρητο** του τοπικού mode. Προσθέτει **έλεγχο και αυτόματη εγκατάσταση όλων των μοντέλων** κατά την εκκίνηση, **user consent** πριν από οποιοδήποτε fallback σε cloud, και **αμφίδρομο fallback** (local↔cloud) με ρητή έγκριση χρήστη.
+
+### Προσθήκες
+- **Model Pre-Verification (`_verify_local_models`):**
+  - Κατά την επιλογή LOCAL mode, ο TALOS ελέγχει **μία φορά** ότι όλα τα απαιτούμενα μοντέλα (chat + embedding) είναι εγκατεστημένα.
+  - Αν κάποιο μοντέλο λείπει, γίνεται αυτόματο `ollama pull`.
+  - Το περιβάλλον `TALOS_MODELS_VERIFIED=1` μεταβιβάζεται σε όλα τα subprocesses, αποφεύγοντας επαναληπτικούς ελέγχους.
+- **Privacy Guard: Cloud Fallback Consent:**
+  - Όταν το τοπικό μοντέλο αποτύχει, ο TALOS **ΔΕΝ** στέλνει αυτόματα δεδομένα στο cloud.
+  - Ο χρήστης ερωτάται κατά την εκκίνηση: "Allow cloud fallback if local fails?"
+  - Αν απαντήσει **NO**, τα δεδομένα παραμένουν **πλήρως offline** — κανένα API call δεν φεύγει από τον υπολογιστή.
+- **Αμφίδρομο Fallback:**
+  - Σε CLOUD mode, ο χρήστης μπορεί να επιτρέψει fallback σε τοπικό μοντέλο αν το cloud αποτύχει ("Allow local fallback if cloud fails?").
+  - Οι μεταβλητές `TALOS_ALLOW_CLOUD_FALLBACK` και `TALOS_ALLOW_LOCAL_FALLBACK` ελέγχουν τη συμπεριφορά.
+
+### Διορθώσεις Σφαλμάτων
+- **Local Provider Priority:**
+  - Διορθώθηκε: όταν επιλέγεται LOCAL mode, το τοπικό μοντέλο μπαίνει **πρώτο** στο `provider_priority` (χρησιμοποιήθηκε `insert(0, 'local')` αντί για `append`).
+  - Προηγουμένως το local προστίθετο τελευταίο, με αποτέλεσμα να δοκιμάζεται μόνο αφού αποτύχουν Gemini και DeepSeek.
+- **Embedding Model Missing:**
+  - Το `_ensure_local_model()` δεν έλεγχε την ύπαρξη του embedding model (`nomic-embed-text`).
+  - Προστέθηκε αυτόματος έλεγχος και εγκατάσταση και για το embedding model.
+- **Embedding Priority:**
+  - Η `generate_embeddings()` δοκιμάζει πλέον **πρώτα** το τοπικό embedding model και μετά το Gemini (ήταν ανάποδα).
+- **Maintenance Menu:**
+  - Αποκαταστάθηκαν οι επιλογές 4-8 (Embedding Generator, Re-evaluate, Recalculate, Data Enricher, Trend Analyzer) που είχαν χαθεί κατά το refactoring.
+
+### Βελτιώσεις
+- **`talos.py`:**
+  - Προσθήκη `_verify_local_models()` για κεντρικό έλεγχο μοντέλων.
+  - Προσθήκη interactive prompts για cloud/local fallback consent.
+  - Αυτόματη μεταβίβαση των `TALOS_MODELS_VERIFIED`, `TALOS_ALLOW_CLOUD_FALLBACK`, `TALOS_ALLOW_LOCAL_FALLBACK` σε subprocesses.
+- **`ai_manager.py` v3.5:**
+  - Παρακάμπτει το `_ensure_local_model()` στα subprocesses όταν τα μοντέλα έχουν ήδη επαληθευτεί.
+  - Προστέθηκε security check πριν από cloud fallback (απαιτεί `TALOS_ALLOW_CLOUD_FALLBACK=1`).
+  - Διόρθωση σειράς providers (`local` πρώτο) και embedding fallback (`local` πρώτο).
+
+---
+
+
 ## [v4.8.2] - 2026-06-27 - The "Local AI & Resilience" Update
 
 Αυτή η έκδοση εστιάζει στην **αυτονομία** και την **ανθεκτικότητα** του TALOS. Εισάγει υποστήριξη για **τοπικά μοντέλα AI (Ollama)** επιτρέποντας πλήρως offline λειτουργία χωρίς cloud dependencies, ενώ παράλληλα διορθώνει **16 κρίσιμα σφάλματα** που επηρέαζαν τη σταθερότητα του συστήματος.
