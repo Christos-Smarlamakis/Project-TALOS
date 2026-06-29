@@ -8,6 +8,17 @@
 #  License, or (at your option) any later version.
 #
 #  For commercial licensing, please contact the author.
+"""
+Module: trend_analyzer.py (v1.0 - Scientometrics Module)
+Project: TALOS v4.8.5
+
+Description:
+    Generates interactive HTML scientometrics reports with statistical
+    visualizations. Produces research timelines, score distribution plots,
+    author productivity charts, Open Access pie charts, and word clouds.
+    Uses matplotlib, seaborn, and wordcloud. Automatically opens the
+    report in the default browser when complete.
+"""
 # scripts/trend_analyzer.py
 # Project TALOS v4.8.0 - Scientometrics Module
 
