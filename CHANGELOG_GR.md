@@ -2,6 +2,27 @@
 
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
+## [v4.9.0] - 2026-06-29 - Ενημέρωση "Streamlit GUI & Quality"
+
+Αυτή η έκδοση μετατρέπει τον TALOS σε μια **πλήρη Web GUI εφαρμογή** με επαγγελματικό Streamlit interface, διατηρώντας παράλληλα το CLI μενού. Προσθέτει **smoke test suite** για ελέγχους υγείας, αναβαθμίζει την αναφορά επιστημομετρίας με dark mode και Quad-Layer στατιστικά, και διορθώνει σφάλματα που ανακαλύφθηκαν κατά την ενσωμάτωση του GUI.
+
+### Προσθήκες
+- **Streamlit Web GUI (`app.py`):** Πλήρης αντικατάσταση του CLI μενού σε 6 σελίδες (Home, Search & Discovery, Single Paper Evaluation, Analysis & Insights, Database Maintenance, Profile & Settings). Περιλαμβάνει επιλογή παρόχου AI (Local/Cloud), Database Dashboard με semantic search και φίλτρα, inline rendering αναφορών Markdown/HTML.
+- **_gui_runner.py:** Wrapper που κάνει monkey-patch το `questionary` ώστε τα TALOS scripts να τρέχουν χωρίς πραγματική κονσόλα, επιτρέποντας εκτέλεση από subprocess.
+- **Smoke Test Suite (`test_smoke.py`):** 78 αυτοματοποιημένοι έλεγχοι (σύνταξη 43 αρχείων, imports, database, AI Manager). Ενσωματωμένο σε CLI (Database Maintenance → επιλογή 8) και GUI (Profile & Settings).
+- **Docker:** Το `Dockerfile` εγκαθιστά το `streamlit`, υποστηρίζει `TALOS_START_MODE` (streamlit/dashboard/cli). Το `docker-compose.yml` εκθέτει τις πόρτες 5000 και 8501.
+
+### Αλλαγές
+- **Αναβάθμιση έκδοσης σε v4.9.0** σε όλα τα αρχεία.
+- **Αναφορά Επιστημομετρίας (`trend_analyzer.py`):** Dark mode HTML, διόρθωση KDE (προσθήκη operational_score), νέο γράφημα Top Venues, πίνακας Quad-Layer στατιστικών.
+- Διόρθωση seaborn `FutureWarning` με προσθήκη `hue` και `legend=False`.
+
+### Διορθώσεις
+- **`KeyError: 'id'` στο CHIRON** όταν το sota_papers είναι κενό DataFrame.
+- **`NoConsoleScreenBufferError`** κατά την εκτέλεση questionary-based scripts από subprocess.
+- **`UnicodeDecodeError`** στα subprocess outputs λόγω ελληνικών χαρακτήρων.
+- **Markdown table rendering** στο Streamlit expander.
+
 ## [v4.8.5] - 2026-06-29 - Ενημέρωση "Bug Hunt & Quality"
 
 Αυτή η έκδοση είναι ένα εκτεταμένο **sprint διόρθωσης σφαλμάτων** που αντιμετωπίζει 15+ bugs σε όλα τα modules. Βασικές βελτιώσεις: ο εμπλουτισμός μεταδεδομένων χρησιμοποιεί πλέον **multi-source fallback chain** (OpenAlex → Crossref → DBLP → Semantic Scholar), ο recommender παράγει **δομημένες αναφορές** που ταιριάζουν με το terminal, και το κατώφλι ποιότητας προτάσεων αυξήθηκε από 4.0 σε **7.0**.

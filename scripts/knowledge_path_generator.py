@@ -90,8 +90,10 @@ class KnowledgePathGenerator:
         sorted_by_year = elite_papers.sort_values(by='publication_year', ascending=True)
         foundational_papers = sorted_by_year.head(3)
         sota_papers = sorted_by_year.tail(3)
-        if foundational_papers.equals(sota_papers): sota_papers = pd.DataFrame()
-        core_ids = pd.concat([foundational_papers['id'], sota_papers['id']]).unique()
+        if foundational_papers.equals(sota_papers): sota_papers = pd.DataFrame(columns=foundational_papers.columns)
+        core_ids = foundational_papers['id'].unique()
+        if not sota_papers.empty:
+            core_ids = pd.concat([foundational_papers['id'], sota_papers['id']]).unique()
         papers_for_clustering = df[~df['id'].isin(core_ids)].copy()
         thematic_clusters = {}
         if len(papers_for_clustering) >= num_clusters:

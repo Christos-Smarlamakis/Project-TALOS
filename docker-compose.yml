@@ -10,9 +10,10 @@ services:
     # Συνδέουμε τον φάκελό μας για να μην χάνονται τα δεδομένα
     volumes:
       - .:/app
-    # Ανοίγουμε την πόρτα για το Web Dashboard
+    # Ports: Flask Dashboard + Streamlit GUI
     ports:
       - "5000:5000"
+      - "8501:8501"
     # Φορτώνουμε τα API Keys
     env_file:
       - .env

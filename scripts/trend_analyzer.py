@@ -97,17 +97,18 @@ class TrendAnalyzer:
         
         # 1. Publications per Year (Timeline)
         fig1, ax1 = plt.subplots(figsize=(10, 6))
-        sns.countplot(x='publication_year', data=df, palette='viridis', ax=ax1)
+        sns.countplot(x='publication_year', data=df, hue='publication_year', palette='viridis', legend=False, ax=ax1)
         ax1.set_title('Research Timeline: Publications per Year', fontsize=14)
         ax1.tick_params(axis='x', rotation=45)
         plots['timeline'] = self.fig_to_base64(fig1)
         
-        # 2. Score Distribution (KDE Plot)
+        # 2. Score Distribution (KDE Plot) — Full Quad-Layer
         fig2, ax2 = plt.subplots(figsize=(10, 6))
-        sns.kdeplot(data=df, x='overall_score', fill=True, color='r', label='Overall', ax=ax2)
-        sns.kdeplot(data=df, x='strategic_score', fill=False, color='b', label='Strategic', ax=ax2)
-        sns.kdeplot(data=df, x='tactical_score', fill=False, color='g', label='Tactical', ax=ax2)
-        ax2.set_title('Quality Landscape: Score Distributions', fontsize=14)
+        sns.kdeplot(data=df, x='overall_score', fill=True, color='#e74c3c', label='Overall', ax=ax2)
+        sns.kdeplot(data=df, x='strategic_score', fill=False, color='#3498db', label='Strategic', ax=ax2)
+        sns.kdeplot(data=df, x='operational_score', fill=False, color='#9b59b6', label='Operational', ax=ax2)
+        sns.kdeplot(data=df, x='tactical_score', fill=False, color='#2ecc71', label='Tactical', ax=ax2)
+        ax2.set_title('Quality Landscape: Quad-Layer Score Distributions', fontsize=14)
         ax2.legend()
         plots['scores'] = self.fig_to_base64(fig2)
 
@@ -117,7 +118,7 @@ class TrendAnalyzer:
         top_authors = authors_series.value_counts().head(15)
         
         fig3, ax3 = plt.subplots(figsize=(10, 8))
-        sns.barplot(x=top_authors.values, y=top_authors.index, palette='rocket', ax=ax3)
+        sns.barplot(x=top_authors.values, y=top_authors.index, hue=top_authors.index, palette='rocket', legend=False, ax=ax3)
         ax3.set_title('Most Active Researchers (Top 15)', fontsize=14)
         plots['authors'] = self.fig_to_base64(fig3)
 
@@ -132,21 +133,80 @@ class TrendAnalyzer:
         else:
             plots['oa_pie'] = None # Placeholder if data missing
 
-        # 5. Word Cloud (Content Analysis)
+        # 5. Top Venues / Publishers
+        if 'publisher' in df.columns and df['publisher'].notna().any():
+            top_publishers = df['publisher'].value_counts().head(10)
+            fig5, ax5 = plt.subplots(figsize=(10, 6))
+            sns.barplot(x=top_publishers.values, y=top_publishers.index, hue=top_publishers.index, palette='magma', legend=False, ax=ax5)
+            ax5.set_title('Top Venues & Publishers', fontsize=14)
+            ax5.set_xlabel('Number of Papers')
+            plots['venues'] = self.fig_to_base64(fig5)
+        else:
+            plots['venues'] = None
+
+        # 6. Word Cloud (Content Analysis)
         text = " ".join(title for title in df.title)
         wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
         
-        fig5, ax5 = plt.subplots(figsize=(12, 6))
-        ax5.imshow(wordcloud, interpolation='bilinear')
-        ax5.axis("off")
-        ax5.set_title('Keyword Dominance (Title Analysis)', fontsize=14)
-        plots['wordcloud'] = self.fig_to_base64(fig5)
+        fig6, ax6 = plt.subplots(figsize=(12, 6))
+        ax6.imshow(wordcloud, interpolation='bilinear')
+        ax6.axis("off")
+        ax6.set_title('Keyword Dominance (Title Analysis)', fontsize=14)
+        plots['wordcloud'] = self.fig_to_base64(fig6)
+
+        # 7. Quad-Layer Score Summary Table
+        score_stats = {}
+        for col in ['strategic_score', 'operational_score', 'tactical_score', 'playground_score', 'overall_score']:
+            if col in df.columns:
+                score_stats[col] = {
+                    'avg': df[col].mean(),
+                    'median': df[col].median(),
+                    'max': df[col].max(),
+                    'min': df[col].min(),
+                    'elite_pct': (df[col] >= 7).sum() / len(df) * 100 if len(df) > 0 else 0
+                }
+        plots['score_stats'] = score_stats
 
         return plots
 
     def generate_html_report(self, plots, count):
-        """Generates the final HTML file."""
+        """Generates the final HTML file with Dark Mode & Quad-Layer stats."""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+        
+        # Build score stats table
+        stats = plots.get('score_stats', {})
+        score_table = ""
+        if stats:
+            rows = ""
+            labels = {
+                'strategic_score': '🔴 Strategic', 'operational_score': '🟣 Operational',
+                'tactical_score': '🔵 Tactical', 'playground_score': '🟡 Playground',
+                'overall_score': '⭐ Overall'
+            }
+            for col, info in stats.items():
+                label = labels.get(col, col)
+                rows += f"""
+                <tr>
+                    <td>{label}</td>
+                    <td>{info['avg']:.2f}</td>
+                    <td>{info['median']:.1f}</td>
+                    <td>{info['min']:.0f}</td>
+                    <td>{info['max']:.0f}</td>
+                    <td>{info['elite_pct']:.1f}%</td>
+                </tr>"""
+            score_table = f"""
+            <h2>📊 Quad-Layer Score Summary</h2>
+            <table class="score-table">
+                <thead><tr><th>Layer</th><th>Avg</th><th>Median</th><th>Min</th><th>Max</th><th>Elite (≥7)</th></tr></thead>
+                <tbody>{rows}</tbody>
+            </table>"""
+        
+        # Build venues section
+        venues_section = ""
+        if plots.get('venues'):
+            venues_section = f"""
+            <h2>🏆 Top Venues & Publishers</h2>
+            <div class="chart-container"><img src="data:image/png;base64,{plots['venues']}" alt="Venues"></div>"""
         
         html_content = f"""
         <!DOCTYPE html>
@@ -154,47 +214,62 @@ class TrendAnalyzer:
         <head>
             <title>TALOS Scientometrics Report</title>
             <style>
-                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; }}
-                h1 {{ color: #2c3e50; text-align: center; }}
-                .meta {{ text-align: center; color: #7f8c8d; margin-bottom: 40px; }}
+                * {{ box-sizing: border-box; }}
+                body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #0d1117; color: #e6edf3; }}
+                h1 {{ color: #e94560; text-align: center; font-size: 2rem; margin-bottom: 5px; }}
+                h2 {{ color: #c9d1d9; text-align: center; margin: 30px 0 15px; font-size: 1.3rem; }}
+                .meta {{ text-align: center; color: #8b949e; margin-bottom: 40px; font-size: 0.9rem; }}
                 .container {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: auto; }}
                 .full-width {{ grid-column: span 2; }}
-                .card {{ background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }}
+                .chart-container {{ background: #161b22; padding: 20px; border-radius: 10px; border: 1px solid #30363d; box-shadow: 0 2px 8px rgba(0,0,0,0.3); }}
                 img {{ max-width: 100%; height: auto; }}
-                .stat-box {{ text-align: center; font-size: 24px; font-weight: bold; color: #34495e; padding: 20px; }}
+                .stat-box {{ text-align: center; font-size: 24px; font-weight: bold; color: #e94560; padding: 20px; background: #161b22; border-radius: 10px; border: 1px solid #30363d; }}
+                .score-table {{ width: 100%; border-collapse: collapse; margin: 20px 0; background: #161b22; border-radius: 10px; overflow: hidden; border: 1px solid #30363d; }}
+                .score-table th {{ background: #1a1a2e; color: #e94560; padding: 12px; text-align: left; font-size: 0.85rem; }}
+                .score-table td {{ padding: 10px 12px; border-top: 1px solid #30363d; font-size: 0.9rem; }}
+                .score-table tr:hover {{ background: #21262d; }}
             </style>
         </head>
         <body>
-            <h1>Project TALOS: Scientometrics Analysis</h1>
-            <div class="meta">Generated: {timestamp} | Papers Analyzed: {count} | Version: v4.8.0</div>
+            <h1>🧠 Project TALOS: Scientometrics Analysis</h1>
+            <div class="meta">Generated: {timestamp} | Papers Analyzed: {count} | Version: v4.8.6 — Dark Mode</div>
+
+            {score_table}
 
             <div class="container">
-                <div class="card full-width stat-box">
-                    Knowledge Base Size: {count} Papers
+                <div class="chart-container full-width stat-box">
+                    📚 Knowledge Base: {count} Papers
                 </div>
 
-                <div class="card full-width">
+                <div class="chart-container full-width">
+                    <h2>📈 Research Timeline: Publications per Year</h2>
                     <img src="data:image/png;base64,{plots['timeline']}" alt="Timeline">
                 </div>
 
-                <div class="card">
+                <div class="chart-container">
+                    <h2>📊 Quad-Layer Score Distributions</h2>
                     <img src="data:image/png;base64,{plots['scores']}" alt="Scores">
                 </div>
 
-                <div class="card">
+                <div class="chart-container">
+                    <h2>👥 Top Authors (Top 15)</h2>
                      <img src="data:image/png;base64,{plots['authors']}" alt="Authors">
                 </div>
         """
         
         if plots.get('oa_pie'):
             html_content += f"""
-                <div class="card">
+                <div class="chart-container">
+                    <h2>🔓 Open Access Landscape</h2>
                     <img src="data:image/png;base64,{plots['oa_pie']}" alt="Open Access">
                 </div>
             """
-            
+        
+        html_content += venues_section
+        
         html_content += f"""
-                <div class="card full-width">
+                <div class="chart-container full-width">
+                    <h2>☁️ Keyword Dominance (Title Analysis)</h2>
                     <img src="data:image/png;base64,{plots['wordcloud']}" alt="Wordcloud">
                 </div>
             </div>

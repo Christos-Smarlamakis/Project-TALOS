@@ -9,8 +9,8 @@
 #
 #  For commercial licensing, please contact the author.
 """
-Module: talos.py (v4.8.5 - The Structured Menu Update)
-Project: TALOS v4.8.5
+Module: talos.py (v4.9.0 - The Streamlit GUI Update)
+Project: TALOS v4.9.0
 
 Description:
     The central entry point and interactive CLI for Project TALOS.
@@ -230,6 +230,7 @@ def maintenance_menu(python_exe: str):
             "5. AI Re-evaluation (Smart Recalibration)",
             "6. Data Enrichment (Unpaywall/IDs)",
             "7. Scientometrics Report",
+            "8. System Health Check (Smoke Test)",
             questionary.Separator(),
             "Back to Main Menu"
         ]
@@ -243,6 +244,17 @@ def maintenance_menu(python_exe: str):
     elif choice.startswith("5."): run_script("reevaluate_database.py", python_exe)
     elif choice.startswith("6."): run_script("data_enricher.py", python_exe)
     elif choice.startswith("7."): run_script("trend_analyzer.py", python_exe, args=[target_db])
+    elif choice.startswith("8."):
+        print("\n🩺 Running System Health Check...\n")
+        test_path = os.path.join(project_root, 'test_smoke.py')
+        if os.path.exists(test_path):
+            result = subprocess.run([python_exe, test_path], check=False, env=os.environ.copy())
+            if result.returncode == 0:
+                print("\n✅ All checks passed — Project is healthy!")
+            else:
+                print(f"\n⚠️ Health check completed with code {result.returncode}.")
+        else:
+            print("test_smoke.py not found.")
 
 
 def profile_settings_menu(python_exe: str):
@@ -343,13 +355,13 @@ def main_menu():
         active_profile = get_active_profile_name()
 
         # --- Build dynamic header with DB stats ---
-        header = f"TALOS v4.8.5 | Profile: [{active_profile}]"
+        header = f"TALOS v4.9.0 | Profile: [{active_profile}]"
         try:
             from core.database_manager import DatabaseManager
             db = DatabaseManager()
             stats = db.get_database_statistics()
             provider = "LOCAL (Ollama)" if USE_LOCAL_MODEL else "CLOUD (Gemini+DeepSeek)"
-            header = f"TALOS v4.8.5 | Profile: [{active_profile}] | {stats['total_papers']} papers | {stats['elite_papers']} elite | {provider}"
+            header = f"TALOS v4.9.0 | Profile: [{active_profile}] | {stats['total_papers']} papers | {stats['elite_papers']} elite | {provider}"
         except Exception:
             pass
 

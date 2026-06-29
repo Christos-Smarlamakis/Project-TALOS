@@ -12,6 +12,7 @@ WORKDIR /app
 # Αντιγραφή και εγκατάσταση απαιτήσεων (γίνεται πρώτο για caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir streamlit
 
 # Αντιγραφή όλου του κώδικα
 COPY . .
@@ -20,5 +21,15 @@ COPY . .
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONIOENCODING=utf-8
 
-# Εκκίνηση του μενού του TALOS
-CMD ["python", "-u", "talos.py"]
+# Expose ports: Flask Dashboard (5000) + Streamlit GUI (8501)
+EXPOSE 5000 8501
+
+# Default: CLI menu. Use `docker-compose run --rm talos streamlit` for GUI.
+# Override with: docker-compose run --rm -e TALOS_START_MODE=streamlit talos
+CMD if [ "$TALOS_START_MODE" = "streamlit" ]; then \
+        python -m streamlit run app.py --server.port 8501 --server.address 0.0.0.0; \
+    elif [ "$TALOS_START_MODE" = "dashboard" ]; then \
+        python scripts/interactive_dashboard.py; \
+    else \
+        python -u talos.py; \
+    fi
