@@ -9,14 +9,21 @@
 #
 #  For commercial licensing, please contact the author.
 """
-Module: talos.py (v4.8 - The Onboarding Update)
-Project: TALOS v4.4
+Module: talos.py (v4.8.5 - The Structured Menu Update)
+Project: TALOS v4.8.5
 
 Description:
-Το κεντρικό σημείο εισόδου.
-- Περιλαμβάνει "Onboarding Wizard": Αν δεν βρει config.json (νέος χρήστης),
-  αντιγράφει το template και εκκινεί αυτόματα την Πυθία για να ρυθμίσει
-  το πρώτο ερευνητικό προφίλ.
+    The central entry point and interactive CLI for Project TALOS.
+    Provides a hierarchical menu system for all research operations:
+
+    - Onboarding Wizard for first-time users (auto-creates config.json + launches PYTHIA)
+    - Search & Discovery (daily search, historical deep archive, grey literature mining)
+    - Analysis & Insights (knowledge paths, citation networks, reading reports, author tools)
+    - Database Maintenance (stats, enrichment, embeddings, re-evaluation, scientometrics)
+    - Profile Management (switch/create/configure research profiles)
+
+    All subprocesses are launched via :func:`run_script` with consistent
+    environment variable propagation for provider and fallback settings.
 """
 import questionary
 import os
@@ -26,33 +33,62 @@ import time
 from dotenv import load_dotenv
 load_dotenv()  # Load HF_TOKEN and other env vars before first use
 
-
 import shutil
 
-# Προσθέτουμε το path για να βλέπουμε τα scripts
+# Add scripts directory to path for profile_manager imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'scripts')))
-from scripts.profile_manager import get_active_profile_name, save_current_state_to_profile, set_active_profile_name
+from scripts.profile_manager import (
+    get_active_profile_name,
+    save_current_state_to_profile,
+    set_active_profile_name,
+)
 
 USE_LOCAL_MODEL = False
 
 
 def safe_select(message, choices):
-    
+    """Display a questionary select prompt with a fallback for limited terminals.
+
+    Args:
+        message (str): The prompt message to display.
+        choices (list): List of choice strings or questionary.Choice objects.
+
+    Returns:
+        str or None: The selected choice value, or None if cancelled.
+    """
     try:
         return questionary.select(message, choices=choices, use_indicator=True, pointer="»").ask()
     except Exception:
         print("\nWARNING: Advanced terminal UI failed. Falling back to simple mode.")
         return questionary.select(message, choices=choices).unsafe_ask()
 
+
 def run_script(script_name: str, python_exe: str, args: list = None, capture: bool = False):
+    """Launch a TALOS script as a subprocess with consistent environment configuration.
+
+    Propagates all provider and fallback environment variables to child processes.
+    Handles dashboard termination gracefully (non-zero exit codes are expected).
+
+    Args:
+        script_name (str): Name of the script file in the 'scripts/' directory.
+        python_exe (str): Path to the Python executable to use.
+        args (list, optional): Additional command-line arguments for the script.
+        capture (bool): If True, capture and return stdout from the subprocess.
+
+    Returns:
+        subprocess.CompletedProcess or bool or None:
+            - CompletedProcess if capture=True
+            - True if script completed successfully
+            - None if script failed
+    """
     project_root = os.path.dirname(os.path.abspath(__file__))
     script_path = os.path.join(project_root, 'scripts', script_name)
     command = [python_exe, script_path] + (args or [])
-    
-    print(f"\n--- Εκκίνηση του '{script_name}'... ---\n")
+
+    print(f"\n--- Launching '{script_name}'... ---\n")
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
-    
+
     if USE_LOCAL_MODEL:
         env["TALOS_USE_LOCAL"] = "1"
     if os.environ.get("TALOS_MODELS_VERIFIED"):
@@ -68,137 +104,165 @@ def run_script(script_name: str, python_exe: str, args: list = None, capture: bo
         if capture:
             result = subprocess.run(command, check=True, capture_output=True, text=True, encoding="utf-8", env=env)
             print(result.stdout)
-            print(f"\n--- Η εκτέλεση του '{script_name}' ολοκληρώθηκε. ---")
+            print(f"\n--- '{script_name}' completed. ---")
             return result
         else:
             try:
                 subprocess.run(command, check=True, env=env)
-                print(f"\n--- Η εκτέλεση του '{script_name}' ολοκληρώθηκε. ---")
+                print(f"\n--- '{script_name}' completed. ---")
                 return True
             except subprocess.CalledProcessError as e:
-                # Αν είναι το dashboard και έχει exit code 1 (συχνό σε windows kill), το αγνοούμε
-                if "interactive_dashboard.py" in script_name and e.returncode in [1, 2, -2, 3221225786]: # Κοινοί κωδικοί τερματισμού
-                     print(f"\n--- Ο server τερματίστηκε από τον χρήστη. ---")
-                     return True
+                # Dashboard uses signal-based shutdown - non-zero exit is normal
+                if "interactive_dashboard.py" in script_name and e.returncode in [1, 2, -2, 3221225786]:
+                    print(f"\n--- Dashboard server terminated by user. ---")
+                    return True
                 else:
-                    raise e # Για άλλα scripts, είναι όντως σφάλμα
+                    raise e
 
     except (subprocess.CalledProcessError, FileNotFoundError, Exception) as e:
-        print(f"\n---! Σφάλμα κατά την εκτέλεση του '{script_name}': {e} !---")       
+        print(f"\n--- Error running '{script_name}': {e} ---")
         return None
 
+
 def check_first_run(python_exe):
-    """
-    Ελέγχει αν είναι η πρώτη φορά που τρέχει το TALOS (λείπει το config.json).
-    Αν ναι, ξεκινάει τον οδηγό εγκατάστασης.
+    """Detect first-time usage and run the Onboarding Wizard.
+
+    If config.json is missing, copies the template and optionally launches
+    PYTHIA (query_translator.py) to configure the initial research profile.
+
+    Args:
+        python_exe (str): Path to the Python executable.
     """
     config_path = "config.json"
     template_path = "config.template.json"
-    
+
     if not os.path.exists(config_path):
-        print("\n👋 Καλώς ήρθες στο Project TALOS!")
-        print("   Φαίνεται πως είναι η πρώτη φορά που τρέχεις το σύστημα.")
-        print("   Θα δημιουργήσω ένα αρχικό προφίλ για σένα.\n")
-        
+        print("\nWelcome to Project TALOS!")
+        print("   It appears this is your first time running the system.")
+        print("   I will create an initial profile for you.\n")
+
         if os.path.exists(template_path):
             shutil.copy(template_path, config_path)
-            print("✅ Δημιουργήθηκε το 'config.json' από το πρότυπο.")
+            print("Created 'config.json' from the template.")
         else:
-            print("❌ ΣΦΑΛΜΑ: Δεν βρέθηκε το 'config.template.json'.")
+            print("ERROR: 'config.template.json' not found.")
             return
 
-        # Ρύθμιση αρχικού προφίλ
         if not os.path.exists("_profiles"):
             os.makedirs("_profiles")
-        
-        # Ζητάμε από τον χρήστη να τρέξει την Πυθία
-        print("\n🤖 Ας ρυθμίσουμε τον ερευνητικό σου στόχο με τη βοήθεια του AI (Project PYTHIA).")
-        if questionary.confirm("Θέλεις να ξεκινήσεις τη ρύθμιση τώρα;", default=True).ask():
+
+        print("\nLet's configure your research goal with AI assistance (Project PYTHIA).")
+        if questionary.confirm("Start configuration now?", default=True).ask():
             run_script("query_translator.py", python_exe)
-            
-            # Αποθήκευση του νέου προφίλ ως 'default'
-            print("\n💾 Αποθήκευση του νέου προφίλ ως 'default'...")
+
+            print("\nSaving new profile as 'default'...")
             set_active_profile_name("default")
             save_current_state_to_profile("default")
-        
-        print("\n--- Η αρχική ρύθμιση ολοκληρώθηκε! ---\n")
+
+        print("\n--- Initial setup complete! ---\n")
         time.sleep(2)
 
 
+# --- SUB-MENUS ---
 
 def author_tools_menu(python_exe: str):
+    """Sub-menu for author analysis tools (Profiler, Trajectory, Full Report).
+
+    Args:
+        python_exe (str): Path to the Python executable.
+    """
     os.system('cls' if os.name == 'nt' else 'clear')
     choice = safe_select(
-        "Εργαλεία Ανάλυσης Συγγραφέα:",
+        "Author Analysis Tools:",
         choices=[
-            "1. Γρήγορο Προφίλ (Profiler)",
-            "2. Ανάλυση Πορείας (Trajectory Analyzer)",
-            "3. Πλήρης Αναφορά (Profiler -> Trajectory)",
+            "1. Quick Profile (Profiler)",
+            "2. Trajectory Analysis",
+            "3. Full Report (Profiler -> Trajectory)",
             questionary.Separator(),
-            "Επιστροφή στο Κύριο Μενού"
+            "Back to Main Menu"
         ]
     )
-    if choice is None or choice.startswith("Επιστροφή"): return
+    if choice is None or choice.startswith("Back"): return
 
     if choice.startswith("1."):
-        author_identifier = questionary.text("Πληκτρολόγησε το όνομα ή το ORCID iD:").ask()
+        author_identifier = questionary.text("Enter author name or ORCID iD:").ask()
         if author_identifier: run_script("author_profiler.py", python_exe, args=[author_identifier.strip()])
 
     elif choice.startswith("2."):
-        author_identifier = questionary.text("Πληκτρολόγησε το όνομα ή το ORCID iD:").ask()
+        author_identifier = questionary.text("Enter author name or ORCID iD:").ask()
         if author_identifier: run_script("author_trajectory_analyzer.py", python_exe, args=[author_identifier.strip()])
 
     elif choice.startswith("3."):
-        author_name = questionary.text("Πληκτρολόγησε το όνομα του συγγραφέα:").ask()
+        author_name = questionary.text("Enter author name:").ask()
         if author_name:
-            print("\n--- [ΒΗΜΑ 1/2] Ταυτοποίηση ερευνητή... ---")
+            print("\n--- [STEP 1/2] Identifying researcher... ---")
             profiler_result = run_script("author_profiler.py", python_exe, args=author_name.strip().split(), capture=True)
             if profiler_result and profiler_result.stdout:
                 selected_id = next((line.split(":", 1)[1].strip() for line in profiler_result.stdout.splitlines() if line.startswith("SELECTED_ORCID_ID:")), None)
                 if selected_id:
-                    print(f"\n--- [ΒΗΜΑ 2/2] Εκκίνηση Trajectory Analyzer... ---")
+                    print(f"\n--- [STEP 2/2] Launching Trajectory Analyzer... ---")
                     run_script("author_trajectory_analyzer.py", python_exe, args=[selected_id])
                 else:
-                    print("\n---! Δεν επιλέχθηκε ORCID iD. Διακοπή. !---")
+                    print("\n--- No ORCID iD selected. Aborting. ---")
+
 
 def maintenance_menu(python_exe: str):
+    """Sub-menu for database maintenance and enrichment tools.
+
+    Args:
+        python_exe (str): Path to the Python executable.
+    """
     os.system('cls' if os.name == 'nt' else 'clear')
 
     project_root = os.path.dirname(os.path.abspath(__file__))
     active_profile = get_active_profile_name()
-    profile_db_path = os.path.join(project_root, '_profiles', active_profile, 'talos_research.db')    
+    profile_db_path = os.path.join(project_root, '_profiles', active_profile, 'talos_research.db')
     root_db_path = os.path.join(project_root, 'talos_research.db')
     target_db = profile_db_path if os.path.exists(profile_db_path) else root_db_path
+
     choice = safe_select(
-        "Εργαλεία Συντήρησης Βάσης:",
+        "Database Maintenance:",
         choices=[
-            "1. Στατιστικά & Υγεία Βάσης (Metrics)",
-            "2. Εμπλουτισμός Μεταδεδομένων",
-            "3. Συγχρονισμός TALOS με Zotero",
-            "4. Δημιουργία/Ενημέρωση Embeddings (Semantic Brain)",
-            "5. Έξυπνη Επαναξιολόγηση Βάσης (AI Re-evaluation)",
-            "7. 🧬 Εμπλουτισμός Δεδομένων (Data Enricher - Unpaywall/IDs)",
-            "8. 📊 Επιστημονικά Στατιστικά (Scientometrics Report)",
+            "1. Statistics & Health (Metrics)",
+            "2. Metadata Enrichment (APOLLO)",
+            "3. Zotero Sync",
+            "4. Generate/Update Embeddings (Semantic Brain)",
+            "5. AI Re-evaluation (Smart Recalibration)",
+            "6. Data Enrichment (Unpaywall/IDs)",
+            "7. Scientometrics Report",
             questionary.Separator(),
-            "Επιστροφή στο Κύριο Μενού"
+            "Back to Main Menu"
         ]
     )
-    if choice is None or choice.startswith("Επιστροφή"): return
+    if choice is None or choice.startswith("Back"): return
 
     if choice.startswith("1."): run_script("db_stats.py", python_exe)
     elif choice.startswith("2."): run_script("metadata_enricher.py", python_exe)
     elif choice.startswith("3."): run_script("zotero_connector.py", python_exe)
-    elif choice.startswith("4."):
-            run_script("embedding_generator.py", python_exe)
-            
+    elif choice.startswith("4."): run_script("embedding_generator.py", python_exe)
     elif choice.startswith("5."): run_script("reevaluate_database.py", python_exe)
-    elif choice.startswith("7."): run_script("data_enricher.py", python_exe)
-    elif choice.startswith("8."): run_script("trend_analyzer.py", python_exe, args=[target_db])
-    
+    elif choice.startswith("6."): run_script("data_enricher.py", python_exe)
+    elif choice.startswith("7."): run_script("trend_analyzer.py", python_exe, args=[target_db])
+
+
+def profile_settings_menu(python_exe: str):
+    """Sub-menu for profile management and research goal configuration.
+
+    Args:
+        python_exe (str): Path to the Python executable.
+    """
+    os.system('cls' if os.name == 'nt' else 'clear')
+    run_script("profile_manager.py", python_exe)
 
 
 def _verify_local_models():
-    import requests, subprocess
+    """Verify and auto-install required local models for Ollama.
+
+    Checks that gemma3:12b and nomic-embed-text are available.
+    Missing models are pulled automatically via 'ollama pull'.
+    Sets TALOS_MODELS_VERIFIED=1 on success.
+    """
+    import requests
     print("\n[Verifying local models...]")
     base = "http://localhost:11434"
     try:
@@ -217,18 +281,24 @@ def _verify_local_models():
         print("[All local models ready.]")
     except Exception as e:
         print(f"WARNING: Model verification failed: {e}")
-        
-# --- ΚΥΡΙΟ ΜΕΝΟΥ ---
+
+
+# --- MAIN MENU ---
 
 def main_menu():
+    """Display the main interactive menu and dispatch to sub-menus and scripts.
+
+    Handles first-run onboarding, AI provider selection, and the main
+    event loop with hierarchical sub-menus for all TALOS operations.
+    """
     python_exe = sys.executable or "python"
-    print(f"INFO: Χρησιμοποιείται η Python από: {python_exe}")
-    
+    print(f"INFO: Using Python from: {python_exe}")
+
     check_first_run(python_exe)
-    
+
     time.sleep(1)
 
-    # --- Ask for local model preference ---
+    # --- AI Provider Selection ---
     global USE_LOCAL_MODEL
     if not USE_LOCAL_MODEL:
         choice = safe_select(
@@ -242,7 +312,7 @@ def main_menu():
         if USE_LOCAL_MODEL:
             print("Local mode enabled.")
             _verify_local_models()
-            
+
             fallback = safe_select("Allow cloud fallback if local fails?",
                 choices=["NO - Keep data offline", "YES - Allow cloud as backup"])
             if fallback and "YES" in fallback:
@@ -267,57 +337,66 @@ def main_menu():
                 ]
                 m = safe_select("Select HF model (free):", choices=hf_models)
                 if m: os.environ["HF_MODEL_NAME"] = m
-            
 
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
         active_profile = get_active_profile_name()
-        
+
+        # --- Build dynamic header with DB stats ---
+        header = f"TALOS v4.8.5 | Profile: [{active_profile}]"
+        try:
+            from core.database_manager import DatabaseManager
+            db = DatabaseManager()
+            stats = db.get_database_statistics()
+            provider = "LOCAL (Ollama)" if USE_LOCAL_MODEL else "CLOUD (Gemini+DeepSeek)"
+            header = f"TALOS v4.8.5 | Profile: [{active_profile}] | {stats['total_papers']} papers | {stats['elite_papers']} elite | {provider}"
+        except Exception:
+            pass
+
         choice = safe_select(
-            f"TALOS v4.8 | Profile: [{active_profile}]",
+            header,
             choices=[
-                "0. 👤 Διαχείριση Προφίλ / Αλλαγή Θέματος", # Εδώ μέσα είναι πλέον η Πυθία
+                questionary.Separator("  SEARCH & DISCOVERY"),
+                "1. Daily Search (New Papers)",
+                "2. Historical Search (Deep Archive)",
+                "3. Grey Literature / Web Horizon Scan",
+                questionary.Separator("  ANALYSIS & INSIGHTS"),
+                "4. Knowledge Path Generator (CHIRON)",
+                "5. Citation Network Analyzer (ORPHEUS)",
+                "6. Strategic Reading Report",
+                "7. Author Analysis Tools",
+                "8. Interactive Dashboard",
+                questionary.Separator("  DATABASE & SETTINGS"),
+                "9. Database Maintenance",
+                "10. Profile & Settings",
                 questionary.Separator(),
-                "1. Έλεγχος για Νέα άρθρα",                
-                "2. Εκτέλεση Ιστορικής Αναζήτησης",
-                questionary.Separator(),
-                "--- Intel & Analysis Tools ---",
-                "3. Δημιουργία Μονοπατιού Γνώσης",
-                "4. Έρευνα Γκρίζας Βιβλιογραφίας/Web (Horizon Scan)",
-                "5. Εργαλεία Ανάλυσης Συγγραφέα", 
-                "6. Ανάλυση Δικτύου Γνώσης",
-                "7. Στρατηγική Αναφορά Ανάγνωσης",
-                "8. Εκκίνηση Διαδραστικού Dashboard",
-                questionary.Separator(),
-                "--- Database Maintenance ---",
-                "9. Εργαλεία Συντήρησης Βάσης",
-                questionary.Separator(),
-                "Έξοδος"
+                "Exit"
             ]
         )
 
-        if choice is None or choice == "Έξοδος": break
-        
-        final_message = "Πατήστε Enter για να επιστρέψετε στο μενού..."
+        if choice is None or choice == "Exit": break
 
-        if choice.startswith("0."): run_script("profile_manager.py", python_exe)
-        elif choice.startswith("1."): run_script("daily_search.py", python_exe)
+        final_message = "Press Enter to return to the menu..."
+
+        if choice.startswith("1."): run_script("daily_search.py", python_exe)
         elif choice.startswith("2."):
-            if questionary.confirm("Αυτή η διαδικασία μπορεί να διαρκέσει πολλή ώρα. Είσαι σίγουρος;", default=False).ask():
+            if questionary.confirm("This process may take a long time. Are you sure?", default=False).ask():
                 run_script("historic_search.py", python_exe)
-        elif choice.startswith("3."): run_script("knowledge_path_generator.py", python_exe)
-        elif choice.startswith("4."): run_script("grey_literature_miner.py", python_exe) 
-        elif choice.startswith("5."): author_tools_menu(python_exe)
-        elif choice.startswith("6."): run_script("citation_analyzer.py", python_exe)
-        elif choice.startswith("7."): run_script("recommender.py", python_exe)
+        elif choice.startswith("3."): run_script("grey_literature_miner.py", python_exe)
+        elif choice.startswith("4."): run_script("knowledge_path_generator.py", python_exe)
+        elif choice.startswith("5."): run_script("citation_analyzer.py", python_exe)
+        elif choice.startswith("6."): run_script("recommender.py", python_exe)
+        elif choice.startswith("7."): author_tools_menu(python_exe)
         elif choice.startswith("8."):
             run_script("interactive_dashboard.py", python_exe)
-            final_message = "Ο server του Dashboard τερματίστηκε. Πατήστε Enter για να επιστρέψετε στο μενού..."
+            final_message = "Dashboard server terminated. Press Enter to return to the menu..."
         elif choice.startswith("9."): maintenance_menu(python_exe)
-        
-        if choice != "Έξοδος": input(final_message)
+        elif choice.startswith("10."): profile_settings_menu(python_exe)
+
+        if choice != "Exit": input(final_message)
 
     print("\nTalos Command Center Closing...\nBye Bye...\n")
+
 
 if __name__ == "__main__":
     try:
