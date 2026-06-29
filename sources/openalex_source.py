@@ -101,6 +101,22 @@ class OpenAlexSource:
         print(f"   SUCCESS [OpenAlex]: Βρέθηκαν {len(all_papers)} νέα άρθρα.")
         return all_papers
 
+    def search_papers(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """Αναζητά papers με τίτλο (για metadata enrichment)."""
+        params = {"search": query, "per_page": limit, "sort": "relevance", "mailto": self.mailto}
+        try:
+            response = requests.get(self.base_url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            results = []
+            for work in data.get('results', []):
+                paper = self._format_paper(work)
+                if paper:
+                    results.append(paper)
+            return results
+        except requests.exceptions.RequestException:
+            return []
+
     def _reconstruct_abstract(self, inverted_index: Dict[str, List[int]]) -> str:
         """
         Ανακατασκευάζει την περίληψη από το inverted index του OpenAlex.

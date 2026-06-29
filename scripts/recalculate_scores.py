@@ -59,7 +59,7 @@ def recalculate_database_scores():
 
             print("Ανάκτηση όλων των άρθρων από τη βάση δεδομένων...")
             # Διαβάζουμε μόνο τα πεδία που χρειαζόμαστε: το ID και τα τρία επιμέρους scores.
-            cursor.execute("SELECT id, tactical_score, strategic_score, playground_score FROM papers")
+            cursor.execute("SELECT id, tactical_score, strategic_score, operational_score, playground_score FROM papers")
             all_papers = cursor.fetchall()
 
     except sqlite3.Error as e:
@@ -80,8 +80,9 @@ def recalculate_database_scores():
     for paper in tqdm(all_papers, desc="Recalculating Scores"):
         # Παίρνουμε τα υπάρχοντα scores από το αντικείμενο paper
         scores_dict = {
-            'tactical': paper['tactical_score'],
             'strategic': paper['strategic_score'],
+            'operational': paper['operational_score'],
+            'tactical': paper['tactical_score'],
             'playground': paper['playground_score']
         }
         

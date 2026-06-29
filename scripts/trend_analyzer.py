@@ -146,7 +146,7 @@ class TrendAnalyzer:
                 body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f4f4f9; }}
                 h1 {{ color: #2c3e50; text-align: center; }}
                 .meta {{ text-align: center; color: #7f8c8d; margin-bottom: 40px; }}
-                .container {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max_width: 1200px; margin: auto; }}
+                .container {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1200px; margin: auto; }}
                 .full-width {{ grid-column: span 2; }}
                 .card {{ background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }}
                 img {{ max-width: 100%; height: auto; }}

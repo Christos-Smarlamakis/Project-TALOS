@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 import google.generativeai as genai
 import openai
 from typing import Union, List, Dict, Any
+# Note: core.hardware used by _verify_local_models / external callers
 
 class AIManager:
     def __init__(self, config: Dict[str, Any]):
@@ -43,6 +44,19 @@ class AIManager:
                 'consecutive_failures': 0, 'circuit_open': False
             }
             print("INFO: DeepSeek provider initialized.")
+
+        # --- HUGGING FACE PROVIDER (Free cloud inference) ---
+        hf_token = os.getenv("HF_TOKEN")
+        if hf_token:
+            self.providers['huggingface'] = {
+                'client': openai.OpenAI(api_key=hf_token, base_url="https://router.huggingface.co/v1"),
+                'model_name': os.getenv("HF_MODEL_NAME", "Qwen/Qwen2.5-7B-Instruct"),
+                'consecutive_failures': 0, 'circuit_open': False
+            }
+            print("INFO: Hugging Face provider initialized.")
+            if 'huggingface' not in self.provider_priority:
+                self.provider_priority.insert(0, 'huggingface')  # Free first
+        
 
         # --- LOCAL MODEL PROVIDER (Ollama) ---
         local_url = os.getenv("LOCAL_MODEL_BASE_URL", "http://localhost:11434/v1")
@@ -117,16 +131,14 @@ class AIManager:
                 if provider_name == 'gemini':
                     result = self._execute_gemini_request(prompt, model_type, response_format)
                 elif provider_name == 'deepseek':
-                    result = self._execute_deepseek_request(prompt, response_format)
+                    result = self._execute_deepseek_request(prompt, response_format)                    
+                elif provider_name == 'huggingface':
+                    result = self._execute_openai_compatible(prompt, response_format, 'huggingface')
                 elif provider_name == 'local':
-                    result = self._execute_local_request(prompt, response_format)
+                    result = self._execute_openai_compatible(prompt, response_format, 'local')
                 if result is not None:
                     self.providers[provider_name]['consecutive_failures'] = 0
-                    return result
-                    # SECURITY: local->cloud fallback requires consent
-                    if provider_name == 'local' and os.getenv("TALOS_ALLOW_CLOUD_FALLBACK") != "1":
-                        print("  >!> Local model failed. Cloud fallback DENIED.")
-                        return None
+                    return result                   
                     
                 else:
                     print(f"  >!> Provider {provider_name.upper()} failed. Trying next provider...")
@@ -175,8 +187,8 @@ class AIManager:
                  self._handle_failure('deepseek')
             return None
 
-    def _execute_local_request(self, prompt: str, response_format: str) -> Union[Dict[str, Any], str, None]:
-        provider = self.providers['local']
+    def _execute_openai_compatible(self, prompt: str, response_format: str, provider_name='local') -> Union[Dict[str, Any], str, None]:
+        provider = self.providers[provider_name]
         final_prompt = prompt
         if response_format == 'json':
             final_prompt += "\n\nIMPORTANT: Return ONLY a valid JSON object. No markdown, no explanation."
@@ -194,36 +206,9 @@ class AIManager:
                     return None
             return text
         except Exception as e:
-            print(f"  >!> Local model execution error: {e}")
-            self._handle_failure('local')
-            return None
-
-    def _ensure_local_model(self):
-        import subprocess
-        p = self.providers.get('local')
-        if not p: return
-        try:
-            resp = requests.get(f"{p['ollama_url']}/api/tags", timeout=5)
-            if resp.status_code != 200:
-                print("WARNING: Ollama not reachable. Local model disabled.")
-                del self.providers['local']
-                self.local_enabled = False
-                return
-            models = [m['name'] for m in resp.json().get('models', [])]
-            if p['model_name'] not in models:
-                print(f"  >> Local model '{p['model_name']}' not found. Pulling...")
-                subprocess.run(["ollama", "pull", p['model_name']], check=True)
-                print(f"  >> Model '{p['model_name']}' installed.")
-            emb_model = p['embedding_model']
-            if emb_model not in models:
-                print(f"  >> Embedding model '{emb_model}' not found. Pulling...")
-                subprocess.run(["ollama", "pull", emb_model], check=True)
-                print(f"  >> Model '{emb_model}' installed.")
-            
-        except Exception as e:
-            print(f"WARNING: Local model setup failed: {e}. Disabling local provider.")
-            if 'local' in self.providers: del self.providers['local']
-            self.local_enabled = False
+            print(f"  >!> {provider_name.upper()} execution error: {e}")
+            self._handle_failure(provider_name)
+            return None   
 
     def _handle_failure(self, provider_name: str):
         if provider_name in self.providers:

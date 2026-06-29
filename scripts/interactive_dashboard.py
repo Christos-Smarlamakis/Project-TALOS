@@ -84,8 +84,8 @@ def semantic_search():
         
         if results_data:
             id_order = {pid: i for i, pid in enumerate(sorted_paper_ids)}
-        results_data.sort(key=lambda x: id_order.get(x['id'], len(sorted_paper_ids)))
-        return jsonify(results_data)
+            results_data.sort(key=lambda x: id_order.get(x['id'], len(sorted_paper_ids)))
+        return jsonify(results_data or [])
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

@@ -98,6 +98,23 @@ class DBLPSource:
         print(f"   SUCCESS [DBLP]: Βρέθηκαν {len(all_papers)} νέα άρθρα.")
         return all_papers
 
+    def search_papers(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """Αναζητά papers με τίτλο (για metadata enrichment)."""
+        params = {"q": query, "h": limit, "format": "json"}
+        try:
+            response = requests.get(self.base_url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            results = []
+            for item in data.get('result', {}).get('hits', {}).get('hit', []):
+                info = item.get('info', {})
+                paper = self._format_paper(info)
+                if paper:
+                    results.append(paper)
+            return results
+        except requests.exceptions.RequestException:
+            return []
+
     def _format_paper(self, info: Dict[str, Any]) -> Dict[str, Any]:
         """
         Μετατρέπει ένα αντικείμενο 'info' από το DBLP API στην τυποποιημένη μορφή του TALOS.

@@ -23,6 +23,10 @@ import os
 import subprocess
 import sys
 import time
+from dotenv import load_dotenv
+load_dotenv()  # Load HF_TOKEN and other env vars before first use
+
+
 import shutil
 
 # Προσθέτουμε το path για να βλέπουμε τα scripts
@@ -52,15 +56,14 @@ def run_script(script_name: str, python_exe: str, args: list = None, capture: bo
     if USE_LOCAL_MODEL:
         env["TALOS_USE_LOCAL"] = "1"
     if os.environ.get("TALOS_MODELS_VERIFIED"):
-        env["TALOS_MODELS_VERIFIED"] = "1"  
         env["TALOS_MODELS_VERIFIED"] = "1"
     if os.environ.get("TALOS_ALLOW_CLOUD_FALLBACK"):
         env["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
     if os.environ.get("TALOS_ALLOW_LOCAL_FALLBACK"):
         env["TALOS_ALLOW_LOCAL_FALLBACK"] = "1"
-    
-        
-    
+    if os.environ.get("HF_MODEL_NAME"):
+        env["HF_MODEL_NAME"] = os.environ["HF_MODEL_NAME"]
+
     try:
         if capture:
             result = subprocess.run(command, check=True, capture_output=True, text=True, encoding="utf-8", env=env)
@@ -225,8 +228,6 @@ def main_menu():
     
     time.sleep(1)
 
-    time.sleep(1)
-
     # --- Ask for local model preference ---
     global USE_LOCAL_MODEL
     if not USE_LOCAL_MODEL:
@@ -255,6 +256,18 @@ def main_menu():
             if fallback and "YES" in fallback:
                 os.environ["TALOS_ALLOW_LOCAL_FALLBACK"] = "1"
                 print("Local fallback ALLOWED.")
+            if os.getenv("HF_TOKEN"):
+                hf_models = [
+                    "mistralai/Mixtral-8x7B-Instruct-v0.1",
+                    "meta-llama/Llama-3.1-8B-Instruct",
+                    "Qwen/Qwen2.5-7B-Instruct",
+                    "mistralai/Mistral-7B-Instruct-v0.3",
+                    "microsoft/Phi-3-mini-4k-instruct",
+                    "google/gemma-2-2b-it"
+                ]
+                m = safe_select("Select HF model (free):", choices=hf_models)
+                if m: os.environ["HF_MODEL_NAME"] = m
+            
 
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')

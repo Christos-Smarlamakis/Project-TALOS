@@ -2,6 +2,108 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v4.8.5] - 2026-06-29 - The "Bug Hunt & Quality" Update
+
+This release is a comprehensive **bug-fixing sprint** addressing 15+ bugs across all modules. Key improvements: metadata enrichment now uses a **multi-source fallback chain** (OpenAlex → Crossref → DBLP → Semantic Scholar), the recommender generates **structured reports** matching the terminal layout, and the overall recommendation quality threshold was raised from 4.0 to **7.0** to ensure high-relevance suggestions.
+
+### Fixed
+- **`sources/elsevier_source.py`:** Fixed class-level `self` reference causing `NameError` on import (Critical B1).
+- **`scripts/grey_literature_miner.py`:** Fixed `try/except/else` logic that always discarded Gemini results (Critical B2). Fixed config key `grey_literature_model` → `grey_research_model` (Critical B3). Added fallback try/except on the AIManager fallback path.
+- **`scripts/recalculate_scores.py`:** Fixed missing `operational_score` in SELECT query and `scores_dict`, causing systematically wrong recalculations (Critical B4).
+- **`scripts/interactive_dashboard.py`:** Fixed `AttributeError` when semantic search returns no results (Critical B6).
+- **`core/ai_manager.py`:** Fixed default local model name `gemma4:12b` → `gemma3:12b` (nonexistent model, High B7). Removed unused hardware imports (Low B23).
+- **`scripts/historic_search.py`:** Added missing `CORESource` import and instantiation, now matches `daily_search.py` (High B8).
+- **`scripts/trend_analyzer.py`:** Fixed CSS `max_width` → `max-width` (High B9).
+- **`scripts/zotero_connector.py`:** Fixed `.startswith()` crash when Zotero returns `None` URL (High B10).
+- **`core/database_manager.py`:** Removed duplicate `ALTER TABLE ADD COLUMN operational_score` causing "duplicate column" errors on every startup (High B11).
+- **`scripts/metadata_enricher.py`:** Fixed 403 errors from excessively long search queries by truncating titles to 100 chars (High B12).
+- **`scripts/db_stats.py`:** Fixed division by zero when database is empty (Medium B17).
+- **`talos.py`:** Cleaned up duplicate `env["TALOS_MODELS_VERIFIED"]` line, removed redundant second `time.sleep(1)`, cleaned dangling whitespace (Low B24/B25).
+
+### Added
+- **Multi-Source Metadata Enrichment (v2.0):**
+  - New `search_papers()` methods added to **OpenAlex**, **Crossref**, and **DBLP** sources.
+  - Fallback chain: OpenAlex → Crossref → DBLP → Semantic Scholar.
+  - Semantic Scholar automatically skipped when no API key is present (eliminates 403 errors).
+  - All 3 primary sources are free and require no API keys.
+- **Structured Recommender Reports (v4.1):**
+  - HTML, DOCX, and Markdown exports now match the terminal layout exactly: Foundational → Clusters → State-of-the-Art.
+  - `operational_score` added to all export formats.
+  - Placeholder abstracts (DBLP "δεν παρέχει περίληψη", etc.) filtered from clustering for better keyword extraction.
+  - HTML report now has two tabs: **Structured Path** + **Top 50 Interactive Table**.
+
+### Changed
+- **Recommender quality threshold:** Default `min_score` raised from **4.0 → 7.0** for clustering and all recommendations.
+- **Foundational papers:** Now filtered by high score (≥7.0) first, fallback to ≥5.0 — no more low-quality old papers.
+- **State-of-the-Art:** Now sorted by `publication_year` (not `processed_at`) and filtered by score ≥7.0.
+
+### Removed
+- **`core/ai_manager_clean.py`:** Deleted headless fragment file that crashed on import (Critical B5).
+
+## [v4.8.4] - 2026-06-28 - The "Multi-Provider & Web Search" Update
+
+This release transforms TALOS into a **complete multi-provider AI system** with 4 independent providers (Local, Hugging Face, DeepSeek, Gemini) and adds **live web search** to the Grey Literature Miner.
+
+### Added
+- **Hugging Face Provider (Free Cloud Inference):**
+  - Integration of Hugging Face Inference Providers API as a 4th AI provider.
+  - Uses the new **OpenAI-compatible unified API** (`router.huggingface.co/v1`) for full compatibility.
+  - **Free** usage with no limits — only requires an `HF_TOKEN` from https://huggingface.co/settings/tokens.
+  - **Interactive Model Selection:** `talos.py` displays a list of the 6 best free models (Mixtral 8x7B, Llama 3.1 8B, Qwen2.5 7B, Mistral 7B, Phi-3, Gemma 2 2B).
+  - **Auto-priority:** HF is placed **first** in `provider_priority` when available (free > paid).
+
+- **Live Web Search (Grey Literature Miner):**
+  - Integration of **DuckDuckGo Search** for live web search (`duckduckgo-search` package).
+  - **Free, no API key required** — works immediately.
+  - **Query Optimization:** User's free-text input is automatically converted to an optimized search query by an LLM before searching.
+  - Web results are embedded in the prompt for better report quality.
+
+- **Multi-Provider Fallback in Grey Literature Miner:**
+  - The Miner now uses **AIManager** instead of direct Gemini API calls.
+  - Flow: Gemini Search Grounding → AIManager fallback (HF → DeepSeek → Local).
+  - **Resilience:** Even when Gemini has quota issues, the Miner continues with another provider.
+
+- **`core/hardware.py` — Hardware Detection Module:**
+  - Automatic GPU VRAM detection via `nvidia-smi`.
+  - Database of model sizes (4-bit quantized) for 20+ models.
+  - **Smart Model Recommendation:** Recommends the best model based on available VRAM.
+
+### Fixed
+- **`talos.py` — Missing `load_dotenv()`:**
+  - `.env` was not loaded in `talos.py`, causing `HF_TOKEN` and other variables to be unavailable.
+  - Added `from dotenv import load_dotenv; load_dotenv()` at module level.
+- **`grey_literature_miner.py` — Import Error:**
+  - Fixed `from google import genai` which required the `google-genai` package.
+  - Added `google-genai` to `requirements.txt`.
+  - Added `duckduckgo-search` to `requirements.txt`.
+- **Provider Priority:**
+  - Fixed: Hugging Face is placed **first** in priority (insert(0)) instead of last (append).
+  - Fixed: `TALOS_USE_LOCAL=1` removed from `.env` — now set **only** by the `talos.py` interactive prompt.
+- **HF Token with spaces:**
+  - Documented that `.env` values must **not** have spaces around `=` (`load_dotenv` does not strip them).
+
+### Changed
+- **`ai_manager.py` v3.5:**
+  - Added Hugging Face provider with OpenAI-compatible client.
+  - Removed custom `_execute_huggingface_request` — uses generic `_execute_openai_compatible`.
+  - `generate_embeddings()` tries **local first**, then Gemini.
+- **`talos.py`:**
+  - **HF Model Selection Menu** with the 6 best free models.
+  - Automatic propagation of `HF_MODEL_NAME` to subprocesses.
+  - `load_dotenv()` called at module level for early `.env` loading.
+  - Separation of `TALOS_USE_LOCAL` (set only by prompt) from `.env`.
+- **`grey_literature_miner.py`:**
+  - Complete upgrade: DuckDuckGo search + query optimization + AIManager fallback.
+  - **Graceful degradation:** each step has fallback — web search, Gemini, AIManager.
+- **`requirements.txt`:**
+  - Added `google-genai`, `duckduckgo-search`.
+- **`.clinerules`:**
+  - Added documentation for editor's inability to match Greek text.
+  - Documented architecture, providers, and known gotchas.
+
+---
+
+
 ## [v4.8.3] - 2026-06-27 - The "Secure Local AI & Privacy" Update
 
 This release strengthens the **security and privacy** of local mode. It adds **model pre-verification with auto-install** at startup, **user consent** before any cloud fallback, and **bidirectional fallback** (local↔cloud) with explicit approval.

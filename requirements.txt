@@ -3,9 +3,13 @@
 
 # === Core: AI, Environment & Networking ===
 google-generativeai       # Επικοινωνία με Google Gemini API
+google-genai               # Google Gemini API (new SDK - Grey Literature)
+
 openai                    # Επικοινωνία με DeepSeek/OpenAI API
 python-dotenv             # Διαχείριση Environment Variables (.env)
 requests                  # HTTP Requests (General)
+
+duckduckgo-search          # Web search for Grey Literature Miner
 
 # === Sources: Academic APIs & Integrations ===
 arxiv                     # ArXiv API Client

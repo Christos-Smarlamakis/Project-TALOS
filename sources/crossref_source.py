@@ -99,6 +99,22 @@ class CrossrefSource:
         print(f"   SUCCESS [Crossref]: Βρέθηκαν {len(all_papers)} νέα άρθρα.")
         return all_papers
 
+    def search_papers(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+        """Αναζητά papers με τίτλο (για metadata enrichment)."""
+        params = {"query.bibliographic": query, "rows": limit, "mailto": self.mailto}
+        try:
+            response = requests.get(self.base_url, params=params, timeout=10)
+            response.raise_for_status()
+            data = response.json()
+            results = []
+            for item in data.get('message', {}).get('items', []):
+                paper = self._format_paper(item)
+                if paper:
+                    results.append(paper)
+            return results
+        except requests.exceptions.RequestException:
+            return []
+
     def _format_paper(self, item: Dict[str, Any]) -> Dict[str, Any]:
         """
         Μετατρέπει ένα αντικείμενο από το Crossref API στην τυποποιημένη μορφή του TALOS.

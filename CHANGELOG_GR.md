@@ -2,6 +2,108 @@
 
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
+## [v4.8.5] - 2026-06-29 - Ενημέρωση "Bug Hunt & Quality"
+
+Αυτή η έκδοση είναι ένα εκτεταμένο **sprint διόρθωσης σφαλμάτων** που αντιμετωπίζει 15+ bugs σε όλα τα modules. Βασικές βελτιώσεις: ο εμπλουτισμός μεταδεδομένων χρησιμοποιεί πλέον **multi-source fallback chain** (OpenAlex → Crossref → DBLP → Semantic Scholar), ο recommender παράγει **δομημένες αναφορές** που ταιριάζουν με το terminal, και το κατώφλι ποιότητας προτάσεων αυξήθηκε από 4.0 σε **7.0**.
+
+### Διορθώσεις
+- **`sources/elsevier_source.py`:** Διορθώθηκε αναφορά `self` σε επίπεδο κλάσης που προκαλούσε `NameError` (Critical B1).
+- **`scripts/grey_literature_miner.py`:** Διορθώθηκε λογική `try/except/else` που απέρριπτε πάντα τα αποτελέσματα Gemini (Critical B2). Διορθώθηκε config key `grey_literature_model` → `grey_research_model` (Critical B3).
+- **`scripts/recalculate_scores.py`:** Διορθώθηκε απών `operational_score` στο SELECT και `scores_dict` (Critical B4).
+- **`scripts/interactive_dashboard.py`:** Διορθώθηκε `AttributeError` όταν το semantic search επιστρέφει κενά αποτελέσματα (Critical B6).
+- **`core/ai_manager.py`:** Διορθώθηκε ανύπαρκτο μοντέλο `gemma4:12b` → `gemma3:12b` (High B7).
+- **`scripts/historic_search.py`:** Προστέθηκε απών `CORESource` (High B8).
+- **`scripts/trend_analyzer.py`:** Διορθώθηκε CSS `max_width` → `max-width` (High B9).
+- **`scripts/zotero_connector.py`:** Διορθώθηκε crash όταν το Zotero επιστρέφει `None` URL (High B10).
+- **`core/database_manager.py`:** Αφαιρέθηκε duplicate `ALTER TABLE` που προκαλούσε "duplicate column" errors (High B11).
+- **`scripts/metadata_enricher.py`:** Διορθώθηκαν 403 errors από υπερβολικά μεγάλα URLs (High B12).
+- **`scripts/db_stats.py`:** Διορθώθηκε division by zero για άδεια βάση (Medium B17).
+- **`talos.py`:** Καθαρίστηκε duplicate γραμμή env, περιττό `time.sleep`, κενά whitespace (Low B24/B25).
+
+### Προσθήκες
+- **Multi-Source Metadata Enrichment (v2.0):**
+  - Νέες μέθοδοι `search_papers()` σε **OpenAlex**, **Crossref**, και **DBLP**.
+  - Fallback chain: OpenAlex → Crossref → DBLP → Semantic Scholar.
+  - Το Semantic Scholar παραλείπεται αυτόματα χωρίς API key.
+  - Και οι 3 κύριες πηγές είναι δωρεάν.
+- **Δομημένες Αναφορές Recommender (v4.1):**
+  - Τα exports HTML, DOCX, MD ταιριάζουν πλέον με το terminal: Foundational → Clusters → SOTA.
+  - Προστέθηκε `operational_score` σε όλα τα formats.
+  - Φιλτράρισμα placeholder abstracts για καλύτερο clustering.
+  - Το HTML έχει δύο tabs: **Structured Path** + **Top 50 Interactive Table**.
+
+### Αλλαγές
+- **Recommender threshold:** Default `min_score` από **4.0 → 7.0**.
+- **Foundational papers:** Φιλτράρονται κατά score (≥7.0, fallback ≥5.0).
+- **State-of-the-Art:** Ταξινόμηση κατά `publication_year` και φίλτρο score ≥7.0.
+
+### Αφαίρεση
+- **`core/ai_manager_clean.py`:** Διαγράφηκε ακέφαλο fragment (Critical B5).
+
+## [v4.8.4] - 2026-06-28 - The "Multi-Provider & Web Search" Update
+
+Αυτή η έκδοση μετατρέπει τον TALOS σε ένα **πλήρες multi-provider AI σύστημα** με 4 ανεξάρτητους παρόχους (Local, Hugging Face, DeepSeek, Gemini) και προσθέτει **ζωντανή αναζήτηση ιστού** στο Grey Literature Miner.
+
+### Προσθήκες
+- **Hugging Face Provider (Δωρεάν Cloud Inference):**
+  - Ενσωμάτωση του Hugging Face Inference Providers API ως 4ου παρόχου AI.
+  - Χρήση του νέου **OpenAI-compatible unified API** (`router.huggingface.co/v1`) για πλήρη συμβατότητα.
+  - **Δωρεάν** χρήση χωρίς όρια — χρειάζεται μόνο ένα `HF_TOKEN` από το https://huggingface.co/settings/tokens.
+  - **Interactive Model Selection:** Το `talos.py` εμφανίζει λίστα με τα 6 καλύτερα δωρεάν μοντέλα (Mixtral 8x7B, Llama 3.1 8B, Qwen2.5 7B, Mistral 7B, Phi-3, Gemma 2 2B).
+  - **Auto-priority:** Το HF μπαίνει **πρώτο** στο `provider_priority` όταν είναι διαθέσιμο (δωρεάν > επί πληρωμή).
+
+- **Live Web Search (Grey Literature Miner):**
+  - Ενσωμάτωση του **DuckDuckGo Search** για ζωντανή αναζήτηση ιστού (`duckduckgo-search`).
+  - **Δωρεάν, χωρίς API key** — άμεση λειτουργία.
+  - **Query Optimization:** Το ελεύθερο κείμενο του χρήστη μετατρέπεται αυτόματα σε optimized search query από LLM πριν την αναζήτηση.
+  - Τα web results ενσωματώνονται στο prompt για καλύτερη ποιότητα αναφορών.
+  
+- **Multi-Provider Fallback στο Grey Literature Miner:**
+  - Το Miner πλέον χρησιμοποιεί τον **AIManager** αντί για απευθείας κλήσεις στο Gemini.
+  - Ροή: Gemini Search Grounding → AIManager fallback (HF → DeepSeek → Local).
+  - **Ανθεκτικότητα:** Ακόμα κι αν το Gemini έχει quota issues, το Miner συνεχίζει με άλλον provider.
+
+- **`core/hardware.py` — Hardware Detection Module:**
+  - Αυτόματη ανίχνευση GPU VRAM μέσω `nvidia-smi`.
+  - Βάση δεδομένων με μεγέθη μοντέλων (4-bit quantized) για 20+ μοντέλα.
+  - **Smart Model Recommendation:** Προτείνει το καλύτερο μοντέλο με βάση τη διαθέσιμη VRAM.
+
+### Διορθώσεις Σφαλμάτων
+- **`talos.py` — Missing `load_dotenv()`:**
+  - Το `.env` δεν φορτωνόταν στο `talos.py`, με αποτέλεσμα το `HF_TOKEN` και άλλες μεταβλητές να μην είναι διαθέσιμες.
+  - Προστέθηκε `from dotenv import load_dotenv; load_dotenv()` στο module level.
+- **`grey_literature_miner.py` — Import Error:**
+  - Διορθώθηκε το `from google import genai` που απαιτούσε το πακέτο `google-genai`.
+  - Προστέθηκε το `google-genai` στο `requirements.txt`.
+  - Προστέθηκε το `duckduckgo-search` στο `requirements.txt`.
+- **Provider Priority:**
+  - Διορθώθηκε: το Hugging Face μπαίνει **πρώτο** στο priority (insert(0)) αντί για τελευταίο (append).
+  - Διορθώθηκε: το `TALOS_USE_LOCAL=1` αφαιρέθηκε από το `.env` — πλέον ορίζεται **μόνο** από το interactive prompt του `talos.py`.
+- **HF Token with spaces:**
+  - Τεκμηριώθηκε ότι τα `.env` values **δεν** πρέπει να έχουν κενά γύρω από το `=` (το `load_dotenv` δεν τα αφαιρεί).
+
+### Βελτιώσεις
+- **`ai_manager.py` v3.5:**
+  - Προσθήκη Hugging Face provider με OpenAI-compatible client.
+  - Κατάργηση του custom `_execute_huggingface_request` — χρησιμοποιεί το γενικό `_execute_openai_compatible`.
+  - Το `generate_embeddings()` δοκιμάζει **πρώτα** local, μετά Gemini.
+- **`talos.py`:**
+  - **HF Model Selection Menu** με τα 6 καλύτερα δωρεάν μοντέλα.
+  - Αυτόματη μεταβίβαση `HF_MODEL_NAME` σε subprocesses.
+  - Το `load_dotenv()` καλείται στο module level για έγκαιρη φόρτωση του `.env`.
+  - Διαχωρισμός `TALOS_USE_LOCAL` (ορίζεται μόνο από το prompt) από το `.env`.
+- **`grey_literature_miner.py`:**
+  - Πλήρης αναβάθμιση: DuckDuckGo search + query optimization + AIManager fallback.
+  - **Graceful degradation:** κάθε βήμα έχει fallback — web search, Gemini, AIManager.
+- **`requirements.txt`:**
+  - Προσθήκη `google-genai`, `duckduckgo-search`.
+- **`.clinerules`:**
+  - Προστέθηκε documentation για την αδυναμία του editor να κάνει match ελληνικό κείμενο.
+  - Τεκμηρίωση της αρχιτεκτονικής, των providers, και των γνωστών gotchas.
+
+---
+
+
 ## [v4.8.3] - 2026-06-27 - The "Secure Local AI & Privacy" Update
 
 Αυτή η έκδοση ενισχύει την **ασφάλεια και το απόρρητο** του τοπικού mode. Προσθέτει **έλεγχο και αυτόματη εγκατάσταση όλων των μοντέλων** κατά την εκκίνηση, **user consent** πριν από οποιοδήποτε fallback σε cloud, και **αμφίδρομο fallback** (local↔cloud) με ρητή έγκριση χρήστη.

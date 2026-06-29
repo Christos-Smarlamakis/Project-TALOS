@@ -43,6 +43,7 @@ from sources.pubmed_source import PubMedSource
 from sources.osti_source import OSTISource
 from sources.scigov_source import ScienceGovSource
 from sources.plos_source import PLOSSource
+from sources.core_source import CORESource
 
 from core.database_manager import DatabaseManager
 from core.ai_manager import AIManager 
@@ -88,7 +89,8 @@ def main():
         PubMedSource(historic_config),
         ScienceGovSource(historic_config),
         OSTISource(historic_config),
-        PLOSSource(historic_config)
+        PLOSSource(historic_config),
+        CORESource(historic_config)
     ]
     
     all_historic_papers = []

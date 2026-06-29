@@ -40,9 +40,9 @@ class ElsevierSource:
         self.total_max_results = config.get("max_results_config", {}).get("elsevier", 200) 
         print("INFO: ElsevierSource (v2.1 - Abstract Fix) initialized.")
 
+    def fetch_new_papers(self) -> List[Dict[str, Any]]:
         if not getattr(self, "enabled", True): return []
         
-    def fetch_new_papers(self) -> List[Dict[str, Any]]:
         print(f"-> Searching Elsevier (Scopus)...")
         all_papers = []
         try:

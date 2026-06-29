@@ -108,7 +108,7 @@ def main():
         url = data.get('url', '')
         
         # Δίνουμε προτεραιότητα σε ένα "καθαρό" URL από το DOI
-        if doi and not url.startswith('https://doi.org'):
+        if doi and not (url or '').startswith('https://doi.org'):
              url = f"https://doi.org/{doi}"
         
         title = data.get('title', 'N/A')

@@ -70,6 +70,38 @@ def run_miner():
     ).ask()
     
     if not research_topic: return
+    
+    # Optimize the search query with LLM
+    print("  >> Optimizing search query...")
+    search_query = research_topic
+    try:
+        from core.ai_manager import AIManager
+        ai = AIManager(config)
+        qprompt = f"Rewrite this research topic as a short English search query (5-8 keywords) for finding GitHub repos, datasets, and technical reports. Return ONLY the query, nothing else.\n\nTOPIC: {research_topic}"
+        optimized = ai.analyze_generic_text(qprompt)
+        if optimized and len(optimized.strip()) > 3:
+            search_query = optimized.strip()
+            print(f"  >> Query: {search_query}")
+    except Exception as e:
+        print(f"  >> Query optimization skipped: {e}")
+    
+    
+    # Live web search (DuckDuckGo - free, no API key)
+    print("  >> Searching the web...")
+    web_results = ""
+    try:
+        from duckduckgo_search import DDGS  # or use: from ddgs import DDGS
+        ddgs = DDGS()
+        hits = list(ddgs.text(search_query, max_results=10))
+        if hits:
+            web_results = "\n**WEB SEARCH RESULTS:**\n" + "\n".join(
+                f"- [{h['title']}]({h.get('href','#')}): {h.get('body','')[:200]}"
+                for h in hits
+            )
+            print(f"  >> Found {len(hits)} web results")
+    except Exception as e:
+        print(f"  >> Web search unavailable: {e}")
+    
 
     # 2. Επιστημονικό Prompt
     formatted_prompt = f"""
@@ -90,6 +122,8 @@ def run_miner():
     - **Key Repositories & Tools:** List with URLs and brief tech stack analysis.
     - **Datasets:** Available data for experiments.
     - **Emerging Trends:** Discussions in forums/blogs.
+    
+    
     - **References:** Direct URLs to all resources found.
     
     Provide the response in **Greek** (maintain English for technical terms/names).
@@ -97,9 +131,14 @@ def run_miner():
 
     print(f"\n🔮 Εκτέλεση σάρωσης ιστού. Αναμονή...\n")
 
+    result_text = None
+
     try:
         client = genai.Client(api_key=api_key)
-        model_id = config.get("grey_literature_model", "gemini-flash-latest") 
+        print("  >> Gemini Search Grounding enabled")
+        
+        # BUGFIX: use correct config key "grey_research_model" with fallback
+        model_id = config.get("grey_research_model", config.get("grey_literature_model", "gemini-flash-latest"))
 
         # Χρήση του google-genai SDK με Search Grounding
         response = client.models.generate_content(
@@ -112,6 +151,7 @@ def run_miner():
         )
         
         if response.text:
+            result_text = response.text
             print("\n--- Αποτελέσματα (Preview) ---")
             print(response.text[:500] + "...\n")
             
@@ -121,15 +161,33 @@ def run_miner():
                      print(f"🔎 Η έρευνα βασίστηκε σε πραγματικά δεδομένα Google Search.\n")
             except:
                 pass
-
-            filepath = save_report(research_topic, response.text)
-            print(f"📄 Η αναφορά αποθηκεύτηκε: {filepath}")
         else:
             print("\n⚠️ Δεν λήφθηκε κείμενο απάντησης.")
 
     except Exception as e:
         print(f"\n❌ Σφάλμα κατά την εκτέλεση: {e}")
         print("Συμβουλή: Βεβαιώσου ότι έχεις εγκαταστήσει το 'google-genai' (pip install google-genai).")
+        result_text = None
+
+    # Fallback: use AIManager if Gemini failed or unavailable
+    if not result_text:
+        print("  >> Falling back to AIManager...")
+        try:
+            from core.ai_manager import AIManager
+            ai = AIManager(config)
+            fb = formatted_prompt + "\n\n" + web_results if web_results else formatted_prompt
+            result_text = ai.analyze_generic_text(fb)
+        except Exception as e:
+            print(f"  >> Fallback also failed: {e}")
+
+    if result_text:
+        print("\n--- Αποτελέσματα (Preview) ---")
+        print(result_text[:500] + "...\n")
+        filepath = save_report(research_topic, result_text)
+        print(f"📄 Η αναφορά αποθηκεύτηκε: {filepath}")
+    else:
+        print("\n⚠️ Δεν λήφθηκε κείμενο απάντησης.")
+
 
 if __name__ == "__main__":
     run_miner()

@@ -10,14 +10,20 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: metadata_enricher.py (v1.0 - Project "APOLLO")
-Project: TALOS v3.1
+Module: metadata_enricher.py (v2.0 - Multi-Source Fallback)
+Project: TALOS v4.8.5
 
 Description:
 Ένα εργαλείο συντήρησης που "εμπλουτίζει" τις υπάρχουσες εγγραφές στη βάση
 δεδομένων. Σαρώνει τη βάση για άρθρα με ελλιπή μεταδεδομένα (όπως έτος
-δημοσίευσης ή DOI) και προσπαθεί να τα βρει χρησιμοποιώντας εξωτερικές πηγές
-(π.χ., Semantic Scholar), συμπληρώνοντας τα κενά.
+δημοσίευσης ή DOI) και προσπαθεί να τα βρει χρησιμοποιώντας πολλαπλές
+εξωτερικές πηγές με fallback chain:
+
+  OpenAlex → Crossref → DBLP → Semantic Scholar
+
+Κάθε πηγή δοκιμάζεται με τη σειρά — αν αποτύχει ή δεν βρει match,
+προχωράμε στην επόμενη. Οι OpenAlex, Crossref, DBLP είναι δωρεάν
+και δεν χρειάζονται API keys.
 """
 import os
 import sys
@@ -30,22 +36,36 @@ import questionary
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from core.database_manager import DatabaseManager
+from sources.openalex_source import OpenAlexSource
+from sources.crossref_source import CrossrefSource
+from sources.dblp_source import DBLPSource
 from sources.semantic_scholar_source import SemanticScholarSource
 
 class MetadataEnricher:
     """
     Η κλάση που ενορχηστρώνει τη διαδικασία εμπλουτισμού των μεταδεδομένων.
+    v2.0: Multi-source fallback chain (OpenAlex → Crossref → DBLP → S2).
     """
     def __init__(self, config: dict):
         """
-        Αρχικοποιεί τον Enricher.
+        Αρχικοποιεί τον Enricher με πολλαπλές πηγές.
 
         Args:
             config (dict): Το λεξικό ρυθμίσεων του project.
         """
         self.db_manager = DatabaseManager()
-        self.s2_source = SemanticScholarSource(config)
-        print("INFO: Metadata Enricher 'APOLLO' (v1.0) initialized.")
+        self.sources = [
+            ("OpenAlex", OpenAlexSource(config)),
+            ("Crossref", CrossrefSource(config)),
+            ("DBLP", DBLPSource(config)),
+        ]
+        # Only include Semantic Scholar if API key is available
+        s2_source = SemanticScholarSource(config)
+        if s2_source.api_key:
+            self.sources.append(("Semantic Scholar", s2_source))
+        else:
+            print("INFO: Semantic Scholar skipped (no API key). Using OpenAlex + Crossref + DBLP.")
+        print("INFO: Metadata Enricher 'APOLLO' (v2.0 - Multi-Source) initialized.")
 
     def find_papers_to_enrich(self) -> list:
         """
@@ -86,9 +106,32 @@ class MetadataEnricher:
         )
         self.db_manager.execute_query(sql, params, commit=True)
 
+    def _search_with_fallback(self, query: str) -> dict:
+        """
+        Δοκιμάζει όλες τις πηγές με τη σειρά.
+        Επιστρέφει το πρώτο αποτέλεσμα που ταιριάζει ακριβώς (case-insensitive title match).
+
+        Args:
+            query: truncated title (max 100 chars)
+
+        Returns:
+            dict ή None αν καμία πηγή δεν βρήκε ακριβές match.
+        """
+        for source_name, source in self.sources:
+            try:
+                search_results = source.search_papers(query, limit=3)
+                if search_results:
+                    # Έλεγχος για case-insensitive title match
+                    for paper in search_results:
+                        if paper.get('title', '').strip().lower() == query.strip().lower():
+                            return paper
+            except Exception:
+                continue
+        return None
+
     def run(self):
         """
-        Εκτελεί την πλήρη ροή εργασίας του εμπλουτισμού.
+        Εκτελεί την πλήρη ροή εργασίας του εμπλουτισμού με multi-source fallback.
         """
         papers_to_enrich = self.find_papers_to_enrich()
 
@@ -97,36 +140,55 @@ class MetadataEnricher:
             return
 
         print(f"Βρέθηκαν {len(papers_to_enrich)} άρθρα που μπορεί να χρειάζονται εμπλουτισμό.")
+        print("Πηγές (fallback chain): OpenAlex → Crossref → DBLP → Semantic Scholar")
         if not questionary.confirm("Θέλετε να ξεκινήσει η διαδικασία αναζήτησης και ενημέρωσης;", default=True).ask():
             print("Η διαδικασία ακυρώθηκε από τον χρήστη.")
             return
 
         enriched_count = 0
+        stats = {"OpenAlex": 0, "Crossref": 0, "DBLP": 0, "Semantic Scholar": 0}
+
         for paper_id, title in tqdm(papers_to_enrich, desc="Enriching Metadata"):
             if not title:
                 continue
 
-            # Κάνουμε αναζήτηση στον Semantic Scholar με βάση τον τίτλο
-            search_results = self.s2_source.search_papers(title, limit=1)
-            
-            # Ελέγχουμε αν βρέθηκε αποτέλεσμα και αν ο τίτλος ταιριάζει ακριβώς
-            # (για να αποφύγουμε την ενημέρωση με λάθος άρθρο)
-            if search_results and search_results[0]['title'].lower() == title.lower():
-                found_paper = search_results[0]
-                
-                # Ενημερώνουμε την εγγραφή στη βάση
-                self.update_paper_metadata(paper_id, found_paper)
-                tqdm.write(f"  -> SUCCESS: Εμπλουτίστηκε το άρθρο ID:{paper_id} ('{title[:40]}...')")
-                enriched_count += 1
-            else:
-                tqdm.write(f"  -> INFO: Δεν βρέθηκε ακριβής αντιστοιχία για το ID:{paper_id} ('{title[:40]}...')")
+            # Truncate query to avoid 403 errors from overly long URLs
+            query = title[:100]
 
-            # Rate limit για να σεβόμαστε το API του Semantic Scholar
+            # Try each source in fallback order
+            found = False
+            for source_name, source in self.sources:
+                try:
+                    search_results = source.search_papers(query, limit=3)
+                    if search_results:
+                        # Check for case-insensitive exact title match
+                        for paper in search_results:
+                            if paper.get('title', '').strip().lower() == title.strip().lower():
+                                found_paper = paper
+                                self.update_paper_metadata(paper_id, found_paper)
+                                tqdm.write(f"  -> [{source_name}] Εμπλουτίστηκε ID:{paper_id} ('{title[:40]}...')")
+                                enriched_count += 1
+                                stats[source_name] += 1
+                                found = True
+                                break
+                    if found:
+                        break
+                except Exception:
+                    continue
+
+            if not found:
+                tqdm.write(f"  -> INFO: Δεν βρέθηκε αντιστοιχία για ID:{paper_id} ('{title[:40]}...')")
+
+            # Rate limit — 1 δευτερόλεπτο ανά paper
             time.sleep(1)
 
         print("\n" + "="*50)
         print("  Η ΔΙΑΔΙΚΑΣΙΑ ΕΜΠΛΟΥΤΙΣΜΟΥ ΟΛΟΚΛΗΡΩΘΗΚΕ")
         print(f"  > Εμπλουτίστηκαν επιτυχώς: {enriched_count} / {len(papers_to_enrich)} άρθρα.")
+        print("  > Ανά πηγή:")
+        for src, cnt in stats.items():
+            if cnt > 0:
+                print(f"      - {src}: {cnt}")
         print("="*50)
 
 

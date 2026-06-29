@@ -140,11 +140,6 @@ class DatabaseManager:
         cols = self.execute_query("PRAGMA table_info(papers);", fetch_all=True)
         if cols and not any(col[1] == 'operational_score' for col in cols):
             self.execute_query("ALTER TABLE papers ADD COLUMN operational_score INTEGER DEFAULT 0;", commit=True)
-        
-        try:
-            self.execute_query("ALTER TABLE papers ADD COLUMN operational_score INTEGER DEFAULT 0;", commit=True)
-        except sqlite3.OperationalError:
-            pass
 
 
     # --- CORE METHODS ---

@@ -39,7 +39,8 @@ def main():
     # --- Γενική Εικόνα ---
     print_header("ΓΕΝΙΚΗ ΕΙΚΟΝΑ (OVERVIEW)")
     print(f"📚 Συνολικά Άρθρα:      {stats['total_papers']}")
-    print(f"💎 Elite Papers (>7/10): {stats['elite_papers']} ({(stats['elite_papers']/stats['total_papers']*100):.1f}%)")
+    elite_pct = (stats['elite_papers'] / stats['total_papers'] * 100) if stats['total_papers'] > 0 else 0.0
+    print(f"💎 Elite Papers (>7/10): {stats['elite_papers']} ({elite_pct:.1f}%)")
     print(f"🧠 Μέσος Όρος Score:    {stats['avg_score']} / 10")
     
     # --- Κατανομή ανά Πηγή ---
