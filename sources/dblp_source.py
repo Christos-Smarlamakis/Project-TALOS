@@ -10,81 +10,94 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: dblp_source.py (v2.0 - Genesis Update)
-Project: TALOS v3.2
+Module: dblp_source.py (v2.1 - Genesis + Search)
+Project: TALOS v4.8.5
 
 Description:
-Η πλήρως αναβαθμισμένη έκδοση του "Πράκτορα" για το DBLP, εναρμονισμένη
-με τις απαιτήσεις του "Operation Genesis".
-- Ανακτά πλέον το κρίσιμο μεταδεδομένο: `doi`.
-- Χρησιμοποιεί μια ξεχωριστή μέθοδο `_format_paper` για καλύτερη οργάνωση.
-- Επιστρέφει τα δεδομένα σε πλήρη συμμόρφωση με το νέο, τυποποιημένο λεξικό.
+    Search agent for the DBLP Computer Science Bibliography API
+    (https://dblp.org). Fetches papers matching the configured query with
+    offset-based pagination. DBLP does not provide abstracts or strong
+    date filters, so year-based filtering is done locally. Provides both
+    batch fetching (``fetch_new_papers``) and single-title search
+    (``search_papers``) for metadata enrichment workflows.
+
+    Free to use — no API key required.
 """
 import requests
 import time
 from datetime import datetime
 from typing import List, Dict, Any
 
+
 class DBLPSource:
+    """Search agent for the DBLP API.
+
+    Fetches computer science publications via the search/publ endpoint.
+    Filters by year locally since DBLP lacks date-range query support.
+
+    Attributes:
+        query (str): Search query from config.
+        days_to_search (int): Lookback window in days (converted to years).
+        total_max_results (int): Maximum results to fetch.
+        base_url (str): DBLP search API base URL.
     """
-    Ένας "Πράκτορας" του TALOS που ειδικεύεται στην ανάκτηση δεδομένων από το DBLP API.
-    """
+
     def __init__(self, config: Dict[str, Any]):
-        """
-        Αρχικοποιεί τον πράκτορα του DBLP.
+        """Initialize the DBLP agent from configuration.
+
+        Args:
+            config (dict): Application configuration dictionary.
         """
         self.query = config.get("dblp_query", "swarm intelligence")
         self.days_to_search = config.get("days_to_search_daily", 1)
         self.total_max_results = config.get("max_results_config", {}).get("dblp", 100)
         self.base_url = "https://dblp.org/search/publ/api"
-        print("INFO: DBLPSource (v2.0 - Genesis) αρχικοποιήθηκε.")
+        print("INFO: DBLPSource (v2.1 - Genesis + Search) initialized.")
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
+        """Fetch recent papers from DBLP matching the configured query.
+
+        Returns:
+            list of dict: Standardized paper dictionaries.
         """
-        Εκτελεί την αναζήτηση στο DBLP API και επιστρέφει τα νέα άρθρα.
-        """
-        print(f"-> Αναζήτηση στο DBLP...")
+        print(f"-> Searching DBLP...")
         all_papers = []
         offset = 0
         page_size = 100
-
-        # Η αναζήτηση στο DBLP δεν έχει καλό φίλτρο ημερομηνίας, οπότε
-        # φιλτράρουμε τοπικά με βάση το έτος.
-        start_year = datetime.now().year - (self.days_to_search // 365) -1 # -1 για ασφάλεια
+        start_year = datetime.now().year - (self.days_to_search // 365) - 1
 
         while len(all_papers) < self.total_max_results:
             params = {
                 "q": self.query,
-                "h": page_size, # h = max number of hits
-                "f": offset,   # f = first hit to show
+                "h": page_size,
+                "f": offset,
                 "format": "json"
             }
             try:
                 response = requests.get(self.base_url, params=params, timeout=20)
                 response.raise_for_status()
                 data = response.json()
-                
+
                 hits = data.get('result', {}).get('hits', {}).get('hit', [])
                 if not hits:
-                    break # Δεν υπάρχουν άλλα αποτελέσματα
+                    break
 
                 stop_searching = False
                 for item in hits:
                     info = item.get('info', {})
-                    
-                    # Τοπικό φιλτράρισμα με βάση το έτος
+
                     year_str = info.get("year")
                     if year_str and int(year_str) < start_year:
                         stop_searching = True
-                        continue # Αγνοούμε τα πολύ παλιά άρθρα
-                        
+                        continue
+
                     formatted_paper = self._format_paper(info)
                     if formatted_paper:
                         all_papers.append(formatted_paper)
 
                     if len(all_papers) >= self.total_max_results:
                         break
-                
+
                 if stop_searching or len(all_papers) >= self.total_max_results or len(hits) < page_size:
                     break
 
@@ -92,14 +105,22 @@ class DBLPSource:
                 time.sleep(1)
 
             except requests.exceptions.RequestException as e:
-                print(f"   ERROR [DBLP]: Παρουσιάστηκε σφάλμα κατά την ανάκτηση: {e}")
+                print(f"   ERROR [DBLP]: Fetch failed: {e}")
                 break
 
-        print(f"   SUCCESS [DBLP]: Βρέθηκαν {len(all_papers)} νέα άρθρα.")
+        print(f"   SUCCESS [DBLP]: Found {len(all_papers)} new papers.")
         return all_papers
 
     def search_papers(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
-        """Αναζητά papers με τίτλο (για metadata enrichment)."""
+        """Search for papers by title (used for metadata enrichment).
+
+        Args:
+            query (str): Title or partial title to search for.
+            limit (int): Maximum results to return.
+
+        Returns:
+            list of dict: Standardized paper dictionaries.
+        """
         params = {"q": query, "h": limit, "format": "json"}
         try:
             response = requests.get(self.base_url, params=params, timeout=10)
@@ -116,11 +137,15 @@ class DBLPSource:
             return []
 
     def _format_paper(self, info: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Μετατρέπει ένα αντικείμενο 'info' από το DBLP API στην τυποποιημένη μορφή του TALOS.
+        """Convert a DBLP hit to the standardized TALOS format.
+
+        Args:
+            info (dict): Raw info object from a DBLP hit.
+
+        Returns:
+            dict: Standardized paper dictionary, or None if formatting fails.
         """
         try:
-            # Το πεδίο 'authors' μπορεί να είναι είτε λίστα είτε ένα μόνο αντικείμενο
             authors_data = info.get('authors', {}).get('author', [])
             if isinstance(authors_data, list):
                 authors_str = ", ".join([a.get('text', '') for a in authors_data])
@@ -129,23 +154,21 @@ class DBLPSource:
             else:
                 authors_str = ""
 
-            # --- ΝΕΕΣ ΠΡΟΣΘΗΚΕΣ ---
             doi = info.get("doi")
             year_str = info.get("year")
             publication_year = int(year_str) if year_str and year_str.isdigit() else None
-            
-            # Το DBLP παρέχει το καλύτερο link στο πεδίο "ee" (electronic edition)
+
             url = info.get("ee") or (f"https://doi.org/{doi}" if doi else info.get("url", "#"))
-            
+
             return {
                 "doi": doi,
                 "url": url,
                 "title": info.get("title", "N/A"),
                 "authors_str": authors_str,
                 "publication_year": publication_year,
-                "abstract": "Το DBLP δεν παρέχει περιλήψεις μέσω του API.",
+                "abstract": "DBLP does not provide abstracts via its API.",
                 "source": "DBLP"
             }
         except Exception as e:
-            print(f"   WARNING [DBLP]: Αποτυχία μορφοποίησης ενός άρθρου: {e}")
+            print(f"   WARNING [DBLP]: Formatting failed: {e}")
             return None

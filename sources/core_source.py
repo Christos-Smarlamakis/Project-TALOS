@@ -8,15 +8,16 @@
 #  License, or (at your option) any later version.
 #
 #  For commercial licensing, please contact the author.
-
 """
 Module: core_source.py (v2.1 - Robust Date Search)
-Project: TALOS v3.2
+Project: TALOS v4.8.5
 
 Description:
-Διορθώνει ένα λογικό σφάλμα στο φιλτράρισμα ημερομηνίας. Η αναζήτηση
-πλέον δεν σταματά πρόωρα, επιτρέποντας την πλήρη κάλυψη του χρονικού
-διαστήματος που ορίζεται στην ιστορική αναζήτηση.
+    Search agent for the CORE API (core.ac.uk), a large aggregator of open-access
+    research papers. Fetches papers matching the configured query with date
+    filtering and pagination. Supports optional API key for higher rate limits
+    via the ``CORE_API_KEY`` environment variable. Does not require an API key
+    for basic usage.
 """
 import requests
 import time
@@ -24,8 +25,21 @@ import os
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
+
 class CORESource:
+    """Search agent for the CORE API.
+
+    Attributes:
+        api_key (str or None): CORE API key from environment.
+        base_url (str): CORE API v3 search endpoint.
+    """
+
     def __init__(self, config: Dict[str, Any]):
+        """Initialize the CORE agent.
+
+        Args:
+            config (dict): Application configuration.
+        """
         self.api_key = os.getenv("CORE_API_KEY")
         self.query = config.get("core_query", "swarm intelligence")
         self.days_to_search = config.get("days_to_search_daily", 1)
@@ -34,10 +48,15 @@ class CORESource:
         self.headers = {'User-Agent': 'Mozilla/5.0'}
         if self.api_key:
             self.headers["Authorization"] = f"Bearer {self.api_key}"
-        print("INFO: CORESource (v2.1 - Robust Date Search) αρχικοποιήθηκε.")
+        print("INFO: CORESource (v2.1 - Robust Date Search) initialized.")
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
-        print(f"-> Αναζήτηση στο CORE...")
+        """Fetch recent papers from CORE.
+
+        Returns:
+            list of dict: Standardized paper dictionaries.
+        """
+        print(f"-> Searching CORE...")
         all_papers = []
         page = 1
         page_size = 100
@@ -54,9 +73,7 @@ class CORESource:
 
                 for item in results_on_page:
                     if len(all_papers) >= self.total_max_results: break
-                    
-                    # --- Η ΔΙΟΡΘΩΜΕΝΗ ΛΟΓΙΚΗ ΕΙΝΑΙ ΕΔΩ ---
-                    # Φιλτράρουμε κάθε άρθρο, αλλά ΔΕΝ σταματάμε ολόκληρη τη σελιδοποίηση
+
                     pub_date_str = item.get("publishedDate")
                     is_recent_enough = False
                     if pub_date_str:
@@ -66,7 +83,7 @@ class CORESource:
                                 is_recent_enough = True
                         except ValueError:
                             continue
-                    
+
                     if is_recent_enough:
                         formatted_paper = self._format_paper(item)
                         if formatted_paper:
@@ -77,18 +94,25 @@ class CORESource:
                 page += 1
                 time.sleep(1)
             except requests.exceptions.RequestException as e:
-                print(f"   ERROR [CORE]: Παρουσιάστηκε σφάλμα: {e}")
+                print(f"   ERROR [CORE]: Error: {e}")
                 break
-        print(f"   SUCCESS [CORE]: Βρέθηκαν {len(all_papers)} νέα άρθρα.")
+        print(f"   SUCCESS [CORE]: Found {len(all_papers)} new papers.")
         return all_papers
 
     def _format_paper(self, item: Dict[str, Any]) -> Dict[str, Any]:
-        # ... (η _format_paper παραμένει η ίδια) ...
+        """Convert a CORE work to standardized format.
+
+        Args:
+            item (dict): Raw CORE API work.
+
+        Returns:
+            dict: Standardized paper dictionary.
+        """
         authors_str = ", ".join([author.get('name', '') for author in item.get('authors', [])])
         doi = item.get('doi')
         url = f"https://doi.org/{doi}" if doi else item.get('downloadUrl', '#')
         return {
             "doi": doi, "url": url, "title": item.get("title", "N/A"),
             "authors_str": authors_str, "publication_year": item.get("yearPublished"),
-            "abstract": item.get("abstract", "Δεν υπάρχει διαθέσιμη περίληψη."), "source": "CORE"
+            "abstract": item.get("abstract", "No abstract available."), "source": "CORE"
         }

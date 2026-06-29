@@ -11,13 +11,16 @@
 
 """
 Module: daily_search.py (v5.4 - Quad-Layer & Rate Limit Safe)
-Project: TALOS v4.0
+Project: TALOS v4.8.5
 
 Description:
-Η πλήρως αναβαθμισμένη έκδοση της καθημερινής αναζήτησης.
-- Υποστηρίζει την Quad-Layer αρχιτεκτονική (Strategic, Operational, Tactical, Playground).
-- Εφαρμόζει το δυναμικό Rate Limiting (από το config) ΣΕ ΟΛΕΣ τις φάσεις.
-- Ενημερώνει την αναφορά Discord για να περιλαμβάνει το Operational Score.
+    The daily search orchestrator. Fetches new papers from all 14 configured
+    source agents, deduplicates them by DOI/URL, and runs a two-stage AI
+    evaluation pipeline: fast pre-screening (Flash model) for all new papers,
+    followed by deep analysis (Pro model) for papers that exceed the minimum
+    threshold. Generates a Markdown briefing report and optionally posts it
+    to Discord via webhook. Respects configurable API call limits and rate
+    delays to avoid quota exhaustion.
 """
 import sys
 import os
@@ -46,22 +49,30 @@ from sources.plos_source import PLOSSource
 from core.database_manager import DatabaseManager
 from core.ai_manager import AIManager
 
+
 def generate_markdown_report(report_data: list) -> str:
+    """Generate a Markdown briefing report from evaluation results.
+
+    Args:
+        report_data (list of dict): List of {'paper': ..., 'eval': ...} dictionaries.
+
+    Returns:
+        str: Complete Markdown report as a string.
+    """
     timestamp = datetime.now().strftime('%d-%m-%Y')
     report_content = [f"# TALOS Daily Briefing - {timestamp}\n", f"Found **{len(report_data)}** high-relevance articles today.\n---"]
     for item in report_data:
         paper, evaluation = item['paper'], item['eval']
         scores = evaluation.get('scores', {})
-        
-        # --- Quad-Layer Scores ---
+
         s_score = scores.get('strategic', 0)
         o_score = scores.get('operational', 0)
         t_score = scores.get('tactical', 0)
         p_score = scores.get('playground', 0)
         overall = evaluation.get('overall_score', 0)
-        
+
         tags_str = f"`{'`, `'.join(evaluation.get('tags', []))}`" if evaluation.get('tags') else 'N/A'
-        
+
         report_content.extend([
             f"\n## {paper.get('title', 'N/A')}",
             f"**Source:** {paper.get('source', 'N/A')} | **Link:** [{paper.get('doi', 'No DOI')}]({paper.get('url', '#')})",
@@ -74,13 +85,21 @@ def generate_markdown_report(report_data: list) -> str:
         ])
     return "\n".join(report_content)
 
+
 def post_report_to_discord(config: dict, markdown_content: str, filename: str):
+    """Post the daily briefing report to Discord via webhook.
+
+    Args:
+        config (dict): Application configuration.
+        markdown_content (str): The Markdown report content.
+        filename (str): Filename for the attachment.
+    """
     load_dotenv()
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
     if not webhook_url:
         print("WARNING: DISCORD_WEBHOOK_URL not found. Skipping report.")
         return
-    payload = {"content": f"🔥 **TALOS Daily Briefing** 🔥\nToday's report is ready."}
+    payload = {"content": f"TALOS Daily Briefing\nToday's report is ready."}
     files = {'file': (filename, markdown_content, 'text/markdown')}
     try:
         response = requests.post(webhook_url, data=payload, files=files)
@@ -89,7 +108,16 @@ def post_report_to_discord(config: dict, markdown_content: str, filename: str):
     except requests.exceptions.RequestException as e:
         print(f"  > Discord Webhook Error: {e}")
 
+
 def load_configuration():
+    """Load the project configuration from config.json.
+
+    Returns:
+        dict: Configuration dictionary.
+
+    Raises:
+        SystemExit: If config.json is missing or invalid.
+    """
     print("PHASE 1: Loading configuration...")
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     config_path = os.path.join(project_root, 'config.json')
@@ -97,28 +125,29 @@ def load_configuration():
         with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"FATAL: Σφάλμα φόρτωσης του config.json: {e}")
+        print(f"FATAL: Error loading config.json: {e}")
         sys.exit(1)
 
+
 def main():
+    """Run the daily search pipeline: fetch, filter, evaluate, report."""
     print("--- DAILY SEARCH (v5.4 - Quad-Layer & Safe) ---")
     config = load_configuration()
     print("SUCCESS: Configuration loaded.\n")
     ai_manager = AIManager(config)
     db_manager = DatabaseManager()
-    db_manager.create_table() # Ensure table exists (with quad columns)
+    db_manager.create_table()
 
     print("\n--- PHASE 2: Fetching & Filtering ---")
-    # Εδώ ενεργοποιείς όποιους πράκτορες θέλεις για την καθημερινή αναζήτηση
     sources_to_search = [
-        ArxivSource(config), 
-        ElsevierSource(config), 
+        ArxivSource(config),
+        ElsevierSource(config),
         SemanticScholarSource(config),
-        IEEEXploreSource(config), 
-        SpringerNatureSource(config), 
+        IEEEXploreSource(config),
+        SpringerNatureSource(config),
         OpenAlexSource(config),
-        DBLPSource(config), 
-        CrossrefSource(config), 
+        DBLPSource(config),
+        CrossrefSource(config),
         OpenArchivesSource(config),
         PubMedSource(config),
         OSTISource(config),
@@ -145,12 +174,11 @@ def main():
         return
 
     print(f"\n--- PHASE 3: Pre-screening (Flash Model) for {len(papers_to_process)} new articles ---")
-    
-    # --- Φόρτωση Ρυθμίσεων Ασφαλείας ---
+
     API_CALL_LIMIT = config.get("api_call_limit_flash", 950)
     REQUEST_DELAY = config.get("ai_request_delay", 5)
     min_score_for_deep_analysis = config.get("min_pre_screening_score", 6)
-    
+
     api_calls_made = 0
     promising_papers = []
 
@@ -161,10 +189,10 @@ def main():
 
         print(f"-> Pre-screening {i+1}/{len(papers_to_process)}: '{paper['title'][:80]}...'")
         content_for_ai = f"Title: {paper['title']}\nAbstract: {paper.get('abstract', '')}"
-        
+
         evaluation_data = ai_manager.evaluate_paper_json(content_for_ai, model_type='flash')
         api_calls_made += 1
-        
+
         if evaluation_data:
             db_manager.add_paper(paper, evaluation_data)
             overall = evaluation_data.get('overall_score', 0)
@@ -173,8 +201,7 @@ def main():
                 promising_papers.append(paper)
         else:
             print(f"   WARNING: Flash evaluation failed for {paper['doi']}. Skipping.")
-        
-        # --- Η ΔΙΟΡΘΩΣΗ: Καθυστέρηση ΚΑΙ εδώ ---
+
         time.sleep(REQUEST_DELAY)
 
     if not promising_papers:
@@ -200,13 +227,12 @@ def main():
         if deep_evaluation_data:
             db_manager.update_paper_evaluation(db_manager.get_paper_id_by_doi(paper['doi']), deep_evaluation_data)
             final_results_for_report.append({'paper': paper, 'eval': deep_evaluation_data})
-            
-            # Logging για Quad-Layer
+
             scores = deep_evaluation_data.get('scores', {})
             print(f"   SUCCESS: S:{scores.get('strategic')} O:{scores.get('operational')} T:{scores.get('tactical')} P:{scores.get('playground')}")
         else:
             print(f"   WARNING: Pro evaluation failed for {paper['doi']}.")
-        
+
         time.sleep(REQUEST_DELAY)
 
     if final_results_for_report:
@@ -219,8 +245,9 @@ def main():
         with open(report_path, 'w', encoding='utf-8') as f: f.write(markdown_report)
         print(f"  > Daily report saved to: {report_path}")
         post_report_to_discord(config, markdown_report, report_filename)
-    
+
     print("\nScript completed successfully.")
+
 
 if __name__ == "__main__":
     main()

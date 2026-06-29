@@ -10,14 +10,35 @@
 #  For commercial licensing, please contact the author.
 """
 Module: springer_source.py (v2.1 - Resilient)
-Project: TALOS v3.2
+Project: TALOS v4.8.5
+
+Description:
+    Search agent for the Springer Nature API (api.springernature.com).
+    Fetches papers matching the configured query with date filtering and
+    offset-based pagination. Implements exponential backoff on rate limits.
+    Requires an API key via the ``SPRINGER_API_KEY`` environment variable.
+    Gracefully disables itself if no key is configured.
 """
 import os, time, requests, random
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
+
 class SpringerNatureSource:
+    """Search agent for the Springer Nature API.
+
+    Attributes:
+        enabled (bool): False if API key is missing.
+        api_key (str): Springer API key from environment.
+        base_url (str): Springer Nature Meta API v2 base URL.
+    """
+
     def __init__(self, config: Dict[str, Any]):
+        """Initialize the Springer agent.
+
+        Args:
+            config (dict): Application configuration.
+        """
         self.enabled = True
         self.api_key = os.getenv("SPRINGER_API_KEY")
         if not self.api_key:
@@ -31,6 +52,16 @@ class SpringerNatureSource:
         print("INFO: SpringerNatureSource initialized.")
 
     def _make_request(self, params, max_retries=4, initial_backoff=5):
+        """Make an API request with exponential backoff.
+
+        Args:
+            params (dict): Query parameters including api_key.
+            max_retries (int): Maximum retry attempts.
+            initial_backoff (float): Initial backoff in seconds.
+
+        Returns:
+            dict or None: Parsed JSON response.
+        """
         for attempt in range(max_retries):
             try:
                 response = requests.get(self.base_url, params=params, timeout=30)
@@ -42,11 +73,16 @@ class SpringerNatureSource:
                     continue
                 response.raise_for_status()
                 return response.json()
-            except requests.exceptions.RequestException as e:
+            except requests.exceptions.RequestException:
                 return None
         return None
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
+        """Fetch papers from Springer Nature.
+
+        Returns:
+            list of dict: Standardized paper dictionaries.
+        """
         if not getattr(self, "enabled", True):
             return []
         all_papers = []
@@ -70,6 +106,14 @@ class SpringerNatureSource:
         return all_papers
 
     def _format_paper(self, article):
+        """Convert a Springer article to standardized format.
+
+        Args:
+            article (dict): Raw Springer API article.
+
+        Returns:
+            dict: Standardized paper dictionary, or None on failure.
+        """
         try:
             authors_str = ", ".join([c.get('creator') for c in article.get('creators', [])])
             abstract = article.get('abstract', '')

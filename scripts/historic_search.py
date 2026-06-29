@@ -11,14 +11,15 @@
 
 """
 Module: historic_search.py (v5.5 - Final Quad-Layer & Rate Limit)
-Project: TALOS v3.2
+Project: TALOS v4.8.5
 
 Description:
-Η τελική, βελτιστοποιημένη έκδοση για την ιστορική αναζήτηση.
-- Χρησιμοποιεί το Flash model για ταχύτητα.
-- Εφαρμόζει το 'ai_request_delay' για να αποφύγει το rate limiting.
-- Καταγράφει και εμφανίζει τα Quad-Layer scores (Strategic, Operational, Tactical, Playground).
-- Είναι πλήρως εναρμονισμένη με τον νέο DatabaseManager v4.6.
+    The deep archive search orchestrator. Fetches papers from all 14 configured
+    source agents spanning a multi-year window (configurable via
+    ``days_to_search_historic``, default ~6 years), deduplicates by DOI/URL,
+    and evaluates all new papers with the Flash model using Quad-Layer scoring.
+    Designed for initial database population and periodic deep dives.
+    Respects API call limits and rate delays to avoid quota exhaustion.
 """
 import sys
 import os
@@ -26,10 +27,8 @@ import time
 import json
 from dotenv import load_dotenv
 
-# Προσθέτουμε το root του project στο path για να βρει τα modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# --- Τοπικές Εισαγωγές ---
 from sources.arxiv_source import ArxivSource
 from sources.elsevier_source import ElsevierSource
 from sources.semantic_scholar_source import SemanticScholarSource
@@ -46,45 +45,54 @@ from sources.plos_source import PLOSSource
 from sources.core_source import CORESource
 
 from core.database_manager import DatabaseManager
-from core.ai_manager import AIManager 
+from core.ai_manager import AIManager
+
 
 def load_configuration():
-    print("ΦΑΣΗ 1: Φόρτωση ρυθμίσεων...")
+    """Load the project configuration from config.json.
+
+    Returns:
+        dict: Configuration dictionary.
+
+    Raises:
+        SystemExit: If config.json is missing or invalid.
+    """
+    print("PHASE 1: Loading configuration...")
     load_dotenv()
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     config_path = os.path.join(project_root, 'config.json')
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             config = json.load(f)
-        print("SUCCESS: Οι ρυθμίσεις φορτώθηκαν.\n")
+        print("SUCCESS: Configuration loaded.\n")
         return config
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"FATAL: Σφάλμα φόρτωσης του config.json: {e}")
+        print(f"FATAL: Error loading config.json: {e}")
         sys.exit(1)
 
-def main():
-    print("--- ΕΝΑΡΞΗ ΙΣΤΟΡΙΚΗΣ ΑΝΑΖΗΤΗΣΗΣ (v5.5 - Quad-Layer) ---")
-    
-    config = load_configuration()
-    ai_manager = AIManager(config)    
-    db_manager = DatabaseManager() # Ο πίνακας δημιουργείται αυτόματα στο __init__
-    
-    # Ρυθμίζουμε το config για την ιστορική αναζήτηση
-    historic_config = config.copy()
-    days_historic = config.get("days_to_search_historic", 2190) # ~6 χρόνια
-    historic_config["days_to_search_daily"] = days_historic 
-    print(f"INFO: Η αναζήτηση ρυθμίστηκε για τις τελευταίες {days_historic} ημέρες.\n")
 
-    # --- ΦΑΣΗ 2: ΑΝΑΚΤΗΣΗ ΑΠΟ ΠΗΓΕΣ ---
+def main():
+    """Run the historical search pipeline: fetch all sources, deduplicate, evaluate, store."""
+    print("--- HISTORICAL SEARCH STARTED (v5.5 - Quad-Layer) ---")
+
+    config = load_configuration()
+    ai_manager = AIManager(config)
+    db_manager = DatabaseManager()
+
+    historic_config = config.copy()
+    days_historic = config.get("days_to_search_historic", 2190)
+    historic_config["days_to_search_daily"] = days_historic
+    print(f"INFO: Search configured for the last {days_historic} days.\n")
+
     sources_to_search = [
-        ArxivSource(historic_config), 
+        ArxivSource(historic_config),
         ElsevierSource(historic_config),
-        SemanticScholarSource(historic_config), 
+        SemanticScholarSource(historic_config),
         IEEEXploreSource(historic_config),
-        SpringerNatureSource(historic_config), 
+        SpringerNatureSource(historic_config),
         OpenAlexSource(historic_config),
-        DBLPSource(historic_config), 
-        CrossrefSource(historic_config), 
+        DBLPSource(historic_config),
+        CrossrefSource(historic_config),
         OpenArchivesSource(historic_config),
         PubMedSource(historic_config),
         ScienceGovSource(historic_config),
@@ -92,52 +100,47 @@ def main():
         PLOSSource(historic_config),
         CORESource(historic_config)
     ]
-    
+
     all_historic_papers = []
     for source in sources_to_search:
-        # Χρησιμοποιούμε extend για να προσθέσουμε τα αποτελέσματα στη λίστα
         fetched = source.fetch_new_papers()
         if fetched:
             all_historic_papers.extend(fetched)
-        
-    print(f"\nSUCCESS: Βρέθηκαν συνολικά {len(all_historic_papers)} πιθανά άρθρα από όλες τις πηγές.\n")
 
-    # Φιλτράρουμε για μοναδικά άρθρα και για αυτά που δεν υπάρχουν ήδη στη βάση
-    # Προτεραιότητα στο DOI, αν δεν υπάρχει ελέγχουμε το URL (μέσω του dictionary key)
+    print(f"\nSUCCESS: Found {len(all_historic_papers)} potential papers across all sources.\n")
+
     unique_papers_dict = {}
     for p in all_historic_papers:
         key = p.get('doi') if p.get('doi') else p.get('url')
         if key:
             unique_papers_dict[key] = p
 
-    # Τελικό φιλτράρισμα με τη βάση
     papers_to_process = []
     for p in unique_papers_dict.values():
         if p.get('doi'):
             if not db_manager.paper_exists_by_doi(p['doi']):
                 papers_to_process.append(p)
         elif p.get('url'):
-             if not db_manager.paper_exists_by_url(p['url']):
-                 papers_to_process.append(p)
-    
+            if not db_manager.paper_exists_by_url(p['url']):
+                papers_to_process.append(p)
+
     if not papers_to_process:
-        print("INFO: Η βάση δεδομένων φαίνεται να είναι ήδη ενημερωμένη. Τερματισμός.")
+        print("INFO: Database appears to be already up to date. Terminating.")
         return
-        
-    print(f"INFO: Βρέθηκαν {len(papers_to_process)} νέα, μοναδικά άρθρα για προσθήκη στη βάση δεδομένων.")
-    
-    # --- ΦΑΣΗ 3: ΜΑΖΙΚΗ ΑΞΙΟΛΟΓΗΣΗ & ΑΠΟΘΗΚΕΥΣΗ ---
+
+    print(f"INFO: Found {len(papers_to_process)} new, unique papers to add to the database.")
+
     API_CALL_LIMIT = config.get("api_call_limit_flash", 950)
     REQUEST_DELAY = config.get("ai_request_delay", 5)
     api_calls_made = 0
 
     for i, paper in enumerate(papers_to_process):
         if api_calls_made >= API_CALL_LIMIT:
-            print(f"\nWARNING: Έφτασε το όριο των {API_CALL_LIMIT} κλήσεων. Το script θα σταματήσει για σήμερα.")
-            break    
+            print(f"\nWARNING: Reached the limit of {API_CALL_LIMIT} calls. Stopping for today.")
+            break
 
-        print(f"-> Επεξεργασία άρθρου {i+1}/{len(papers_to_process)}: '{paper['title'][:80]}...'")
-        
+        print(f"-> Processing paper {i+1}/{len(papers_to_process)}: '{paper['title'][:80]}...'")
+
         content_for_ai = f"Title: {paper['title']}\nAbstract: {paper.get('abstract', '')}"
 
         evaluation_data = ai_manager.evaluate_paper_json(content_for_ai, model_type='flash')
@@ -145,22 +148,22 @@ def main():
 
         if evaluation_data:
             db_manager.add_paper(paper, evaluation_data)
-            
-            # --- Quad-Layer Logging (Η Προσθήκη) ---
+
             scores = evaluation_data.get('scores', {})
             s = scores.get('strategic', 0)
             o = scores.get('operational', 0)
             t = scores.get('tactical', 0)
             p = scores.get('playground', 0)
             overall = evaluation_data.get('overall_score', 0)
-            
+
             print(f"   SUCCESS: [S:{s} O:{o} T:{t} P:{p}] -> Overall: {overall:.2f}")
         else:
-            print(f"   WARNING: Η αξιολόγηση απέτυχε. Παράλειψη.")
+            print(f"   WARNING: Evaluation failed. Skipping.")
 
         time.sleep(REQUEST_DELAY)
 
-    print("\n--- Η ΙΣΤΟΡΙΚΗ ΑΝΑΖΗΤΗΣΗ ΟΛΟΚΛΗΡΩΘΗΚΕ ---")
+    print("\n--- HISTORICAL SEARCH COMPLETE ---")
+
 
 if __name__ == "__main__":
     main()
