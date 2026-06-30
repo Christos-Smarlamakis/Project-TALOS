@@ -2,6 +2,63 @@
 
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
+
+## [v4.10.1] - 2026-06-30 - Ενημέρωση "Model Management"
+
+Αυτή η έκδοση εισάγει ένα εξειδικευμένο Model Management TUI (`scripts/model_manager.py`) με quantization-aware επιλογή μοντέλων Ollama, δυναμική ανακάλυψη μοντέλων από τη βιβλιοθήκη Ollama, VRAM-fit δείκτες, και ρύθμιση cloud μοντέλων — όλα προσβάσιμα τόσο από το TUI όσο και από το Streamlit GUI.
+
+### Προσθήκες
+- **Model Management TUI (`scripts/model_manager.py`):**
+  - Διαδραστική επιλογή τοπικών + cloud μοντέλων προσβάσιμη μέσω TUI (Profile & Settings → AI Model Management)
+  - Quantization-aware model picker: ανιχνεύει όλα τα διαθέσιμα quant tags (Q8_0, Q4_K_M, Q2_K, IQ2_XXS, κλπ.) μέσω `ollama show`
+  - Tags ομαδοποιημένα ανά bit-depth (8-bit, 6-bit, 4-bit, 3-bit, 2-bit, 1-bit) με εκτιμώμενο VRAM ανά quant
+  - Αυτόματο download μοντέλων που λείπουν μέσω `ollama pull` με confirmation prompt
+  - Cloud model configuration: επιλογείς Gemini Flash/Pro, DeepSeek chat/reasoner, HuggingFace
+  - Επιλογέας embedding model (nomic-embed-text, bge-m3, mxbai-embed-large, κλπ.)
+  - Δυνατότητα manual `ollama pull`
+- **Quantization size estimation (`core/hardware.py`):**
+  - `estimate_size_for_quant(model_name, quant_tag)` — υπολογίζει το μέγεθος μοντέλου σε GB για οποιοδήποτε quantization level
+  - Πίνακας `QUANT_SIZE_PER_BILLION` με 30+ quantization types (Q8_0=1.0GB/B, Q4_K_M=0.55GB/B, Q2_K=0.28GB/B, IQ2_XXS=0.20GB/B, Q1_0=0.20GB/B, κλπ.)
+  - `extract_params_b(model_name)` — εξάγει τον αριθμό παραμέτρων από το όνομα του μοντέλου
+- **Δυναμική ανακάλυψη μοντέλων:**
+  - Η hardcoded λίστα `POPULAR_MODELS` αφαιρέθηκε από το `model_manager.py` — τώρα τραβάει ζωντανά από το `ollama.com/api/tags`
+  - Fallback στο `OLLAMA_LIBRARY_FALLBACK` του `hardware.py` όταν είναι offline
+  - Λίστα μοντέλων σε 3 sections: Installed, Ollama Library, BitNet 1-bit (Edge/CPU)
+- **VRAM-aware δείκτες:**
+  - `[FITS ✓]` / `[TIGHT ~]` / `[TOO BIG ✗]` badges σε κάθε μοντέλο τόσο στο TUI όσο και στο GUI
+  - Το VRAM headroom άλλαξε από 85% → **70%** (`VRAM_HEADROOM = 0.70`) για να αφήνει χώρο για το λειτουργικό και άλλες διεργασίες
+- **GUI model configuration (Streamlit `app.py`):**
+  - Quantization dropdown με εκτιμώμενο VRAM ανά quant level
+  - Cloud model selectors στο Settings: Gemini Flash/Pro, DeepSeek, HuggingFace
+- **Νέα `.env` keys:** `GEMINI_FLASH_MODEL`, `GEMINI_PRO_MODEL`, `DEEPSEEK_MODEL_CHAT`
+
+### Αλλαγές
+- **TUI (`talos.py`):**
+  - `profile_settings_menu`: προστέθηκε "3. AI Model Management (Local & Cloud)" → εκκινεί το `model_manager.py`
+  - Το main header δείχνει πλέον το τρέχον τοπικό μοντέλο (π.χ. `LOCAL (gemma4:12b-q4_K_M)`) αντί για το γενικό `LOCAL (Ollama)`
+  - Έκδοση αναβαθμίστηκε σε v4.10.1
+- **GUI (`app.py`):**
+  - Έκδοση αναβαθμίστηκε σε v4.10.1 (docstring, sidebar, footer)
+  - Το hardware import επεκτάθηκε για να περιλαμβάνει `estimate_size_for_quant`, `VRAM_HEADROOM`
+  - Το VRAM metric δείχνει πλέον το διαθέσιμο headroom (π.χ. `24.0 GB` + `16.8GB usable (70%)`)
+  - Το κουμπί Save αποθηκεύει πλέον και τις επιλογές cloud μοντέλων στο `.env`
+- **`core/hardware.py`:**
+  - Όλα τα VRAM thresholds ενοποιήθηκαν υπό το `VRAM_HEADROOM = 0.70`
+  - `recommend_model()`, `get_all_chat_models_sorted()`, `get_ollama_library_models()`, `get_bitnet_models()` — όλα χρησιμοποιούν `VRAM_HEADROOM`
+
+### Διορθώσεις
+- **`PermissionError` στο `api_keys_menu`:** Η εγγραφή του `.env` χρησιμοποιεί πλέον στρατηγική 3 προσπαθειών (direct write → chmod + write → atomic tempfile + `os.replace()`), με graceful fallback μήνυμα σφάλματος αν το αρχείο είναι read-only στα Windows
+
+### Αρχεία που άλλαξαν
+| Αρχείο | Αλλαγή |
+|---|---|
+| `talos.py` | v4.10.1, Model Management καταχώρηση μενού, header με μοντέλο, PermissionError fix |
+| `app.py` | v4.10.1, quantization dropdown, VRAM badges, cloud model selectors |
+| `core/hardware.py` | `estimate_size_for_quant()`, `QUANT_SIZE_PER_BILLION`, `VRAM_HEADROOM=0.70` |
+| `scripts/model_manager.py` | **Νέο** — 608 γραμμών TUI για model management |
+
+---
+
 ## [v4.10.0] - 2026-06-30 - "Zero-Config & Resilience"
 
 Αυτή η έκδοση μετατρέπει τον TALOS σε ένα πλήρως αυτόνομο σύστημα που λειτουργεί με 100% δωρεάν, keyless APIs. Προσθέτει Tiered API Keys management (GUI + TUI), API Health Check με tqdm progress bar, Smart Ollama Model Selector (installed + Ollama library + BitNet 1-bit), PDF Downloader (Unpaywall / OpenAlex), Health Check στο TUI, και πολλές διορθώσεις UX/UI.
@@ -47,6 +104,8 @@
 - API Health Check "πάγωμα" — tqdm progress bar με real-time feedback
 - KeyError στο CHIRON knowledge_path_generator.py
 - UnicodeDecodeError σε subprocess output λόγω ελληνικών χαρακτήρων
+
+---
 
 ## [v4.9.0] - 2026-06-29 - Ενημέρωση "Streamlit GUI & Quality"
 

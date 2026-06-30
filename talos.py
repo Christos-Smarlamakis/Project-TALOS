@@ -9,8 +9,8 @@
 #
 #  For commercial licensing, please contact the author.
 """
-Module: talos.py (v4.10.0 - The Zero-Config & Resilience Update)
-Project: TALOS v4.10.0
+Module: talos.py (v4.10.1 - The Model Management Update)
+Project: TALOS v4.10.1
 
 Description:
     The central entry point and interactive CLI for Project TALOS.
@@ -30,6 +30,8 @@ import os
 import subprocess
 import sys
 import time
+import tempfile
+import stat
 from dotenv import load_dotenv
 load_dotenv()  # Load HF_TOKEN and other env vars before first use
 
@@ -233,7 +235,8 @@ def maintenance_menu(python_exe: str):
             "5. AI Re-evaluation (Smart Recalibration)",
             "6. Data Enrichment (Unpaywall/IDs)",
             "7. Scientometrics Report",
-            "8. System Health Check (Smoke Test)",
+            "8. PDF Downloader (Open Access)",
+            "9. System Health Check (Smoke Test)",
             questionary.Separator(),
             "Back to Main Menu"
         ]
@@ -247,15 +250,16 @@ def maintenance_menu(python_exe: str):
     elif choice.startswith("5."): run_script("reevaluate_database.py", python_exe)
     elif choice.startswith("6."): run_script("data_enricher.py", python_exe)
     elif choice.startswith("7."): run_script("trend_analyzer.py", python_exe, args=[target_db])
-    elif choice.startswith("8."):
-        print("\n🩺 Running System Health Check...\n")
+    elif choice.startswith("8."): run_script("pdf_downloader.py", python_exe)
+    elif choice.startswith("9."):
+        print("\nSystem Health Check...\n")
         test_path = os.path.join(project_root, 'test_smoke.py')
         if os.path.exists(test_path):
             result = subprocess.run([python_exe, test_path], check=False, env=os.environ.copy())
             if result.returncode == 0:
-                print("\n✅ All checks passed — Project is healthy!")
+                print("\nAll checks passed — Project is healthy!")
             else:
-                print(f"\n⚠️ Health check completed with code {result.returncode}.")
+                print(f"\nHealth check completed with code {result.returncode}.")
         else:
             print("test_smoke.py not found.")
 
@@ -385,10 +389,47 @@ def api_keys_menu(python_exe: str):
                             new_lines.append(line)
                     if not found:
                         new_lines.append(f"\n{key_to_edit} = \"{new_val.strip()}\"\n")
-                    with open(env_path, 'w', encoding='utf-8') as f:
-                        f.writelines(new_lines)
-                    os.environ[key_to_edit] = new_val.strip()
-                    print(f"\n  [{key_to_edit}] updated.")
+                    written = False
+                    for attempt in range(3):
+                        try:
+                            # Attempt 1 & 3: direct write
+                            # Attempt 2: chmod to add write permission first
+                            if attempt == 1:
+                                try:
+                                    os.chmod(env_path, os.stat(env_path).st_mode | stat.S_IWRITE)
+                                except Exception:
+                                    pass
+                            with open(env_path, 'w', encoding='utf-8') as f:
+                                f.writelines(new_lines)
+                            written = True
+                            break
+                        except PermissionError:
+                            if attempt == 2:
+                                # Last resort: write to temp file and atomically replace
+                                try:
+                                    tmp_fd, tmp_path = tempfile.mkstemp(
+                                        dir=os.path.dirname(env_path),
+                                        prefix='.env_tmp_',
+                                        text=True
+                                    )
+                                    with os.fdopen(tmp_fd, 'w', encoding='utf-8') as tmp_f:
+                                        tmp_f.writelines(new_lines)
+                                    os.replace(tmp_path, env_path)
+                                    written = True
+                                    break
+                                except Exception:
+                                    if os.path.exists(tmp_path):
+                                        try:
+                                            os.unlink(tmp_path)
+                                        except Exception:
+                                            pass
+                    if not written:
+                        print(f"\n  [ERROR] Could not write to {env_path} (Permission denied).")
+                        print(f"  Your changes were NOT saved. Please check file permissions.")
+                        print(f"  Try: right-click the .env file -> Properties -> uncheck 'Read-only'.")
+                    else:
+                        os.environ[key_to_edit] = new_val.strip()
+                        print(f"\n  [{key_to_edit}] updated.")
 
         elif choice.startswith("2"):
             print("\nRunning API Diagnostics...\n")
@@ -418,8 +459,9 @@ def profile_settings_menu(python_exe: str):
             choices=[
                 "1. Manage Profiles (Switch/Create)",
                 "2. Configure Research Goal (PYTHIA)",
-                "3. API Keys Management",
-                "4. API Diagnostics",
+                "3. AI Model Management (Local & Cloud)",
+                "4. API Keys Management",
+                "5. API Diagnostics",
                 questionary.Separator(),
                 "Back to Main Menu"
             ]
@@ -431,8 +473,10 @@ def profile_settings_menu(python_exe: str):
         elif choice.startswith("2"):
             run_script("query_translator.py", python_exe)
         elif choice.startswith("3"):
-            api_keys_menu(python_exe)
+            run_script("model_manager.py", python_exe)
         elif choice.startswith("4"):
+            api_keys_menu(python_exe)
+        elif choice.startswith("5"):
             print("\nRunning API Diagnostics...\n")
             project_root = os.path.dirname(os.path.abspath(__file__))
             test_path = os.path.join(project_root, 'scripts', 'api_health_check.py')
@@ -535,12 +579,16 @@ def main_menu():
         active_profile = get_active_profile_name()
 
         # --- Build dynamic header with DB stats ---
-        header = f"TALOS v4.10.0 | Profile: [{active_profile}]"
+        header = f"TALOS v4.10.1 | Profile: [{active_profile}]"
         try:
             from core.database_manager import DatabaseManager
             db = DatabaseManager()
             stats = db.get_database_statistics()
-            provider = "LOCAL (Ollama)" if USE_LOCAL_MODEL else "CLOUD (Gemini+DeepSeek)"
+            if USE_LOCAL_MODEL:
+                local_model = os.getenv("LOCAL_MODEL_NAME", "local")
+                provider = f"LOCAL ({local_model})"
+            else:
+                provider = "CLOUD (Gemini+DeepSeek)"
             vram_str = ""
             try:
                 from core.hardware import detect_vram_gb
@@ -549,7 +597,7 @@ def main_menu():
                     vram_str = f" | VRAM: {vram:.0f}GB"
             except Exception:
                 pass
-            header = f"TALOS v4.10.0 | Profile: [{active_profile}] | {stats['total_papers']} papers | {stats['elite_papers']} elite | {provider}{vram_str}"
+            header = f"TALOS v4.10.1 | Profile: [{active_profile}] | {stats['total_papers']} papers | {stats['elite_papers']} elite | {provider}{vram_str}"
         except Exception:
             pass
 

@@ -2,6 +2,63 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+
+## [v4.10.1] - 2026-06-30 - The "Model Management" Update
+
+This release introduces a dedicated Model Management TUI (`scripts/model_manager.py`) with quantization-aware Ollama model selection, dynamic model discovery from the Ollama library, 
+VRAM-fit indicators, and cloud model configuration — all accessible from both the TUI and Streamlit GUI.
+
+### Added
+- **Model Management TUI (`scripts/model_manager.py`):**
+  - Interactive local + cloud model selection accessible via TUI (Profile & Settings → AI Model Management)
+  - Quantization-aware model picker: detects all available quant tags (Q8_0, Q4_K_M, Q2_K, IQ2_XXS, etc.) via `ollama show`
+  - Tags grouped by bit-depth (8-bit, 6-bit, 4-bit, 3-bit, 2-bit, 1-bit) with estimated VRAM per quant
+  - Auto-download missing models via `ollama pull` with confirmation prompt
+  - Cloud model configuration: Gemini Flash/Pro, DeepSeek chat/reasoner, HuggingFace model selectors
+  - Embedding model selector (nomic-embed-text, bge-m3, mxbai-embed-large, etc.)
+  - Manual `ollama pull` option
+- **Quantization size estimation (`core/hardware.py`):**
+  - `estimate_size_for_quant(model_name, quant_tag)` — computes model size in GB for any quantization level
+  - `QUANT_SIZE_PER_BILLION` table with 30+ quantization types (Q8_0=1.0GB/B, Q4_K_M=0.55GB/B, Q2_K=0.28GB/B, IQ2_XXS=0.20GB/B, Q1_0=0.20GB/B, etc.)
+  - `extract_params_b(model_name)` — extracts parameter count from model name
+- **Dynamic model discovery:**
+  - Hardcoded `POPULAR_MODELS` list removed from `model_manager.py`; now fetches live from `ollama.com/api/tags`
+  - Falls back to `OLLAMA_LIBRARY_FALLBACK` in `hardware.py` when offline
+  - 3-section model list: Installed, Ollama Library, BitNet 1-bit (Edge/CPU)
+- **VRAM-aware indicators:**
+  - `[FITS ✓]` / `[TIGHT ~]` / `[TOO BIG ✗]` badges on every model in both TUI and GUI
+  - VRAM headroom changed from 85% → **70%** (`VRAM_HEADROOM = 0.70`) to leave breathing room for OS + other tasks
+- **GUI model configuration (Streamlit `app.py`):**
+  - Quantization dropdown with estimated VRAM per quant level
+  - Cloud model selectors in Settings: Gemini Flash/Pro, DeepSeek, HuggingFace
+- **New `.env` keys:** `GEMINI_FLASH_MODEL`, `GEMINI_PRO_MODEL`, `DEEPSEEK_MODEL_CHAT`
+
+### Changed
+- **TUI (`talos.py`):**
+  - `profile_settings_menu`: added "3. AI Model Management (Local & Cloud)" → launches `model_manager.py`
+  - Main header now shows current local model (e.g. `LOCAL (gemma4:12b-q4_K_M)`) instead of generic `LOCAL (Ollama)`
+  - Version bumped to v4.10.1
+- **GUI (`app.py`):**
+  - Version bumped to v4.10.1 (docstring, sidebar, footer)
+  - Hardware import expanded to include `estimate_size_for_quant`, `VRAM_HEADROOM`
+  - VRAM metric now shows usable headroom (e.g. `24.0 GB` + `16.8GB usable (70%)`)
+  - Save button now persists cloud model selections to `.env`
+- **`core/hardware.py`:**
+  - All VRAM thresholds unified under `VRAM_HEADROOM = 0.70`
+  - `recommend_model()`, `get_all_chat_models_sorted()`, `get_ollama_library_models()`, `get_bitnet_models()` — all use `VRAM_HEADROOM`
+
+### Fixed
+- **`PermissionError` in `api_keys_menu`:** `.env` file write now uses 3-attempt resilient strategy (direct write → chmod + write → atomic tempfile + `os.replace()`), with a graceful fallback error message if the file is read-only on Windows
+
+### Files Changed
+| File | Change |
+|---|---|
+| `talos.py` | v4.10.1, Model Management menu entry, header shows model, PermissionError fix |
+| `app.py` | v4.10.1, quantization dropdown, VRAM badges, cloud model selectors |
+| `core/hardware.py` | `estimate_size_for_quant()`, `QUANT_SIZE_PER_BILLION`, `VRAM_HEADROOM=0.70` |
+| `scripts/model_manager.py` | **New** — 608-line TUI for model management |
+
+
 ## [v4.10.0] - 2026-06-30 - The "Zero-Config & Resilience" Update
 
 This release transforms TALOS into a fully autonomous system running on 100% free, keyless APIs. It adds Tiered API Keys management (GUI + TUI), API Health Check with tqdm progress bar, Smart Ollama Model Selector, PDF Downloader, System Health Check, and numerous UX/UI fixes.
@@ -47,6 +104,8 @@ This release transforms TALOS into a fully autonomous system running on 100% fre
 - API Health Check hanging — tqdm progress bar with real-time tqdm.write()
 - KeyError in CHIRON knowledge_path_generator.py
 - UnicodeDecodeError in subprocess output due to Greek characters
+
+
 
 ## [v4.9.0] - 2026-06-29 - The "Streamlit GUI & Quality" Update
 

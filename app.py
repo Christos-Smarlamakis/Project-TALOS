@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: app.py (Streamlit Web GUI — Complete TALOS CLI Replacement)
-Project: TALOS v4.10.0
+Project: TALOS v4.10.1
 Description:
     Complete Multi-Page Streamlit Web GUI replicating ALL functionality of
     the TALOS CLI. Every script is executed as a real subprocess.
@@ -159,7 +159,7 @@ st.markdown("""<style>
 # ═══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.markdown("""<div style="text-align:center;padding:1rem 0">
-    <h2 style="color:#e94560;margin:0;font-size:1.5rem">🧠 TALOS v4.10.0</h2>
+    <h2 style="color:#e94560;margin:0;font-size:1.5rem">🧠 TALOS v4.10.1</h2>
     <p style="color:#8b949e;font-size:.75rem;margin:.2rem 0 0">Research Intelligence Platform</p></div>""", unsafe_allow_html=True)
     st.markdown("---")
 
@@ -669,7 +669,7 @@ elif page == "🛠️ Database Maintenance":
     mo = st.selectbox("Task", [
         "📊 Statistics & Health", "📝 APOLLO Metadata Enrichment", "📚 Zotero Sync",
         "🧠 Embedding Generator", "🔄 AI Re-evaluation", "🔗 Data Enrichment (Unpaywall)",
-        "📈 Scientometrics Report",
+        "📈 Scientometrics Report", "📥 PDF Downloader (Open Access)",
     ])
     st.markdown("---")
 
@@ -681,6 +681,7 @@ elif page == "🛠️ Database Maintenance":
         "Re-evaluation": ("reevaluate_database.py", "AI Re-evaluation"),
         "Data Enrichment": ("data_enricher.py", "Data Enrichment (Unpaywall)"),
         "Scientometrics": ("trend_analyzer.py", "Scientometrics Report"),
+        "PDF": ("pdf_downloader.py", "PDF Downloader"),
     }
     for kw, (scr, lbl) in MAP.items():
         if kw in mo:
@@ -722,7 +723,8 @@ elif page == "⚙️ Settings":
         
         # ── Tier 1: Free & Keyless ──
         from core.hardware import (
-            detect_vram_gb, get_all_chat_models_sorted, get_embedding_models, pull_model, MODEL_SIZES
+            detect_vram_gb, get_all_chat_models_sorted, get_embedding_models, pull_model,
+            MODEL_SIZES, estimate_size_for_quant, VRAM_HEADROOM, extract_params_b
         )
         vram = detect_vram_gb()
         chat_models = get_all_chat_models_sorted(vram)
@@ -734,8 +736,12 @@ elif page == "⚙️ Settings":
                                    value=os.getenv("MAILTO", st.session_state.config.get("mailto", "")),
                                    placeholder="your@email.com")
         with col_vram:
-            if vram: st.metric("🖥️ GPU VRAM", f"{vram:.1f} GB")
-            else: st.info("GPU not detected")
+            if vram:
+                vram_limit = vram * VRAM_HEADROOM
+                st.metric("🖥️ GPU VRAM", f"{vram:.1f} GB", f"{vram_limit:.1f}GB usable (70%)")
+            else:
+                vram_limit = None
+                st.info("GPU not detected")
         
         # Chat model selector with 3 sections
         st.markdown("#### 🧠 Chat Model")
@@ -747,7 +753,12 @@ elif page == "⚙️ Settings":
         if installed:
             chat_options.append("─── 📥 Installed on this PC ───")
             for m in installed:
-                label = f"   ✅ {m['name']} ({m['size_gb']}GB)"
+                fit_badge = ""
+                if vram_limit and m['size_gb'] <= vram_limit:
+                    fit_badge = " [FITS ✓]"
+                elif vram_limit:
+                    fit_badge = " [TOO BIG ✗]"
+                label = f"   ✅ {m['name']} ({m['size_gb']}GB){fit_badge}"
                 chat_options.append(label)
                 if m["name"] == current_chat:
                     chat_index = len(chat_options) - 1
@@ -756,7 +767,12 @@ elif page == "⚙️ Settings":
         if library:
             chat_options.append("─── 📡 Available via Ollama ───")
             for m in library:
-                chat_options.append(f"   📥 {m['name']} ({m['size_gb']}GB)")
+                fit_badge = ""
+                if vram_limit and m['size_gb'] <= vram_limit:
+                    fit_badge = " [FITS ✓]"
+                elif vram_limit:
+                    fit_badge = " [TOO BIG ✗]"
+                chat_options.append(f"   📥 {m['name']} ({m['size_gb']}GB){fit_badge}")
                 if m["name"] == current_chat: chat_index = len(chat_options) - 1
                 elif not current_chat and not installed and chat_index == 0: chat_index = len(chat_options) - 1
         
@@ -773,6 +789,27 @@ elif page == "⚙️ Settings":
             selected_chat = chat_models[0]["name"] if chat_models else ""
         else:
             selected_chat = selected_chat_label.strip().split(" ")[1]
+        
+        # Quantization selector
+        quant_tag = ""
+        if selected_chat:
+            common_quants = ["q8_0", "q6_K", "q5_K_M", "q4_K_M", "q4_0", "q3_K_M", "q2_K", "q1_0"]
+            quant_options = ["(base / default)"]
+            for q in common_quants:
+                est = estimate_size_for_quant(selected_chat, q)
+                fit_badge = ""
+                if vram_limit and est <= vram_limit:
+                    fit_badge = " [FITS ✓]"
+                elif vram_limit:
+                    fit_badge = " [TOO BIG ✗]"
+                if est and est < 99:
+                    quant_options.append(f"{q} (est. ~{est}GB){fit_badge}")
+                else:
+                    quant_options.append(f"{q}")
+            quant_sel = st.selectbox("Quantization (precision vs VRAM):", quant_options, key="quant_select")
+            if quant_sel and quant_sel != "(base / default)":
+                quant_tag = quant_sel.split(" ")[0]
+                selected_chat = f"{selected_chat}:{quant_tag}" if ":" not in selected_chat                     else selected_chat.split(":")[0] + f":{quant_tag}"
         
         # Embedding model
         st.markdown("#### 🔤 Embedding Model")
@@ -800,6 +837,29 @@ elif page == "⚙️ Settings":
                     with st.spinner(f"Downloading {selected_emb}..."):
                         if pull_model(selected_emb): st.success(f"✅ {selected_emb} installed!"); st.rerun()
                         else: st.error("❌ Download failed.")
+        
+        # ── Cloud Model Configuration ──
+        st.markdown("---")
+        st.subheader("☁️ Cloud Model Configuration")
+        st.caption("Select which cloud models to use when cloud fallback is enabled.")
+        
+        gemini_flash = st.selectbox("Gemini Flash (pre-screening):",
+            ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash-latest"],
+            index=0, key="gemini_flash_select")
+        gemini_pro = st.selectbox("Gemini Pro (deep analysis):",
+            ["gemini-2.5-pro", "gemini-1.5-pro-latest"],
+            index=0, key="gemini_pro_select")
+        
+        deepseek_model = st.selectbox("DeepSeek model:",
+            ["deepseek-chat (general purpose)", "deepseek-reasoner (advanced reasoning)"],
+            index=0, key="deepseek_model_select")
+        deepseek_model = deepseek_model.split(" ")[0]
+        
+        hf_model_name = st.selectbox("HuggingFace model (free tier):",
+            ["Qwen/Qwen2.5-7B-Instruct", "mistralai/Mistral-7B-Instruct-v0.3",
+             "meta-llama/Llama-3.1-8B-Instruct", "microsoft/Phi-3-mini-4k-instruct",
+             "google/gemma-2-2b-it", "mistralai/Mixtral-8x7B-Instruct-v0.1"],
+            index=0, key="hf_model_select")
         
         # ── Premium AI APIs ──
         st.markdown("---")
@@ -843,7 +903,13 @@ elif page == "⚙️ Settings":
         
         if st.button("💾 Save All Configuration", type="primary", key="btn_save_env"):
             try:
-                _save_env("MAILTO", mailto); _save_env("LOCAL_MODEL_NAME", selected_chat); _save_env("LOCAL_EMBEDDING_MODEL", selected_emb)
+                _save_env("MAILTO", mailto)
+                _save_env("LOCAL_MODEL_NAME", selected_chat)
+                _save_env("LOCAL_EMBEDDING_MODEL", selected_emb)
+                _save_env("GEMINI_FLASH_MODEL", gemini_flash)
+                _save_env("GEMINI_PRO_MODEL", gemini_pro)
+                _save_env("DEEPSEEK_MODEL_CHAT", deepseek_model)
+                _save_env("HF_MODEL_NAME", hf_model_name)
                 for k, v in [("GEMINI_API_KEY", gemini), ("DEEPSEEK_API_KEY", deepseek), ("HF_TOKEN", hf_token),
                              ("DISCORD_WEBHOOK_URL", discord), ("SEMANTIC_SCHOLAR_API_KEY", s2),
                              ("SEMANTIC_SCHOLAR_API_KEY_basic", s2_basic), ("IEEE_API_KEY", ieee),
@@ -950,7 +1016,7 @@ elif page == "⚙️ Settings":
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("---")
 st.markdown(f"""<div style="text-align:center;padding:1rem;color:#8b949e;font-size:.85rem">
-<strong>Project TALOS v4.10.0</strong> · © 2026 Christos Smarlamakis ·
+<strong>Project TALOS v4.10.1</strong> · © 2026 Christos Smarlamakis ·
 Provider: {system_info()['prov'].title()} · Profile: <code>{get_active_profile()}</code> ·
 {datetime.now().strftime('%Y-%m-%d %H:%M')}
 </div>""", unsafe_allow_html=True)
