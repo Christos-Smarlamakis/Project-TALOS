@@ -2,6 +2,52 @@
 
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
+## [v4.10.0] - 2026-06-30 - "Zero-Config & Resilience"
+
+Αυτή η έκδοση μετατρέπει τον TALOS σε ένα πλήρως αυτόνομο σύστημα που λειτουργεί με 100% δωρεάν, keyless APIs. Προσθέτει Tiered API Keys management (GUI + TUI), API Health Check με tqdm progress bar, Smart Ollama Model Selector (installed + Ollama library + BitNet 1-bit), PDF Downloader (Unpaywall / OpenAlex), Health Check στο TUI, και πολλές διορθώσεις UX/UI.
+
+### Προσθήκες
+- **Tiered API Keys Management:**
+  - GUI: Ενιαία σελίδα Settings με 3 tabs (API Keys & Models, Profiles & PYTHIA, Diagnostics)
+  - 4 sections: Free & Keyless, Premium AI, Academic APIs, Integrations
+  - TUI: Νέο sub-menu Profile & Settings / API Keys Management με δυνατότητα edit κάθε key
+  - Αποθήκευση μέσω python-dotenv στο αρχείο .env
+- **API Health Check (v1.1):**
+  - 25 API checks με tqdm progress bar σε πραγματικό χρόνο
+  - Κατάσταση: [OK], [FAIL], [FREE], [NONE] χωρίς emoji
+  - Real-time feedback — κανένα "πάγωμα" κατά τον έλεγχο
+- **Smart Ollama Model Selector:**
+  - 3-section dropdown: Installed on this PC | Available via Ollama | BitNet 1-bit (Edge/CPU)
+  - VRAM detection + αυτόματο download μέσω ollama pull
+  - BitNet b1.58 μοντέλα (7 μοντέλα, ~0.2GB ανα 1B παραμέτρους)
+- **PDF Downloader (pdf_downloader.py):**
+  - Unpaywall / OpenAlex keyless fallback
+  - Λήψη PDF στο data/pdfs/ με timeout και retries
+- **System Health Check (test_smoke.py):**
+  - 78 checks (σύνταξη, imports, DB, AI Manager)
+  - Ενσωμάτωση σε GUI και TUI
+- **Docker Updates:**
+  - Dockerfile με streamlit, TALOS_START_MODE
+  - docker-compose.yml με port 8501
+- **Onboarding Wizard (GUI):**
+  - Full-screen wizard για νέους χρήστες (research goal / PYTHIA)
+  - Αυτόματη αντιγραφή config.template.json εάν λείπει το config.json
+
+### Αλλαγές
+- **Sidebar: 8 → 6 σελίδες** (συνένωση Setup + Profile σε Settings)
+- **Settings page:** 3 tabs αντί για 2 ξεχωριστές σελίδες
+- **TUI:** VRAM detection στο header, KeyboardInterrupt graceful handling
+- **example.env:** Πλήρες template με 21 keys σε 5 sections
+- **start_talos.bat:** Interactive launcher με επιλογή CLI/GUI/Dashboard
+- **Scientometrics Report:** Dark mode HTML, Quad-Layer KDE fix, Top Venues chart, Score table
+
+### Διορθώσεις
+- 17 use_container_width deprecation warnings
+- KeyboardInterrupt (Ctrl+C) στο daily_search — επιστροφή στο menu αντί για crash
+- API Health Check "πάγωμα" — tqdm progress bar με real-time feedback
+- KeyError στο CHIRON knowledge_path_generator.py
+- UnicodeDecodeError σε subprocess output λόγω ελληνικών χαρακτήρων
+
 ## [v4.9.0] - 2026-06-29 - Ενημέρωση "Streamlit GUI & Quality"
 
 Αυτή η έκδοση μετατρέπει τον TALOS σε μια **πλήρη Web GUI εφαρμογή** με επαγγελματικό Streamlit interface, διατηρώντας παράλληλα το CLI μενού. Προσθέτει **smoke test suite** για ελέγχους υγείας, αναβαθμίζει την αναφορά επιστημομετρίας με dark mode και Quad-Layer στατιστικά, και διορθώνει σφάλματα που ανακαλύφθηκαν κατά την ενσωμάτωση του GUI.

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: app.py (Streamlit Web GUI — Complete TALOS CLI Replacement)
-Project: TALOS v4.9.0
+Project: TALOS v4.10.0
 Description:
     Complete Multi-Page Streamlit Web GUI replicating ALL functionality of
     the TALOS CLI. Every script is executed as a real subprocess.
@@ -159,7 +159,7 @@ st.markdown("""<style>
 # ═══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.markdown("""<div style="text-align:center;padding:1rem 0">
-    <h2 style="color:#e94560;margin:0;font-size:1.5rem">🧠 TALOS v4.9.0</h2>
+    <h2 style="color:#e94560;margin:0;font-size:1.5rem">🧠 TALOS v4.10.0</h2>
     <p style="color:#8b949e;font-size:.75rem;margin:.2rem 0 0">Research Intelligence Platform</p></div>""", unsafe_allow_html=True)
     st.markdown("---")
 
@@ -169,7 +169,7 @@ with st.sidebar:
         "🧪 Single Paper Evaluation",
         "📊 Analysis & Insights",
         "🛠️ Database Maintenance",
-        "⚙️ Profile & Settings",
+        "⚙️ Settings",
     ], label_visibility="collapsed")
 
     st.markdown("---")
@@ -252,29 +252,29 @@ if page == "🏠 Home & Knowledge Base":
         st.subheader("📋 Knowledge Base — All Papers")
         cf1, cf2, cf3, cf4, cf5, cf6 = st.columns(6)
         with cf1:
-            if st.button("⭐ Core (≥7)", use_container_width=True, key="f_core"):
+            if st.button("⭐ Core (≥7)", width="stretch", key="f_core"):
                 st.session_state._filter = "core"
         with cf2:
-            if st.button("🔴 Strategic ≥7", use_container_width=True, key="f_str"):
+            if st.button("🔴 Strategic ≥7", width="stretch", key="f_str"):
                 st.session_state._filter = "strategic"
         with cf3:
-            if st.button("🟣 Operational ≥7", use_container_width=True, key="f_opr"):
+            if st.button("🟣 Operational ≥7", width="stretch", key="f_opr"):
                 st.session_state._filter = "operational"
         with cf4:
-            if st.button("🔵 Tactical ≥7", use_container_width=True, key="f_tac"):
+            if st.button("🔵 Tactical ≥7", width="stretch", key="f_tac"):
                 st.session_state._filter = "tactical"
         with cf5:
-            if st.button("🟡 Playground ≥7", use_container_width=True, key="f_ply"):
+            if st.button("🟡 Playground ≥7", width="stretch", key="f_ply"):
                 st.session_state._filter = "playground"
         with cf6:
-            if st.button("🗑️ Clear", use_container_width=True, key="f_clr"):
+            if st.button("🗑️ Clear", width="stretch", key="f_clr"):
                 st.session_state._filter = None
 
         sem_col1, sem_col2 = st.columns([3, 1])
         with sem_col1:
             sem_query = st.text_input("🔎 Semantic Search", placeholder="Search by meaning...", key="sem_q")
         with sem_col2:
-            if st.button("🔍 Search", use_container_width=True, key="sem_btn") and sem_query:
+            if st.button("🔍 Search", width="stretch", key="sem_btn") and sem_query:
                 with st.spinner("Searching..."):
                     try:
                         vec = st.session_state.ai.generate_embeddings([sem_query])
@@ -303,7 +303,7 @@ if page == "🏠 Home & Knowledge Base":
                 dc = [c for c in dc if c in df.columns]
                 df2 = df[dc].head(100).copy()
 
-                st.dataframe(df2, use_container_width=True, height=500,
+                st.dataframe(df2, width="stretch", height=500,
                     column_config={
                         "strategic_score": st.column_config.ProgressColumn("🔴 Strategic", format="%d/10", min_value=0, max_value=10),
                         "operational_score": st.column_config.ProgressColumn("🟣 Operational", format="%d/10", min_value=0, max_value=10),
@@ -323,7 +323,7 @@ if page == "🏠 Home & Knowledge Base":
             try:
                 if s.get("by_source"):
                     sd = pd.DataFrame(s["by_source"], columns=["Source","Count"])
-                    st.bar_chart(sd.set_index("Source"), use_container_width=True)
+                    st.bar_chart(sd.set_index("Source"), width="stretch")
             except Exception: pass
         with cr:
             st.subheader("🏥 Database Health")
@@ -331,7 +331,7 @@ if page == "🏠 Home & Knowledge Base":
                 hd = {"With DOIs": s["total_papers"]-s["missing_doi"], "Missing DOIs": s["missing_doi"],
                       "With Embeddings": s["embedded_papers"], "Enriched": s.get("enriched_papers",0),
                       "PDF Links": s.get("pdf_links",0)}
-                st.dataframe(pd.DataFrame(list(hd.items()), columns=["Metric","Count"]), use_container_width=True, hide_index=True)
+                st.dataframe(pd.DataFrame(list(hd.items()), columns=["Metric","Count"]), width="stretch", hide_index=True)
             except Exception: pass
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -416,7 +416,7 @@ elif page == "🧪 Single Paper Evaluation":
                                 key="abs_paste")
         demo_col1, demo_col2 = st.columns([1, 3])
         with demo_col1:
-            if st.button("📋 Load Demo", use_container_width=True, key="demo1"):
+            if st.button("📋 Load Demo", width="stretch", key="demo1"):
                 st.session_state._demo_abs = (
                     "We present a novel framework for multi-agent reinforcement learning for autonomous "
                     "drone swarm operations in urban environments. Our approach combines hierarchical task "
@@ -435,7 +435,7 @@ elif page == "🧪 Single Paper Evaluation":
                                    key="doi_input")
         fetch_col1, fetch_col2 = st.columns([1, 3])
         with fetch_col1:
-            fetch_doi = st.button("🔍 Fetch Paper", type="primary", use_container_width=True, key="btn_fetch_doi")
+            fetch_doi = st.button("🔍 Fetch Paper", type="primary", width="stretch", key="btn_fetch_doi")
         if fetch_doi and doi_input:
             with st.spinner("Fetching paper details..."):
                 # Try database first
@@ -491,7 +491,7 @@ elif page == "🧪 Single Paper Evaluation":
     st.markdown("---")
     
     # Evaluate button
-    if st.button("🔬 Analyze Paper", type="primary", use_container_width=True, key="btn_eval"):
+    if st.button("🔬 Analyze Paper", type="primary", width="stretch", key="btn_eval"):
         if not abstract or len(abstract.strip()) < 50:
             st.error("⚠️ Please provide an abstract (min. 50 characters). Use the Paste, DOI fetch, or DB tabs above.")
         else:
@@ -699,67 +699,258 @@ elif page == "🛠️ Database Maintenance":
                 show_output(kw, scr)
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 6. PROFILE & SETTINGS
+# 6. SETTINGS (Unified: API Keys + Profiles + PYTHIA + Health Check)
 # ═══════════════════════════════════════════════════════════════════════════════
-elif page == "⚙️ Profile & Settings":
-    st.header("⚙️ Profile & Settings")
-    st.subheader("📂 Research Profiles")
-    pd_ = os.path.join(os.path.dirname(__file__), "_profiles")
-    ap = get_active_profile()
-    st.info(f"**Active:** `{ap}`")
-    if os.path.exists(pd_):
-        for p in [d for d in os.listdir(pd_) if os.path.isdir(os.path.join(pd_, d))]:
-            st.markdown(f"- {'🟢' if p == ap else '⚪'} `{p}`")
-    st.caption("💡 Profile management via CLI: `python talos.py` → Profile & Settings.")
-
-    st.markdown("---")
-    st.subheader("🔮 PYTHIA — Research Goal Configuration")
-    st.caption("AI-powered configuration of search queries and evaluation prompts.")
-    if st.button("🔮 Launch PYTHIA", type="primary", key="bp"):
-        with st.spinner("Running PYTHIA..."):
-            rc, out = run("query_translator.py")
-            st.session_state.output["pythia"] = out
-        if rc == 0: st.success("✅ PYTHIA complete!"); reload_config()
-        else: st.warning(f"Completed (code {rc}).")
-        show_output("pythia", "query_translator.py")
-
-    st.markdown("---")
-    st.markdown("---")
-    st.subheader("🩺 System Health Check")
-    st.caption("Runs a quick smoke test to verify syntax, imports, database connectivity, and AI manager.")
-    if st.button("🩺 Run Health Check", type="primary", key="btn_health"):
-        with st.spinner("Running health check..."):
-            rc, out = run("test_smoke.py") if False else (0, "")
-            # Run test_smoke.py directly (not via _gui_runner — it's not questionary-based)
-            exe = sys.executable
-            root = os.path.dirname(os.path.abspath(__file__))
-            test_path = os.path.join(root, "test_smoke.py")
-            env = os.environ.copy()
-            env["PYTHONIOENCODING"] = "utf-8"
-            try:
-                r = subprocess.run([exe, test_path], capture_output=True, text=True, timeout=30, env=env,
-                                   encoding="utf-8", errors="replace")
-                st.session_state.output["health"] = r.stdout + "\n" + r.stderr
-                if r.returncode == 0:
-                    st.success("🎉 All checks passed — Project is healthy!")
-                else:
-                    st.warning(f"Health check completed with issues (code {r.returncode}).")
-            except Exception as e:
-                st.error(f"Health check failed: {e}")
-        show_output("health", "System Health Check")
+elif page == "⚙️ Settings":
+    st.header("⚙️ Settings")
     
-    st.markdown("---")
-    st.subheader("🖥️ System Information")
-    si = system_info()
-    c1, c2, c3 = st.columns(3)
-    c1.metric("OS", si["sys"]); c2.metric("Python", si["py"]); c3.metric("Provider", si["prov"].title())
-    with st.expander("📋 config.json"):
-        st.json(st.session_state.config)
+    tab_api, tab_profile, tab_health = st.tabs(["🔑 API Keys & Models", "📂 Profiles & PYTHIA", "🩺 Diagnostics"])
+    
+    # ── TAB 1: API Keys & Model Selection ──
+    with tab_api:
+        st.subheader("API Keys & Local Models")
+        st.markdown("TALOS works with **100% free, keyless APIs**. Premium keys are strictly optional.")
+        
+        from dotenv import set_key as _set_key
+        env_path = os.path.join(os.path.dirname(__file__), ".env")
+        if not os.path.exists(env_path):
+            open(env_path, "w", encoding="utf-8").close()
+        
+        def _save_env(key, value):
+            _set_key(env_path, key, value.strip())
+            os.environ[key] = value.strip()
+        
+        # ── Tier 1: Free & Keyless ──
+        from core.hardware import (
+            detect_vram_gb, get_all_chat_models_sorted, get_embedding_models, pull_model, MODEL_SIZES
+        )
+        vram = detect_vram_gb()
+        chat_models = get_all_chat_models_sorted(vram)
+        embedding_models = get_embedding_models()
+        
+        col_email, col_vram = st.columns(2)
+        with col_email:
+            mailto = st.text_input("📧 Contact Email", 
+                                   value=os.getenv("MAILTO", st.session_state.config.get("mailto", "")),
+                                   placeholder="your@email.com")
+        with col_vram:
+            if vram: st.metric("🖥️ GPU VRAM", f"{vram:.1f} GB")
+            else: st.info("GPU not detected")
+        
+        # Chat model selector with 3 sections
+        st.markdown("#### 🧠 Chat Model")
+        chat_options = []
+        chat_index = 0
+        current_chat = os.getenv("LOCAL_MODEL_NAME", "")
+        
+        installed = [m for m in chat_models if m.get("installed")]
+        if installed:
+            chat_options.append("─── 📥 Installed on this PC ───")
+            for m in installed:
+                label = f"   ✅ {m['name']} ({m['size_gb']}GB)"
+                chat_options.append(label)
+                if m["name"] == current_chat:
+                    chat_index = len(chat_options) - 1
+        
+        library = [m for m in chat_models if not m.get("installed") and m.get("section") == "library"]
+        if library:
+            chat_options.append("─── 📡 Available via Ollama ───")
+            for m in library:
+                chat_options.append(f"   📥 {m['name']} ({m['size_gb']}GB)")
+                if m["name"] == current_chat: chat_index = len(chat_options) - 1
+                elif not current_chat and not installed and chat_index == 0: chat_index = len(chat_options) - 1
+        
+        bitnet = [m for m in chat_models if m.get("section") == "bitnet"]
+        if bitnet:
+            chat_options.append("─── ⚡ BitNet 1-bit (Edge/CPU) ───")
+            for m in bitnet:
+                desc = m.get("description", "")
+                chat_options.append(f"   📥 {m['name']} ({m['size_gb']}GB)" + (f" — {desc}" if desc else ""))
+        
+        selected_chat_label = st.selectbox("Select chat model:", chat_options, index=chat_index if chat_options else 0, key="chat_model_select")
+        if selected_chat_label.startswith("───"):
+            st.warning("Please select an actual model, not a section header.")
+            selected_chat = chat_models[0]["name"] if chat_models else ""
+        else:
+            selected_chat = selected_chat_label.strip().split(" ")[1]
+        
+        # Embedding model
+        st.markdown("#### 🔤 Embedding Model")
+        emb_options, emb_index = [], 0
+        current_emb = os.getenv("LOCAL_EMBEDDING_MODEL", "nomic-embed-text")
+        for i, m in enumerate(embedding_models):
+            badge = "✅" if m["installed"] else "📥"
+            emb_options.append(f"{badge} {m['name']} ({m['size_gb']}GB)")
+            if m["name"] == current_emb: emb_index = i
+        selected_emb_label = st.selectbox("Select embedding model:", emb_options, index=emb_index, key="emb_model_select")
+        selected_emb = selected_emb_label.split(" ")[1]
+        
+        col_refresh, col_pull_chat, col_pull_emb = st.columns(3)
+        with col_refresh:
+            if st.button("🔄 Refresh", width="stretch", key="btn_refresh_models"): st.rerun()
+        with col_pull_chat:
+            if not any(m["installed"] for m in chat_models if m["name"] == selected_chat):
+                if st.button(f"📥 Download {selected_chat}", width="stretch", key="btn_pull_chat"):
+                    with st.spinner(f"Downloading {selected_chat}..."):
+                        if pull_model(selected_chat): st.success(f"✅ {selected_chat} installed!"); st.rerun()
+                        else: st.error("❌ Download failed.")
+        with col_pull_emb:
+            if not any(m["installed"] for m in embedding_models if m["name"] == selected_emb):
+                if st.button(f"📥 Download {selected_emb}", width="stretch", key="btn_pull_emb"):
+                    with st.spinner(f"Downloading {selected_emb}..."):
+                        if pull_model(selected_emb): st.success(f"✅ {selected_emb} installed!"); st.rerun()
+                        else: st.error("❌ Download failed.")
+        
+        # ── Premium AI APIs ──
+        st.markdown("---")
+        st.subheader("🔵 Premium AI APIs (Optional)")
+        st.caption("Add these to unlock cloud AI providers.")
+        col1, col2 = st.columns(2)
+        with col1:
+            gemini = st.text_input("🔑 GEMINI_API_KEY", value=os.getenv("GEMINI_API_KEY", ""), type="password")
+            deepseek = st.text_input("🔑 DEEPSEEK_API_KEY", value=os.getenv("DEEPSEEK_API_KEY", ""), type="password")
+        with col2:
+            hf_token = st.text_input("🔑 HF_TOKEN (HuggingFace)", value=os.getenv("HF_TOKEN", ""), type="password")
+            discord = st.text_input("🔗 DISCORD_WEBHOOK_URL", value=os.getenv("DISCORD_WEBHOOK_URL", ""), type="password")
+        
+        # ── Academic APIs ──
+        st.markdown("---")
+        st.subheader("📚 Academic APIs (Optional)")
+        st.caption("Unlock additional research sources. All keyless sources work without these.")
+        col1, col2 = st.columns(2)
+        with col1:
+            s2 = st.text_input("🔑 SEMANTIC_SCHOLAR_API_KEY", value=os.getenv("SEMANTIC_SCHOLAR_API_KEY", ""), type="password")
+            s2_basic = st.text_input("🔑 S2 Basic Key", value=os.getenv("SEMANTIC_SCHOLAR_API_KEY_basic", ""), type="password")
+            ieee = st.text_input("🔑 IEEE_API_KEY", value=os.getenv("IEEE_API_KEY", ""), type="password")
+            springer = st.text_input("🔑 SPRINGER_API_KEY", value=os.getenv("SPRINGER_API_KEY", ""), type="password")
+        with col2:
+            elsevier = st.text_input("🔑 ELSEVIER_API_KEY", value=os.getenv("ELSEVIER_API_KEY", ""), type="password")
+            elsevier_inst = st.text_input("🔑 ELSEVIER_INST_TOKEN", value=os.getenv("ELSEVIER_INST_TOKEN", ""), type="password")
+            core = st.text_input("🔑 CORE_API_KEY", value=os.getenv("CORE_API_KEY", ""), type="password")
+            openarchives = st.text_input("🔑 OPENARCHIVES_API_KEY", value=os.getenv("OPENARCHIVES_API_KEY", ""), type="password")
+        
+        # ── Integrations ──
+        st.markdown("---")
+        st.subheader("🔗 Integrations (Optional)")
+        st.caption("Connect TALOS with external services.")
+        col1, col2 = st.columns(2)
+        with col1:
+            zotero_id = st.text_input("📚 ZOTERO_USER_ID", value=os.getenv("ZOTERO_USER_ID", ""))
+            zotero_key = st.text_input("📚 ZOTERO_API_KEY", value=os.getenv("ZOTERO_API_KEY", ""), type="password")
+        with col2:
+            orcid_id = st.text_input("🎓 ORCID_CLIENT_ID", value=os.getenv("ORCID_CLIENT_ID", ""))
+            orcid_secret = st.text_input("🎓 ORCID_CLIENT_SECRET", value=os.getenv("ORCID_CLIENT_SECRET", ""), type="password")
+        
+        if st.button("💾 Save All Configuration", type="primary", key="btn_save_env"):
+            try:
+                _save_env("MAILTO", mailto); _save_env("LOCAL_MODEL_NAME", selected_chat); _save_env("LOCAL_EMBEDDING_MODEL", selected_emb)
+                for k, v in [("GEMINI_API_KEY", gemini), ("DEEPSEEK_API_KEY", deepseek), ("HF_TOKEN", hf_token),
+                             ("DISCORD_WEBHOOK_URL", discord), ("SEMANTIC_SCHOLAR_API_KEY", s2),
+                             ("SEMANTIC_SCHOLAR_API_KEY_basic", s2_basic), ("IEEE_API_KEY", ieee),
+                             ("ELSEVIER_API_KEY", elsevier), ("ELSEVIER_INST_TOKEN", elsevier_inst),
+                             ("SPRINGER_API_KEY", springer), ("CORE_API_KEY", core),
+                             ("OPENARCHIVES_API_KEY", openarchives), ("ZOTERO_USER_ID", zotero_id),
+                             ("ZOTERO_API_KEY", zotero_key), ("ORCID_CLIENT_ID", orcid_id),
+                             ("ORCID_CLIENT_SECRET", orcid_secret)]:
+                    if v: _save_env(k, v)
+                st.success("✅ All configuration saved to .env!")
+            except Exception as e: st.error(str(e))
+    
+    # ── TAB 2: Profiles & PYTHIA ──
+    with tab_profile:
+        st.subheader("📂 Research Profiles")
+        pd_ = os.path.join(os.path.dirname(__file__), "_profiles")
+        ap = get_active_profile()
+        st.info(f"**Active Profile:** `{ap}`")
+        if os.path.exists(pd_):
+            for p in [d for d in os.listdir(pd_) if os.path.isdir(os.path.join(pd_, d))]:
+                st.markdown(f"- {'🟢' if p == ap else '⚪'} `{p}`")
+        st.caption("💡 Profile management via CLI: `python talos.py` → Profile & Settings.")
+        
+        st.markdown("---")
+        st.subheader("🔮 PYTHIA — Research Goal Configuration")
+        st.caption("AI-powered configuration of search queries and evaluation prompts.")
+        
+        col_pythia1, col_pythia2 = st.columns([3, 1])
+        with col_pythia1:
+            research_goal = st.text_area("Describe your research goal:", 
+                                          placeholder="e.g. 'I want to study autonomous drone swarm intelligence using multi-agent reinforcement learning and graph neural networks...'",
+                                          height=80, key="settings_goal")
+        with col_pythia2:
+            st.write("")
+            if st.button("🔮 Configure with PYTHIA", type="primary", width="stretch", key="btn_pythia"):
+                if not research_goal.strip() or len(research_goal.strip()) < 20:
+                    st.error("Please describe your research goal (min. 20 characters).")
+                else:
+                    with st.spinner("PYTHIA is optimizing your configuration..."):
+                        rc, out = run("query_translator.py", stdin_text=research_goal + "\n")
+                        st.session_state.output["pythia_settings"] = out
+                    if rc == 0: 
+                        st.success("✅ PYTHIA configuration complete!")
+                        reload_config()
+                    else: st.warning(f"Completed (code {rc}).")
+                    show_output("pythia_settings", "PYTHIA Configuration")
+        
+        st.markdown("---")
+        st.subheader("📊 Current Configuration Summary")
+        cfg = st.session_state.config
+        queries_count = sum(1 for k in cfg if k.endswith("_query"))
+        st.markdown(f"- 📋 **{queries_count}** search queries configured")
+        st.markdown(f"- 🧠 PhD focus prompt: **{'✅ Customized' if cfg.get('phd_focus_system_prompt', '').find('artificial intelligence') == -1 else '⚠️ Generic (not yet optimized)'}**")
+        st.markdown(f"- 🖥️ Provider priority: `{' → '.join(cfg.get('ai_provider_priority', ['gemini']))}`")
+    
+    # ── TAB 3: Diagnostics ──
+    with tab_health:
+        st.subheader("🩺 System Diagnostics")
+        
+        if st.button("🩺 Run API Health Check", type="primary", key="btn_api_diag"):
+            with st.spinner("Testing all APIs..."):
+                try:
+                    from scripts.api_health_check import run_diagnostics
+                    results = run_diagnostics()
+                    st.session_state._api_results = results
+                    st.success("✅ Diagnostics complete!")
+                except Exception as e: st.error(str(e))
+        
+        if "_api_results" in st.session_state:
+            results = st.session_state._api_results
+            for item in results:
+                if isinstance(item, dict) and "category" in item:
+                    st.markdown(f"**{item['category']}**")
+                elif isinstance(item, tuple):
+                    name, status, detail = item
+                    if status == "available": st.success(f"✅ **{name}**: {detail}")
+                    elif status == "keyless": st.info(f"🟢 **{name}**: {detail}")
+                    elif status == "missing_key": st.warning(f"🟡 **{name}**: {detail}")
+                    elif status == "invalid_key": st.error(f"🔴 **{name}**: {detail}")
+                    else: st.warning(f"⚠️ **{name}**: {detail}")
+        
+        st.markdown("---")
+        st.subheader("🩺 System Health Check")
+        if st.button("🩺 Run Smoke Test", key="btn_health"):
+            with st.spinner("Running health check..."):
+                exe = sys.executable
+                test_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_smoke.py")
+                env = os.environ.copy()
+                env["PYTHONIOENCODING"] = "utf-8"
+                try:
+                    r = subprocess.run([exe, test_path], capture_output=True, text=True, timeout=30, env=env, encoding="utf-8", errors="replace")
+                    st.session_state.output["health"] = r.stdout + "\n" + r.stderr
+                    if r.returncode == 0: st.success("🎉 All checks passed — Project is healthy!")
+                    else: st.warning(f"Issues found (code {r.returncode}).")
+                except Exception as e: st.error(str(e))
+            show_output("health", "System Health Check")
+        
+        st.markdown("---")
+        st.subheader("🖥️ System Information")
+        si = system_info()
+        c1, c2, c3 = st.columns(3)
+        c1.metric("OS", si["sys"]); c2.metric("Python", si["py"]); c3.metric("Provider", si["prov"].title())
 
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("---")
 st.markdown(f"""<div style="text-align:center;padding:1rem;color:#8b949e;font-size:.85rem">
-<strong>Project TALOS v4.9.0</strong> · © 2026 Christos Smarlamakis ·
+<strong>Project TALOS v4.10.0</strong> · © 2026 Christos Smarlamakis ·
 Provider: {system_info()['prov'].title()} · Profile: <code>{get_active_profile()}</code> ·
 {datetime.now().strftime('%Y-%m-%d %H:%M')}
 </div>""", unsafe_allow_html=True)

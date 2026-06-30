@@ -9,8 +9,8 @@
 #
 #  For commercial licensing, please contact the author.
 """
-Module: talos.py (v4.9.0 - The Streamlit GUI Update)
-Project: TALOS v4.9.0
+Module: talos.py (v4.10.0 - The Zero-Config & Resilience Update)
+Project: TALOS v4.10.0
 
 Description:
     The central entry point and interactive CLI for Project TALOS.
@@ -119,6 +119,9 @@ def run_script(script_name: str, python_exe: str, args: list = None, capture: bo
                 else:
                     raise e
 
+    except KeyboardInterrupt:
+        print(f"\n\n--- '{script_name}' cancelled by user. Returning to menu... ---")
+        return False
     except (subprocess.CalledProcessError, FileNotFoundError, Exception) as e:
         print(f"\n--- Error running '{script_name}': {e} ---")
         return None
@@ -257,14 +260,191 @@ def maintenance_menu(python_exe: str):
             print("test_smoke.py not found.")
 
 
+def api_keys_menu(python_exe: str):
+    """Sub-menu for viewing and editing API keys in the .env file.
+
+    Displays all configured keys with masked values and [SET]/[NOT SET] status.
+    Allows interactive editing of individual keys using dotenv.
+
+    Args:
+        python_exe (str): Path to the Python executable.
+    """
+    from dotenv import set_key as _set_key, dotenv_values
+
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    env_path = os.path.join(project_root, '.env')
+
+    # Ensure .env exists
+    if not os.path.exists(env_path):
+        example_path = os.path.join(project_root, 'example.env')
+        if os.path.exists(example_path):
+            import shutil
+            shutil.copy(example_path, env_path)
+        else:
+            open(env_path, 'w').close()
+
+    # Define all known keys with categories
+    ALL_KEYS = [
+        ("Contact", [("MAILTO", "Contact Email (for polite API pools)")]),
+        ("Premium AI", [
+            ("GEMINI_API_KEY", "Google Gemini API Key"),
+            ("DEEPSEEK_API_KEY", "DeepSeek API Key"),
+            ("HF_TOKEN", "Hugging Face Token"),
+        ]),
+        ("Academic APIs", [
+            ("SEMANTIC_SCHOLAR_API_KEY", "Semantic Scholar API Key"),
+            ("SEMANTIC_SCHOLAR_API_KEY_basic", "Semantic Scholar Basic Key"),
+            ("IEEE_API_KEY", "IEEE Xplore API Key"),
+            ("ELSEVIER_API_KEY", "Elsevier Scopus API Key"),
+            ("ELSEVIER_INST_TOKEN", "Elsevier Institutional Token"),
+            ("SPRINGER_API_KEY", "Springer Nature API Key"),
+            ("CORE_API_KEY", "CORE API Key"),
+            ("OPENARCHIVES_API_KEY", "OpenArchives.gr API Key"),
+        ]),
+        ("Integrations", [
+            ("DISCORD_WEBHOOK_URL", "Discord Webhook URL"),
+            ("ZOTERO_USER_ID", "Zotero User ID"),
+            ("ZOTERO_API_KEY", "Zotero API Key"),
+            ("ORCID_CLIENT_ID", "ORCID Client ID"),
+            ("ORCID_CLIENT_SECRET", "ORCID Client Secret"),
+        ]),
+        ("Local Models", [
+            ("LOCAL_MODEL_NAME", "Ollama Chat Model"),
+            ("LOCAL_EMBEDDING_MODEL", "Ollama Embedding Model"),
+        ]),
+    ]
+
+    while True:
+        os.system('cls' if os.name == 'nt' else 'clear')
+        print("\n" + "=" * 62)
+        print("  API Keys Management")
+        print("=" * 62)
+
+        values = dotenv_values(env_path)
+
+        for category, keys in ALL_KEYS:
+            print(f"\n  [{category}]")
+            for key, desc in keys:
+                val = values.get(key, "")
+                status = "[SET]" if val.strip() else "[NOT SET]"
+                masked = val[:4] + "****" if len(val) > 4 else val
+                print(f"    {key:<28} | {status:<8} | {desc}")
+
+        print("\n" + "-" * 62)
+        print("  [1] Edit a key")
+        print("  [2] Run API Diagnostics")
+        print("  [3] Back")
+
+        choice = safe_select(
+            "Select action:",
+            choices=["1. Edit a key", "2. Run API Diagnostics", "3. Back"]
+        )
+        if choice is None or choice.startswith("3"):
+            return
+
+        if choice.startswith("1"):
+            # Build a flat list of choices
+            flat = []
+            for cat, keys in ALL_KEYS:
+                flat.append(f"--- {cat} ---")
+                for key, desc in keys:
+                    val = values.get(key, "")
+                    status = "[SET]" if val.strip() else "[NOT SET]"
+                    flat.append(f"{key}  {status}")
+            flat.append("Cancel")
+
+            selected = safe_select("Select key to edit:", choices=flat)
+            if selected and not selected.startswith("---") and selected != "Cancel":
+                key_to_edit = selected.split()[0]
+                current_val = values.get(key_to_edit, "")
+                print(f"\nEditing: {key_to_edit}")
+                print(f"Current value: {current_val[:4] + '****' if len(current_val) > 4 else current_val}")
+                new_val = questionary.text("New value (leave empty to clear):", default=current_val).ask()
+                if new_val is not None:
+                    # Update using dotenv
+                    vals = dotenv_values(env_path)
+                    vals[key_to_edit] = new_val.strip()
+                    # Rewrite the env file
+                    env_lines = []
+                    read_vals = dotenv_values(env_path)
+                    read_vals[key_to_edit] = new_val.strip()
+                    # Read original file to preserve comments
+                    if os.path.exists(env_path):
+                        with open(env_path, 'r', encoding='utf-8') as f:
+                            original_lines = f.readlines()
+                    else:
+                        original_lines = []
+                    # Check if key already exists in file
+                    found = False
+                    new_lines = []
+                    for line in original_lines:
+                        if line.strip().startswith(key_to_edit + " ") or line.strip().startswith(key_to_edit + "="):
+                            new_lines.append(f"{key_to_edit} = \"{new_val.strip()}\"\n")
+                            found = True
+                        else:
+                            new_lines.append(line)
+                    if not found:
+                        new_lines.append(f"\n{key_to_edit} = \"{new_val.strip()}\"\n")
+                    with open(env_path, 'w', encoding='utf-8') as f:
+                        f.writelines(new_lines)
+                    os.environ[key_to_edit] = new_val.strip()
+                    print(f"\n  [{key_to_edit}] updated.")
+
+        elif choice.startswith("2"):
+            print("\nRunning API Diagnostics...\n")
+            test_path = os.path.join(project_root, 'scripts', 'api_health_check.py')
+            if os.path.exists(test_path):
+                result = subprocess.run([python_exe, test_path], check=False, env=os.environ.copy())
+                if result.returncode == 0:
+                    print("\n  All checks passed.")
+                else:
+                    print(f"\n  Health check completed with code {result.returncode}.")
+            else:
+                print("  api_health_check.py not found.")
+        
+        input("\nPress Enter to continue...")
+
+
 def profile_settings_menu(python_exe: str):
     """Sub-menu for profile management and research goal configuration.
 
     Args:
         python_exe (str): Path to the Python executable.
     """
-    os.system('cls' if os.name == 'nt' else 'clear')
-    run_script("profile_manager.py", python_exe)
+    while True:
+        os.system('cls' if os.name == 'nt' else 'clear')
+        choice = safe_select(
+            "Profile & Settings:",
+            choices=[
+                "1. Manage Profiles (Switch/Create)",
+                "2. Configure Research Goal (PYTHIA)",
+                "3. API Keys Management",
+                "4. API Diagnostics",
+                questionary.Separator(),
+                "Back to Main Menu"
+            ]
+        )
+        if choice is None or choice.startswith("Back"):
+            return
+        if choice.startswith("1"):
+            run_script("profile_manager.py", python_exe)
+        elif choice.startswith("2"):
+            run_script("query_translator.py", python_exe)
+        elif choice.startswith("3"):
+            api_keys_menu(python_exe)
+        elif choice.startswith("4"):
+            print("\nRunning API Diagnostics...\n")
+            project_root = os.path.dirname(os.path.abspath(__file__))
+            test_path = os.path.join(project_root, 'scripts', 'api_health_check.py')
+            if os.path.exists(test_path):
+                result = subprocess.run([python_exe, test_path], check=False, env=os.environ.copy())
+                if result.returncode == 0:
+                    print("\n  All checks passed.")
+                else:
+                    print(f"\n  Completed with code {result.returncode}.")
+            else:
+                print("  api_health_check.py not found.")
+            input("\nPress Enter to continue...")
 
 
 def _verify_local_models():
@@ -355,13 +535,21 @@ def main_menu():
         active_profile = get_active_profile_name()
 
         # --- Build dynamic header with DB stats ---
-        header = f"TALOS v4.9.0 | Profile: [{active_profile}]"
+        header = f"TALOS v4.10.0 | Profile: [{active_profile}]"
         try:
             from core.database_manager import DatabaseManager
             db = DatabaseManager()
             stats = db.get_database_statistics()
             provider = "LOCAL (Ollama)" if USE_LOCAL_MODEL else "CLOUD (Gemini+DeepSeek)"
-            header = f"TALOS v4.9.0 | Profile: [{active_profile}] | {stats['total_papers']} papers | {stats['elite_papers']} elite | {provider}"
+            vram_str = ""
+            try:
+                from core.hardware import detect_vram_gb
+                vram = detect_vram_gb()
+                if vram:
+                    vram_str = f" | VRAM: {vram:.0f}GB"
+            except Exception:
+                pass
+            header = f"TALOS v4.10.0 | Profile: [{active_profile}] | {stats['total_papers']} papers | {stats['elite_papers']} elite | {provider}{vram_str}"
         except Exception:
             pass
 

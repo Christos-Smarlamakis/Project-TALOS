@@ -1,5 +1,5 @@
 
-# Project TALOS (v4.9.0)
+# Project TALOS (v4.10.0)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Τακτικό Πρακτορικό Σύστημα Ενορχήστρωσης Βιβλιογραφίας)*
@@ -78,7 +78,7 @@ python talos.py
 This software is part of ongoing PhD research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v4.9.0, June 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v4.10.0, June 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -87,7 +87,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-   version = {v4.9.0},
+   version = {v4.10.0},
   year = {2026}
 }
 ```
@@ -109,7 +109,7 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 
 # ΕΛΛΗΝΙΚΗ ΕΚΔΟΣΗ
 
-# Project TALOS (v4.9.0)
+# Project TALOS (v4.10.0)
 ### **Tactical Agentic Literature Orchestration System**
 
 > **Μια Αυτόνομη Πλατφόρμα Ερευνητικής Νοημοσύνης για την Εποχή του AI.**
@@ -150,7 +150,7 @@ python talos.py
 Εάν χρησιμοποιήσετε το TALOS στην έρευνά σας, παρακαλούμε να το αναφέρετε ως εξής:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v4.9.0, June 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v4.10.0, June 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -159,7 +159,7 @@ python talos.py
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v4.9.0},
+  version = {v4.10.0},
   year = {2026}
 }
 ```

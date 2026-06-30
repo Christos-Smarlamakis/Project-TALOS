@@ -91,3 +91,246 @@ def estimate_size(model_name):
     tag = model_name.split(":")[1] if ":" in model_name else ""
     key = f"{base}:{tag}" if tag else base
     return MODEL_SIZES.get(key, 99)
+
+
+def get_installed_models():
+    """Query Ollama API for locally installed models.
+
+    Returns:
+        list of str: Names of installed models (e.g., ['gemma3:12b', 'nomic-embed-text']).
+        Returns empty list if Ollama is not reachable.
+    """
+    import requests
+    try:
+        resp = requests.get("http://localhost:11434/api/tags", timeout=5)
+        if resp.status_code == 200:
+            return [m['name'] for m in resp.json().get('models', [])]
+    except Exception:
+        pass
+    return []
+
+
+def get_all_chat_models_sorted(vram_gb=None):
+    """Get all chat models sorted by VRAM fit.
+    
+    Returns list of dicts: {name, size_gb, fits, installed, recommended}
+    Excludes embedding models (nomic-embed-text).
+    
+    Args:
+        vram_gb (float, optional): Available VRAM. If None, auto-detects.
+    """
+    if vram_gb is None:
+        vram_gb = detect_vram_gb() or 99
+    installed = get_installed_models()
+    recommended_name = RECOMMENDED.get(0, "qwen2.5:0.5b")
+    if vram_gb and vram_gb < 99:
+        for tier, model in sorted(RECOMMENDED.items(), reverse=True):
+            if vram_gb >= tier:
+                recommended_name = model
+                break
+    
+    models = []
+    for name, size in MODEL_SIZES.items():
+        # Skip embedding models
+        if "embed" in name.lower():
+            continue
+        fits = size <= vram_gb * 0.85 if vram_gb else True
+        models.append({
+            "name": name,
+            "size_gb": size,
+            "fits": fits,
+            "installed": name in installed,
+            "recommended": name == recommended_name,
+        })
+    
+    # Sort: recommended first, then by size ascending (smaller = more likely to fit)
+    models.sort(key=lambda m: (not m["recommended"], m["size_gb"]))
+    return models
+
+
+def get_embedding_models():
+    """Get available embedding models.
+    
+    Returns list of dicts: {name, size_gb, installed}
+    """
+    installed = get_installed_models()
+    embedding_models = []
+    for name, size in MODEL_SIZES.items():
+        if "embed" in name.lower():
+            embedding_models.append({
+                "name": name,
+                "size_gb": size,
+                "installed": name in installed,
+            })
+    return embedding_models if embedding_models else [{"name": "nomic-embed-text", "size_gb": 0.3, "installed": "nomic-embed-text" in installed}]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 1-BIT QUANTIZED MODELS (BitNet b1.58) — ~0.2 GB per 1B parameters
+# These are GGUF models from Hugging Face that can be imported into Ollama.
+# ═══════════════════════════════════════════════════════════════════════════════
+BITNET_MODELS = [
+    {"name": "BitNet-b1.58-3B", "size_gb": 0.6, "hf_repo": "1bitLLM/BitNet-b1.58-3B-GGUF", "description": "3B params, 1.58-bit"},
+    {"name": "BitNet-b1.58-7B", "size_gb": 1.5, "hf_repo": "1bitLLM/BitNet-b1.58-7B-GGUF", "description": "7B params, 1.58-bit"},
+    {"name": "BitNet-b1.58-13B", "size_gb": 2.5, "hf_repo": "1bitLLM/BitNet-b1.58-13B-GGUF", "description": "13B params, 1.58-bit"},
+    {"name": "BitLlama-1.58-3B", "size_gb": 0.6, "hf_repo": "hf-llm-bitnet/bitllama-3b-1.58-GGUF", "description": "Llama-3B, 1.58-bit"},
+    {"name": "BitLlama-1.58-8B", "size_gb": 1.6, "hf_repo": "hf-llm-bitnet/bitllama-8b-1.58-GGUF", "description": "Llama-8B, 1.58-bit"},
+    {"name": "TriLite-1.58B", "size_gb": 0.35, "hf_repo": "microsoft/TriLite-GGUF", "description": "1.58B params, ternary"},
+    {"name": "BitDelta-1.58-7B", "size_gb": 1.5, "hf_repo": "microsoft/BitDelta-GGUF", "description": "7B delta, 1-bit"},
+]
+
+# Well-known Ollama library models (fetched dynamically as fallback)
+OLLAMA_LIBRARY_FALLBACK = {
+    "llama3.2:3b": 2, "llama3.2:1b": 0.8, "llama3.1:8b": 5, "llama3.1:70b": 43,
+    "gemma3:12b": 8, "gemma3:4b": 3, "gemma2:9b": 6, "gemma2:2b": 1.5,
+    "mistral:7b": 4.5, "mixtral:8x7b": 26, "qwen2.5:14b": 10, "qwen2.5:7b": 5,
+    "qwen2.5:3b": 2, "qwen2.5:0.5b": 0.4, "phi4:14b": 10, "phi3:3.8b": 2.5,
+    "command-r:35b": 22, "deepseek-r1:7b": 4.5, "deepseek-r1:14b": 9,
+    "deepseek-coder-v2:16b": 10, "codellama:7b": 4, "codellama:13b": 8,
+    "nomic-embed-text": 0.3, "mxbai-embed-large": 0.7,
+}
+
+
+def get_ollama_library_models(vram_gb=None):
+    """
+    Fetch popular models from Ollama library (dynamically from internet).
+    Falls back to hardcoded OLLAMA_LIBRARY_FALLBACK if API unreachable.
+    
+    Returns list of dicts: {name, size_gb, fits}
+    """
+    import requests
+    if vram_gb is None:
+        vram_gb = detect_vram_gb() or 99
+    
+    models = []
+    
+    # Try fetching from Ollama API
+    try:
+        resp = requests.get("https://ollama.com/api/tags", timeout=8)
+        if resp.status_code == 200:
+            data = resp.json()
+            for m in data.get("models", [])[:60]:
+                name = m.get("name", "")
+                # Estimate size from parameter count in name (e.g., "7b" ≈ 4GB at 4-bit)
+                size = MODEL_SIZES.get(name, 99)
+                if size == 99:
+                    # Try to estimate from name
+                    for param_str in ["70b", "35b", "14b", "12b", "8b", "7b", "3b", "2b", "1b", "0.5b"]:
+                        if param_str in name.lower():
+                            params = float(param_str.replace("b", ""))
+                            size = params * 0.7
+                            break
+                if size <= vram_gb * 0.85:
+                    models.append({"name": name, "size_gb": round(size, 1), "fits": True})
+    except Exception:
+        pass
+    
+    # Fallback: use hardcoded library if API failed or returned few results
+    if len(models) < 5:
+        for name, size in OLLAMA_LIBRARY_FALLBACK.items():
+            if "embed" in name.lower():
+                continue
+            if name not in [m["name"] for m in models]:
+                fits = size <= vram_gb * 0.85 if vram_gb else True
+                models.append({"name": name, "size_gb": size, "fits": fits})
+    
+    return models
+
+
+def get_bitnet_models(vram_gb=None):
+    """
+    Get 1-bit quantized models suitable for edge devices.
+    These models use ~0.2 GB per 1B parameters (1.58-bit quantization).
+    
+    Returns list of dicts: {name, size_gb, fits, hf_repo, description}
+    """
+    if vram_gb is None:
+        vram_gb = detect_vram_gb() or 99
+    
+    models = []
+    for m in BITNET_MODELS:
+        fits = m["size_gb"] <= vram_gb * 0.85 if vram_gb else True
+        models.append({
+            "name": m["name"],
+            "size_gb": m["size_gb"],
+            "fits": fits,
+            "hf_repo": m["hf_repo"],
+            "description": m["description"],
+            "section": "bitnet",
+        })
+    return models
+
+
+def get_all_chat_models_sorted(vram_gb=None):
+    """Get all chat models sorted by VRAM fit, organized in 3 sections:
+    1. Currently installed (via Ollama)
+    2. Ollama library (available from internet)
+    3. BitNet 1-bit quantized models (for edge devices)
+    
+    Returns list of dicts: {name, size_gb, fits, installed, recommended, section}
+    """
+    if vram_gb is None:
+        vram_gb = detect_vram_gb() or 99
+    installed = get_installed_models()
+    recommended_name = RECOMMENDED.get(0, "qwen2.5:0.5b")
+    if vram_gb and vram_gb < 99:
+        for tier, model in sorted(RECOMMENDED.items(), reverse=True):
+            if vram_gb >= tier:
+                recommended_name = model
+                break
+    
+    # Global model list
+    models = []
+    
+    # ── Section 1: Installed models ──
+    for name in installed:
+        if "embed" in name.lower():
+            continue
+        size = MODEL_SIZES.get(name, estimate_size(name))
+        fits = size <= vram_gb * 0.85 if vram_gb else True
+        models.append({
+            "name": name, "size_gb": size, "fits": fits,
+            "installed": True, "recommended": name == recommended_name,
+            "section": "installed",
+        })
+    
+    # ── Section 2: Ollama library (not installed) ──
+    library = get_ollama_library_models(vram_gb)
+    for m in library:
+        if m["name"] in [x["name"] for x in models]:
+            continue
+        size = m["size_gb"]
+        if size > vram_gb * 0.85:
+            continue
+        models.append({
+            "name": m["name"], "size_gb": size, "fits": True,
+            "installed": False, "recommended": False,
+            "section": "library",
+        })
+    
+    # ── Section 3: BitNet 1-bit models ──
+    bitnet = get_bitnet_models(vram_gb)
+    for m in bitnet:
+        if m["name"] in [x["name"] for x in models]:
+            continue
+        models.append({
+            "name": m["name"], "size_gb": m["size_gb"], "fits": m["fits"],
+            "installed": False, "recommended": False,
+            "section": "bitnet", "hf_repo": m.get("hf_repo"),
+            "description": m.get("description", ""),
+        })
+    
+    # Sort: installed first, then library, then bitnet. Within each, by size ascending
+    section_order = {"installed": 0, "library": 1, "bitnet": 2}
+    models.sort(key=lambda m: (section_order.get(m.get("section", "library"), 99), m["size_gb"]))
+    return models
+
+
+def pull_model(model_name):
+    """Pull a model via Ollama CLI. Returns True on success."""
+    import subprocess as sp
+    try:
+        r = sp.run(["ollama", "pull", model_name], capture_output=True, text=True, timeout=600)
+        return r.returncode == 0
+    except Exception:
+        return False
