@@ -1,0 +1,3482 @@
+{
+  "generated_at": "2026-07-02T00:30:25.570446",
+  "project_version": "v4.11.0",
+  "stats": {
+    "nodes": 102,
+    "edges": 318,
+    "layers": {
+      "entry": 2,
+      "core": 3,
+      "script": 24,
+      "source": 14,
+      "external": 8,
+      "config": 5,
+      "stdlib": 26,
+      "thirdparty": 20
+    }
+  },
+  "elements": [
+    {
+      "group": "nodes",
+      "data": {
+        "id": "talos.py",
+        "label": "talos.py",
+        "layer": "entry",
+        "desc": "CLI Entry Point — Interactive menu, subprocess orchestrator"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "app.py",
+        "label": "app.py",
+        "layer": "entry",
+        "desc": "Streamlit Web GUI — Full CLI replacement, semantic search"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "ai_manager.py",
+        "label": "ai_manager.py",
+        "layer": "core",
+        "desc": "AIManager — Multi-provider LLM (Gemini, DeepSeek, HF, Ollama) with circuit breaker"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "hardware.py",
+        "label": "hardware.py",
+        "layer": "core",
+        "desc": "GPU detection — nvidia-smi, 30+ quantization formats, model recommendations"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "database_manager.py",
+        "label": "database_manager.py",
+        "layer": "core",
+        "desc": "DatabaseManager — SQLite + 4-layer scores + cosine similarity search"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "api_health_check.py",
+        "label": "api_health_check.py",
+        "layer": "script",
+        "desc": "API Diagnostics — Pings all configured APIs"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "author_profiler.py",
+        "label": "author_profiler.py",
+        "layer": "script",
+        "desc": "Unified Profiler — ORCID + OpenAlex + S2"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "author_trajectory_analyzer.py",
+        "label": "author_trajectory_analyzer.py",
+        "layer": "script",
+        "desc": "Trajectory Analyzer — 5-year publication analysis"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "citation_analyzer.py",
+        "label": "citation_analyzer.py",
+        "layer": "script",
+        "desc": "ORPHEUS — Citation networks via S2 API + pyvis graph"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "daily_search.py",
+        "label": "daily_search.py",
+        "layer": "script",
+        "desc": "Daily Search — 14 APIs, two-stage AI eval, Markdown + Discord"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "data_enricher.py",
+        "label": "data_enricher.py",
+        "layer": "script",
+        "desc": "Data Enricher — Unpaywall OA links + IDs"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "db_stats.py",
+        "label": "db_stats.py",
+        "layer": "script",
+        "desc": "Database Statistics & Health"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "embedding_generator.py",
+        "label": "embedding_generator.py",
+        "layer": "script",
+        "desc": "Embedding Generator — Batch vector generation"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "grey_literature_miner.py",
+        "label": "grey_literature_miner.py",
+        "layer": "script",
+        "desc": "Grey Literature — Gemini Search Grounding + DuckDuckGo"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "historic_search.py",
+        "label": "historic_search.py",
+        "layer": "script",
+        "desc": "Historical Deep Archive — Multi-year, database population"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "interactive_dashboard.py",
+        "label": "interactive_dashboard.py",
+        "layer": "script",
+        "desc": "Flask Dashboard — Tabulator.js data table"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "knowledge_path_generator.py",
+        "label": "knowledge_path_generator.py",
+        "layer": "script",
+        "desc": "CHIRON — Semantic search + K-Means + AI narrative"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "metadata_enricher.py",
+        "label": "metadata_enricher.py",
+        "layer": "script",
+        "desc": "APOLLO — Multi-source metadata enrichment"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "migrate_database_schema.py",
+        "label": "migrate_database_schema.py",
+        "layer": "script",
+        "desc": "Schema Migration — Old analysis regex extraction"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "model_manager.py",
+        "label": "model_manager.py",
+        "layer": "script",
+        "desc": "Model Manager — Quantization-aware Ollama + cloud model config"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "pdf_downloader.py",
+        "label": "pdf_downloader.py",
+        "layer": "script",
+        "desc": "PDF Downloader — Unpaywall → OpenAlex → CORE"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "profile_manager.py",
+        "label": "profile_manager.py",
+        "layer": "script",
+        "desc": "Profile Manager — Switch/Create research profiles"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "query_translator.py",
+        "label": "query_translator.py",
+        "layer": "script",
+        "desc": "PYTHIA — Research goal → queries + prompts via AI"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "recalculate_scores.py",
+        "label": "recalculate_scores.py",
+        "layer": "script",
+        "desc": "Score Recalculation — Bulk SQLite update"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "recommender.py",
+        "label": "recommender.py",
+        "layer": "script",
+        "desc": "Strategic Reading Report — TF-IDF clustering, HTML/DOCX/MD"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "reevaluate_database.py",
+        "label": "reevaluate_database.py",
+        "layer": "script",
+        "desc": "AI Re-evaluation — Flash model batch processing"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "trend_analyzer.py",
+        "label": "trend_analyzer.py",
+        "layer": "script",
+        "desc": "Scientometrics — Matplotlib/Seaborn reports"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "verify_dependency_map.py",
+        "label": "verify_dependency_map.py",
+        "layer": "script",
+        "desc": "Dependency Verification — AST-based map audit"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "zotero_connector.py",
+        "label": "zotero_connector.py",
+        "layer": "script",
+        "desc": "Zotero Sync — 'Zotero is Ground Truth' strategy"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "arxiv_source.py",
+        "label": "arxiv_source.py",
+        "layer": "source",
+        "desc": "arXiv API — Keyless, Atom XML, multi-query"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "core_source.py",
+        "label": "core_source.py",
+        "layer": "source",
+        "desc": "CORE API — Open access repository"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "crossref_source.py",
+        "label": "crossref_source.py",
+        "layer": "source",
+        "desc": "Crossref API — DOI registry, search_papers()"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "dblp_source.py",
+        "label": "dblp_source.py",
+        "layer": "source",
+        "desc": "DBLP API — Keyless, computer science focus"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "elsevier_source.py",
+        "label": "elsevier_source.py",
+        "layer": "source",
+        "desc": "Elsevier Scopus — API key + inst token, elsapy"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "ieee_source.py",
+        "label": "ieee_source.py",
+        "layer": "source",
+        "desc": "IEEE Xplore — API key, exponential backoff"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "openalex_source.py",
+        "label": "openalex_source.py",
+        "layer": "source",
+        "desc": "OpenAlex API — Keyless, ~250M works, inverted index"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "openarchives_source.py",
+        "label": "openarchives_source.py",
+        "layer": "source",
+        "desc": "OpenArchives.gr — Greek academic repository"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "osti_source.py",
+        "label": "osti_source.py",
+        "layer": "source",
+        "desc": "OSTI.gov — Keyless, DOE research"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "plos_source.py",
+        "label": "plos_source.py",
+        "layer": "source",
+        "desc": "PLOS API — Keyless, open access publisher"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "pubmed_source.py",
+        "label": "pubmed_source.py",
+        "layer": "source",
+        "desc": "PubMed API — Keyless, biomedical, pymed"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "scigov_source.py",
+        "label": "scigov_source.py",
+        "layer": "source",
+        "desc": "Science.gov — Keyless, US government research"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "semantic_scholar_source.py",
+        "label": "semantic_scholar_source.py",
+        "layer": "source",
+        "desc": "S2 API — Search, refs, citations, exponential backoff"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "springer_source.py",
+        "label": "springer_source.py",
+        "layer": "source",
+        "desc": "Springer Nature — API key, exponential backoff"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "Gemini API",
+        "label": "Gemini API",
+        "layer": "external",
+        "desc": "Google Generative AI — Flash + Pro + Embedding"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "DeepSeek API",
+        "label": "DeepSeek API",
+        "layer": "external",
+        "desc": "DeepSeek Cloud — OpenAI-compatible"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "HuggingFace",
+        "label": "HuggingFace",
+        "layer": "external",
+        "desc": "Free Cloud Inference — Router API"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "Ollama (local)",
+        "label": "Ollama (local)",
+        "layer": "external",
+        "desc": "Local LLM — gemma3:12b + nomic-embed-text"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "Discord Webhook",
+        "label": "Discord Webhook",
+        "layer": "external",
+        "desc": "Daily briefing push via Discord"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "Zotero API",
+        "label": "Zotero API",
+        "layer": "external",
+        "desc": "Reference Manager Sync"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "Unpaywall API",
+        "label": "Unpaywall API",
+        "layer": "external",
+        "desc": "Open Access PDF Discovery"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "ORCID API",
+        "label": "ORCID API",
+        "layer": "external",
+        "desc": "Researcher Identity & Works"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "talos_research.db",
+        "label": "talos_research.db",
+        "layer": "config",
+        "desc": ""
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "_gui_runner.py",
+        "label": "_gui_runner.py",
+        "layer": "config",
+        "desc": ""
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": ".env",
+        "label": ".env",
+        "layer": "config",
+        "desc": ""
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "config.json",
+        "label": "config.json",
+        "layer": "config",
+        "desc": ""
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "templates/dashboard.html",
+        "label": "dashboard.html",
+        "layer": "config",
+        "desc": ""
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "ast",
+        "label": "ast",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "base64",
+        "label": "base64",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "collections",
+        "label": "collections",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "concurrent",
+        "label": "concurrent",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "datetime",
+        "label": "datetime",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "docx",
+        "label": "docx",
+        "layer": "thirdparty",
+        "desc": "Word document generation"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "dotenv",
+        "label": "dotenv",
+        "layer": "thirdparty",
+        "desc": "Environment variable loader"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "duckduckgo_search",
+        "label": "duckduckgo_search",
+        "layer": "thirdparty",
+        "desc": "Web search engine"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "elsapy",
+        "label": "elsapy",
+        "layer": "thirdparty",
+        "desc": "Elsevier Scopus client"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "flask",
+        "label": "flask",
+        "layer": "thirdparty",
+        "desc": "Web server (Dashboard)"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "google",
+        "label": "google",
+        "layer": "thirdparty",
+        "desc": "Google genai SDK"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "io",
+        "label": "io",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "json",
+        "label": "json",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "logging",
+        "label": "logging",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "matplotlib",
+        "label": "matplotlib",
+        "layer": "thirdparty",
+        "desc": "Plotting library"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "numpy",
+        "label": "numpy",
+        "layer": "thirdparty",
+        "desc": "Numerical computing"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "openai",
+        "label": "openai",
+        "layer": "thirdparty",
+        "desc": "OpenAI-compatible client"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "os",
+        "label": "os",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "pandas",
+        "label": "pandas",
+        "layer": "thirdparty",
+        "desc": "Data analysis library"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "pathlib",
+        "label": "pathlib",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "pickle",
+        "label": "pickle",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "platform",
+        "label": "platform",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "pymed",
+        "label": "pymed",
+        "layer": "thirdparty",
+        "desc": "PubMed API client"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "pyvis",
+        "label": "pyvis",
+        "layer": "thirdparty",
+        "desc": "Network visualization"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "pyzotero",
+        "label": "pyzotero",
+        "layer": "thirdparty",
+        "desc": "Zotero API client"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "questionary",
+        "label": "questionary",
+        "layer": "thirdparty",
+        "desc": "Interactive CLI prompts"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "random",
+        "label": "random",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "re",
+        "label": "re",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "requests",
+        "label": "requests",
+        "layer": "thirdparty",
+        "desc": "HTTP client"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "seaborn",
+        "label": "seaborn",
+        "layer": "thirdparty",
+        "desc": "Statistical visualizations"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "shutil",
+        "label": "shutil",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "signal",
+        "label": "signal",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "sklearn",
+        "label": "sklearn",
+        "layer": "thirdparty",
+        "desc": "Machine learning (KMeans, TF-IDF)"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "sqlite3",
+        "label": "sqlite3",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "stat",
+        "label": "stat",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "streamlit",
+        "label": "streamlit",
+        "layer": "thirdparty",
+        "desc": "Streamlit Web GUI framework"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "subprocess",
+        "label": "subprocess",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "sys",
+        "label": "sys",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "tempfile",
+        "label": "tempfile",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "threading",
+        "label": "threading",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "time",
+        "label": "time",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "tqdm",
+        "label": "tqdm",
+        "layer": "thirdparty",
+        "desc": "Progress bars"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "typing",
+        "label": "typing",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "webbrowser",
+        "label": "webbrowser",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "wordcloud",
+        "label": "wordcloud",
+        "layer": "thirdparty",
+        "desc": "Word cloud generation"
+      }
+    },
+    {
+      "group": "nodes",
+      "data": {
+        "id": "xml",
+        "label": "xml",
+        "layer": "stdlib",
+        "desc": "Standard library module"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "database_manager.py",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "hardware.py",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "profile_manager.py",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "config.json",
+        "label": "reads"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "app.py",
+        "target": "database_manager.py",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "app.py",
+        "target": "ai_manager.py",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "app.py",
+        "target": "hardware.py",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "app.py",
+        "target": "semantic_scholar_source.py",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "app.py",
+        "target": "_gui_runner.py",
+        "label": "wraps via subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "app.py",
+        "target": "templates/dashboard.html",
+        "label": "serves"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "api_health_check.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "author_profiler.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "author_trajectory_analyzer.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "citation_analyzer.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "daily_search.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "data_enricher.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "db_stats.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "embedding_generator.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "grey_literature_miner.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "historic_search.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "interactive_dashboard.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "knowledge_path_generator.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "metadata_enricher.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "migrate_database_schema.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "model_manager.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "pdf_downloader.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "profile_manager.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "query_translator.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "recalculate_scores.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "recommender.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "reevaluate_database.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "trend_analyzer.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "verify_dependency_map.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "talos.py",
+        "target": "zotero_connector.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "api_health_check.py",
+        "target": "dotenv",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "api_health_check.py",
+        "target": "Gemini API",
+        "label": "genai"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "api_health_check.py",
+        "target": "google",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "api_health_check.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "api_health_check.py",
+        "target": "DeepSeek API",
+        "label": "OpenAI client"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "api_health_check.py",
+        "target": "openai",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "api_health_check.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "api_health_check.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "api_health_check.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "api_health_check.py",
+        "target": "tqdm",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_profiler.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_profiler.py",
+        "target": "dotenv",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_profiler.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_profiler.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_profiler.py",
+        "target": "questionary",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_profiler.py",
+        "target": "re",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_profiler.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_profiler.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_profiler.py",
+        "target": "tqdm",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_profiler.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_trajectory_analyzer.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_trajectory_analyzer.py",
+        "target": "dotenv",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_trajectory_analyzer.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_trajectory_analyzer.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_trajectory_analyzer.py",
+        "target": "re",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_trajectory_analyzer.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_trajectory_analyzer.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_trajectory_analyzer.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "citation_analyzer.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "citation_analyzer.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "citation_analyzer.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "citation_analyzer.py",
+        "target": "pyvis",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "citation_analyzer.py",
+        "target": "questionary",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "citation_analyzer.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "citation_analyzer.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "daily_search.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "daily_search.py",
+        "target": "dotenv",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "daily_search.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "daily_search.py",
+        "target": "logging",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "daily_search.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "daily_search.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "daily_search.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "daily_search.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "data_enricher.py",
+        "target": "concurrent",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "data_enricher.py",
+        "target": "dotenv",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "data_enricher.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "data_enricher.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "data_enricher.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "data_enricher.py",
+        "target": "sqlite3",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "data_enricher.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "data_enricher.py",
+        "target": "tqdm",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "db_stats.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "db_stats.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "embedding_generator.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "embedding_generator.py",
+        "target": "numpy",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "embedding_generator.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "embedding_generator.py",
+        "target": "pickle",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "embedding_generator.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "embedding_generator.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "embedding_generator.py",
+        "target": "tqdm",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "grey_literature_miner.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "grey_literature_miner.py",
+        "target": "dotenv",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "grey_literature_miner.py",
+        "target": "duckduckgo_search",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "grey_literature_miner.py",
+        "target": "Gemini API",
+        "label": "genai"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "grey_literature_miner.py",
+        "target": "google",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "grey_literature_miner.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "grey_literature_miner.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "grey_literature_miner.py",
+        "target": "questionary",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "grey_literature_miner.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "historic_search.py",
+        "target": "dotenv",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "historic_search.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "historic_search.py",
+        "target": "logging",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "historic_search.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "historic_search.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "historic_search.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "interactive_dashboard.py",
+        "target": "flask",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "interactive_dashboard.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "interactive_dashboard.py",
+        "target": "numpy",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "interactive_dashboard.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "interactive_dashboard.py",
+        "target": "signal",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "interactive_dashboard.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "interactive_dashboard.py",
+        "target": "threading",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "knowledge_path_generator.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "knowledge_path_generator.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "knowledge_path_generator.py",
+        "target": "numpy",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "knowledge_path_generator.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "knowledge_path_generator.py",
+        "target": "pandas",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "knowledge_path_generator.py",
+        "target": "questionary",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "knowledge_path_generator.py",
+        "target": "re",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "knowledge_path_generator.py",
+        "target": "sklearn",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "knowledge_path_generator.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "metadata_enricher.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "metadata_enricher.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "metadata_enricher.py",
+        "target": "questionary",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "metadata_enricher.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "metadata_enricher.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "metadata_enricher.py",
+        "target": "tqdm",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "migrate_database_schema.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "migrate_database_schema.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "migrate_database_schema.py",
+        "target": "questionary",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "migrate_database_schema.py",
+        "target": "re",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "migrate_database_schema.py",
+        "target": "shutil",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "migrate_database_schema.py",
+        "target": "sqlite3",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "migrate_database_schema.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "migrate_database_schema.py",
+        "target": "tqdm",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "model_manager.py",
+        "target": "dotenv",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "model_manager.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "model_manager.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "model_manager.py",
+        "target": "questionary",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "model_manager.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "model_manager.py",
+        "target": "shutil",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "model_manager.py",
+        "target": "subprocess",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "model_manager.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "model_manager.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pdf_downloader.py",
+        "target": "dotenv",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pdf_downloader.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pdf_downloader.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pdf_downloader.py",
+        "target": "pathlib",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pdf_downloader.py",
+        "target": "questionary",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pdf_downloader.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pdf_downloader.py",
+        "target": "sqlite3",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pdf_downloader.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pdf_downloader.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pdf_downloader.py",
+        "target": "tqdm",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "profile_manager.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "profile_manager.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "profile_manager.py",
+        "target": "questionary",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "profile_manager.py",
+        "target": "shutil",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "profile_manager.py",
+        "target": "subprocess",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "profile_manager.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "query_translator.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "query_translator.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "query_translator.py",
+        "target": "questionary",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "query_translator.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "recalculate_scores.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "recalculate_scores.py",
+        "target": "questionary",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "recalculate_scores.py",
+        "target": "sqlite3",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "recalculate_scores.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "recalculate_scores.py",
+        "target": "tqdm",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "recommender.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "recommender.py",
+        "target": "docx",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "recommender.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "recommender.py",
+        "target": "pandas",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "recommender.py",
+        "target": "sklearn",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "recommender.py",
+        "target": "sqlite3",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "recommender.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "reevaluate_database.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "reevaluate_database.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "reevaluate_database.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "reevaluate_database.py",
+        "target": "questionary",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "reevaluate_database.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "reevaluate_database.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "trend_analyzer.py",
+        "target": "base64",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "trend_analyzer.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "trend_analyzer.py",
+        "target": "io",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "trend_analyzer.py",
+        "target": "matplotlib",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "trend_analyzer.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "trend_analyzer.py",
+        "target": "pandas",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "trend_analyzer.py",
+        "target": "seaborn",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "trend_analyzer.py",
+        "target": "sqlite3",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "trend_analyzer.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "trend_analyzer.py",
+        "target": "wordcloud",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "verify_dependency_map.py",
+        "target": "ast",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "verify_dependency_map.py",
+        "target": "collections",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "verify_dependency_map.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "verify_dependency_map.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "verify_dependency_map.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "verify_dependency_map.py",
+        "target": "pathlib",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "verify_dependency_map.py",
+        "target": "re",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "verify_dependency_map.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "zotero_connector.py",
+        "target": "dotenv",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "zotero_connector.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "zotero_connector.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "zotero_connector.py",
+        "target": "Zotero API",
+        "label": "pyzotero"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "zotero_connector.py",
+        "target": "pyzotero",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "zotero_connector.py",
+        "target": "sys",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "zotero_connector.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "zotero_connector.py",
+        "target": "tqdm",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "dotenv",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "Gemini API",
+        "label": "genai"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "google",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "json",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "DeepSeek API",
+        "label": "OpenAI client"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "openai",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "re",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "subprocess",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "database_manager.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "database_manager.py",
+        "target": "numpy",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "database_manager.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "database_manager.py",
+        "target": "pandas",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "database_manager.py",
+        "target": "pickle",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "database_manager.py",
+        "target": "sqlite3",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "database_manager.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "hardware.py",
+        "target": "re",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "hardware.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "hardware.py",
+        "target": "subprocess",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "arxiv_source.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "arxiv_source.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "arxiv_source.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "arxiv_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "arxiv_source.py",
+        "target": "xml",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "core_source.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "core_source.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "core_source.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "core_source.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "core_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "crossref_source.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "crossref_source.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "crossref_source.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "crossref_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "dblp_source.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "dblp_source.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "dblp_source.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "dblp_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "elsevier_source.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "elsevier_source.py",
+        "target": "elsapy",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "elsevier_source.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "elsevier_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ieee_source.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ieee_source.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ieee_source.py",
+        "target": "random",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ieee_source.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ieee_source.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ieee_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "openalex_source.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "openalex_source.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "openalex_source.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "openalex_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "openarchives_source.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "openarchives_source.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "openarchives_source.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "openarchives_source.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "openarchives_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "osti_source.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "osti_source.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "osti_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "plos_source.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "plos_source.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "plos_source.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "plos_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pubmed_source.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pubmed_source.py",
+        "target": "pymed",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pubmed_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "scigov_source.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "scigov_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "semantic_scholar_source.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "semantic_scholar_source.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "semantic_scholar_source.py",
+        "target": "random",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "semantic_scholar_source.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "semantic_scholar_source.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "semantic_scholar_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "springer_source.py",
+        "target": "datetime",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "springer_source.py",
+        "target": "os",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "springer_source.py",
+        "target": "random",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "springer_source.py",
+        "target": "requests",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "springer_source.py",
+        "target": "time",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "springer_source.py",
+        "target": "typing",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "HuggingFace",
+        "label": "OpenAI client"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "Ollama (local)",
+        "label": "OpenAI + embed"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": ".env",
+        "label": "reads keys"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "hardware.py",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "ai_manager.py",
+        "target": "config.json",
+        "label": "reads"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "database_manager.py",
+        "target": "talos_research.db",
+        "label": "SQLite CRUD"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "daily_search.py",
+        "target": "Discord Webhook",
+        "label": "HTTP POST"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "data_enricher.py",
+        "target": "Unpaywall API",
+        "label": "HTTP"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "pdf_downloader.py",
+        "target": "Unpaywall API",
+        "label": "HTTP"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_profiler.py",
+        "target": "ORCID API",
+        "label": "HTTP"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_trajectory_analyzer.py",
+        "target": "ORCID API",
+        "label": "HTTP"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "author_trajectory_analyzer.py",
+        "target": "author_profiler.py",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "grey_literature_miner.py",
+        "target": "Gemini API",
+        "label": "Search Grounding"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "trend_analyzer.py",
+        "target": "talos_research.db",
+        "label": "SQLite direct"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "recommender.py",
+        "target": "talos_research.db",
+        "label": "SQLite direct"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "interactive_dashboard.py",
+        "target": "templates/dashboard.html",
+        "label": "serves"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "interactive_dashboard.py",
+        "target": "talos_research.db",
+        "label": "reads"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "config.json",
+        "target": ".env",
+        "label": "complements"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "profile_manager.py",
+        "target": "query_translator.py",
+        "label": "subprocess"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "citation_analyzer.py",
+        "target": "semantic_scholar_source.py",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "metadata_enricher.py",
+        "target": "openalex_source.py",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "metadata_enricher.py",
+        "target": "crossref_source.py",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "metadata_enricher.py",
+        "target": "dblp_source.py",
+        "label": "import"
+      }
+    },
+    {
+      "group": "edges",
+      "data": {
+        "source": "metadata_enricher.py",
+        "target": "semantic_scholar_source.py",
+        "label": "import"
+      }
+    }
+  ]
+}

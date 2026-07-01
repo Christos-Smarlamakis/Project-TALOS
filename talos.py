@@ -9,8 +9,8 @@
 #
 #  For commercial licensing, please contact the author.
 """
-Module: talos.py (v4.10.1 - The Model Management Update)
-Project: TALOS v4.10.1
+Module: talos.py (v4.11.0 - The Project Map & Diagnostics Update)
+Project: TALOS v4.11.0
 
 Description:
     The central entry point and interactive CLI for Project TALOS.
@@ -211,8 +211,8 @@ def author_tools_menu(python_exe: str):
                     print("\n--- No ORCID iD selected. Aborting. ---")
 
 
-def maintenance_menu(python_exe: str):
-    """Sub-menu for database maintenance and enrichment tools.
+def database_data_menu(python_exe: str):
+    """Sub-menu for database operations and data management.
 
     Args:
         python_exe (str): Path to the Python executable.
@@ -226,7 +226,7 @@ def maintenance_menu(python_exe: str):
     target_db = profile_db_path if os.path.exists(profile_db_path) else root_db_path
 
     choice = safe_select(
-        "Database Maintenance:",
+        "Database & Data:",
         choices=[
             "1. Statistics & Health (Metrics)",
             "2. Metadata Enrichment (APOLLO)",
@@ -236,7 +236,6 @@ def maintenance_menu(python_exe: str):
             "6. Data Enrichment (Unpaywall/IDs)",
             "7. Scientometrics Report",
             "8. PDF Downloader (Open Access)",
-            "9. System Health Check (Smoke Test)",
             questionary.Separator(),
             "Back to Main Menu"
         ]
@@ -251,7 +250,32 @@ def maintenance_menu(python_exe: str):
     elif choice.startswith("6."): run_script("data_enricher.py", python_exe)
     elif choice.startswith("7."): run_script("trend_analyzer.py", python_exe, args=[target_db])
     elif choice.startswith("8."): run_script("pdf_downloader.py", python_exe)
-    elif choice.startswith("9."):
+
+
+def system_health_menu(python_exe: str):
+    """Sub-menu for system health checks and project audits.
+
+    Args:
+        python_exe (str): Path to the Python executable.
+    """
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+    project_root = os.path.dirname(os.path.abspath(__file__))
+
+    choice = safe_select(
+        "System Diagnostics:",
+        choices=[
+            "1. Code Integrity Check",
+            "2. Documentation Audit (Map vs Code)",
+            "3. Open Architecture Graph",
+            "4. Architecture Intelligence Report (AI Analysis)",
+            questionary.Separator(),
+            "Back to Main Menu"
+        ]
+    )
+    if choice is None or choice.startswith("Back"): return
+
+    if choice.startswith("1."):
         print("\nSystem Health Check...\n")
         test_path = os.path.join(project_root, 'test_smoke.py')
         if os.path.exists(test_path):
@@ -262,6 +286,61 @@ def maintenance_menu(python_exe: str):
                 print(f"\nHealth check completed with code {result.returncode}.")
         else:
             print("test_smoke.py not found.")
+    elif choice.startswith("2."):
+        print("\nRunning Dependency Map Audit...\n")
+        print("Compares documented dependencies and functions (PROJECT_MAP.md)")
+        print("against actual Python source code.\n")
+        run_script("verify_dependency_map.py", python_exe, args=["--all"])
+        print("\nReports saved:")
+        print("  reports/audits/dependency_audit.html")
+        print("  reports/audits/dependency_audit.md")
+        print("  reports/audits/dependency_audit.json")
+    elif choice.startswith("3."):
+        import webbrowser
+        import socket
+        # Start local HTTP server if needed (allows CDN scripts like cytoscape-svg to load)
+        port = 8765
+        server_running = False
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.5)
+            server_running = sock.connect_ex(('127.0.0.1', port)) == 0
+            sock.close()
+        except Exception:
+            pass
+        
+        if not server_running:
+            print(f"\nStarting local HTTP server on port {port}...")
+            server_dir = os.path.join(project_root, "templates")
+            subprocess.Popen(
+                [python_exe, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", server_dir],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            print("Server started.")
+        
+        audit_json = os.path.join(project_root, "reports", "audits", "dependency_audit.json")
+        url = f"http://localhost:{port}/architecture_graph.html"
+        if os.path.exists(audit_json):
+            url += "?audit=../reports/audits/dependency_audit.json"
+        print(f"\nOpening {url}")
+        webbrowser.open(url)
+        print("Graph opened in your default browser.")
+
+    elif choice.startswith("4."):
+        print("\nGenerating Architecture Intelligence Report...\n")
+        print("This will analyze PROJECT_MAP.md, the dependency audit,")
+        print("and the architecture graph to produce a comprehensive")
+        print("intelligence report in English and Greek.\n")
+        print("⚠️  Requires a working AI provider (Gemini Pro or DeepSeek).")
+        if not questionary.confirm("Start now? (may take up to 60 seconds)", default=True).ask():
+            return
+        run_script("architecture_intelligence_report.py", python_exe)
+        print("\nReports saved:")
+        print("  reports/architecture_intelligence_report_en.md")
+        print("  reports/architecture_intelligence_report_gr.md")
+
+    print()
+    input("Press Enter to continue...")
 
 
 def api_keys_menu(python_exe: str):
@@ -579,7 +658,7 @@ def main_menu():
         active_profile = get_active_profile_name()
 
         # --- Build dynamic header with DB stats ---
-        header = f"TALOS v4.10.1 | Profile: [{active_profile}]"
+        header = f"TALOS v4.11.0 | Profile: [{active_profile}]"
         try:
             from core.database_manager import DatabaseManager
             db = DatabaseManager()
@@ -597,7 +676,7 @@ def main_menu():
                     vram_str = f" | VRAM: {vram:.0f}GB"
             except Exception:
                 pass
-            header = f"TALOS v4.10.1 | Profile: [{active_profile}] | {stats['total_papers']} papers | {stats['elite_papers']} elite | {provider}{vram_str}"
+            header = f"TALOS v4.11.0 | Profile: [{active_profile}] | {stats['total_papers']} papers | {stats['elite_papers']} elite | {provider}{vram_str}"
         except Exception:
             pass
 
@@ -615,8 +694,9 @@ def main_menu():
                 "7. Author Analysis Tools",
                 "8. Interactive Dashboard",
                 questionary.Separator("  DATABASE & SETTINGS"),
-                "9. Database Maintenance",
-                "10. Profile & Settings",
+                "9.  Database & Data",
+                "10. System Diagnostics",
+                "11. Profile & Settings",
                 questionary.Separator(),
                 "Exit"
             ]
@@ -638,8 +718,9 @@ def main_menu():
         elif choice.startswith("8."):
             run_script("interactive_dashboard.py", python_exe)
             final_message = "Dashboard server terminated. Press Enter to return to the menu..."
-        elif choice.startswith("9."): maintenance_menu(python_exe)
-        elif choice.startswith("10."): profile_settings_menu(python_exe)
+        elif choice.startswith("9."): database_data_menu(python_exe)
+        elif choice.startswith("10."): system_health_menu(python_exe)
+        elif choice.startswith("11."): profile_settings_menu(python_exe)
 
         if choice != "Exit": input(final_message)
 

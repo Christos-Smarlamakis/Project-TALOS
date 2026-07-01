@@ -101,11 +101,24 @@ def main():
         CORESource(historic_config)
     ]
 
+    import logging
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    logger = logging.getLogger(__name__)
+    
     all_historic_papers = []
     for source in sources_to_search:
-        fetched = source.fetch_new_papers()
-        if fetched:
-            all_historic_papers.extend(fetched)
+        if not getattr(source, "enabled", True):
+            logger.warning("Skipping %s — disabled (no valid API key)", type(source).__name__)
+            continue
+        try:
+            fetched = source.fetch_new_papers()
+            if fetched:
+                all_historic_papers.extend(fetched)
+            else:
+                logger.info("No new papers from %s", type(source).__name__)
+        except Exception as e:
+            logger.error("Error fetching from %s: %s. Skipping source.", type(source).__name__, e)
+            continue
 
     print(f"\nSUCCESS: Found {len(all_historic_papers)} potential papers across all sources.\n")
 

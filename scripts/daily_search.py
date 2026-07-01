@@ -154,7 +154,24 @@ def main():
         ScienceGovSource(config),
         PLOSSource(config)
     ]
-    all_new_papers = [p for source in sources_to_search for p in source.fetch_new_papers() if p]
+    import logging
+    logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+    logger = logging.getLogger(__name__)
+    
+    all_new_papers = []
+    for source in sources_to_search:
+        if not getattr(source, "enabled", True):
+            logger.warning("Skipping %s — disabled (no valid API key)", type(source).__name__)
+            continue
+        try:
+            papers = source.fetch_new_papers()
+            if papers:
+                all_new_papers.extend(papers)
+            else:
+                logger.info("No new papers from %s", type(source).__name__)
+        except Exception as e:
+            logger.error("Error fetching from %s: %s. Skipping source.", type(source).__name__, e)
+            continue
     unique_papers_dict = {}
     for p in all_new_papers:
         key = p.get('doi') if p.get('doi') else p.get('url')

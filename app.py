@@ -13,6 +13,7 @@ Description:
 import streamlit as st
 import sys
 import os
+import re
 import json
 import time
 import subprocess
@@ -159,7 +160,7 @@ st.markdown("""<style>
 # ═══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.markdown("""<div style="text-align:center;padding:1rem 0">
-    <h2 style="color:#e94560;margin:0;font-size:1.5rem">🧠 TALOS v4.10.1</h2>
+    <h2 style="color:#e94560;margin:0;font-size:1.5rem">🧠 TALOS v4.11.0</h2>
     <p style="color:#8b949e;font-size:.75rem;margin:.2rem 0 0">Research Intelligence Platform</p></div>""", unsafe_allow_html=True)
     st.markdown("---")
 
@@ -168,8 +169,9 @@ with st.sidebar:
         "🔍 Search & Discovery",
         "🧪 Single Paper Evaluation",
         "📊 Analysis & Insights",
-        "🛠️ Database Maintenance",
-        "⚙️ Settings",
+        "🛠️ Database & Data",
+        "🩺 System Diagnostics",
+        "⚙️ Profile & Settings",
     ], label_visibility="collapsed")
 
     st.markdown("---")
@@ -664,8 +666,8 @@ elif page == "📊 Analysis & Insights":
 # ═══════════════════════════════════════════════════════════════════════════════
 # 5. DATABASE MAINTENANCE
 # ═══════════════════════════════════════════════════════════════════════════════
-elif page == "🛠️ Database Maintenance":
-    st.header("🛠️ Database Maintenance")
+elif page == "🛠️ Database & Data":
+    st.header("🛠️ Database & Data")
     mo = st.selectbox("Task", [
         "📊 Statistics & Health", "📝 APOLLO Metadata Enrichment", "📚 Zotero Sync",
         "🧠 Embedding Generator", "🔄 AI Re-evaluation", "🔗 Data Enrichment (Unpaywall)",
@@ -700,12 +702,238 @@ elif page == "🛠️ Database Maintenance":
                 show_output(kw, scr)
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# 6. SETTINGS (Unified: API Keys + Profiles + PYTHIA + Health Check)
+# 6. SYSTEM DIAGNOSTICS
 # ═══════════════════════════════════════════════════════════════════════════════
-elif page == "⚙️ Settings":
-    st.header("⚙️ Settings")
+elif page == "🩺 System Diagnostics":
+
+    # ── Architecture Intelligence Report Sub-Page ──────────────────────────
+    if st.session_state.get("arch_report_page"):
+        st.header("🧠 Architecture Intelligence Report")
+        st.caption("AI-powered analysis of PROJECT_MAP.md, dependency audit, and architecture graph.")
+        st.markdown("---")
+        
+        en_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports", "architecture_intelligence_report_en.md")
+        gr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports", "architecture_intelligence_report_gr.md")
+        
+        # Generate button
+        if not st.session_state.get("arch_report_generated"):
+            if st.button("🚀 Generate Report Now", type="primary", width="stretch", key="btn_arch_gen"):
+                st.markdown("### 📋 Generation Progress")
+                progress_placeholder = st.empty()
+                
+                # Run with real-time line-by-line output
+                exe = sys.executable
+                script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts", "architecture_intelligence_report.py")
+                
+                output_lines = []
+                process = subprocess.Popen(
+                    [exe, script_path],
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                    text=True, encoding="utf-8", errors="replace",
+                    env=os.environ.copy()
+                )
+                
+                # Read lines with real-time progress display
+                for line in iter(process.stdout.readline, ""):
+                    output_lines.append(line)
+                    if len(output_lines) % 3 == 0:
+                        progress_placeholder.code("".join(output_lines[-30:]), language="")
+                
+                process.wait()
+                progress_placeholder.code("".join(output_lines[-30:]), language="")
+                
+                full_output = "".join(output_lines)
+                st.session_state.output["arch_report"] = full_output
+                st.session_state.arch_report_generated = True
+                st.rerun()
+        else:
+            # Find the latest timestamped reports
+            reports_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
+            from pathlib import Path as _Path
+            _reports = _Path(reports_dir)
+            en_reports = sorted(_reports.glob("architecture_intelligence_report_en_*.md"), reverse=True)
+            gr_reports = sorted(_reports.glob("architecture_intelligence_report_gr_*.md"), reverse=True)
+            en_path = str(en_reports[0]) if en_reports else ""
+            gr_path = str(gr_reports[0]) if gr_reports else ""
+            
+            en_exists = bool(en_reports)
+            gr_exists = bool(gr_reports)
+            
+            if en_exists or gr_exists:
+                st.success("✅ Reports generated successfully!")
+                st.markdown("### 📊 Open Reports")
+                col_btn_en, col_btn_gr = st.columns(2)
+                with col_btn_en:
+                    if en_exists:
+                        st.caption(f"**EN:** `{en_reports[0].name}`")
+                        if st.button("🇬🇧 Open English Report in Browser", width="stretch", key="btn_open_en2"):
+                            import webbrowser
+                            webbrowser.open("file:///" + en_path.replace(os.sep, "/"))
+                    else:
+                        st.caption("English report not found.")
+                with col_btn_gr:
+                    if gr_exists:
+                        st.caption(f"**GR:** `{gr_reports[0].name}`")
+                        if st.button("🇬🇷 Άνοιγμα Ελληνικής Αναφοράς στον Browser", width="stretch", key="btn_open_gr2"):
+                            import webbrowser
+                            webbrowser.open("file:///" + gr_path.replace(os.sep, "/"))
+                    else:
+                        st.caption("Greek report not found.")
+                
+                # Show history count
+                st.caption(f"📚 **{len(en_reports)}** English reports in archive · **{len(gr_reports)}** Greek reports in archive")
+                
+                # Console output
+                show_output("arch_report", "architecture_intelligence_report.py")
+            else:
+                st.warning("Report files not found. The generation may have failed. Check console output below.")
+                show_output("arch_report", "architecture_intelligence_report.py")
+        
+        st.markdown("---")
+        if st.button("← Back to System Diagnostics", width="stretch", key="btn_back_diag"):
+            st.session_state.arch_report_page = False
+            st.session_state.arch_report_generated = False
+            st.rerun()
+        
+        st.stop()  # Don't render the rest of the System Diagnostics page
     
-    tab_api, tab_profile, tab_health = st.tabs(["🔑 API Keys & Models", "📂 Profiles & PYTHIA", "🩺 Diagnostics"])
+    # ── Normal System Diagnostics Page ─────────────────────────────────────
+    st.header("🩺 System Diagnostics")
+
+    tab1, tab2 = st.tabs(["Code Integrity Check", "Documentation Audit (Map vs Code)"])
+
+    with tab1:
+        st.subheader("Code Integrity Check")
+        st.caption("Verifies that all .py files compile, core modules import, and the database is accessible.")
+        if st.button("Run Code Integrity Check", type="primary", key="btn_integrity"):
+            with st.spinner("Running integrity check..."):
+                exe = sys.executable
+                test_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_smoke.py")
+                env = os.environ.copy()
+                env["PYTHONIOENCODING"] = "utf-8"
+                try:
+                    r = subprocess.run([exe, test_path], capture_output=True, text=True, timeout=30, env=env, encoding="utf-8", errors="replace")
+                    st.session_state.output["integrity"] = r.stdout + "\n" + r.stderr
+                    if r.returncode == 0:
+                        st.success("All checks passed — Project is healthy!")
+                    else:
+                        st.warning(f"Issues found (code {r.returncode}).")
+                except Exception as e:
+                    st.error(str(e))
+            show_output("integrity", "Code Integrity Check")
+
+    with tab2:
+        st.subheader("Documentation Audit (Map vs Code)")
+        st.caption(
+            "Compares PROJECT_MAP.md against actual Python source code. "
+            "Detects stale (documented but not in code) and missing (in code but not documented) entries. "
+            "Generates HTML, Markdown, and JSON reports."
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Run Documentation Audit", type="primary", width="stretch", key="btn_doc_audit"):
+                with st.spinner("Scanning source code with AST..."):
+                    rc, out = run("verify_dependency_map.py", args=["--all"])
+                    st.session_state.output["doc_audit"] = out
+                if rc == 0:
+                    st.success("Audit complete. Map is 100% accurate.")
+                else:
+                    st.warning("Discrepancies found. See details below and review PROJECT_MAP.md.")
+
+        with col2:
+            # Architecture Intelligence Report button — navigates to dedicated sub-page
+            st.caption("")
+            if st.button("Generate Architecture Intelligence Report", width="stretch", key="btn_arch_report"):
+                st.session_state.arch_report_page = True
+                st.session_state.arch_report_generated = False
+                st.rerun()
+            
+            graph_path = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "templates", "architecture_graph.html"
+            )
+            if os.path.exists(graph_path):
+                if st.button("Open Interactive Graph in Browser", width="stretch", key="btn_open_graph"):
+                    import webbrowser
+                    import socket
+                    # Start local HTTP server if needed (allows CDN scripts to load)
+                    port = 8765
+                    server_running = False
+                    try:
+                        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        sock.settimeout(0.5)
+                        server_running = sock.connect_ex(('127.0.0.1', port)) == 0
+                        sock.close()
+                    except Exception:
+                        pass
+                    if not server_running:
+                        server_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+                        subprocess.Popen(
+                            [sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", server_dir],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                        )
+                    url = f"http://localhost:{port}/architecture_graph.html"
+                    # Only add audit if JSON exists
+                    audit_json = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports", "audits", "dependency_audit.json")
+                    if os.path.exists(audit_json):
+                        url += "?audit=../reports/audits/dependency_audit.json"
+                    webbrowser.open(url)
+                    st.success(f"Graph opened at http://localhost:{port}")
+            else:
+                st.caption("Interactive graph file not found.")
+
+        st.markdown("---")
+
+        # Load audit results
+        audit_json_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "reports", "audits", "dependency_audit.json"
+        )
+        if os.path.exists(audit_json_path):
+            try:
+                with open(audit_json_path, "r", encoding="utf-8") as f:
+                    audit_data = json.load(f)
+
+                matched = audit_data.get("matched", 0)
+                stale = audit_data.get("stale", 0)
+                missing = audit_data.get("missing", 0)
+
+                st.subheader("Last Audit Results")
+                c1, c2, c3 = st.columns(3)
+                c1.metric("Matched", matched)
+                c2.metric("Stale (doc but not code)", stale)
+                c3.metric("Missing (code but not doc)", missing)
+
+                if stale == 0 and missing == 0:
+                    st.success("Dependency map is 100% accurate.")
+                elif stale > 0 or missing > 0:
+                    st.warning("Discrepancies found. Review and update PROJECT_MAP.md Section 7.")
+
+                results = audit_data.get("results", [])
+                stale_list = [r for r in results if r["status"] == "stale"]
+                missing_list = [r for r in results if r["status"] == "missing"]
+
+                if stale_list:
+                    with st.expander(f"Stale Dependencies ({len(stale_list)})"):
+                        for r in sorted(stale_list, key=lambda x: x["file"]):
+                            st.markdown(f"- `{r['file']}` -> **{r['dependency']}**")
+                if missing_list:
+                    with st.expander(f"Missing from Documentation ({len(missing_list)})"):
+                        for r in sorted(missing_list, key=lambda x: x["file"])[:50]:
+                            st.markdown(f"- `{r['file']}` -> **{r['dependency']}**")
+                        if len(missing_list) > 50:
+                            st.caption(f"... and {len(missing_list) - 50} more")
+            except Exception:
+                st.caption("Could not read audit results. Run the audit first.")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 7. PROFILE & SETTINGS
+# ═══════════════════════════════════════════════════════════════════════════════
+elif page == "⚙️ Profile & Settings":
+    st.header("⚙️ Profile & Settings")
+    
+    tab_api, tab_profile = st.tabs(["🔑 API Keys & Models", "📂 Profiles & PYTHIA"])
     
     # ── TAB 1: API Keys & Model Selection ──
     with tab_api:
@@ -965,58 +1193,11 @@ elif page == "⚙️ Settings":
         st.markdown(f"- 🧠 PhD focus prompt: **{'✅ Customized' if cfg.get('phd_focus_system_prompt', '').find('artificial intelligence') == -1 else '⚠️ Generic (not yet optimized)'}**")
         st.markdown(f"- 🖥️ Provider priority: `{' → '.join(cfg.get('ai_provider_priority', ['gemini']))}`")
     
-    # ── TAB 3: Diagnostics ──
-    with tab_health:
-        st.subheader("🩺 System Diagnostics")
-        
-        if st.button("🩺 Run API Health Check", type="primary", key="btn_api_diag"):
-            with st.spinner("Testing all APIs..."):
-                try:
-                    from scripts.api_health_check import run_diagnostics
-                    results = run_diagnostics()
-                    st.session_state._api_results = results
-                    st.success("✅ Diagnostics complete!")
-                except Exception as e: st.error(str(e))
-        
-        if "_api_results" in st.session_state:
-            results = st.session_state._api_results
-            for item in results:
-                if isinstance(item, dict) and "category" in item:
-                    st.markdown(f"**{item['category']}**")
-                elif isinstance(item, tuple):
-                    name, status, detail = item
-                    if status == "available": st.success(f"✅ **{name}**: {detail}")
-                    elif status == "keyless": st.info(f"🟢 **{name}**: {detail}")
-                    elif status == "missing_key": st.warning(f"🟡 **{name}**: {detail}")
-                    elif status == "invalid_key": st.error(f"🔴 **{name}**: {detail}")
-                    else: st.warning(f"⚠️ **{name}**: {detail}")
-        
-        st.markdown("---")
-        st.subheader("🩺 System Health Check")
-        if st.button("🩺 Run Smoke Test", key="btn_health"):
-            with st.spinner("Running health check..."):
-                exe = sys.executable
-                test_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "test_smoke.py")
-                env = os.environ.copy()
-                env["PYTHONIOENCODING"] = "utf-8"
-                try:
-                    r = subprocess.run([exe, test_path], capture_output=True, text=True, timeout=30, env=env, encoding="utf-8", errors="replace")
-                    st.session_state.output["health"] = r.stdout + "\n" + r.stderr
-                    if r.returncode == 0: st.success("🎉 All checks passed — Project is healthy!")
-                    else: st.warning(f"Issues found (code {r.returncode}).")
-                except Exception as e: st.error(str(e))
-            show_output("health", "System Health Check")
-        
-        st.markdown("---")
-        st.subheader("🖥️ System Information")
-        si = system_info()
-        c1, c2, c3 = st.columns(3)
-        c1.metric("OS", si["sys"]); c2.metric("Python", si["py"]); c3.metric("Provider", si["prov"].title())
 
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("---")
 st.markdown(f"""<div style="text-align:center;padding:1rem;color:#8b949e;font-size:.85rem">
-<strong>Project TALOS v4.10.1</strong> · © 2026 Christos Smarlamakis ·
+<strong>Project TALOS v4.11.0</strong> · © 2026 Christos Smarlamakis ·
 Provider: {system_info()['prov'].title()} · Profile: <code>{get_active_profile()}</code> ·
 {datetime.now().strftime('%Y-%m-%d %H:%M')}
 </div>""", unsafe_allow_html=True)

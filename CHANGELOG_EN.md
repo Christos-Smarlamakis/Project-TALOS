@@ -3,6 +3,54 @@
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [v4.11.0] - 2026-07-02 - The "Project Map & Diagnostics" Update
+
+This release introduces a complete project knowledge management system including a master blueprint file (PROJECT_MAP.md), interactive dependency graph, AST-based verification tooling, and reorganized CLI/GUI menus.
+
+### Added
+- **PROJECT_MAP.md:** Complete project blueprint documenting all 55 files, functions, dependencies, configuration schema, database schema, Greek code name glossary, and known gotchas
+- **`.clinerules` v5.0.0:** Mandatory PROJECT_MAP.md reading rules for AI agents — reads the map first on every new chat, updates it after every code change
+- **`templates/architecture_graph.html`:** Interactive Cytoscape.js dependency graph with 50+ nodes, 80+ edges, layer filtering, physics simulation, and audit mode (color-coded from dependency_audit.json)
+- **`scripts/verify_dependency_map.py`:** AST-based verification tool that compares PROJECT_MAP.md against actual source code:
+  - Dependency audit mode (Section 7 vs actual imports): 48 matched, 4 stale (false positives), 35 missing
+  - Function documentation audit mode (`--functions`): Sections 2-4 vs actual Python def/class definitions
+  - Combined mode (`--all`) for complete project health check
+  - 81% noise reduction through smart filtering (external packages, submodule paths, standard library)
+  - Outputs in 3 formats: HTML (colored report with intro + HOW TO FIX), Markdown, JSON
+  - CI/CD mode (`--ci`) for GitHub Actions integration
+- **Audit reports** saved to `reports/audits/`: dependency_audit.{html,md,json}, function_audit.{html,md,json}
+- **Explanatory descriptions** in all output formats — clear explanations of what MATCHED, STALE, and MISSING mean and how to fix them
+
+### Changed
+- **TUI menu reorganized** from 10 items to 11 items with 3 new sub-menus:
+  - `9. Database & Data` (8 items: stats, APOLLO, Zotero, embeddings, re-evaluation, enrichment, scientometrics, PDF downloader)
+  - `10. System Diagnostics` (3 items: Code Integrity Check, Documentation Audit, Open Architecture Graph)
+  - `11. Profile & Settings` (5 items: profiles, PYTHIA, models, API keys, diagnostics)
+- **GUI sidebar restructured** to 7 pages matching the TUI: Home, Search, Paper Eval, Analysis, Database & Data, System Diagnostics, Profile & Settings
+- **GUI System Diagnostics page** with 2 tabs: Code Integrity Check (Smoke Test) + Documentation Audit with interactive graph button
+- **GUI Profile & Settings** simplified to 2 tabs (API Keys & Models, Profiles & PYTHIA)
+- **Version bumped** to v4.11.0 across all entry points (talos.py, app.py, PROJECT_MAP.md)
+- **Architecture Intelligence Report:** LLM-powered analysis of PROJECT_MAP.md, audit, and graph data producing 8-section reports in English and Greek (`scripts/architecture_intelligence_report.py`)
+- **Architecture graph:** Interactive Cytoscape.js dependency graph with 102 nodes, 318 edges, particle background, edge type legend, futuristic academic theme, zoom controls, fullscreen mode, Dark/Light toggle
+- **Graph auto-generation:** `scripts/generate_architecture_graph.py` builds graph from AST analysis + documented dependencies, outputs `templates/architecture_graph.html` with inline data
+- **SVG export:** Background rect injection for non-transparent output, CDN fallback via PNG-wrapped SVG
+- **HTTP server auto-start:** CLI and GUI open the graph at `http://localhost:8765` for full CDN support (cytoscape-svg, navigator)
+- **Real-time progress:** Architecture report sub-page in GUI shows line-by-line output during generation
+- **Timestamped filenames:** Reports saved as `architecture_intelligence_report_{lang}_{YYYY-MM-DD_HH-MM}.md`
+- **TUI menu integration:** System Diagnostics → option 4 → Architecture Intelligence Report (AI Analysis)
+- **GUI sub-page:** Dedicated page with Generate button, progress display, browser-open buttons (EN+GR), Back navigation, and history archive count
+- **Free-first provider chain:** Architecture report uses AIManager priority chain (Ollama → HuggingFace → Gemini → DeepSeek)
+
+### Fixed
+- Interactive Graph button in Streamlit GUI now uses HTTP server (port 8765) + `webbrowser.open()` instead of broken `file:///` links
+- SVG export button now works via CDN (`cytoscape-svg@1.4.0`) with PNG fallback
+- Graph layout balanced (nodeRepulsion 30000, gravity 0.2, padding 60) for readability
+- Duplicate `<script id="graph-data">` blocks removed via regex cleanup in generator
+- `metadata_enricher.py (APOLLO)` dependency documentation corrected — AIManager reference removed (not imported)
+- `interactive_dashboard.py` dependency corrected from "Flask, Tabulator.js" to "Flask"
+- Dependency audit now correctly filters out third-party libraries and standard library imports
+- Function documentation parser handles path normalization between documented and actual paths
+
 ## [v4.10.1] - 2026-06-30 - The "Model Management" Update
 
 This release introduces a dedicated Model Management TUI (`scripts/model_manager.py`) with quantization-aware Ollama model selection, dynamic model discovery from the Ollama library, 

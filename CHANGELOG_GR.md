@@ -3,6 +3,46 @@
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
 
+## [v4.11.0] - 2026-07-02 - Ενημέρωση "Project Map & Diagnostics"
+
+Αυτή η έκδοση εισάγει ένα πλήρες σύστημα διαχείρισης γνώσης του project, συμπεριλαμβανομένου ενός κεντρικού χάρτη (PROJECT_MAP.md), διαδραστικού γράφου εξαρτήσεων, εργαλείων επαλήθευσης βασισμένων σε AST, και αναδιοργανωμένων μενού CLI/GUI.
+
+### Προσθήκες
+- **PROJECT_MAP.md:** Πλήρης χάρτης του project που τεκμηριώνει και τα 55 αρχεία, συναρτήσεις, εξαρτήσεις, σχήμα βάσης, γλωσσάρι ελληνικών κωδικών ονομάτων, και γνωστά προβλήματα
+- **`.clinerules` v5.0.0:** Υποχρεωτικοί κανόνες ανάγνωσης του PROJECT_MAP.md για AI agents — διαβάζει τον χάρτη πρώτα σε κάθε νέο chat, τον ενημερώνει μετά από κάθε αλλαγή κώδικα
+- **`templates/architecture_graph.html`:** Διαδραστικός γράφος εξαρτήσεων Cytoscape.js με 50+ nodes, 80+ edges, φιλτράρισμα επιπέδων, και audit mode (χρωματική κωδικοποίηση από dependency_audit.json)
+- **`scripts/verify_dependency_map.py`:** Εργαλείο επαλήθευσης βασισμένο σε AST:
+  - Dependency audit (Section 7 vs πραγματικά imports)
+  - Function documentation audit (`--functions`: Sections 2-4 vs AST)
+  - Συνδυασμένη λειτουργία (`--all`)
+  - 81% μείωση θορύβου μέσω έξυπνου φιλτραρίσματος
+  - 3 formats εξόδου: HTML, Markdown, JSON
+- **Αναφορές ελέγχου** στο `reports/audits/`
+
+### Αλλαγές
+- **TUI αναδιοργάνωση** σε 11 επιλογές με 3 υπο-μενού: Database & Data, System Diagnostics, Profile & Settings
+- **GUI sidebar** αναδιαρθρώθηκε σε 7 σελίδες που αντιστοιχούν στο TUI
+- **GUI System Diagnostics** με 2 tabs: Code Integrity Check + Documentation Audit
+- **Έκδοση** bumped σε v4.11.0
+- **Architecture Intelligence Report:** Ανάλυση από LLM των PROJECT_MAP.md, audit, και graph data που παράγει αναφορές 8 ενοτήτων στα Αγγλικά και Ελληνικά (`scripts/architecture_intelligence_report.py`)
+- **Γράφος αρχιτεκτονικής:** Διαδραστικός γράφος Cytoscape.js με 102 nodes, 318 edges, particle background, edge type legend, futuristic academic theme, zoom controls, fullscreen mode, Dark/Light toggle
+- **Αυτόματη παραγωγή γράφου:** Το `scripts/generate_architecture_graph.py` χτίζει τον γράφο από AST analysis + documented dependencies, παράγοντας `templates/architecture_graph.html` με inline data
+- **SVG export:** Background rect injection για μη-διαφανή έξοδο, CDN fallback μέσω PNG-wrapped SVG
+- **Αυτόματη εκκίνηση HTTP server:** Το CLI και το GUI ανοίγουν τον γράφο στο `http://localhost:8765` για πλήρη υποστήριξη CDN (cytoscape-svg, navigator)
+- **Real-time progress:** Η υπο-σελίδα του Architecture Report στο GUI δείχνει line-by-line output κατά τη διάρκεια του generation
+- **Timestamped filenames:** Οι αναφορές αποθηκεύονται ως `architecture_intelligence_report_{lang}_{YYYY-MM-DD_HH-MM}.md`
+- **TUI menu integration:** System Diagnostics → επιλογή 4 → Architecture Intelligence Report (AI Analysis)
+- **GUI υπο-σελίδα:** Αποκλειστική σελίδα με Generate button, progress display, browser-open buttons (EN+GR), Back navigation, και history archive count
+- **Free-first provider chain:** Το architecture report χρησιμοποιεί το AIManager priority chain (Ollama → HuggingFace → Gemini → DeepSeek)
+
+### Διορθώσεις
+- Το κουμπί Interactive Graph στο Streamlit GUI χρησιμοποιεί πλέον HTTP server (port 8765) + `webbrowser.open()` αντί για broken `file:///` links
+- Το κουμπί SVG export λειτουργεί μέσω CDN (`cytoscape-svg@1.4.0`) με PNG fallback
+- Το layout του γράφου είναι ισορροπημένο (nodeRepulsion 30000, gravity 0.2, padding 60)
+- Τα διπλά `<script id="graph-data">` blocks αφαιρούνται μέσω regex cleanup στον generator
+- Διορθώθηκαν λάθη στο dependency documentation (metadata_enricher, interactive_dashboard)
+- Το dependency audit φιλτράρει σωστά third-party βιβλιοθήκες και standard library imports
+
 ## [v4.10.1] - 2026-06-30 - Ενημέρωση "Model Management"
 
 Αυτή η έκδοση εισάγει ένα εξειδικευμένο Model Management TUI (`scripts/model_manager.py`) με quantization-aware επιλογή μοντέλων Ollama, δυναμική ανακάλυψη μοντέλων από τη βιβλιοθήκη Ollama, VRAM-fit δείκτες, και ρύθμιση cloud μοντέλων — όλα προσβάσιμα τόσο από το TUI όσο και από το Streamlit GUI.

@@ -1,26 +1,58 @@
 # TALOS Project Instructions for AI Coding Agents
-# Version: v4.8.2
+# Version: v5.0.0
+
+## PROJECT_MAP.md — Mandatory Knowledge Base (NEW in v5.0.0)
+
+### On Every New Chat (MANDATORY — Step 1)
+1. **READ `PROJECT_MAP.md` FIRST** — before reading any other file.
+2. This file is the SINGLE SOURCE OF TRUTH containing:
+   - Complete architecture overview with ASCII diagram
+   - All functions/methods with full signatures and descriptions (for all 55 files)
+   - Dependency graph (which script imports which module)
+   - Data flow (User → CLI/GUI → Scripts → Core → Sources → APIs)
+   - Configuration schema (config.json, .env keys, env vars, profile system)
+   - Database schema (all columns, enrichment state machine)
+   - Greek code name glossary (TALOS, PYTHIA, CHIRON, ORPHEUS, APOLLO)
+   - Known gotchas and conventions
+3. **DO NOT re-read individual source files** unless you need to make changes to them.
+4. If PROJECT_MAP.md is missing or outdated → inform the user, it must be regenerated.
+
+### Updating PROJECT_MAP.md (MANDATORY — After Every Change)
+1. After **ANY code change** (new function, modified signature, new file, deleted file, changed import),
+   **UPDATE `PROJECT_MAP.md`** to reflect the change immediately.
+2. If a new script or source is added, document it fully:
+   - Purpose/role, all functions with signatures, imports used
+3. If dependencies change, update the Dependency Graph section (Section 7).
+4. If configuration keys change, update Section 6.
+5. If a known gotcha is discovered, add it to Section 10.
+6. Update the "Last Updated" date at the bottom of PROJECT_MAP.md.
+7. The map **MUST always be 100% accurate** — out-of-date information is worse than none.
+
+### Token Efficiency
+- PROJECT_MAP.md is ~400-800 lines (~3K-6K tokens) vs. ~55 files (~50K+ tokens)
+- This saves ~90% of context window per chat session
+- Enables precise, targeted edits without re-exploring the entire codebase
 
 ## CRITICAL: Editor Limitations
 - The editor CANNOT match or replace Greek/Unicode text reliably.
 - ALWAYS use `insert_line` instead of `old_text`/`new_text` for edits involving Greek comments.
 - PREFER creating new files (clean) over patching corrupted ones.
 - When using `insert_line`, be aware that all subsequent line numbers shift.
-- Large files (>6K chars) must be split across multiple edits.
 - NEVER use `python -c "..."` inline commands via PowerShell - use a .py script file instead.
-- The `run_commands` tool does not capture stdout reliably - write results to files for verification.
 
 ## Architecture
-- Entry point: `talos.py` (CLI menu, orchestrates subprocesses)
-- Core modules: `core/ai_manager.py` (multi-provider LLM interface), `core/database_manager.py` (SQLite + embeddings)
+- Entry points: `talos.py` (CLI menu), `app.py` (Streamlit Web GUI)
+- Core modules: `core/ai_manager.py` (multi-provider LLM), `core/database_manager.py` (SQLite + embeddings), `core/hardware.py` (GPU detection)
 - Search agents: `sources/*.py` (14 APIs, standardized output format)
-- Feature scripts: `scripts/*.py` (daily search, recommendation, CHIRON, ORPHEUS, etc.)
+- Feature scripts: `scripts/*.py` (20 scripts: daily search, recommendation, CHIRON, ORPHEUS, PYTHIA, APOLLO, etc.)
 - Configuration: `config.json` (queries, prompts)
 - Secrets: `.env` (API keys)
 - Profiles: `_profiles/<name>/` (isolated config.json + talos_research.db per research topic)
+- GUI wrapper: `_gui_runner.py` (pipes stdin to subprocesses for Streamlit)
+- Templates: `templates/dashboard.html` (Flask/Tabulator.js)
 
 ## Provider System (ai_manager.py)
-- Three providers: Gemini (primary), DeepSeek (fallback), Local/Ollama (offline)
+- Four providers: Gemini (primary), DeepSeek (fallback), HuggingFace (free cloud), Local/Ollama (offline)
 - Circuit breaker: 3+ consecutive failures → opens circuit → skips provider
 - System Prompt Override: used by PYTHIA (query_translator.py) to act as "Research Architect" instead of "PhD Advisor"
 - All providers must handle: JSON mode, text mode, embedding mode
@@ -29,6 +61,7 @@
 
 ## Database (database_manager.py)
 - SQLite with 20+ columns including 4-layer scores (strategic, operational, tactical, playground)
+- Overall score weights: Strategic 30% + Operational 30% + Tactical 30% + Playground 10%
 - Embeddings stored as pickled numpy arrays in BLOB column
 - Semantic search via cosine similarity
 - Enrichment status: 0=Pending, 1=Enriched, 2=Failed (state machine)
@@ -51,4 +84,13 @@
 - `python -m py_compile <file>` for syntax validation
 - `python talos.py` for full integration test
 - `python scripts/db_stats.py` for database health check
+- `python test_smoke.py` for system health check
+- `python scripts/verify_dependency_map.py` for dependency map audit (AST vs PROJECT_MAP.md)
+- `python scripts/verify_dependency_map.py --ci` for CI/CD exit-code-only check
 - Local mode: `ollama pull gemma3:12b && ollama pull nomic-embed-text` then set TALOS_USE_LOCAL=1
+
+## Dependency Map Verification (NEW in v5.0.0)
+- After any significant change, run `python scripts/verify_dependency_map.py` to check that PROJECT_MAP.md Section 7 is still accurate
+- If stale/missing dependencies are found, update PROJECT_MAP.md accordingly
+- The `--ci` flag exits with code 1 if discrepancies are found (useful for GitHub Actions)
+- HTML and JSON reports are saved to `reports/audits/`

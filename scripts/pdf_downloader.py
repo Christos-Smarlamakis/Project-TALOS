@@ -87,6 +87,22 @@ def find_oa_pdf(doi, mailto):
     except requests.RequestException:
         pass
     
+    # ── Strategy 3: CORE API (keyless — free open access repository) ──
+    try:
+        clean_doi = doi.replace("https://doi.org/", "")
+        url = f"https://api.core.ac.uk/v3/search/works?doi={clean_doi}&limit=1"
+        r = requests.get(url, headers=headers, timeout=10)
+        if r.status_code == 200:
+            data = r.json()
+            results = data.get("results", [])
+            if results:
+                first = results[0]
+                download_url = first.get("downloadUrl") or first.get("fullTextIdentifier")
+                if download_url:
+                    return (download_url, "CORE API")
+    except requests.RequestException:
+        pass
+    
     return (None, None)
 
 
@@ -102,14 +118,31 @@ def download_pdf(pdf_url, filename, max_retries=MAX_RETRIES):
     if os.path.exists(filepath):
         return filepath
     
-    headers = {"User-Agent": "TALOS-PDFDownloader/1.0"}
+    # Browser-like User-Agent to avoid publisher blocks
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                       "(KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 "
+                       "TALOS-PDFDownloader/1.0 (mailto:TALOS-bot)",
+        "Accept": "application/pdf,text/html,application/octet-stream,*/*",
+        "Accept-Language": "en-US,en;q=0.9",
+    }
     
     for attempt in range(max_retries):
         try:
-            r = requests.get(pdf_url, headers=headers, stream=True, timeout=DOWNLOAD_TIMEOUT)
+            r = requests.get(
+                pdf_url, headers=headers, stream=True,
+                timeout=DOWNLOAD_TIMEOUT, allow_redirects=True
+            )
             if r.status_code == 200:
-                content_type = r.headers.get("Content-Type", "")
-                if "pdf" not in content_type and "octet-stream" not in content_type:
+                content_type = r.headers.get("Content-Type", "").lower()
+                # Check if response is a PDF
+                is_pdf = "pdf" in content_type or "octet-stream" in content_type
+                # If not PDF by content-type, check first bytes for PDF magic number
+                if not is_pdf and len(r.content) > 10:
+                    first_bytes = r.raw.read(8)
+                    r.raw.seek(0)
+                    is_pdf = first_bytes.startswith(b"%PDF")
+                if not is_pdf:
                     print(f"  ⚠️  Response is not a PDF (Content-Type: {content_type})")
                     return None
                 
@@ -126,6 +159,10 @@ def download_pdf(pdf_url, filename, max_retries=MAX_RETRIES):
                 return filepath
             elif r.status_code in (403, 404):
                 return None
+            elif r.status_code == 429:
+                # Rate limited — exponential backoff
+                wait = 5 * (2 ** attempt)
+                time.sleep(wait)
             else:
                 time.sleep(2 * (attempt + 1))
         except requests.RequestException:
