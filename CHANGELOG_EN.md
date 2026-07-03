@@ -3,6 +3,12 @@
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [v5.0.1] - 2026-07-04 — GWO JSON Export
+
+### Added
+- **`scripts/gwo_rl_optimizer.py`**: Saves best hyperparameters to `models/gwo_best_params.json` after optimization completes. Includes learning_rate, gamma, epsilon_decay, best_fitness, best_avg_reward, iterations, and execution time. Creates `models/` directory automatically if it doesn't exist.
+
+
 ## [v5.0.0] - 2026-07-03 — The "Hybrid Embeddings & Deep RL" Update
 
 This **massive major release** spans six distinct phases covering multi-provider embeddings, a complete Deep Reinforcement Learning stack (environment + agent + optimizer + offline training), RTX 4070 GPU acceleration, an automated baseline reporting module, and documentation/project housekeeping. This version represents the largest single update in TALOS history with **14 new files** and **22 modified files**.

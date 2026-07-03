@@ -322,6 +322,27 @@ def run_gwo(wolves_number=DEFAULT_WOLVES, max_iterations=DEFAULT_ITERS):
     print(f"  Iterations: {iteration}")
     print("=" * 65)
 
+    # ── Save best hyperparameters to JSON ─────────────────────────────
+    import os as _os
+    import json as _json
+    project_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), '..'))
+    models_dir = _os.path.join(project_root, "models")
+    _os.makedirs(models_dir, exist_ok=True)
+    json_path = _os.path.join(models_dir, "gwo_best_params.json")
+    params = {
+        "learning_rate": best_lr,
+        "gamma": best_gamma,
+        "epsilon_decay": best_eps,
+        "best_fitness": best_wolves[0][1],
+        "best_avg_reward": best_reward,
+        "iterations": iteration,
+        "gwo_time_seconds": round(elapsed, 1),
+    }
+    with open(json_path, "w", encoding="utf-8") as f:
+        _json.dump(params, f, indent=2)
+    print(f"\n  📁 Best parameters saved to: models/gwo_best_params.json")
+    print(f"     {_json.dumps(params)}")
+
     return {
         "learning_rate": best_lr,
         "gamma": best_gamma,

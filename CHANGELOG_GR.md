@@ -3,6 +3,12 @@
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
 
+## [v5.0.1] - 2026-07-04 — Εξαγωγή JSON από GWO
+
+### Προσθήκες
+- **`scripts/gwo_rl_optimizer.py`**: Αποθηκεύει τις καλύτερες υπερπαραμέτρους στο `models/gwo_best_params.json` μετά την ολοκλήρωση του optimization. Περιλαμβάνει learning_rate, gamma, epsilon_decay, best_fitness, best_avg_reward, iterations, και χρόνο εκτέλεσης. Δημιουργεί αυτόματα τον φάκελο `models/` αν δεν υπάρχει.
+
+
 ## [v5.0.0] - 2026-07-03 — Ενημέρωση "Hybrid Embeddings & Deep RL"
 
 Αυτή η **τεράστια κύρια έκδοση** καλύπτει έξι διακριτές φάσεις: multi-provider embeddings, πλήρες Deep Reinforcement Learning stack (περιβάλλον + πράκτορας + optimizer + offline εκπαίδευση), επιτάχυνση GPU RTX 4070, αυτοματοποιημένο baseline reporting module, και τεκμηρίωση/νοικοκύρεμα του project. Πρόκειται για τη μεγαλύτερη μεμονωμένη ενημέρωση στην ιστορία του TALOS με **14 νέα αρχεία** και **22 τροποποιημένα αρχεία**.
