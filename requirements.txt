@@ -39,3 +39,13 @@ Flask                     # Web Server for Interactive Dashboard
 Jinja2                    # Templating Engine (HTML Reports)
 python-docx               # Word Document Generation
 tabulate                  # Markdown Table Formatting
+
+# === Deep Reinforcement Learning (Phase 1-2) ===
+gymnasium                 # RL environment standard (Gymnasium API)
+torch                     # Neural network framework (PyTorch - CPU or CUDA)
+
+# === Web GUI ===
+streamlit                 # Interactive Web GUI (replaces CLI dashboard)
+
+# === Phase 4: Daemon & Notifications ===
+psutil                    # Process priority management (daemon)

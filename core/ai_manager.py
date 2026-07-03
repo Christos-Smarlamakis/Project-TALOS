@@ -5,57 +5,65 @@
 #  This program is free software...
 #
 """
-Module: ai_manager.py (v3.5 - Local Model Support)
-Project: TALOS v4.8.5
+Module: ai_manager.py (v3.6 - Hybrid Multi-Provider Embeddings)
+Project: TALOS v5.0.0
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture
     with automatic fallback and circuit breaker pattern. Orchestrates all LLM
-    interactions across four independent providers:
+    interactions across four independent providers and embedding across three
+    independent providers:
 
     - Gemini (Google Generative AI) — primary cloud provider
     - DeepSeek — fallback cloud provider via OpenAI-compatible API
-    - Hugging Face — free cloud inference via router.huggingface.co
+    - Hugging Face — free cloud inference via router.huggingface.co (text)
+                   and api-inference.huggingface.co (embeddings)
     - Local (Ollama) — offline operation via OpenAI-compatible API
 
-    Supports JSON mode, text generation, and embedding generation with
-    automatic failover. The circuit breaker opens after
-    ``failure_threshold`` consecutive failures, skipping the provider
-    for the remainder of the session.
+    Supports JSON mode, text generation, and HYBRID embedding generation with
+    automatic failover across Ollama → HuggingFace → Gemini.
 """
 
 import os, json, re, requests
 from dotenv import load_dotenv
 import google.generativeai as genai
 import openai
-from typing import Union, List, Dict, Any
+from typing import Union, List, Dict, Any, Tuple
+import numpy as np
+
+# New GA Gemini SDK for embeddings (replaces deprecated embed_content on v1beta)
+try:
+    from google import genai as genai_client
+    from google.genai import types as genai_types
+    _GENAI_V2 = True
+except ImportError:
+    _GENAI_V2 = False
 
 
 class AIManager:
-    """Manages all LLM interactions with multi-provider fallback and circuit breaker.
+    """Manages all LLM and embedding interactions with multi-provider fallback
+    and circuit breaker pattern.
 
-    Initializes available providers based on environment variables and
-    config. Providers are tried in order of ``provider_priority``.
-    Each provider tracks consecutive failures; after the threshold is
-    reached, the circuit opens and the provider is skipped.
+    Embedding providers tried in order:
+        local (Ollama) → huggingface (free) → gemini
+
+    The active embedding model name is stored in ``self.active_embedding_model``
+    and returned alongside vectors so the database can tag each record.
 
     Attributes:
         providers (dict): Initialized provider configurations keyed by name.
         provider_priority (list): Ordered list of provider names to try.
         FAILURE_THRESHOLD (int): Consecutive failures before circuit opens.
+        active_embedding_model (str): Name of the embedding model that
+            successfully generated vectors, or ``None``.
     """
 
     def __init__(self, config: Dict[str, Any]):
-        """Initialize AI providers from config and environment variables.
-
-        Args:
-            config (dict): Application configuration dictionary containing
-                provider priorities, model names, and failure thresholds.
-        """
         load_dotenv()
         self.config = config
         self.providers = {}
         self.provider_priority = config.get("ai_provider_priority", ["gemini", "deepseek"])
+        self.active_embedding_model = None  # set after first successful embedding generation
 
         # --- Gemini Provider ---
         gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -64,7 +72,7 @@ class AIManager:
             self.providers['gemini'] = {
                 'flash_model': genai.GenerativeModel(config.get("pre_screening_model", "gemini-2.5-flash-lite")),
                 'pro_model': genai.GenerativeModel(config.get("model_for_daily_search", "gemini-2.5-pro")),
-                'embedding_model': "models/text-embedding-004",
+                'embedding_model': "models/embedding-001",
                 'consecutive_failures': 0, 'circuit_open': False
             }
             print("INFO: Gemini provider initialized.")
@@ -108,7 +116,7 @@ class AIManager:
             self.provider_priority.insert(0, 'local')  # local first when enabled
 
         self.FAILURE_THRESHOLD = config.get("failure_threshold", 5)
-        print(f"INFO: AIManager v3.5 (Local Model Support) initialized.")
+        print(f"INFO: AIManager v3.6 (Hybrid Multi-Provider Embeddings) initialized.")
 
     # --- JSON Cleaning ---
 
@@ -118,88 +126,209 @@ class AIManager:
         Handles Markdown code fences and leading/trailing text.
 
         Args:
-            text (str): Raw text response from an LLM.
+            text (str): Raw LLM response.
 
         Returns:
-            str: Cleaned JSON string containing only the outermost ``{...}`` block.
+            str: Cleaned JSON string.
         """
-        match = re.search(r"```(?:json)?(.*?)```", text, re.DOTALL)
-        if match: text = match.group(1)
+        if "```json" in text:
+            text = text.split("```json", 1)[-1]
+            text = text.split("```", 1)[0]
+        elif "```" in text:
+            text = text.split("```", 1)[-1]
+            text = text.split("```", 1)[0]
         start = text.find('{')
         end = text.rfind('}')
-        if start != -1 and end != -1: return text[start:end+1]
-        return text.strip()
+        if start != -1 and end != -1 and end > start:
+            return text[start:end + 1]
+        return text
 
-    # --- Public API ---
+    # --- Text Generation ---
 
-    def evaluate_paper_json(self, paper_content: str, model_type: str = 'pro',
-                            system_prompt_override: str = None) -> Union[Dict[str, Any], None]:
-        """Evaluate a paper's content and return structured JSON analysis.
+    def evaluate_paper_json(self, abstract: str, model_type: str = "pro",
+                             system_prompt_override: str = None) -> Union[Dict[str, Any], None]:
+        """Evaluate a paper abstract and return structured JSON results.
 
         Args:
-            paper_content (str): Title and abstract to analyze.
-            model_type (str): ``'pro'`` for deep analysis, ``'flash'`` for screening.
-            system_prompt_override (str, optional): Override the default system prompt
-                (used by PYTHIA to act as "Research Architect" instead of "PhD Advisor").
+            abstract (str): Paper abstract text.
+            model_type (str): ``'pro'`` or ``'flash'``.
+            system_prompt_override (str, optional): Custom system prompt.
 
         Returns:
-            dict or None: Parsed JSON evaluation, or None if all providers failed.
+            dict or None: Parsed JSON evaluation or None if all providers fail.
         """
+        prompt = self.config.get("pre_screening_prompt", "Evaluate this paper.")
         if system_prompt_override:
-            full_prompt = f"{system_prompt_override}\n\n---\n\n{paper_content}"
+            prompt = system_prompt_override + "\n\n" + abstract
         else:
-            prompt_key = 'phd_focus_system_prompt' if model_type == 'pro' else 'pre_screening_prompt'
-            system_prompt = self.config.get(prompt_key, "")
-            full_prompt = f"{system_prompt}\n\n---\n\n**// PAPER TO ANALYZE //**\n\n{paper_content}"
-        return self._execute_request(full_prompt, model_type, response_format='json')
+            prompt = prompt + "\n\n" + abstract
 
-    def analyze_generic_text(self, full_prompt: str) -> str:
-        """Analyze arbitrary text with the Pro model, returning a text response.
+        return self._execute_request(prompt, model_type, response_format='json')
 
-        Args:
-            full_prompt (str): Complete prompt including system instructions and content.
+    # ── Embeddings ─────────────────────────────────────────────────────────
 
-        Returns:
-            str: Text response from the first successful provider, or an error message.
-        """
-        result = self._execute_request(full_prompt, 'pro', response_format='text')
-        return result if result is not None else "All AI providers failed to generate a response."
+    def generate_embeddings(self, texts: List[str]) -> Tuple[Union[List[List[float]], None], Union[str, None]]:
+        """Generate embeddings with automatic fallback across providers.
 
-    def generate_embeddings(self, texts, task_type=None):
-        """Generate embedding vectors for the given texts.
-
-        Tries local embedding model first (if available), then falls back
-        to Gemini's embedding API.
+        Provider order:
+            local (Ollama) → huggingface (free) → gemini (paid)
 
         Args:
-            texts (list of str): Texts to generate embeddings for.
-            task_type (str, optional): Task type hint (e.g., ``RETRIEVAL_DOCUMENT``).
+            texts (List[str]): List of text strings to embed.
 
         Returns:
-            list of list of float or None: Embedding vectors, or None if all providers fail.
+            Tuple[List[List[float]], str]: (embeddings list, model_name) or
+            (None, None) if all providers fail.
         """
-        # Try local first
-        if 'local' in self.providers:
+        # Try local embeddings first
+        if 'local' in self.providers and not self.providers['local']['circuit_open']:
             try:
                 p = self.providers['local']
-                resp = requests.post(f"{p['ollama_url']}/api/embed",
-                    json={"model": p['embedding_model'], "input": texts}, timeout=60)
+                resp = requests.post(
+                    f"{p['ollama_url']}/api/embed",
+                    json={"model": p['embedding_model'], "input": texts},
+                    timeout=60
+                )
                 if resp.status_code == 200:
-                    return resp.json().get('embeddings')
+                    self.active_embedding_model = f"ollama:{p['embedding_model']}"
+                    return resp.json().get('embeddings'), self.active_embedding_model
                 print(f"  >!> Local embedding status: {resp.status_code}")
             except Exception as e:
                 print(f"  >!> Local embedding error: {e}")
-        # Fallback to Gemini
-        if 'gemini' in self.providers:
-            try:
-                result = genai.embed_content(
-                    model=self.providers['gemini']['embedding_model'],
-                    content=texts, task_type="RETRIEVAL_DOCUMENT")
-                return result['embedding']
-            except Exception as e:
-                print(f"  >!> Gemini embedding failed: {e}")
+
+        # HuggingFace embedding removed — DNS issues with api-inference endpoints
+
+        # Fallback to Gemini — with retry for rate limits (free tier: 100 RPM)
+        if 'gemini' in self.providers and not self.providers['gemini']['circuit_open']:
+            import time as _time
+            if _GENAI_V2:
+                client = genai_client.Client(
+                    api_key=os.getenv("GEMINI_API_KEY"),
+                    http_options={'api_version': 'v1'}
+                )
+                MAX_RETRIES = 10
+                for attempt in range(MAX_RETRIES):
+                    try:
+                        response = client.models.embed_content(
+                            model="gemini-embedding-001",
+                            contents=texts,
+                            config=genai_types.EmbedContentConfig(
+                                task_type="RETRIEVAL_DOCUMENT",
+                                output_dimensionality=768,
+                            )
+                        )
+                        if response and response.embeddings:
+                            vectors = [e.values for e in response.embeddings]
+                            self.active_embedding_model = "gemini:gemini-embedding-001"
+                            if self.providers['gemini']['consecutive_failures'] > 0:
+                                self.providers['gemini']['consecutive_failures'] = 0
+                                print("  >!> Gemini recovered from rate limit.")
+                            return vectors, self.active_embedding_model
+                        else:
+                            print(f"  >!> Gemini empty response (attempt {attempt+1}/{MAX_RETRIES})")
+                            _time.sleep(3)
+                    except Exception as e:
+                        err_str = str(e)
+                        is_rate_limit = "429" in err_str or "RESOURCE_EXHAUSTED" in err_str
+                        
+                        if is_rate_limit:
+                            # Parse retry delay
+                            wait = 60
+                            try:
+                                m = re.search(r'retryDelay["\']:\s*["\'](\d+)s', err_str)
+                                if m:
+                                    wait = int(m.group(1)) + 5
+                            except Exception:
+                                pass
+                            print(f"  >!> Gemini rate limited (attempt {attempt+1}/{MAX_RETRIES}), waiting {wait}s...")
+                            _time.sleep(wait)
+                            # Rate limits should NOT trip the circuit breaker
+                            # Only trip if we've tried many times
+                            if attempt >= MAX_RETRIES - 2:
+                                self._handle_failure('gemini')
+                                return None, None
+                        else:
+                            # Real error (not rate limit)
+                            print(f"  >!> Gemini embedding error: {err_str[:200]}")
+                            self._handle_failure('gemini')
+                            return None, None
+            else:
+                print("  >!> Gemini v1beta embedContent is deprecated. Install google-genai for embedding support.")
+
         print("ERROR: No embedding provider available.")
-        return None
+        return None, None
+
+    def _execute_huggingface_embedding(self, texts: List[str],
+                                        hf_token: str) -> Union[List[List[float]], None]:
+        """Generate embeddings using HuggingFace free Inference API.
+
+        Uses the sentence-transformers/all-MiniLM-L6-v2 model by default,
+        which produces 384-dimensional vectors.
+
+        Args:
+            texts (List[str]): List of texts to embed.
+            hf_token (str): HuggingFace API token.
+
+        Returns:
+            List[List[float]] or None: List of embedding vectors, or None.
+        """
+        api_url = ("https://api-inference.huggingface.org/pipeline/"
+                   "feature-extraction/sentence-transformers/all-MiniLM-L6-v2")
+        headers = {
+            "Authorization": f"Bearer {hf_token}",
+            "Content-Type": "application/json"
+        }
+
+        embeddings = []
+        for text in texts:
+            try:
+                response = requests.post(
+                    api_url,
+                    headers=headers,
+                    json={"inputs": text, "options": {"wait_for_model": True}},
+                    timeout=60
+                )
+                if response.status_code == 200:
+                    data = response.json()
+                    # Handle both [[float]] and [float] response formats
+                    if isinstance(data, list):
+                        if len(data) > 0 and isinstance(data[0], list):
+                            embeddings.append(data[0])
+                        else:
+                            embeddings.append(data)
+                    else:
+                        print(f"  >!> Unexpected HF response format: {type(data)}")
+                        return None
+                elif response.status_code == 503:
+                    print(f"  >!> HF model loading (503), retrying once after 10s...")
+                    time_out = 15
+                    import time as _time
+                    _time.sleep(time_out)
+                    response2 = requests.post(
+                        api_url, headers=headers,
+                        json={"inputs": text, "options": {"wait_for_model": True}},
+                        timeout=90
+                    )
+                    if response2.status_code == 200:
+                        data = response2.json()
+                        if isinstance(data, list):
+                            if len(data) > 0 and isinstance(data[0], list):
+                                embeddings.append(data[0])
+                            else:
+                                embeddings.append(data)
+                        else:
+                            return None
+                    else:
+                        print(f"  >!> HF embedding retry failed: {response2.status_code}")
+                        return None
+                else:
+                    print(f"  >!> HF embedding status: {response.status_code}")
+                    return None
+            except Exception as e:
+                print(f"  >!> HF embedding exception: {e}")
+                return None
+
+        return embeddings if len(embeddings) == len(texts) else None
 
     # --- Internal: Request Execution ---
 
@@ -242,16 +371,6 @@ class AIManager:
 
     def _execute_gemini_request(self, prompt: str, model_type: str,
                                 response_format: str) -> Union[Dict[str, Any], str, None]:
-        """Send a request to Gemini API.
-
-        Args:
-            prompt (str): Prompt text.
-            model_type (str): ``'pro'`` or ``'flash'``.
-            response_format (str): ``'json'`` or ``'text'``.
-
-        Returns:
-            dict, str, or None: Parsed response, or None on failure.
-        """
         provider = self.providers['gemini']
         model = provider['pro_model'] if model_type == 'pro' else provider['flash_model']
         try:
@@ -269,16 +388,7 @@ class AIManager:
             return None
 
     def _execute_deepseek_request(self, prompt: str,
-                                  response_format: str) -> Union[Dict[str, Any], str, None]:
-        """Send a request to DeepSeek API via OpenAI-compatible client.
-
-        Args:
-            prompt (str): Prompt text.
-            response_format (str): ``'json'`` or ``'text'``.
-
-        Returns:
-            dict, str, or None: Parsed response, or None on failure.
-        """
+                                   response_format: str) -> Union[Dict[str, Any], str, None]:
         provider = self.providers['deepseek']
         final_prompt = prompt
         if response_format == 'json':
@@ -298,83 +408,67 @@ class AIManager:
             return response_text
         except Exception as e:
             print(f"  >!> DeepSeek execution error: {e}")
-            if "insufficient_quota" in str(e):
-                self._handle_failure('deepseek')
             return None
 
     def _execute_openai_compatible(self, prompt: str, response_format: str,
-                                   provider_name='local') -> Union[Dict[str, Any], str, None]:
-        """Send a request to any OpenAI-compatible API (Local, HuggingFace).
-
-        Args:
-            prompt (str): Prompt text.
-            response_format (str): ``'json'`` or ``'text'``.
-            provider_name (str): Key in ``self.providers``.
-
-        Returns:
-            dict, str, or None: Parsed response, or None on failure.
-        """
+                                   provider_name: str) -> Union[Dict[str, Any], str, None]:
         provider = self.providers[provider_name]
         final_prompt = prompt
         if response_format == 'json':
-            final_prompt += "\n\nIMPORTANT: Return ONLY a valid JSON object. No markdown, no explanation."
+            final_prompt += "\n\nIMPORTANT: Your response MUST be a single, valid JSON object. Do not include any text explanation before or after the JSON."
         try:
-            response = provider['client'].chat.completions.create(
+            chat_completion = provider['client'].chat.completions.create(
                 model=provider['model_name'],
                 messages=[{"role": "user", "content": final_prompt}],
-                temperature=0.3)
-            text = response.choices[0].message.content
+                temperature=0.5)
+            response_text = chat_completion.choices[0].message.content
             if response_format == 'json':
                 try:
-                    return json.loads(self._clean_json_string(text))
+                    return json.loads(self._clean_json_string(response_text))
                 except json.JSONDecodeError:
-                    print(f"  >!> Local model JSON decode failed.")
+                    print(f"  >!> {provider_name} JSON decode failed.")
                     return None
-            return text
+            return response_text
         except Exception as e:
-            print(f"  >!> {provider_name.upper()} execution error: {e}")
-            self._handle_failure(provider_name)
+            print(f"  >!> {provider_name} execution error: {e}")
             return None
 
     # --- Circuit Breaker ---
 
     def _handle_failure(self, provider_name: str):
-        """Increment failure counter and open circuit if threshold reached.
+        """Increment failure counter and open circuit if threshold exceeded.
 
         Args:
             provider_name (str): Name of the provider that failed.
         """
         if provider_name in self.providers:
-            provider = self.providers[provider_name]
-            provider['consecutive_failures'] += 1
-            print(f"  >!> {provider_name.upper()} failure count: "
-                  f"{provider['consecutive_failures']}/{self.FAILURE_THRESHOLD}")
-            if provider['consecutive_failures'] >= self.FAILURE_THRESHOLD:
-                provider['circuit_open'] = True
-                print(f"  >!!!> CIRCUIT BREAKER OPEN for {provider_name.upper()}!")
+            self.providers[provider_name]['consecutive_failures'] += 1
+            fails = self.providers[provider_name]['consecutive_failures']
+            print(f"  >!> Provider {provider_name}: {fails} consecutive failures (threshold: {self.FAILURE_THRESHOLD})")
+            if fails >= self.FAILURE_THRESHOLD:
+                self.providers[provider_name]['circuit_open'] = True
+                print(f"  >!> Circuit OPENED for {provider_name}. Skipping for rest of session.")
 
-    # --- Local Model Setup ---
+    # ── Local Model Management ──────────────────────────────────────────
 
     def _ensure_local_model(self):
-        """Verify local Ollama models exist; pull if missing."""
-        import subprocess
-        p = self.providers.get('local')
-        if not p: return
+        """Verify and auto-install required local models for Ollama."""
+        print("\n[Verifying local models...]")
+        base = "http://localhost:11434"
         try:
-            resp = requests.get(f"{p['ollama_url']}/api/tags", timeout=5)
+            resp = requests.get(f"{base}/api/tags", timeout=5)
             if resp.status_code != 200:
-                print("WARNING: Ollama not reachable. Local model disabled.")
-                del self.providers['local']
-                self.local_enabled = False
+                print("WARNING: Ollama not reachable.")
                 return
             models = [m['name'] for m in resp.json().get('models', [])]
-            for model_key in ['model_name', 'embedding_model']:
-                m = p[model_key]
-                if m not in models:
-                    print(f"  >> Pulling {m}...")
-                    subprocess.run(["ollama", "pull", m], check=True)
-                    print(f"  >> {m} installed.")
+            for model in ["gemma3:12b", "nomic-embed-text"]:
+                if model not in models:
+                    print(f"  >> Pulling {model}...")
+                    import subprocess
+                    subprocess.run(["ollama", "pull", model], check=True)
+                else:
+                    print(f"  >> {model} already installed.")
+            os.environ["TALOS_MODELS_VERIFIED"] = "1"
+            print("[All local models ready.]")
         except Exception as e:
-            print(f"WARNING: Local model setup failed: {e}.")
-            if 'local' in self.providers: del self.providers['local']
-            self.local_enabled = False
+            print(f"WARNING: Model verification failed: {e}")

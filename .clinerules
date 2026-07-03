@@ -94,3 +94,36 @@
 - If stale/missing dependencies are found, update PROJECT_MAP.md accordingly
 - The `--ci` flag exits with code 1 if discrepancies are found (useful for GitHub Actions)
 - HTML and JSON reports are saved to `reports/audits/`
+
+## Phase 0: Multi-Provider Hybrid Embeddings (v5.0.0)
+- **Database schema:** `embeddings` table (id, paper_id FK, embedding BLOB, embedding_model TEXT) with indexes
+- **Provider chain:** Ollama (nomic-embed-text, local/free) → Gemini (gemini-embedding-001, cloud/paid) — HuggingFace removed due to DNS block
+- **Generator flags:** `python scripts/embedding_generator.py` (single) or `--all` (both models)
+- **Rate limiting:** BATCH_SIZE=10, sleep=3s, retry up to 10 times with parsed `retryDelay` from 429 errors
+- **Semantic search:** model_filter dropdown in GUI + Flask dashboard — only compares vectors from same model
+- **Migration script:** `python scripts/db_embedding_upgrade.py` — creates `embeddings` table, migrates 3,849 legacy `embedding` column records
+- **Backward compatibility:** All `get_all_embeddings()` and `get_papers_needing_embedding()` methods fall back to legacy `papers.embedding` column if `embeddings` table doesn't exist
+- **`_fix_embedding_labels.py`** renamed legacy "gemini" → "gemini:gemini-embedding-001" (one-time fix)
+- **Gemini SDK:** Uses new `google.genai` GA SDK (NOT deprecated `google.generativeai`) with `gemini-embedding-001` model, `RETRIEVAL_DOCUMENT` task type, and 768-dim output dimensionality
+
+## Progressive Documentation Rule (v5.0.0)
+- **Every time you open a `.py` file for ANY reason (reading, editing, checking):**
+  1. Read the ENTIRE file first
+  2. If documentation is missing, incomplete, or could be improved:
+     - Add/improve module-level docstring (WHAT it does, HOW it works, KEY design decisions)
+     - Add/improve Google-style docstrings on ALL functions/methods (Args, Returns, Raises)
+     - Add/improve inline comments on every logical block and every non-obvious line — in simple English that a first-year CS student can understand
+  3. If you opened the file for editing: THEN make the actual bugfix/feature change
+  4. If you opened the file for reading: ADD documentation before moving on
+  **This rule is MANDATORY — do NOT skip it even if you only read a file.**
+- **Module docstring format:**
+  ```
+  """
+  Module: filename.py (version)
+  Project: TALOS v5.0.0
+  Description: [2-3 sentence overview of WHAT this file does and HOW it works]
+  Key design decisions: [why certain choices were made]
+  """
+  ```
+- **Inline comment style:** Keep comments on their own line above the code they explain, using `# ── section ──` headers for logical sections
+- **Do NOT skip this step** even for small changes — documentation compounds across sessions

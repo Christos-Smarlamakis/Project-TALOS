@@ -1,8 +1,8 @@
-
-# Project TALOS (v4.10.0)
+# Project TALOS (v5.0.0)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Τακτικό Πρακτορικό Σύστημα Ενορχήστρωσης Βιβλιογραφίας)*
+### **Now with Deep Reinforcement Learning — LSTM-DDDQN API Orchestrator**
 
 > **An Autonomous Research Intelligence Platform for the AI Era.**
 
@@ -28,7 +28,13 @@ TALOS acts as an autonomous "Research Architect," filtering noise and highlighti
 
 ## 2. Technical Architecture & Ecosystem
 
-### **A. Core Intelligence Layer**
+### **A. Core Intelligence Layer (now DRL-powered)**
+- **DRL Agent (The Autonomous Orchestrator):** A **Double Dueling DQN with 3-layer LSTM** that learns to select the optimal academic API source in real-time. Trained on 3,849 real paper scores from the database with **RTX 4070 CUDA 12.1** acceleration. Features include:
+  - **Gymnasium RL environment** (`core/talos_env.py`) — Observation Space (6 elements), Action Space (4: ArXiv, OpenAlex, S2, Sleep)
+  - **Grey Wolf Optimizer** (`scripts/gwo_rl_optimizer.py`) for hyperparameter tuning
+  - **24/7 Autonomous Service** (`scripts/talos_service.py`) — background research agent with Telegram/Discord/Email notifications
+  - **API server** (`scripts/talos_service_api.py`) — real-time status at `localhost:5002/api/status`
+  - Models saved at `models/dddqn_trained.pth` and `models/talos_drl.pth`
 *   **Database Manager (The Knowledge Hub):** A SQLite3-powered hub using **B-Tree indexing**. It serves as a bridge between ecosystems by storing multiple identifiers (`DOI`, `OpenAlex ID`, `PMID`, `PMCID`).
 *   **AI Manager (The Cognitive Engine):** A model-agnostic engine (Gemini, DeepSeek, Ollama) using the **Adapter Design Pattern**. It features **Circuit Breakers** for resilience and **Surgical JSON Extraction** via regex to ensure data integrity.
 *   **Quad-Layer Evaluation Framework:** A proprietary scoring methodology that evaluates papers across four dimensions:
@@ -78,7 +84,7 @@ python talos.py
 This software is part of ongoing PhD research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v4.10.0, June 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.0.0, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -87,7 +93,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-   version = {v4.10.0},
+  version = {v5.0.0},
   year = {2026}
 }
 ```
@@ -109,8 +115,9 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 
 # ΕΛΛΗΝΙΚΗ ΕΚΔΟΣΗ
 
-# Project TALOS (v4.10.0)
+# Project TALOS (v5.0.0)
 ### **Tactical Agentic Literature Orchestration System**
+### **Τώρα με Deep Reinforcement Learning — LSTM-DDDQN API Orchestrator**
 
 > **Μια Αυτόνομη Πλατφόρμα Ερευνητικής Νοημοσύνης για την Εποχή του AI.**
 
@@ -121,7 +128,30 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 
 ---
 
-## 2. Εγκατάσταση & Χρήση (Zero-Friction)
+## 2. Τεχνική Αρχιτεκτονική & Οικοσύστημα
+
+### **A. Core Intelligence Layer (πλέον με DRL)**
+* **DRL Agent (Ο Αυτόνομος Ενορχηστρωτής):** Ένα **Double Dueling DQN με 3-layer LSTM** που μαθαίνει να επιλέγει τη βέλτιστη ακαδημαϊκή πηγή API σε πραγματικό χρόνο. Εκπαιδευμένο σε 3.849 πραγματικές βαθμολογίες paper από τη βάση δεδομένων με επιτάχυνση **RTX 4070 CUDA 12.1**. Περιλαμβάνει:
+  - **Gymnasium RL περιβάλλον** (`core/talos_env.py`) — Observation Space 6 στοιχείων, Action Space 4 πηγών (ArXiv, OpenAlex, S2, Sleep)
+  - **Grey Wolf Optimizer** (`scripts/gwo_rl_optimizer.py`) για βελτιστοποίηση υπερπαραμέτρων
+  - **24/7 Αυτόνομη Υπηρεσία** (`scripts/talos_service.py`) — πράκτορας φόντου με ειδοποιήσεις Telegram/Discord/Email
+  - **API server** (`scripts/talos_service_api.py`) — real-time status στο `localhost:5002/api/status`
+  - Μοντέλα αποθηκευμένα σε `models/dddqn_trained.pth` και `models/talos_drl.pth`
+*   **Database Manager (The Knowledge Hub):** Μια SQLite3 βάση με **B-Tree indexing** που λειτουργεί ως γέφυρα μεταξύ οικοσυστημάτων αποθηκεύοντας πολλαπλά αναγνωριστικά (`DOI`, `OpenAlex ID`, `PMID`, `PMCID`).
+*   **AI Manager (The Cognitive Engine):** Μια model-agnostic μηχανή (Gemini, DeepSeek, Ollama) που χρησιμοποιεί το **Adapter Design Pattern** με **Circuit Breakers** για ανθεκτικότητα και **Surgical JSON Extraction** για ακεραιότητα δεδομένων.
+*   **Quad-Layer Evaluation Framework:** Μια ιδιόκτητη μεθοδολογία βαθμολόγησης που αξιολογεί papers σε τέσσερις διαστάσεις:
+    1.  **Strategic:** Θεωρητικό πλαίσιο και υψηλού επιπέδου λήψη αποφάσεων.
+    2.  **Operational:** Κατανομή πόρων, δημοπρασίες, μηχανισμοί consensus.
+    3.  **Tactical:** Αλγοριθμική υλοποίηση και DRL/Neural policies.
+    4.  **Playground:** Περιβάλλοντα προσομοίωσης, datasets, benchmarks.
+
+### **B. Data Acquisition & Enrichment Layer**
+*   **Operation "Genesis" (Native Agents):** Ενορχηστρώνει ταυτόχρονες αναζητήσεις σε 12+ πηγές (ArXiv, Scopus, IEEE, PubMed, κ.λπ.) χρησιμοποιώντας custom-built Python agents με λογική **Exponential Backoff**.
+*   **Project "HERMES" (Data Enricher):** Ανακτά αυτόματα νόμιμους **Open Access (OA)** συνδέσμους PDF μέσω του Unpaywall API και εμπλουτίζει τα μεταδεδομένα (ISSN, Publisher).
+
+---
+
+## 3. Εγκατάσταση & Χρήση (Zero-Friction)
 
 Επιλέξτε τη μέθοδο που σας εξυπηρετεί καλύτερα:
 
@@ -150,7 +180,7 @@ python talos.py
 Εάν χρησιμοποιήσετε το TALOS στην έρευνά σας, παρακαλούμε να το αναφέρετε ως εξής:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v4.10.0, June 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.0.0, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -159,7 +189,7 @@ python talos.py
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v4.10.0},
+  version = {v5.0.0},
   year = {2026}
 }
 ```
@@ -170,10 +200,7 @@ python talos.py
 Το λογισμικό διατίθεται υπό την άδεια **GNU Affero General Public License v3.0 (AGPLv3)**.
 *   **Ακαδημαϊκή Χρήση:** Ελεύθερη, με την προϋπόθεση ότι τυχόν τροποποιήσεις θα παραμείνουν ανοιχτού κώδικα υπό την ίδια άδεια.
 *   **Εμπορική Χρήση:** Απαιτείται η αγορά **Εμπορικής Άδειας (Commercial License)**.
-*   **Επικοινωνία:**[christossmarlamakis@gmail.com](mailto:christossmarlamakis@gmail.com)
+*   **Επικοινωνία:** [christossmarlamakis@gmail.com](mailto:christossmarlamakis@gmail.com)
 
 ---
-Designed & AI-Augmented Developed by Christos Smarlamakis.
-
-
-
+*Designed & AI-Augmented Developed by Christos Smarlamakis.*

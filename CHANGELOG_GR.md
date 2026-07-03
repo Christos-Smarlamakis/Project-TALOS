@@ -3,6 +3,168 @@
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
 
+## [v5.0.0] - 2026-07-03 — Ενημέρωση "Hybrid Embeddings & Deep RL"
+
+Αυτή η **τεράστια κύρια έκδοση** καλύπτει έξι διακριτές φάσεις: multi-provider embeddings, πλήρες Deep Reinforcement Learning stack (περιβάλλον + πράκτορας + optimizer + offline εκπαίδευση), επιτάχυνση GPU RTX 4070, αυτοματοποιημένο baseline reporting module, και τεκμηρίωση/νοικοκύρεμα του project. Πρόκειται για τη μεγαλύτερη μεμονωμένη ενημέρωση στην ιστορία του TALOS με **14 νέα αρχεία** και **22 τροποποιημένα αρχεία**.
+
+---
+
+### Phase 0 — Multi-Provider Hybrid Embeddings v2
+
+#### Προσθήκες
+- **`scripts/db_embedding_upgrade.py` v2.0:** Δημιουργία πίνακα `embeddings` (id, paper_id FK, embedding BLOB, embedding_model TEXT) με indexes. Μετέφερε 3.849 legacy `papers.embedding` εγγραφές.
+- **`core/database_manager.py` v5.0:**  
+  - **`store_embeddings_batch(updates)`**: INSERT INTO `embeddings` (πολλαπλά vectors ανά paper — ένα ανά provider)  
+  - **`get_papers_needing_embedding(model)`**: Ελέγχει τον πίνακα embeddings ανά συγκεκριμένο μοντέλο  
+  - **`get_all_embeddings(model_filter)`**: Αυτόματο fallback σε legacy `papers.embedding` αν δεν υπάρχει ο πίνακας  
+  - **`get_embedding_model_stats()`**: Επιστρέφει model → count από τον πίνακα embeddings  
+  - **`reload_embeddings_for_model(model)`**: Φορτώνει στη μνήμη vectors μόνο για το επιλεγμένο μοντέλο  
+  - **`semantic_search(query_vector, top_k=100, model_filter=None)`**: Φιλτράρει cosine similarity μόνο για vectors από το ίδιο μοντέλο  
+  - **Profile-aware init**: Αυτόματη ανίχνευση `_profiles/<name>/talos_research.db` μέσω `_resolve_profile_db()`
+- **`core/ai_manager.py` v3.6:**  
+  - **Hybrid multi-provider embeddings**: Σειρά: Ollama (nomic-embed-text, τοπικό/δωρεάν) → Gemini (gemini-embedding-001, cloud/επί πληρωμή)  
+  - **`generate_embeddings(texts)` επιστρέφει `(vectors, model_name)` tuple**: Η βάση μπορεί να μαρκάρει κάθε εγγραφή με το μοντέλο που την παρήγαγε  
+  - **Google GenAI GA SDK**: Χρήση `google.genai.Client` (ΟΧΙ deprecated `google.generativeai`) με `gemini-embedding-001`, `RETRIEVAL_DOCUMENT`, 768-dim output  
+  - **Rate-limit handling**: BATCH_SIZE=10, sleep=3s, retry έως 10 φορές με parsed `retryDelay` από 429 errors  
+  - **HuggingFace αφαιρέθηκε** από την αλυσίδα embeddings: DNS προβλήματα
+- **`scripts/embedding_generator.py` v4.0:**  
+  - **`--all` seed-all mode**: Περνά από ΟΛΑ τα διαθέσιμα μοντέλα (Ollama → Gemini)  
+  - **BATCH_SIZE=10** με sleep=3s (~20 RPM, εντός του ορίου 100 RPM του free tier)  
+  - **Summary report**: Σύνολο papers, papers χωρίς abstract, generated/failed ανά μοντέλο  
+- **Semantic search**: `model_filter` dropdown σε GUI και Flask dashboard — συγκρίνει μόνο vectors από το ίδιο μοντέλο. `semantic_search()` επιστρέφει έως 200 αποτελέσματα.
+- **`_fix_embedding_labels.py`** (μιας χρήσης): Μετονόμασε legacy "gemini" → "gemini:gemini-embedding-001" σε 3.849 εγγραφές.
+
+---
+
+### Phase 1 — DRL Περιβάλλον & Πράκτορας v1.0
+
+#### Προσθήκες
+- **`core/talos_env.py` v1.0 (225 γραμμές):** Gymnasium RL περιβάλλον για επιλογή API πηγής  
+  - **Observation Space**: `Box(6,)` — [κανονικοποιημένη_ώρα, arxiv_ratio, openalex_ratio, s2_ratio, χαμηλά_scores_streak, errors_streak]  
+  - **Action Space**: `Discrete(4)` — 0=ArXiv, 1=OpenAlex, 2=SemanticScholar, 3=Sleep/Cooldown  
+  - **Reward Logic**: +20 score≥8, +5 score=7, -10 score<7, -50 API error (429), +2 sleep όταν limits >80%  
+- **`core/drl_agent.py` v1.1 (395 γραμμές):** Double Dueling DQN με LSTM  
+  - **`DuelingLSTM`**: 3-layer LSTM (128→64→32) με LayerNorm + Dueling heads (V + A)  
+  - **`TalosDRLAgent`**: Online + Target δίκτυα, ε-greedy exploration, soft updates (τ=1e-3), experience replay  
+  - **`ReplayMemory`**: deque(maxlen=10000), batch_size=200, LEARN_AFTER=500  
+  - **CuDNN fix**: `flatten_parameters()` πριν από κάθε LSTM forward pass, `actor_target.train()` αντί `.eval()`  
+  - **Hyperparameters**: LR=1e-4, GAMMA=0.8, TAU=1e-3, BATCH_SIZE=200
+- **`scripts/drl_trainer.py` v1.0 (135 γραμμές):** CLI training loop — `--episodes 500` flag, αποθήκευση σε `models/talos_drl.pth`
+
+---
+
+### Phase 2 — Meta-Optimization & Offline Training
+
+#### Προσθήκες
+- **`scripts/gwo_rl_optimizer.py` v1.0 (360 γραμμές):** Grey Wolf Optimizer για hyperparameter tuning  
+  - **Search space**: LR ∈ [1e-5, 1e-3], GAMMA ∈ [0.5, 0.99], EPS_DECAY ∈ [0.9, 0.999]  
+  - **15 λύκοι, 50 επαναλήψεις**: X_new = (X1 + X2 + X3) / 3, `a` μειώνεται 2→0  
+- **`scripts/train_agent.py` v1.0 (260 γραμμές):** Offline εκπαίδευση με ΠΡΑΓΜΑΤΙΚΑ scores από τη βάση  
+  - **`OfflineTalosEnv`**: Επεκτείνει `TalosEnv`, κάνει override `_simulate_score()` → δειγματοληψία πραγματικών `overall_score` από SQLite  
+  - **Profile-aware**: Διαβάζει `_profiles/active_profile.txt`  
+  - **Per-episode timing**: `X.XXs` ανά επεισόδιο με `flush=True`, ETA σε λεπτά  
+  - Αποθήκευση σε `models/dddqn_trained.pth`
+
+---
+
+### Phase 3 — Graceful Degradation & Documentation
+
+#### Αλλαγές
+- **Και οι 3 premium API πηγές (IEEE, Elsevier, Springer):** Ήδη υλοποιημένο graceful degradation — έλεγχος API key → `self.enabled=False` + warning → `fetch_new_papers()` επιστρέφει `[]`. Επαληθεύτηκε.
+- **`scripts/data_enricher.py` v4.8.1:** Προστέθηκε πλήρης τεκμηρίωση: module docstring, Google-style docstrings, inline comments σε απλά αγγλικά.
+- **`sources/ieee_source.py` v2.2:** Προστέθηκαν inline comments για pagination logic.
+
+---
+
+### Επιτάχυνση GPU/CUDA
+
+#### Αλλαγές
+- **RTX 4070**: Απεγκατάσταση CPU-only PyTorch 2.12.1, εγκατάσταση `torch 2.5.1+cu121` (CUDA 12.1)  
+- **CuDNN mode-lock fix**: Αφαίρεση όλων των `.eval()` από το online δίκτυο, `actor_target.eval()` → `actor_target.train()`  
+- **Επαληθεύτηκε**: `torch.cuda.is_available()` = True, CUDA 12.1, GPU: NVIDIA GeForce RTX 4070 (12 GB VRAM)  
+- **Ταχύτητα**: ~0.5s/επεισόδιο σε CPU → ~0.05s/επεισόδιο σε GPU (10x βελτίωση)
+
+#### Προσθήκη dependencies
+- `gymnasium`, `torch`, `streamlit`
+
+---
+
+### Σύστημα Baseline Report
+
+#### Προσθήκες
+- **`scripts/generate_baseline_report.py` v1.1 (480 γραμμές):** Αυτοματοποιημένη γεννήτρια baseline snapshot  
+  - **4 plots σε 300/600 DPI**: Score distribution (histogram + KDE), Quad-Layer averages (bar), Source distribution (pie, top 8 + Other), Embedding coverage (horizontal bar)  
+  - **`--academic` flag**: Ποιότητα δημοσίευσης — serif γραμματοσειρές (Times New Roman), 600 DPI, muted ακαδημαϊκή παλέτα, κατάλληλο για IEEE/Springer journals  
+  - **Οργάνωση κατά ημερομηνία**: `reports/general_status_report/YYYY-MM-DD/` με `report.md` + `report.html`  
+  - **Dark-themed HTML**: Ταιριάζει με το TALOS dashboard aesthetic
+
+#### Προσθήκη στο TUI/GUI
+- **TUI** (`talos.py` → System Diagnostics): Επιλογές 5 "Baseline Report (Standard)" και 6 "Baseline Report (Academic — 600 DPI)"  
+- **GUI** (`app.py` → Analysis & Insights): Dropdown "📊 Baseline Report (Standard)" και "🎓 Baseline Report (Academic)"
+
+---
+
+### Κανόνες Τεκμηρίωσης & Γνώσης
+
+- **`.clinerules` v5.0.0 — Progressive Documentation Rule**: ΥΠΟΧΡΕΩΤΙΚΗ τεκμηρίωση σε ΚΑΘΕ άνοιγμα `.py` αρχείου (ανάγνωση Ή επεξεργασία)
+- **`CHANGELOG_EN.md`** και **`CHANGELOG_GR.md`**: Ενημερώθηκαν και στις δύο γλώσσες
+- **`requirements.txt`**: Προστέθηκαν `gymnasium`, `torch`, `streamlit`
+
+---
+
+### Νοικοκύρεμα
+
+#### Διαγραφή
+- `_fix_ai.py`, `_fix_embedding_labels.py`, `_fix_now.py`, `_fix2.py`, `_fix3.py`, `_fix4.py` — scripts μιας χρήσης, ήδη εφαρμόστηκαν
+- `dump.json` — παλιό data dump
+
+#### Αλλαγές
+- **`start_talos.bat` v2.0**: Χρήση conda `talosenv`, menu: CLI, GUI, Dashboard, Baseline Report, Exit
+- **TUI menu επέκταση**: 9→12 επιλογές (DRL Training + αναρίθμηση)
+- **GUI menu επέκταση**: Baseline Report επιλογές στο Analysis & Insights
+
+---
+
+### Phase 4 — Αυτόνομη Υπηρεσία & Ειδοποιήσεις
+
+#### Προσθήκες
+- **`core/notifier.py` v1.0 (185 γραμμές):** Σύστημα ειδοποιήσεων πολλαπλών καναλιών  
+  - **Telegram**: Bot API, `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`  
+  - **Discord**: Webhook με truncation στα 2000 chars, `DISCORD_WEBHOOK_URL`  
+  - **Email**: SMTP με STARTTLS για Gmail/Outlook (`SMTP_*` keys)  
+  - Όλα τα exceptions πιάνονται εσωτερικά — fire-and-forget, ποτέ δεν ρίχνει τον caller
+- **`scripts/talos_service.py` v1.1 (470 γραμμές):** 24/7 αυτόνομη ερευνητική υπηρεσία  
+  - **Interactive reporting**: Silent (μόνο alerts) / Normal (σύνοψη επεισοδίων) / Verbose (κάθε ενέργεια)  
+  - **Ημερήσιες αναφορές**: `reports/argus/YYYY-MM-DD/discoveries.{json,md,html}` — τρία formats  
+  - **Εβδομαδιαίο digest**: Email κάθε Παρασκευή 17:00 με DB stats + δραστηριότητα  
+  - **Ultra-lightweight**: `os.nice(10)` / `BELOW_NORMAL_PRIORITY_CLASS`, `time.sleep(5)`, `gc.collect()`, RAM < 100 MB  
+  - **Action 3 (Sleep)**: `time.sleep(3600)` — 1 ώρα cooldown  
+  - **Τεράστιο try/except** — η υπηρεσία ΠΟΤΕ δεν κρασάρει  
+  - **Graceful shutdown**: SIGINT/SIGTERM handlers
+- **`scripts/talos_service_api.py` v1.0 (90 γραμμές):** Micro-Flask API (port 5002)  
+  - `GET /api/status` — uptime, papers σήμερα, DB stats  
+  - `GET /api/report` — σημερινή HTML αναφορά
+- **Μετονομάστηκε**: `talos_daemon.py` → `talos_service.py` (επιστημονικά σωστή ορολογία)
+- **`requirements.txt`**: Προστέθηκε `psutil` για διαχείριση προτεραιότητας διεργασίας
+
+#### Αλλαγές
+- **`start_talos.bat` v2.0**: Προσθήκη `[5] Autonomous Research Service (24/7)`, Daemon→Service
+- **GUI (`app.py`)**: Προσθήκη "🤖 Autonomous Research Service (24/7)" και "📡 Service API (Port 5002)" στο Analysis & Insights dropdown
+- **`drl_trainer.py`**: Interactive επιλογή επεισοδίων (1=50, 2=100, 3=500, 4=1000)
+- **`example.env`**: Προσθήκη Phase 4 keys (Telegram, SMTP, Discord notification config)
+
+#### Αναφορές
+- **Ημερήσια**: JSON + Markdown + HTML στο `reports/argus/YYYY-MM-DD/`
+- **Εβδομαδιαία**: HTML email με DB stats κάθε Παρασκευή 17:00
+- **API**: Real-time JSON status μέσω `localhost:5002/api/status`
+
+---
+
+**Σύνολο: 17 νέα αρχεία, 26 τροποποιημένα, 7 διαγραμμένα**
+**Γραμμές κώδικα που προστέθηκαν: ~5,000+**
+
+---
+
 ## [v4.11.0] - 2026-07-02 - Ενημέρωση "Project Map & Diagnostics"
 
 Αυτή η έκδοση εισάγει ένα πλήρες σύστημα διαχείρισης γνώσης του project, συμπεριλαμβανομένου ενός κεντρικού χάρτη (PROJECT_MAP.md), διαδραστικού γράφου εξαρτήσεων, εργαλείων επαλήθευσης βασισμένων σε AST, και αναδιοργανωμένων μενού CLI/GUI.

@@ -3,6 +3,189 @@
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [v5.0.0] - 2026-07-03 — The "Hybrid Embeddings & Deep RL" Update
+
+This **massive major release** spans six distinct phases covering multi-provider embeddings, a complete Deep Reinforcement Learning stack (environment + agent + optimizer + offline training), RTX 4070 GPU acceleration, an automated baseline reporting module, and documentation/project housekeeping. This version represents the largest single update in TALOS history with **14 new files** and **22 modified files**.
+
+---
+
+### Phase 0 — Multi-Provider Hybrid Embeddings v2
+
+#### Added
+- **`scripts/db_embedding_upgrade.py` v2.0:** Standalone `embeddings` table migration (id, paper_id FK, embedding BLOB, embedding_model TEXT) with indexes on `paper_id` and `embedding_model`. Migrated 3,849 legacy `papers.embedding` records.
+- **`core/database_manager.py` v5.0:**  
+  - **`store_embeddings_batch(updates)`**: INSERT INTO `embeddings` table (supports multiple vectors per paper — one per provider)  
+  - **`get_papers_needing_embedding(model)`**: Checks the embeddings table per specific model (e.g., "ollama:nomic-embed-text")  
+  - **`get_all_embeddings(model_filter)`**: Automatic fallback to legacy `papers.embedding` column if `embeddings` table doesn't exist  
+  - **`get_embedding_model_stats()`**: Returns model → paper count from embeddings table with DISTINCT  
+  - **`reload_embeddings_for_model(model)`**: Reloads in-memory vectors for a specific model  
+  - **`semantic_search(query_vector, top_k=100, model_filter=None)`**: Filters cosine similarity to only compare vectors from the same embedding model  
+  - **Profile-aware initialization**: Auto-detects `_profiles/<name>/talos_research.db` via `_resolve_profile_db()`
+- **`core/ai_manager.py` v3.6:**  
+  - **Hybrid multi-provider embeddings**: Provider chain: Ollama (nomic-embed-text, local/free) → Gemini (gemini-embedding-001, cloud/paid)  
+  - **`generate_embeddings(texts)` returns `(vectors, model_name)` tuple**: Database can tag each record with the model that generated it  
+  - **Google GenAI GA SDK**: Uses `google.genai.Client` (NOT deprecated `google.generativeai`) with `gemini-embedding-001` model, `RETRIEVAL_DOCUMENT` task type, 768-dim output  
+  - **Rate-limit handling**: BATCH_SIZE=10, sleep=3s, retry up to 10 times with parsed `retryDelay` from 429 errors, exponential backoff  
+  - **HuggingFace removed** from embedding chain: DNS issues with `api-inference.huggingface.co/.com/.org`
+- **`scripts/embedding_generator.py` v4.0:**  
+  - **`--all` seed-all mode**: Loops through ALL available models (Ollama → Gemini), shows embedding distribution before starting  
+  - **BATCH_SIZE=10** with sleep=3s (~20 RPM, well within 100 RPM free tier)  
+  - **Summary report**: Total papers, papers without abstract, per-model generated/failed counts, reasons for failures  
+  - Per-model fresh AIManager creation (resets circuit breakers between models)
+- **Semantic search**: `model_filter` dropdown in both GUI (`app.py`) and Flask dashboard (`interactive_dashboard.py`) — only compares vectors from the same embedding model. `semantic_search()` adapted to return up to 200 results.
+- **`_fix_embedding_labels.py`** (one-time): Renamed legacy "gemini" → "gemini:gemini-embedding-001" in 3,849 records.
+
+---
+
+### Phase 1 — DRL Environment & Agent v1.0
+
+#### Added
+- **`core/talos_env.py` v1.0 (225 lines):** Gymnasium RL environment for TALOS API source selection  
+  - **Observation Space**: `Box(6,)` — [normalized_hour, arxiv_ratio, openalex_ratio, s2_ratio, low_score_streak, error_streak]  
+  - **Action Space**: `Discrete(4)` — 0=ArXiv, 1=OpenAlex, 2=SemanticScholar, 3=Sleep/Cooldown  
+  - **Reward Logic**: +20 score≥8, +5 score=7, -10 score<7, -50 API error (429), +2 sleep when limits >80%  
+  - **`reset()`**: Zeroes all counters, random hour, returns `(obs, info)`  
+  - **`step(action)`**: Increments call counters, returns `(obs, reward, terminated, truncated, info)`  
+  - **`_simulate_score()`**: Weighted random (20% score 5-6, 40% 7-8, 40% 9-10) — replaced by real DB scores in Phase 2
+- **`core/drl_agent.py` v1.1 (395 lines):** Double Dueling DQN agent with LSTM  
+  - **`DuelingLSTM`**: 3-layer LSTM (128→64→32) with LayerNorm + Dueling heads (V + A)  
+  - **`TalosDRLAgent`**: Online + Target networks, ε-greedy exploration, soft updates (τ=1e-3), experience replay  
+  - **`ReplayMemory`**: `deque(maxlen=10000)`, batch_size=200, LEARN_AFTER=500  
+  - **`reset_hidden_states()`**: Documented hook — LSTM resets per singleton input  
+  - **`save()`/`load()`**: Model persistence to `models/talos_drl.pth`  
+  - **CuDNN fix**: `flatten_parameters()` called before every LSTM forward pass to reset CuDNN memory pointers  
+  - **`actor_target.train()`** instead of `.eval()` — prevents CuDNN "backward only in training mode" error  
+  - **Hyperparameters**: LR=1e-4, GAMMA=0.8, TAU=1e-3, BATCH_SIZE=200, LEARN_EVERY=3, UPDATE_EVERY=9
+- **`scripts/drl_trainer.py` v1.0 (135 lines):** CLI training loop  
+  - `--episodes 500` flag, tqdm progress bar, save to `models/talos_drl.pth`
+  - Real-time per-episode timing output with ETA
+
+---
+
+### Phase 2 — Meta-Optimization & Offline Training
+
+#### Added
+- **`scripts/gwo_rl_optimizer.py` v1.0 (360 lines):** Grey Wolf Optimizer for DRL hyperparameter tuning  
+  - **Search space**: LR ∈ [1e-5, 1e-3], GAMMA ∈ [0.5, 0.99], EPS_DECAY ∈ [0.9, 0.999]  
+  - **Fitness function**: 30 fast episodes × 200 steps, negative average reward (GWO minimizes)  
+  - **15 wolves, 50 iters**: GWO equations X_new = (X1 + X2 + X3) / 3, `a` decays 2→0  
+  - **`--wolves`, `--iters`, `--rl-episodes`** CLI flags
+- **`scripts/train_agent.py` v1.0 (260 lines):** Offline training with REAL database scores  
+  - **`OfflineTalosEnv`**: Extends `TalosEnv`, overrides `_simulate_score()` → samples real `overall_score` from SQLite papers table  
+  - **Profile-aware DB resolution**: Reads `_profiles/active_profile.txt`  
+  - **Score source display**: Loads 3,849 scores, shows range (1.0-10.0) and mean (3.5)  
+  - **`--lr`, `--gamma`, `--eps-decay`** CLI flags for custom hyperparameters  
+  - **Per-episode timing**: `X.XXs` per episode with `flush=True`, ETA in minutes  
+  - Saves to `models/dddqn_trained.pth`
+
+---
+
+### Phase 3 — Graceful Degradation & Documentation
+
+#### Changed
+- **All 3 premium API sources (IEEE, Elsevier, Springer):** Already implemented graceful degradation — API key check → `self.enabled=False` + warning → `fetch_new_papers()` returns `[]`. Verified and confirmed working.
+- **`scripts/data_enricher.py` v4.8.1:** Added comprehensive English documentation: module docstring, Google-style docstrings on all functions, inline comments on every logical block in simple English for first-year CS students.
+- **`sources/ieee_source.py` v2.2:** Added inline comments explaining pagination logic and stop conditions.
+
+---
+
+### GPU/CUDA Acceleration
+
+#### Changed
+- **RTX 4070 support**: Uninstalled CPU-only PyTorch 2.12.1, force-installed `torch 2.5.1+cu121` (CUDA 12.1)  
+- **CuDNN mode-lock fix**: Removed all `.eval()` calls from online network, changed `actor_target.eval()` → `actor_target.train()`, uses `torch.no_grad()` only for inference  
+- **Verified**: `torch.cuda.is_available()` = True, CUDA 12.1, GPU: NVIDIA GeForce RTX 4070 (12 GB VRAM), both networks on `cuda:0`  
+- **Training speed**: ~0.5s/episode on CPU → ~0.05s/episode on GPU (10x improvement)
+
+#### Added to dependencies
+- `gymnasium` (RL environment standard)  
+- `torch` (neural network framework — CUDA 12.1)  
+- `streamlit` (Web GUI)
+
+---
+
+### Baseline Report System
+
+#### Added
+- **`scripts/generate_baseline_report.py` v1.1 (480 lines):** Automated baseline snapshot generator  
+  - **4 plots at 300/600 DPI**: Score distribution (histogram + KDE), Quad-Layer averages (bar chart), Source distribution (pie chart, top 8 + Other), Embedding model coverage (horizontal bar)  
+  - **`--academic` flag**: Publication-quality styling — serif fonts (Times New Roman), 600 DPI, muted academic color palette (grayscale + soft blues), clean layout suitable for IEEE/Springer journals  
+  - **Date-organized output**: `reports/general_status_report/YYYY-MM-DD/` with `report.md` + `report.html`  
+  - **Dark-themed HTML**: Matching TALOS dashboard aesthetic, responsive CSS, embedded images  
+  - **Profile-aware DB resolution**: Reads from active profile's database  
+  - **Google-style docstrings** on ALL 12 functions
+
+#### Added TUI/GUI Entries
+- **TUI** (`talos.py` → System Diagnostics): Options 5 "Generate Baseline Report (Standard)" and 6 "Generate Baseline Report (Academic — 600 DPI)"  
+- **GUI** (`app.py` → Analysis & Insights): Dropdown entries "📊 Baseline Report (Standard)" and "🎓 Baseline Report (Academic)"
+
+---
+
+### Documentation Rules & Knowledge Base
+
+#### Added
+- **`.clinerules` v5.0.0 — Progressive Documentation Rule**: MANDATORY documentation on EVERY `.py` file open (read OR edit): module docstring, Google-style docstrings, inline comments, section headers. Documentation before edits.
+- **`CHANGELOG_EN.md`** and **`CHANGELOG_GR.md`**: v5.0.0 entries in both languages
+
+#### Changed
+- **`requirements.txt`**: Added `gymnasium`, `torch`, `streamlit`
+- **`PROJECT_MAP.md`** to be updated (if not already)
+
+---
+
+### Housekeeping
+
+#### Removed
+- `_fix_ai.py`, `_fix_embedding_labels.py`, `_fix_now.py`, `_fix2.py`, `_fix3.py`, `_fix4.py` — one-time fix scripts, already applied
+- `dump.json` — stale data dump
+
+#### Changed
+- **`start_talos.bat` v2.0**: Uses conda `talosenv` environment (auto-activation via `C:\ProgramData\miniconda3\Scripts\activate.bat talosenv`), menu includes CLI, GUI, Legacy Dashboard, Baseline Report, Exit
+- **TUI menu expanded**: 9→12 items (added DRL Training + renumbered DB/Diagnostics/Settings)
+- **GUI menu expanded**: Added Baseline Report options to Analysis & Insights
+
+---
+
+### Phase 4 — Autonomous Service & Notifications
+
+#### Added
+- **`core/notifier.py` v1.0 (185 lines):** Multi-channel notification system  
+  - **Telegram**: Bot API, `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID`  
+  - **Discord**: Webhook with strict 2000-char truncation, `DISCORD_WEBHOOK_URL`  
+  - **Email**: SMTP with STARTTLS for Gmail/Outlook compatibility (`SMTP_*` keys)  
+  - All exceptions caught internally — fire-and-forget, never crashes the caller
+- **`scripts/talos_service.py` v1.1 (470 lines):** 24/7 autonomous research service  
+  - **Interactive reporting**: Silent (alerts only) / Normal (episode summaries) / Verbose (every action)  
+  - **Daily reports**: `reports/argus/YYYY-MM-DD/discoveries.{json,md,html}` — three formats  
+  - **Weekly digest**: Email every Friday 17:00 with DB stats + activity summary  
+  - **Ultra-lightweight**: `os.nice(10)` / `BELOW_NORMAL_PRIORITY_CLASS`, `time.sleep(5)`, `gc.collect()`, RAM < 100 MB  
+  - **Action 3 (Sleep)**: `time.sleep(3600)` — 1 hour cooldown  
+  - **Massive try/except** — the service NEVER crashes  
+  - **Graceful shutdown**: SIGINT/SIGTERM handlers
+- **`scripts/talos_service_api.py` v1.0 (90 lines):** Micro-Flask API (port 5002)  
+  - `GET /api/status` — uptime, papers found today, DB stats  
+  - `GET /api/report` — today's HTML report
+- **Renamed**: `talos_daemon.py` → `talos_service.py` (scientifically correct terminology)
+- **`requirements.txt`**: Added `psutil` for process priority management
+
+#### Changed
+- **`start_talos.bat` v2.0**: Added `[5] Autonomous Research Service (24/7)`, renamed Daemon→Service
+- **GUI (`app.py`)**: Added "🤖 Autonomous Research Service (24/7)" and "📡 Service API (Port 5002)" to Analysis & Insights dropdown
+- **`drl_trainer.py`**: Interactive episode selection (1=50, 2=100, 3=500, 4=1000)
+- **`example.env`**: Added Phase 4 keys (Telegram, SMTP, Discord notification config)
+
+#### Reporting
+- **Daily**: JSON + Markdown + HTML in `reports/argus/YYYY-MM-DD/`
+- **Weekly**: HTML email with DB stats every Friday 17:00
+- **API**: Real-time JSON status via `localhost:5002/api/status`
+
+---
+
+**Total: 17 new files, 26 modified files, 7 deleted files**
+**Lines of code added: ~5,000+**
+
+---
+
 ## [v4.11.0] - 2026-07-02 - The "Project Map & Diagnostics" Update
 
 This release introduces a complete project knowledge management system including a master blueprint file (PROJECT_MAP.md), interactive dependency graph, AST-based verification tooling, and reorganized CLI/GUI menus.

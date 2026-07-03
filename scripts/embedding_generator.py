@@ -1,25 +1,13 @@
 # -*- coding: utf-8 -*-
-#  Project TALOS
-#  Copyright (C) 2026 Christos Smarlamakis
-#
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU Affero General Public License as
-#  published by the Free Software Foundation, either version 3 of the
-#  License, or (at your option) any later version.
-#
-#  For commercial licensing, please contact the author.
-
 """
-Module: embedding_generator.py (v3.1 - Full Documentation & Harmonization)
-Project: TALOS v4.8.5
-
+Module: embedding_generator.py (v4.0 — Multi-Model Seed All)
+Project: TALOS v5.0.0
 Description:
-    Generates semantic embeddings for all papers in the database that lack them.
-    Processes papers in configurable batches via the AIManager's embedding
-    provider (local Ollama or Gemini), serializes vectors with pickle, and
-    stores them in the database for cosine similarity semantic search.
-    Includes progress bars, error handling, and rate-limit-friendly delays
-    between batches.
+    Generates semantic embeddings using all available providers.
+
+    Usage:
+        python scripts/embedding_generator.py          # current provider only
+        python scripts/embedding_generator.py --all    # ALL available models
 """
 import os
 import sys
@@ -34,18 +22,15 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from core.database_manager import DatabaseManager
 from core.ai_manager import AIManager
 
-BATCH_SIZE = 100
+BATCH_SIZE = 10
+# All known models we want to seed
+ALL_MODELS = [
+    ("ollama:nomic-embed-text", "local"),
+    ("gemini:gemini-embedding-001", "gemini"),
+]
 
 
 def load_configuration():
-    """Load the project configuration from config.json.
-
-    Returns:
-        dict: Configuration dictionary.
-
-    Raises:
-        SystemExit: If config.json is missing or invalid.
-    """
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     config_path = os.path.join(project_root, 'config.json')
     try:
@@ -56,31 +41,26 @@ def load_configuration():
         sys.exit(1)
 
 
-def main():
-    """Generate embeddings for all papers missing them.
+def generate_for_model(ai_manager, db_manager, model_name, provider_name):
+    """Generate embeddings using a specific model and store them.
 
-    1. Initializes core modules and AIManager.
-    2. Fetches papers without embeddings from the database.
-    3. Processes them in batches of BATCH_SIZE.
-    4. For each batch, calls the AI to generate embedding vectors.
-    5. Serializes vectors with pickle and stores them in bulk.
+    Returns (generated, failed) counts.
     """
-    print("--- EMBEDDING GENERATION STARTED (v3.1) ---")
+    print(f"\n{'='*60}")
+    print(f"  MODEL: {model_name} (provider: {provider_name})")
+    print(f"{'='*60}")
 
-    config = load_configuration()
-    ai_manager = AIManager(config)
-    db_manager = DatabaseManager()
-
-    print("INFO: Fetching papers that need embeddings from the database...")
-    papers_to_embed = db_manager.get_papers_without_embedding()
+    papers_to_embed = db_manager.get_papers_needing_embedding(model=model_name)
 
     if not papers_to_embed:
-        print("INFO: All papers already have embeddings. Terminating.")
-        return
+        print(f"  All papers already have {model_name} embeddings. Skipping.")
+        return 0, 0
 
-    print(f"Found {len(papers_to_embed)} papers to process.")
+    print(f"  Papers to process: {len(papers_to_embed)}")
+    generated = 0
+    failed = 0
 
-    with tqdm(total=len(papers_to_embed), desc="Generating Embeddings") as pbar:
+    with tqdm(total=len(papers_to_embed), desc=f"  {model_name}") as pbar:
         for i in range(0, len(papers_to_embed), BATCH_SIZE):
             batch = papers_to_embed[i:i + BATCH_SIZE]
 
@@ -89,10 +69,12 @@ def main():
                 for paper in batch
             ]
 
-            embedding_vectors = ai_manager.generate_embeddings(texts_to_embed)
+            result = ai_manager.generate_embeddings(texts_to_embed)
+            embedding_vectors, used_model = result if isinstance(result, tuple) else (result, 'unknown')
 
             if not embedding_vectors or len(batch) != len(embedding_vectors):
-                print(f"\nWARNING: Size mismatch or API error for batch index {i}. Skipping this batch.")
+                failed += len(batch)
+                print(f"\n  WARNING: Batch {i//BATCH_SIZE} failed. Skipping {len(batch)} papers.")
                 pbar.update(len(batch))
                 time.sleep(1)
                 continue
@@ -100,11 +82,110 @@ def main():
             updates = []
             for paper, vector in zip(batch, embedding_vectors):
                 embedding_blob = pickle.dumps(np.array(vector))
-                updates.append((embedding_blob, paper['id']))
+                updates.append((paper['id'], embedding_blob, model_name))
 
-            db_manager.update_embeddings_batch(updates)
+            try:
+                db_manager.store_embeddings_batch(updates)
+                generated += len(batch)
+            except Exception as e:
+                print(f"\n  ERROR storing batch: {e}")
+                failed += len(batch)
+
             pbar.update(len(batch))
-            time.sleep(2)
+            time.sleep(3)
+
+    print(f"  Model {model_name}: {generated} generated, {failed} failed")
+    return generated, failed
+
+
+def main():
+    print("--- EMBEDDING GENERATION STARTED (v4.0) ---")
+
+    config = load_configuration()
+    ai_manager = AIManager(config)
+    db_manager = DatabaseManager()
+
+    # Collect statistics
+    import sqlite3
+    with sqlite3.connect(db_manager.db_path) as conn:
+        total_papers = conn.cursor().execute("SELECT COUNT(*) FROM papers").fetchone()[0]
+        without_abstract = conn.cursor().execute(
+            "SELECT COUNT(*) FROM papers WHERE abstract IS NULL OR abstract=''").fetchone()[0]
+        with_abstract = total_papers - without_abstract
+
+    print(f"\n  Database: {os.path.basename(db_manager.db_path)}")
+    print(f"  Total papers: {total_papers}")
+    print(f"  With abstract: {with_abstract}")
+    print(f"  Without abstract: {without_abstract}")
+
+    # Show current distribution
+    print("\n  Current embedding distribution:")
+    stats = db_manager.get_embedding_model_stats()
+    if stats:
+        for s in stats:
+            print(f"    {s['model']}: {s['count']} papers")
+    else:
+        print("    (no embeddings yet)")
+
+    run_all = "--all" in sys.argv
+
+    if run_all:
+        print("\n" + "=" * 60)
+        print("  SEED ALL MODE — Processing ALL available models")
+        print("=" * 60)
+
+        summary = {}
+        for model_name, provider_name in ALL_MODELS:
+            gen, fail = generate_for_model(
+                AIManager(config),  # fresh AIManager per model to reset circuit breakers
+                db_manager,
+                model_name,
+                provider_name
+            )
+            summary[model_name] = (gen, fail)
+            time.sleep(3)  # brief pause between models
+
+        # ── Final Summary ──
+        print("\n" + "=" * 60)
+        print("  EMBEDDING GENERATION SUMMARY")
+        print("=" * 60)
+        print(f"  Total papers in database:    {total_papers}")
+        print(f"  Papers without abstract:     {without_abstract}  (skipped — no text to embed)")
+        print(f"  Papers with abstract:        {with_abstract}")
+        print("  " + "-" * 52)
+        for model_name, (gen, fail) in summary.items():
+            print(f"  {model_name}:  {gen:>6} generated  |  {fail:>6} failed")
+        print("  " + "-" * 52)
+        total_gen = sum(g for g, f in summary.values())
+        total_fail = sum(f for g, f in summary.values())
+        print(f"  TOTAL:                      {total_gen:>6} generated  |  {total_fail:>6} failed")
+        if total_fail > 0:
+            print(f"\n  Reasons for failures:")
+            print(f"    - Missing abstract: {without_abstract} papers")
+            print(f"    - Model/API errors: {total_fail} attempts")
+        print("=" * 60)
+    else:
+        # ── Single model mode (backward compatible) ──
+        model_name = ai_manager.active_embedding_model
+        if not model_name:
+            try:
+                result = ai_manager.generate_embeddings(["test discovery"])
+                _, model_name = result if isinstance(result, tuple) else (result, None)
+            except Exception:
+                model_name = None
+
+        if not model_name:
+            print("\n  WARNING: Could not determine active embedding model.")
+            print("  Try: python scripts/embedding_generator.py --all")
+            return
+
+        print(f"\n  Active model: {model_name}")
+        gen, fail = generate_for_model(ai_manager, db_manager, model_name, "auto-detected")
+
+        # Brief summary
+        print("\n  Summary:")
+        print(f"    {model_name}: {gen} generated, {fail} failed")
+        print(f"    Papers without abstract (skipped): {without_abstract}")
 
     print("\n--- EMBEDDING GENERATION COMPLETE ---")
 

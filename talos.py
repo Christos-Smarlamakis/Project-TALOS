@@ -270,6 +270,9 @@ def system_health_menu(python_exe: str):
             "3. Open Architecture Graph",
             "4. Architecture Intelligence Report (AI Analysis)",
             questionary.Separator(),
+            "5. Generate Baseline Report (Standard)",
+            "6. Generate Baseline Report (Academic — 600 DPI)",
+            questionary.Separator(),
             "Back to Main Menu"
         ]
     )
@@ -338,6 +341,10 @@ def system_health_menu(python_exe: str):
         print("\nReports saved:")
         print("  reports/architecture_intelligence_report_en.md")
         print("  reports/architecture_intelligence_report_gr.md")
+    elif choice.startswith("5."):
+        run_script("generate_baseline_report.py", python_exe)
+    elif choice.startswith("6."):
+        run_script("generate_baseline_report.py", python_exe, args=["--academic"])
 
     print()
     input("Press Enter to continue...")
@@ -692,11 +699,13 @@ def main_menu():
                 "5. Citation Network Analyzer (ORPHEUS)",
                 "6. Strategic Reading Report",
                 "7. Author Analysis Tools",
-                "8. Interactive Dashboard",
-                questionary.Separator("  DATABASE & SETTINGS"),
-                "9.  Database & Data",
-                "10. System Diagnostics",
-                "11. Profile & Settings",
+            "8. Interactive Dashboard",
+            questionary.Separator(),
+            "9. DRL Training (API Orchestrator)",
+            questionary.Separator("  DATABASE & SETTINGS"),
+            "10. Database & Data",
+            "11. System Diagnostics",
+            "12. Profile & Settings",
                 questionary.Separator(),
                 "Exit"
             ]
@@ -718,9 +727,10 @@ def main_menu():
         elif choice.startswith("8."):
             run_script("interactive_dashboard.py", python_exe)
             final_message = "Dashboard server terminated. Press Enter to return to the menu..."
-        elif choice.startswith("9."): database_data_menu(python_exe)
-        elif choice.startswith("10."): system_health_menu(python_exe)
-        elif choice.startswith("11."): profile_settings_menu(python_exe)
+        elif choice.startswith("9."): run_script("drl_trainer.py", python_exe)
+        elif choice.startswith("10."): database_data_menu(python_exe)
+        elif choice.startswith("11."): system_health_menu(python_exe)
+        elif choice.startswith("12."): profile_settings_menu(python_exe)
 
         if choice != "Exit": input(final_message)
 

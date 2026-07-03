@@ -272,18 +272,54 @@ if page == "🏠 Home & Knowledge Base":
             if st.button("🗑️ Clear", width="stretch", key="f_clr"):
                 st.session_state._filter = None
 
-        sem_col1, sem_col2 = st.columns([3, 1])
+        # Embedding model filter dropdown
+        sem_col0, sem_col1, sem_col2 = st.columns([2, 2, 1])
+        with sem_col0:
+            model_stats = st.session_state.db.get_embedding_model_stats()
+            model_opts = {f"{m['model']} ({m['count']} papers)": m['model'] for m in model_stats}
+            model_opts["All models"] = None
+            selected_label = st.selectbox("🧠 Embedding Model", list(model_opts.keys()), key="embed_model_sel")
+            selected_model = model_opts[selected_label]
         with sem_col1:
             sem_query = st.text_input("🔎 Semantic Search", placeholder="Search by meaning...", key="sem_q")
         with sem_col2:
             if st.button("🔍 Search", width="stretch", key="sem_btn") and sem_query:
                 with st.spinner("Searching..."):
                     try:
-                        vec = st.session_state.ai.generate_embeddings([sem_query])
-                        if vec and vec[0]:
-                            ids = st.session_state.db.semantic_search(np.array(vec[0]), top_k=50)
+                        vectors = None
+                        # Direct provider calls to avoid fallback chain / rate limits
+                        # Default to Ollama if "All models" is selected
+                        use_ollama = (not selected_model) or selected_model.startswith("ollama:")
+                        use_gemini = selected_model and selected_model.startswith("gemini:")
+                        
+                        if use_ollama:
+                            import requests as _req
+                            r = _req.post("http://localhost:11434/api/embed",
+                                          json={"model": "nomic-embed-text", "input": [sem_query]}, timeout=10)
+                            if r.status_code == 200:
+                                vectors = r.json().get("embeddings")
+                            else:
+                                st.warning(f"Ollama returned status {r.status_code}")
+                        elif use_gemini:
+                            try:
+                                from google import genai as _g
+                                from google.genai import types as _gt
+                                _c = _g.Client(api_key=os.getenv("GEMINI_API_KEY"), http_options={'api_version': 'v1'})
+                                _r = _c.models.embed_content(model="gemini-embedding-001", contents=[sem_query],
+                                    config=_gt.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT", output_dimensionality=768))
+                                if _r and _r.embeddings:
+                                    vectors = [e.values for e in _r.embeddings]
+                            except Exception as _e:
+                                st.warning(f"Gemini embedding failed: {str(_e)[:100]}")
+                        else:
+                            st.warning(f"Unknown model filter: {selected_model}")
+                        if vectors and vectors[0]:
+                            ids = st.session_state.db.semantic_search(
+                                np.array(vectors[0]), top_k=200, model_filter=selected_model)
                             st.session_state._sem_ids = ids
                             st.success(f"Found {len(ids)} matches")
+                        else:
+                            st.warning("Could not generate embeddings. Try a different model.")
                     except Exception as e:
                         st.warning(f"Unavailable: {e}")
 
@@ -571,6 +607,10 @@ elif page == "📊 Analysis & Insights":
         "📊 Strategic Reading Report (Recommender)",
         "👤 Author Analysis Tools",
         "🖥️ Interactive Dashboard (Legacy)",
+        "📊 Baseline Report (Standard)",
+        "🎓 Baseline Report (Academic)",
+        "🤖 Autonomous Research Service (24/7)",
+        "📡 Service API (Port 5002)",
     ])
     st.markdown("---")
 
@@ -662,6 +702,48 @@ elif page == "📊 Analysis & Insights":
             if rc in [0,1,2]: st.success("Dashboard server terminated.")
             else: st.warning(f"Code {rc}.")
             show_output("dash", "interactive_dashboard.py")
+
+    elif "Autonomous Research Service" in opt:
+        st.subheader("🤖 Autonomous Research Service (24/7)")
+        st.caption("Runs the DRL agent continuously in the background to discover high-scoring papers. "
+                   "Notifies via Telegram/Discord for papers scoring ≥8. Saves daily reports.")
+        st.warning("⚠️ This service runs INDEFINITELY in the background. Use 'Stop' in the terminal to end it.")
+        if st.button("🚀 Start Autonomous Research Service", type="primary", key="btn_service"):
+            with st.spinner("Starting autonomous research service..."):
+                rc, out = run("talos_service.py")
+                st.session_state.output["service"] = out
+            if rc in [0, 1, 2]: st.success("✅ Service terminated.")
+            else: st.warning(f"Completed (code {rc}).")
+            show_output("service", "talos_service.py")
+
+    elif "Service API" in opt:
+        st.subheader("📡 Service API — Port 5002")
+        st.caption("Starts a lightweight Flask server that exposes the daily discoveries and service status "
+                   "via HTTP API endpoints. Does NOT run the research agent itself.")
+        st.info("**Endpoints:**\n- `GET /api/status` — service uptime, papers found today, DB stats\n"
+                "- `GET /api/report` — today's HTML report")
+        if st.button("📡 Start Service API", type="primary", key="btn_api"):
+            with st.spinner("Starting service API on port 5002..."):
+                rc, out = run("talos_service_api.py")
+                st.session_state.output["service_api"] = out
+            if rc in [0, 1, 2]: st.success("✅ API server terminated.")
+            else: st.warning(f"Completed (code {rc}).")
+            show_output("service_api", "talos_service_api.py")
+
+    elif "Baseline Report" in opt:
+        is_academic = "Academic" in opt
+        label = "Academic (600 DPI)" if is_academic else "Standard (300 DPI)"
+        st.subheader(f"📊 Baseline Report — {label}")
+        st.caption("Generates a comprehensive baseline snapshot of the knowledge base with "
+                   "publication-quality plots, metrics, and HTML/MD reports.")
+        args = ["--academic"] if is_academic else []
+        if st.button(f"🎓 Generate {label} Report", type="primary", key=f"btn_baseline_{'acad' if is_academic else 'std'}"):
+            with st.spinner(f"Generating {label} baseline report..."):
+                rc, out = run("generate_baseline_report.py", args=args)
+                st.session_state.output["baseline"] = out
+            if rc == 0: st.success(f"✅ {label} baseline report generated!")
+            else: st.warning(f"Completed (code {rc}).")
+            show_output("baseline", "generate_baseline_report.py")
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # 5. DATABASE MAINTENANCE

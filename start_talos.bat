@@ -1,37 +1,38 @@
 @echo off
-title Project TALOS v4.10.0 Launcher
+title Project TALOS v5.0.0 Launcher
 
-:CHECK_VENV
-IF NOT EXIST "venv\" IF NOT EXIST ".venv\" (
-    echo [INFO] First run: Creating Python Virtual Environment...
-    python -m venv venv
-    echo [INFO] Installing dependencies...
-    call venv\Scripts\activate.bat
-    pip install -r requirements.txt
-    pip install streamlit
-) ELSE (
-    IF EXIST "venv\Scripts\activate.bat" call venv\Scripts\activate.bat
-    IF EXIST ".venv\Scripts\activate.bat" call .venv\Scripts\activate.bat
+REM Activate the conda environment
+call C:\ProgramData\miniconda3\Scripts\activate.bat talosenv
+IF ERRORLEVEL 1 (
+    echo [ERROR] Could not activate talosenv conda environment.
+    echo Please ensure Miniconda/Anaconda is installed at C:\ProgramData\miniconda3
+    echo or edit this batch file to point to the correct path.
+    pause
+    exit /b 1
 )
 
 :MENU
 cls
 echo =============================================
-echo    Project TALOS v4.10.0
+echo    Project TALOS v5.0.0
 echo    Research Intelligence Platform
 echo =============================================
 echo.
 echo    [1] CLI Menu (Terminal)
 echo    [2] Web GUI (Streamlit - Recommended)
 echo    [3] Legacy Dashboard (Flask)
-echo    [4] Exit
+echo    [4] Generate Baseline Report
+echo    [5] Autonomous Research Service (24/7)
+echo    [6] Exit
 echo.
-set /p choice="    Select mode [1-4]: "
+set /p choice="    Select mode [1-6]: "
 
 if "%choice%"=="1" goto CLI
 if "%choice%"=="2" goto GUI
 if "%choice%"=="3" goto DASHBOARD
-if "%choice%"=="4" goto END
+if "%choice%"=="4" goto REPORT
+if "%choice%"=="5" goto SERVICE
+if "%choice%"=="6" goto END
 goto MENU
 
 :CLI
@@ -46,7 +47,8 @@ echo    Starting TALOS Web GUI...
 echo    Open: http://localhost:8501
 echo    Press Ctrl+C to stop
 echo =============================================
-streamlit run app.py --server.port 8501
+echo.
+python -m streamlit run app.py --server.port 8501
 goto MENU
 
 :DASHBOARD
@@ -58,6 +60,26 @@ echo =============================================
 python scripts\interactive_dashboard.py
 goto MENU
 
+:REPORT
+cls
+echo =============================================
+echo    Generating Baseline Report...
+echo =============================================
+python scripts\generate_baseline_report.py --academic
+echo.
+echo    Report saved to reports\general_status_report\
+echo.
+pause
+goto MENU
+
+:SERVICE
+cls
+echo =============================================
+echo    Starting Autonomous Research Service...
+echo    Press Ctrl+C to stop
+echo =============================================
+python scripts\talos_service.py
+goto MENU
+
 :END
-deactivate
 exit

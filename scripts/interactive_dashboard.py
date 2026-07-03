@@ -100,8 +100,8 @@ def semantic_search():
     if not query_text: return jsonify({'error': 'Query text is missing.'}), 400
 
     try:
-        query_vector_list = ai_manager.generate_embeddings(
-            [query_text], task_type="RETRIEVAL_QUERY")
+        result = ai_manager.generate_embeddings([query_text])
+        query_vector_list, _ = result if isinstance(result, tuple) else (result, None)
         if not query_vector_list: raise Exception("AIManager failed.")
         query_vector = np.array(query_vector_list[0])
 

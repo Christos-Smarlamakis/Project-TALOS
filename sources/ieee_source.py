@@ -91,15 +91,17 @@ class IEEEXploreSource:
         Returns:
             list of dict: Standardized paper dictionaries.
         """
+        # ── Guard: skip if API key is missing ──────────────────────────────
         if not getattr(self, "enabled", True): return []
 
         print(f"-> Searching IEEE Xplore...")
         all_papers = []
-        start_record = 1
-        page_size = 200
+        start_record = 1        # IEEE API uses 1-based indexing for pagination
+        page_size = 200         # Maximum records per page
         start_year = datetime.now().year - (self.days_to_search // 365) - 1
         cutoff_date = datetime.now() - timedelta(days=self.days_to_search)
 
+        # ── Paginate through results until we hit the limit or end ──────────
         while len(all_papers) < self.total_max_results:
             params = {
                 "apikey": self.api_key, "format": "json", "max_records": page_size,
@@ -120,9 +122,10 @@ class IEEEXploreSource:
                         formatted = self._format_paper(article)
                         if formatted: all_papers.append(formatted)
 
+            # ── Stop conditions: reached target OR no more pages ────────────
             if len(all_papers) >= self.total_max_results or len(articles_on_page) < page_size:
                 break
-            start_record += page_size
+            start_record += page_size  # Move to next page for next iteration
 
         print(f"   SUCCESS [IEEE]: Found {len(all_papers)} new papers.")
         return all_papers
