@@ -113,6 +113,13 @@
 - If you find a mismatch, FIX PROJECT_MAP.md FIRST before any other work.
 - **This rule overrides all others** — an out-of-date PROJECT_MAP.md is worse than no map at all.
 
+## CRITICAL: Compile Check — All Changed Files (NEW in v5.2.1)
+- After ANY code change, run `python -m py_compile <file>` for EVERY changed .py file.
+- If ANY file fails compilation, fix it BEFORE marking the task complete.
+- Command: `python -m py_compile app.py talos.py core/*.py templates/gui_strings.py`
+- This ensures no syntax errors are ever committed to the repository.
+- This rule applies to BOTH .py and .bat changes — always test that the code is syntactically valid.
+
 ## CRITICAL: NO AUTO-GIT — User Handles Version Control (NEW in v5.2.1)
 - **NEVER run `git add`, `git commit`, `git push`, `git tag`, or any other `git` command** unless the user EXPLICITLY asks you to.
 - The user manages version control manually. Your job is to write code and documentation — NOT to push to GitHub.

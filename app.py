@@ -150,18 +150,15 @@ def render_css():
     except Exception:
         css_content = "/* gui_theme.css not found */"
 
-    # Inject the theme class for light/dark mode
-    theme_class = "dark-theme" if st.session_state.dark_mode else "light-theme"
-    wrapper_html = f'<div class="{theme_class}"></div>'
-
     # ── Build dynamic CSS variables based on current theme ──
-    bg = "#0d1117" if st.session_state.dark_mode else "#ffffff"
-    card_bg = "#161b22" if st.session_state.dark_mode else "#f6f8fa"
-    border = "#30363d" if st.session_state.dark_mode else "#d0d7de"
-    text = "#c9d1d9" if st.session_state.dark_mode else "#24292f"
-    accent = "#e94560"
-    muted = "#8b949e" if st.session_state.dark_mode else "#57606a"
-    sbar = "linear-gradient(180deg, #0d1117, #161b22)" if st.session_state.dark_mode else "linear-gradient(180deg, #f6f8fa, #ffffff)"
+    # Blue/Teal palette — scientific, eye-friendly
+    bg = "#0a1628" if st.session_state.dark_mode else "#ffffff"
+    card_bg = "#0f1f38" if st.session_state.dark_mode else "#f0f4f8"
+    border = "#1e3a5f" if st.session_state.dark_mode else "#c8d6e5"
+    text = "#d4e4f7" if st.session_state.dark_mode else "#1a2a3a"
+    accent = "#4a9eff" if st.session_state.dark_mode else "#1a73e8"
+    muted = "#7a9fc0" if st.session_state.dark_mode else "#5a6a7a"
+    sbar = "linear-gradient(180deg, #0a1628, #0f1f38)" if st.session_state.dark_mode else "linear-gradient(180deg, #f0f4f8, #ffffff)"
 
     st.markdown(f"""<style>
     :root {{
@@ -179,8 +176,8 @@ def render_css():
 def render_sidebar():
     with st.sidebar:
         st.markdown(f"""<div style="text-align:center;padding:.5rem 0">
-        <h2 style="color:#e94560;margin:0;font-size:1.4rem">🧠 TALOS</h2>
-        <p style="color:#8b949e;font-size:.7rem;margin:.2rem 0 0">{t('sidebar_title')} v5.2.1</p>
+        <h2 style="color:#4a9eff;margin:0;font-size:1.4rem">🧠 TALOS</h2>
+        <p style="color:var(--muted);font-size:.7rem;margin:.2rem 0 0">{t('sidebar_title')} v5.2.1</p>
         </div>""", unsafe_allow_html=True)
         st.markdown("---")
 
@@ -199,7 +196,8 @@ def render_sidebar():
             st.markdown(f'<div class="mode-badge">{mode_label}</div>', unsafe_allow_html=True)
         with col2:
             theme_label = "Dark" if st.session_state.dark_mode else "Light"
-            st.markdown(f'<div class="mode-badge" style="background:#58a6ff">{theme_label}</div>',
+            bg_color = "#4a5568" if st.session_state.dark_mode else "#1a73e8"
+            st.markdown(f'<div class="mode-badge" style="background:{bg_color}">{theme_label}</div>',
                        unsafe_allow_html=True)
 
         # ── Navigation ──
@@ -932,8 +930,8 @@ def main():
     else:
         # ── Advanced Mode Routing ──
         st.markdown("""<div style="text-align:center;padding:1rem 0">
-        <h2 style="color:#e94560;margin:0;font-size:1.5rem">🧠 Project TALOS</h2>
-        <p style="color:#8b949e;font-size:.85rem">Research Intelligence Platform v5.2.1</p>
+        <h2 style="color:#4a9eff;margin:0;font-size:1.5rem">🧠 Project TALOS</h2>
+        <p style="color:var(--muted);font-size:.85rem">Research Intelligence Platform v5.2.1</p>
         </div>""", unsafe_allow_html=True)
         handle_advanced_page(page)
 
