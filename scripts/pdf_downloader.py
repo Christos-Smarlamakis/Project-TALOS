@@ -226,35 +226,79 @@ def main():
     if not questionary.confirm(f"Attempt to download PDFs for {len(papers)} papers? This may take time.", default=True).ask():
         return
     
+    use_batch = questionary.confirm(
+        "Use multi-threaded batch download? (Faster — ~10x speedup with ThreadPoolExecutor)", 
+        default=True
+    ).ask()
+
     success = 0
     failed = 0
     sources_found = {"Unpaywall": 0, "OpenAlex": 0}
-    
-    for paper in tqdm(papers, desc="Downloading PDFs"):
-        doi = paper.get("doi", "")
-        title = paper.get("title", "Untitled")[:60]
+
+    if use_batch:
+        import concurrent.futures
         
-        pdf_url, source = find_oa_pdf(doi, mailto)
-        
-        if not pdf_url:
-            failed += 1
-            continue
-        
-        sources_found[source] = sources_found.get(source, 0) + 1
-        tqdm.write(f"  [{source}] Found OA PDF for: {title}")
-        
-        local_path = download_pdf(pdf_url, f"{paper['id']}_{title[:50]}")
-        
-        if local_path:
-            update_paper_pdf(db, paper["id"], pdf_url, local_path)
-            tqdm.write(f"    ✅ Downloaded: {local_path}")
-            success += 1
-        else:
-            tqdm.write(f"    ❌ Download failed")
-            failed += 1
-        
-        time.sleep(REQUEST_DELAY)
-    
+        def _process_single_paper(paper, mailto_val):
+            """Process one paper: find OA PDF + download."""
+            doi = paper.get("doi", "")
+            title = paper.get("title", "Untitled")[:60]
+            pdf_url, source = find_oa_pdf(doi, mailto_val)
+            if not pdf_url:
+                return None
+            local_path = download_pdf(pdf_url, f"{paper['id']}_{title[:50]}")
+            if local_path:
+                return (paper, pdf_url, local_path, source)
+            return None
+
+        print(f"\n  ⚡ Multi-threaded mode: {MAX_WORKERS} workers")
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+            futures = {executor.submit(_process_single_paper, p, mailto): p for p in papers}
+            with tqdm(total=len(papers), desc="Downloading PDFs (batch)", unit="paper") as pbar:
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        result = future.result()
+                        if result:
+                            results.append(result)
+                            paper, pdf_url, local_path, source = result
+                            sources_found[source] = sources_found.get(source, 0) + 1
+                            update_paper_pdf(db, paper["id"], pdf_url, local_path)
+                            tqdm.write(f"    ✅ [{source}] {paper['title'][:60]}")
+                            success += 1
+                        else:
+                            failed += 1
+                    except Exception as e:
+                        failed += 1
+                        tqdm.write(f"    ❌ Error: {e}")
+                    pbar.update(1)
+                    time.sleep(0.1)  # Minimal delay between thread completions
+    else:
+        # Sequential mode (original behavior)
+        for paper in tqdm(papers, desc="Downloading PDFs"):
+            doi = paper.get("doi", "")
+            title = paper.get("title", "Untitled")[:60]
+            
+            pdf_url, source = find_oa_pdf(doi, mailto)
+            
+            if not pdf_url:
+                failed += 1
+                continue
+            
+            sources_found[source] = sources_found.get(source, 0) + 1
+            tqdm.write(f"  [{source}] Found OA PDF for: {title}")
+            
+            local_path = download_pdf(pdf_url, f"{paper['id']}_{title[:50]}")
+            
+            if local_path:
+                update_paper_pdf(db, paper["id"], pdf_url, local_path)
+                tqdm.write(f"    ✅ Downloaded: {local_path}")
+                success += 1
+            else:
+                tqdm.write(f"    ❌ Download failed")
+                failed += 1
+            
+            time.sleep(REQUEST_DELAY)
+
     print(f"\n{'='*50}")
     print(f"  PDF DOWNLOAD COMPLETE")
     print(f"  ✅ Successfully downloaded: {success}")

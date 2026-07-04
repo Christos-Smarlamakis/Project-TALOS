@@ -191,6 +191,23 @@
 **Integration test: 43/43 Python files περνούν `py_compile` validation**
 
 
+## [v5.2.0] - 2026-07-04 — The Live Agent & PDF Downloader
+
+Αυτή η έκδοση συνδέει τον εκπαιδευμένο DRL agent στο ζωντανό διαδίκτυο και προσθέτει multi-threaded PDF batch downloading.
+
+### Προσθήκες
+- **`scripts/talos_live_agent.py` v1.0 (330 γραμμές):** Live DRL inference engine — φορτώνει το εκπαιδευμένο μοντέλο, pure exploitation (ε=0.0), πραγματικά API calls, AI evaluation μέσω Flash model, graceful 429 handling
+- **TUI entry** (`talos.py` → Analysis Option 11): "Live DRL Agent (Real APIs)"
+- **GUI entry** (`app.py` → Analysis & Insights dropdown): "🧠 Live DRL Agent (Real APIs)"
+- **`.bat` entry** (`start_talos.bat` Option 6): "Live DRL Agent (Real APIs)"
+- **`scripts/pdf_downloader.py` v2.0:** Multi-threaded batch download με ThreadPoolExecutor (15 workers), ~10x speedup
+
+### Αλλαγές
+- **`scripts/talos_service.py`:** Epsilon 0.05 → 0.0 (pure exploitation)
+- **`ROADMAP.md`:** Πλήρες αρχιτεκτονικό narrative — v5.2.0 marked as current
+
+---
+
 ## [v5.1.0] - 2026-07-04 — DRL Dashboard & Αναδιοργάνωση TUI/GUI
 
 Αυτή η έκδοση φέρνει το DRL οικοσύστημα στο προσκήνιο με ένα αποκλειστικό Streamlit dashboard, διαδραστικές λειτουργίες TUI, και μια ολοκληρωμένη ενημέρωση του project roadmap.

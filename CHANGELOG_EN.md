@@ -191,6 +191,34 @@ This release transforms TALOS into a **fully guided research platform** with a f
 **Integration test: 43/43 Python files pass `py_compile` validation**
 
 
+## [v5.2.0] - 2026-07-04 — The Live Agent & PDF Downloader
+
+This release wires the trained DRL agent to the live internet and adds multi-threaded PDF batch downloading.
+
+### Added
+- **`scripts/talos_live_agent.py` v1.0 (330 lines):** Live DRL inference engine  
+  - Loads trained model (`models/dddqn_trained.pth`)  
+  - Pure exploitation (ε=0.0) — agent uses ONLY learned policy  
+  - Real-time state calculation: 6-element vector [hour, arxiv_ratio, openalex_ratio, s2_ratio, low_streak, error_streak]  
+  - ONE live API call per loop iteration (ArXiv, OpenAlex, Semantic Scholar)  
+  - AI evaluation via AIManager (Flash model) after each fetch  
+  - Reward logic: +20 (score≥8), +5 (score≥7), -10 (score<7), -50 (429 error)  
+  - Action 3 (Sleep): 1-hour cooldown, resets all counters  
+  - Graceful 429 handling: exceptions caught, error streak incremented, -50 penalty  
+- **TUI entry** (`talos.py` → Analysis Option 11): "Live DRL Agent (Real APIs)" with confirmation prompt
+- **GUI entry** (`app.py` → Analysis & Insights dropdown): "🧠 Live DRL Agent (Real APIs)"
+- **`.bat` entry** (`start_talos.bat` Option 6): "Live DRL Agent (Real APIs)"
+- **`scripts/pdf_downloader.py` v2.0:** Multi-threaded batch download  
+  - ThreadPoolExecutor with 15 workers  
+  - Interactive prompt: sequential vs batch mode  
+  - ~10x speedup for large paper collections
+
+### Changed
+- **`scripts/talos_service.py`:** Epsilon changed from 0.05 → 0.0 (pure exploitation)
+- **`ROADMAP.md`:** Complete architectural narrative rewrite — v5.2.0 marked as current
+
+---
+
 ## [v5.1.0] - 2026-07-04 — DRL Dashboard & TUI/GUI Reorganization
 
 This release brings the DRL ecosystem to the forefront with a dedicated Streamlit dashboard, interactive TUI features, and a comprehensive project roadmap update.
