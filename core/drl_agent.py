@@ -32,10 +32,12 @@ import random
 import numpy as np
 from collections import deque, namedtuple
 
+from core.drl_networks import DuelingLSTM
+
 # ── Hyperparameters (tuned for TALOS, works for any source count) ─────────────
-LR = 1e-4              # Learning rate — small for stable LSTM training
+LR = 4.735e-05         # Learning rate — GWO-optimized for stable LSTM training
 DEVICE = T.device('cuda' if T.cuda.is_available() else 'cpu')
-GAMMA = 0.8            # Discount factor — cares more about immediate reward
+GAMMA = 0.575          # Discount factor — GWO-optimized for short-term reward
 TAU = 1e-3             # Soft-update parameter for target network
 MEMORY_LEN = 10000     # Max experiences stored in replay buffer
 MEMORY_THRESH = 500    # Minimum experiences before learning starts
@@ -59,106 +61,6 @@ except Exception:
 Transition = namedtuple("Transition", ["States", "Actions", "Rewards", "NextStates", "Dones"])
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-class DuelingLSTM(nn.Module):
-    """
-    Dueling LSTM network for the TALOS DRL agent.
-
-    The "dueling" architecture splits the network's output into two
-    streams that share the same LSTM backbone:
-
-        V(s)  — state-value   — "How good is this situation?" (1 scalar)
-        A(s,a)— advantage     — "How much better is action 'a' vs average?"
-
-    The final Q-value combines them: Q(s,a) = V(s) + [A(s,a) - mean(A)]
-
-    This separation helps the agent learn which states are inherently
-    good (high V) without having to figure out the exact action values
-    for each of the N+1 actions.
-
-    The LSTM layers let the network remember sequences of past states,
-    which is critical because the optimal action depends on the *history*
-    of API calls, not just the current count.
-
-    Both input_dim and output_dim are set at construction time so the
-    network works for any number of sources (3, 14, or more).
-    """
-
-    def __init__(self, input_dim=STATE_SPACE, output_dim=ACTION_SPACE):
-        """
-        Build a 3-layer LSTM network with dueling output heads.
-
-        Args:
-            input_dim (int): Size of observation vector (1 + N_sources + 2).
-            output_dim (int): Number of possible actions (N_sources + 1 sleep).
-        """
-        super(DuelingLSTM, self).__init__()
-        self.input_dim = input_dim
-        self.output_dim = output_dim
-
-        # ── First LSTM layer: raw observation → 128 hidden features ────────
-        # LayerNorm helps prevent exploding/vanishing gradients in LSTMs.
-        self.lstm1 = nn.LSTM(input_size=input_dim, hidden_size=128)
-        self.layer_norm1 = nn.LayerNorm(128)
-
-        # ── Second LSTM layer: 128 → 64 ────────────────────────────────────
-        self.lstm2 = nn.LSTM(input_size=128, hidden_size=64)
-        self.layer_norm2 = nn.LayerNorm(64)
-
-        # ── Third LSTM layer: 64 → 32 ──────────────────────────────────────
-        self.lstm3 = nn.LSTM(input_size=64, hidden_size=32)
-        self.layer_norm3 = nn.LayerNorm(32)
-
-        # ── Dueling heads ───────────────────────────────────────────────────
-        # V(s): state-value — outputs 1 value per state
-        self.V = nn.Linear(32, 1)
-        # A(s,a): advantage — outputs output_dim values, one per action
-        self.A = nn.Linear(32, output_dim)
-
-        # tanh activation for bounded output (helps stability)
-        self.tanh = nn.Tanh()
-
-    def forward(self, state):
-        """
-        Forward pass through the dueling LSTM network.
-
-        The input state tensor has shape (batch, seq_len, features).
-        For a single step, batch=1, seq_len=1, features=input_dim.
-
-        Args:
-            state (torch.Tensor): Input tensor of shape (B, L, F).
-
-        Returns:
-            torch.Tensor: Q-values of shape (B, L, output_dim).
-        """
-        # ── LSTM layer 1 ───────────────────────────────────────────────────
-        # flatten_parameters() resets CuDNN memory pointers so that the
-        # same LSTM can be used for both inference (torch.no_grad) and
-        # training (backward) without the mode-lock error.
-        self.lstm1.flatten_parameters()
-        lstm1_out, _ = self.lstm1(state)
-        x = self.layer_norm1(self.tanh(lstm1_out))
-
-        # ── LSTM layer 2 ───────────────────────────────────────────────────
-        self.lstm2.flatten_parameters()
-        lstm2_out, _ = self.lstm2(x)
-        x = self.layer_norm2(self.tanh(lstm2_out))
-
-        # ── LSTM layer 3 ───────────────────────────────────────────────────
-        self.lstm3.flatten_parameters()
-        lstm3_out, _ = self.lstm3(x)
-        x = self.layer_norm3(self.tanh(lstm3_out))
-
-        # ── Dueling combination ─────────────────────────────────────────────
-        V = self.V(x)                                   # (B, L, 1)
-        A = self.A(x)                                   # (B, L, output_dim)
-        # Q(s,a) = V(s) + [A(s,a) - mean(A)] — subtract mean for identifiability
-        Q = V + A - A.mean(dim=2, keepdim=True)
-
-        return Q
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
 class ReplayMemory:
     """
     Experience replay buffer for the DDQN agent.
@@ -234,7 +136,7 @@ class TalosDRLAgent:
         t_step (int): Global step counter (across all episodes).
     """
 
-    def __init__(self, state_dim=None, action_dim=None):
+    def __init__(self, state_dim=None, action_dim=None, network_class=None):
         """
         Initialise the DDQN agent with dynamic state/action dimensions.
 
@@ -243,22 +145,25 @@ class TalosDRLAgent:
                 if None (from config or defaults).
             action_dim (int, optional): Number of actions. Auto-detected
                 if None.
+            network_class (class, optional): nn.Module subclass to use as
+                the neural network backbone. Must accept (input_dim, output_dim).
+                Defaults to DuelingLSTM.
         """
         # ── Resolve dimensions ──────────────────────────────────────────────
         if state_dim is None:
             state_dim = STATE_SPACE
         if action_dim is None:
             action_dim = ACTION_SPACE
+        if network_class is None:
+            network_class = DuelingLSTM
 
         self.state_dim = state_dim
         self.action_dim = action_dim
+        self.network_class = network_class
 
         # ── Create the two networks ────────────────────────────────────────
-        # Both start with the same weights, but they will diverge as the
-        # online network is updated via gradient descent while the target
-        # network gets soft-updated.
-        self.actor_online = DuelingLSTM(state_dim, action_dim).to(DEVICE)
-        self.actor_target = DuelingLSTM(state_dim, action_dim).to(DEVICE)
+        self.actor_online = network_class(state_dim, action_dim).to(DEVICE)
+        self.actor_target = network_class(state_dim, action_dim).to(DEVICE)
         self.actor_target.load_state_dict(self.actor_online.state_dict())
         # Both networks stay in .train() mode permanently.
         # Calling .eval() triggers the CuDNN RNN backward bug.
@@ -412,8 +317,8 @@ class TalosDRLAgent:
         """
         Save the agent's online network weights to a file.
 
-        Includes metadata (state_dim, action_dim, source_names) so the
-        model can be loaded with the correct architecture later.
+        Includes metadata (state_dim, action_dim, source_names, network_class)
+        so the model can be loaded with the correct architecture later.
 
         Args:
             path (str): File path to save to (e.g., 'models/dddqn_trained.pth').
@@ -422,6 +327,7 @@ class TalosDRLAgent:
             "state_dim": self.state_dim,
             "action_dim": self.action_dim,
             "source_names": self.source_names,
+            "network_class": self.network_class.__name__,
             "weights": self.actor_online.state_dict(),
         }, path)
 
@@ -438,27 +344,49 @@ class TalosDRLAgent:
         Args:
             path (str): File path to load from.
         """
-        data = T.load(path, map_location=DEVICE)
+        data = T.load(path, map_location=DEVICE, weights_only=True)
 
         # ── Handle both old format (raw state_dict) and new format (dict) ──
         if isinstance(data, dict) and "weights" in data:
             # New format — extract metadata
-            if "state_dim" in data:
-                self.state_dim = data["state_dim"]
-            if "action_dim" in data:
-                self.action_dim = data["action_dim"]
+            saved_state_dim = data.get("state_dim", self.state_dim)
+            saved_action_dim = data.get("action_dim", self.action_dim)
             if "source_names" in data:
                 self.source_names = data["source_names"]
             weights = data["weights"]
         else:
             # Old format — raw state_dict without metadata
+            # Infer dimensions from the saved weights
+            saved_state_dim = None
+            saved_action_dim = None
             weights = data
 
-        # ── Re-create networks if dimensions don't match ────────────────────
+        # ── Re-create networks if dimensions don't match (BEFORE load_state_dict) ──
+        # MUST check BEFORE calling load_state_dict to avoid PyTorch size mismatch
+        # errors when the saved model has different state/action dimensions.
+        recreate_needed = False
+        if saved_state_dim is not None and saved_state_dim != self.state_dim:
+            self.state_dim = saved_state_dim
+            recreate_needed = True
+        if saved_action_dim is not None and saved_action_dim != self.action_dim:
+            self.action_dim = saved_action_dim
+            recreate_needed = True
         if (self.actor_online.input_dim != self.state_dim or
                 self.actor_online.output_dim != self.action_dim):
-            self.actor_online = DuelingLSTM(self.state_dim, self.action_dim).to(DEVICE)
-            self.actor_target = DuelingLSTM(self.state_dim, self.action_dim).to(DEVICE)
+            recreate_needed = True
+
+        # ── Resolve network class from saved metadata ──────────────────────
+        if isinstance(data, dict) and "network_class" in data:
+            saved_class_name = data["network_class"]
+            if saved_class_name == "DuelingLSTM":
+                self.network_class = DuelingLSTM
+            # Future: add elif for other network classes here
+        else:
+            self.network_class = DuelingLSTM
+
+        if recreate_needed:
+            self.actor_online = self.network_class(self.state_dim, self.action_dim).to(DEVICE)
+            self.actor_target = self.network_class(self.state_dim, self.action_dim).to(DEVICE)
             self.actor_target.train()
             self.actor_optimizer = optim.Adam(self.actor_online.parameters(), lr=LR)
 

@@ -3,6 +3,79 @@
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
 
+## [v5.3.2] - 2026-07-05 — Η Ενημέρωση "Pluggable Network Architecture"
+
+Αυτή η μικρή έκδοση εξάγει το νευρωνικό δίκτυο του DRL σε αποκλειστικό pluggable module, επιτρέποντας μελλοντική εναλλαγή αρχιτεκτονικών (Transformer, xLSTM) χωρίς να πειραχτεί ο πυρήνας του agent.
+
+### Προστέθηκε
+- **`core/drl_networks.py` v1.0 (~100 γραμμές, 1 κλάση):** Αποκλειστικό module νευρωνικών δικτύων.
+  - **`DuelingLSTM`** — 3-layer LSTM (128→64→32) με LayerNorm + dueling heads (V + A). Ίδια αρχιτεκτονική με πριν, τώρα σε δικό της αρχείο.
+  - Σχεδιασμένο για μελλοντικές αρχιτεκτονικές μέσω κοινού `(input_dim, output_dim)` interface.
+
+### Άλλαξε
+- **`core/drl_agent.py` v2.1 → v2.2:**
+  - Ο `__init__` δέχεται προαιρετική παράμετρο `network_class` (default: `DuelingLSTM`).
+  - Το `save()` αποθηκεύει το όνομα της κλάσης (`network_class`) στα metadata του μοντέλου.
+  - Το `load()` επιλύει την κλάση δικτύου από τα αποθηκευμένα metadata, με fallback στο `DuelingLSTM` για παλιά μοντέλα.
+  - Πλήρως backward compatible — τα παλιά μοντέλα φορτώνονται κανονικά.
+- **`PROJECT_MAP.md`:** Προστέθηκε Section 2.4 για το `drl_networks.py`, ενημερώθηκε το 2.5 για το `drl_agent.py` v2.2.
+
+### Αρχεία που Άλλαξαν
+| Αρχείο | Αλλαγή |
+|------|--------|
+| `core/drl_networks.py` | **ΝΕΟ** — Pluggable network module (100 γραμμές) |
+| `core/drl_agent.py` | v2.1→v2.2 — network_class param, save/load class name |
+| `PROJECT_MAP.md` | Nέο section 2.4, ενημερωμένο 2.5 |
+
+## [v5.3.1] - 2026-07-05 — Η Ενημέρωση "DRL Live Agent & Provider-Aware Orchestration"
+
+Αυτή η έκδοση προσφέρει εκτεταμένη αναβάθμιση του Deep Reinforcement Learning συστήματος του TALOS. Ο Live DRL Agent αναδιοργανώθηκε σε επαναχρησιμοποιήσιμα `core/` modules με νέο **provider-aware observation space** (παρακολούθηση ορίων Gemini/DeepSeek/HuggingFace/Local), **cooldown μηχανισμό** για αποφυγή deterministic loops, **GWO-βελτιστοποιημένες υπερπαραμέτρους**, και **tier-based Gemini rate limits** στο `config.json`. O DRL agent πλέον ενορχηστρώνει και τις 14 ακαδημαϊκές πηγές API.
+
+### Προστέθηκε
+- **`core/live_agent_sources.py` v1.0 (~40 γραμμές, 2 συναρτήσεις):** Module ανακάλυψης πηγών — δυναμικό import με auto-detection (σκανάρει το module για `*Source` κλάσεις — διορθώνει τα broken class names για DBLP, IEEE, OpenAlex, OSTI, PLOS, PubMed, Springer, OpenArchives). Dense action mapping.
+- **`core/live_agent_orchestrator.py` v1.0 (~420 γραμμές, 6 συναρτήσεις):** Core orchestration loop — state calculation, action selection, API fetch, AI evaluation, reward, provider tracking. **v3.1 Cooldown:** negative-reward actions → 5-step lockout, random free action override. epsilon=0.05. ASCII-only ακαδημαϊκό output.
+- **Tier-based Gemini configuration στο `config.json`:** `"gemini_tier": "free"` (free/tier1/tier2), `"provider_limits"` (RPM/RPD/TPM για 4 providers), 3 νέα query keys (`semantic_scholar_query`, `core_query`, `scigov_query`).
+
+### Διορθώθηκε
+- **Sparse action mapping bug:** ~73% πιθανότητα άκυρου action. Fix: Dense mapping.
+- **Model dimension mismatch crash:** `load_state_dict()` πριν τον έλεγχο διαστάσεων. Fix: Pre-check + `weights_only=True`.
+- **Hour normalization inconsistency:** `/23.0` vs `/24.0`. Fix: `/24.0` παντού.
+- **8 σπασμένες κλάσεις πηγών:** Το `.capitalize()` guessing απέτυχε. Fix: Auto-detection στο `live_agent_sources.import_source_class()`.
+- **Hardcoded local model verification:** `_ensure_local_model()` έψαχνε πάντα `gemma3:12b`. Fix: Διαβάζει `LOCAL_MODEL_NAME` από `.env`.
+- **Save path mismatch:** `talos_drl.pth` vs `dddqn_trained.pth`. Fix: Ενοποιήθηκε.
+
+### Άλλαξε
+- **`core/drl_agent.py` v2.0 → v2.1:** GWO υπερπαράμετροι — `LR=4.735e-05`, `GAMMA=0.575`. `load()` pre-check, `weights_only=True`.
+- **`core/talos_env.py` v2.0 → v3.0:** Hour fix, provider-aware state (21-dim obs με 4 provider ratios).
+- **`scripts/drl_trainer.py` v1.0 → v1.1:** `EPS_DECAY=0.9415` (GWO), save path fix.
+- **`scripts/talos_live_agent.py` v2.0 → v3.1:** Από 530 γραμμές monolith σε 110 γραμμές thin entry. Όλα τα emoji αντικαταστάθηκαν με ASCII tags.
+- **`config.json`:** Προστέθηκαν `gemini_tier`, `provider_limits`, 3 νέα query keys.
+- **`PROJECT_MAP.md`:** v5.3.0→v5.3.1. Core modules: 3→7. Nέα sections. 59→61 αρχεία.
+
+### Αποτελέσματα Εκπαίδευσης (v5.3.1)
+| Μετρική | v5.2.0 (3 πηγές) | v5.3.1 (14 πηγές) |
+|---|---|---|
+| State dimension | 6 | 21 |
+| Action dimension | 4 | 15 |
+| Πηγές | 3 | 14 |
+| Μέσο reward επεισοδίου | 1695.8 | 2220.5 |
+| Βελτίωση GWO | — | +30.9% |
+| Provider tracking | Κανένα | 4 provider ratios |
+
+### Αρχεία που Άλλαξαν
+| Αρχείο | Αλλαγή |
+|------|--------|
+| `core/live_agent_sources.py` | **ΝΕΟ** — Source discovery module |
+| `core/live_agent_orchestrator.py` | **ΝΕΟ** — Main loop + cooldown |
+| `core/drl_agent.py` | v2.0→v2.1 — GWO params, load() pre-check |
+| `core/talos_env.py` | v2.0→v3.0 — Provider-aware state |
+| `core/ai_manager.py` | `_ensure_local_model()` fix |
+| `scripts/talos_live_agent.py` | v2.0→v3.1 — Thin entry, cooldown, ASCII |
+| `scripts/drl_trainer.py` | v1.0→v1.1 — GWO EPS_DECAY |
+| `config.json` | Προστέθηκαν gemini_tier, provider_limits, 3 queries |
+| `PROJECT_MAP.md` | v5.3.0→v5.3.1 — 7 core modules, νέο config schema |
+| `models/dddqn_trained.pth` | **ΕΠΑΝΕΚΠΑΙΔΕΥΣΗ** — 14 πηγές, dims=(21,15) |
+
 ## [v5.3.0] - 2026-07-04 — Η Ενημέρωση "Multi-Language Documentation Builder"
 
 Αυτή η έκδοση εισάγει το `scripts/generate_docs.py` v2.0, μια **πλήρως διαδραστική, 18-γλωσση γεννήτρια τεκμηρίωσης για 93+ αρχεία** που χρησιμοποιεί τοπικό Ollama instance. Πλήρης επανεγγραφή από την v1.0 με υποστήριξη για όλα τα αρχεία του project (όχι μόνο `.py`), language-agnostic prompt system, διαδραστική επιλογή φακέλων μέσω checkbox, token estimation, και ενσωμάτωση σε GUI και TUI.

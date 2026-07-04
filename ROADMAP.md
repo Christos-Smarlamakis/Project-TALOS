@@ -2,8 +2,8 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform — and maps the path forward.
 
-> **Current Version:** v5.3.0 (Auto-Docs)
-> **Last Updated:** 2026-07-04
+> **Current Version:** v5.3.1 (Provider-Aware DRL)
+> **Last Updated:** 2026-07-05
 
 ---
 
@@ -166,7 +166,53 @@ This version transforms TALOS into a **fully guided research platform** with a 4
 
 ---
 
-## 5. v5.3.0 — Automated Documentation (COMPLETED ✅)
+## 5. v5.3.1 — Provider-Aware DRL & Live Agent Refactoring (COMPLETED ✅)
+
+**The DRL Awakening** — The Live DRL Agent undergoes a complete architectural overhaul with modular `core/` components, a provider-aware observation space (tracking Gemini/DeepSeek/HuggingFace/Local limits), GWO-optimized hyperparameters, tier-based Gemini rate limits, and a cooldown mechanism to prevent deterministic action loops.
+
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| `core/live_agent_sources.py` | Dynamic import + module scanning | Auto-discovers 14 source classes regardless of naming conventions |
+| `core/live_agent_orchestrator.py` | Dense action mapping + cooldown | Core loop with 5-step lockout for negative-reward actions, ε=0.05 |
+| `core/talos_env.py` v3.0 | 4 provider ratios in observation | Agent learns to respect provider rate limits (free tier: 5 RPM) |
+| `core/drl_agent.py` v2.1 | GWO hyperparameters + load() pre-check | LR=4.735e-05, GAMMA=0.575, weights_only=True |
+| `config.json` provider_limits | Tier-based config | Free/tier1/tier2 Gemini, DeepSeek, HuggingFace, Local |
+| `models/dddqn_trained.pth` | 14-source retraining | state_dim=21, action_dim=15, avg reward 2220.5 (+30.9% over baseline) |
+
+**Key achievements:**
+- 8 broken class names fixed (DBLP→DBLPSource, IEEE→IEEEXploreSource, etc.)
+- 3 critical bugs resolved (sparse mapping, load crash, hour normalization)
+- 530-line monolith → 110-line entry + 2 reusable `core/` modules
+- Cooldown mechanism prevents deterministic loops (e.g., Springer returning empty)
+- All emoji replaced with ASCII tags for academic output
+
+### 5.1 Files Changed
+| File | Status |
+|------|--------|
+| `core/live_agent_sources.py` | **NEW** — Source discovery (40 lines, 2 functions) |
+| `core/live_agent_orchestrator.py` | **NEW** — Main loop + cooldown (420 lines, 6 functions) |
+| `core/drl_agent.py` | v2.0 → v2.1 — GWO params, load() pre-check |
+| `core/talos_env.py` | v2.0 → v3.0 — Provider-aware state (21-dim obs) |
+| `core/ai_manager.py` | v3.6 — `_ensure_local_model()` reads LOCAL_MODEL_NAME |
+| `scripts/talos_live_agent.py` | v2.0 → v3.1 — Thin entry (530→110 lines) |
+| `scripts/drl_trainer.py` | v1.0 → v1.1 — GWO EPS_DECAY, save path fix |
+| `config.json` | Added gemini_tier, provider_limits, 3 query keys |
+| `PROJECT_MAP.md` | v5.3.0 → v5.3.1 — 7 core modules, 61 files |
+| `CHANGELOG_EN.md`, `CHANGELOG_GR.md`, `README.md` | v5.3.1 entries |
+
+### 5.2 Training Results
+| Metric | v5.2.0 (3 sources) | v5.3.1 (14 sources) |
+|---|---|---|
+| State dimension | 6 | 21 |
+| Action dimension | 4 | 15 |
+| Sources | 3/14 | 14/14 |
+| Avg reward | 1695.8 | 2220.5 |
+| GWO improvement | — | +30.9% |
+| Provider tracking | None | 4 ratios |
+
+---
+
+## 6. v5.3.0 — Automated Documentation (COMPLETED ✅)
 
 ### 5.1 `scripts/generate_docs.py` v1.0
 
@@ -275,8 +321,10 @@ The v6.0 series represents the **third generation** of TALOS — decoupling the 
 | **v5.1.0** | The Insights UI | DRL Dashboard + TUI Reorganization | ✅ Complete |
 | **v5.2.0** | The Live Agent | Live API Routing + PDF Downloader | ⚡ Current |
 | **v5.3.0** | Auto-Docs | Local LLM Greek documentation generator | ✅ Complete |
+| **v5.3.1** | DRL Live Agent | Provider-Aware Orchestration + GWO hyperparams | ✅ Complete |
+| **v5.3.2** | Pluggable Networks | DRL network architecture extraction | ✅ Complete |
 | **v5.4.0** | Deployment | PyInstaller .exe packaging | 📅 Upcoming |
-| **v6.0.0+** | ALEXANDRIA | FastAPI + Flutter + RAG + 3D Viz | 🔮 Future |
+| **v6.0.0+** | ALEXANDRIA | FastAPI + Flutter + RAG + 3D Viz | � Future |
 
 ---
 

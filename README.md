@@ -1,8 +1,8 @@
-# Project TALOS (v5.3.0)
+# Project TALOS (v5.3.2)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Τακτικό Πρακτορικό Σύστημα Ενορχήστρωσης Βιβλιογραφίας)*
-### **Now with 18-Language Codebase Documentation Builder & Dynamic 14-Source DRL Orchestration**
+### **Now with Pluggable DRL Network Architecture, Provider-Aware Agent & 14-Source Live Orchestration**
 
 > **An Autonomous Research Intelligence Platform for the AI Era.**
 

@@ -461,8 +461,15 @@ class AIManager:
                 print("WARNING: Ollama not reachable.")
                 return
             models = [m['name'] for m in resp.json().get('models', [])]
-            for model in ["gemma3:12b", "nomic-embed-text"]:
-                if model not in models:
+
+            # Read user-configured model from .env, fallback to gemma3:12b
+            local_model = os.getenv("LOCAL_MODEL_NAME", "gemma3:12b")
+            local_embedding = os.getenv("LOCAL_EMBEDDING_MODEL", "nomic-embed-text")
+
+            for model in [local_model, local_embedding]:
+                # Strip tag for detection (e.g. "gemma4:12b" may be listed as "gemma4:12b")
+                found = any(m == model or m.startswith(model) for m in models)
+                if not found:
                     print(f"  >> Pulling {model}...")
                     import subprocess
                     subprocess.run(["ollama", "pull", model], check=True)

@@ -44,6 +44,10 @@ ALL_KNOWN_SOURCES = [
     "openarchives", "ieee", "elsevier", "springer",
 ]
 
+# ── Provider names for observation vector (v3.0 — Provider-Aware) ─────────────
+_PROVIDER_NAMES = ["gemini", "deepseek", "huggingface", "local"]
+_PROVIDER_COUNT = len(_PROVIDER_NAMES)
+
 
 def _load_source_list(config=None):
     """
@@ -191,10 +195,11 @@ class TalosEnv(gym.Env):
             self.source_limits = _load_source_limits(self.source_names, config)
 
         # ── Build observation space dynamically ──────────────────────────────
-        # Structure: [hour/23, usage_ratio_0, ..., usage_ratio_N-1,
-        #             low_score_streak/10, error_streak/10]
-        # Total size = 1 (hour) + N (source usage ratios) + 2 (patterns)
-        obs_size = 1 + self.num_sources + 2
+        # Structure: [hour/24, usage_ratio_0, ..., usage_ratio_N-1,
+        #             low_score_streak/10, error_streak/10,
+        #             provider_ratio_0, ..., provider_ratio_3]
+        # Total size = 1 (hour) + N (sources) + 2 (patterns) + 4 (providers)
+        obs_size = 1 + self.num_sources + 2 + _PROVIDER_COUNT
         low = np.zeros(obs_size, dtype=np.float32)
         high = np.ones(obs_size, dtype=np.float32)
         self.observation_space = spaces.Box(low=low, high=high, dtype=np.float32)
@@ -367,14 +372,18 @@ class TalosEnv(gym.Env):
         # ── Usage ratios: calls / limit, safe-division ──────────────────────
         ratios = self.source_calls / np.maximum(self.source_limits, 1.0)
 
-        # ── Assemble vector ─────────────────────────────────────────────────
+        # ── Assemble vector (v3.0 — includes 4 provider zeros during training) ─
+        # During training, provider ratios are simulated (all zeros for now).
+        # The live orchestrator fills real provider values at inference time.
+        provider_zeros = np.zeros(_PROVIDER_COUNT, dtype=np.float32)
         obs = np.concatenate([
-            np.array([self.current_hour / 23.0], dtype=np.float32),
+            np.array([self.current_hour / 24.0], dtype=np.float32),
             ratios.astype(np.float32),
             np.array([
                 self.consecutive_low_scores / 10.0,
                 self.consecutive_errors / 10.0,
             ], dtype=np.float32),
+            provider_zeros,
         ])
         return obs
 
@@ -431,14 +440,13 @@ def get_default_state_space():
     """
     Return the STATE_SPACE size for the default auto-detected source count.
 
-    This is a convenience function so external code (like drl_agent.py) can
-    determine the observation size before instantiating the environment.
+    v3.0: Includes 4 provider ratios in the observation vector.
 
     Returns:
-        int: Default observation vector length (1 + num_sources + 2).
+        int: Default observation vector length (1 + num_sources + 2 + 4).
     """
     names = _load_source_list()
-    return 1 + len(names) + 2
+    return 1 + len(names) + 2 + _PROVIDER_COUNT
 
 
 def get_default_action_space():

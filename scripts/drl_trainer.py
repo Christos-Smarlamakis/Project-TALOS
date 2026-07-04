@@ -27,7 +27,7 @@ from core.drl_agent import TalosDRLAgent, Transition, DEVICE
 # ── Training hyperparameters ─────────────────────────────────────────────────
 EPS_START = 1.0        # Initial exploration rate (100% random)
 EPS_END = 0.01         # Minimum exploration rate (1% random)
-EPS_DECAY = 0.995      # Multiply epsilon by this each episode
+EPS_DECAY = 0.9415     # GWO-optimized epsilon decay
 MAX_STEPS = 200        # Max steps per episode (= one simulated day)
 
 
@@ -142,7 +142,7 @@ def main():
     # Create the models directory if it doesn't exist
     models_dir = os.path.join(os.path.dirname(__file__), '..', 'models')
     os.makedirs(models_dir, exist_ok=True)
-    model_path = os.path.join(models_dir, 'talos_drl.pth')
+    model_path = os.path.join(models_dir, 'dddqn_trained.pth')
 
     agent.save(model_path)
     print(f"\n  Model saved: {model_path}")

@@ -3,6 +3,104 @@
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [v5.3.2] - 2026-07-05 — The "Pluggable Network Architecture" Update
+
+This minor release extracts the DRL neural network into a dedicated pluggable module, enabling future architecture swapping (Transformer, xLSTM) without touching the agent core.
+
+### Added
+- **`core/drl_networks.py` v1.0 (~100 lines, 1 class):** Dedicated neural network module.
+  - **`DuelingLSTM`** — 3-layer LSTM (128→64→32) with LayerNorm + dueling heads (V + A). Same architecture as before, now in its own file.
+  - Designed for future architectures via a common `(input_dim, output_dim)` interface.
+
+### Changed
+- **`core/drl_agent.py` v2.1 → v2.2:**
+  - `__init__` now accepts optional `network_class` parameter (default: `DuelingLSTM`).
+  - `save()` stores `network_class` name in model metadata.
+  - `load()` resolves network class from saved metadata, falls back to `DuelingLSTM` for old models.
+  - Old models (without `network_class` in metadata) load correctly — backward compatible.
+- **`PROJECT_MAP.md`:** Added Section 2.4 for `drl_networks.py`, updated Section 2.5 for `drl_agent.py` v2.2.
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `core/drl_networks.py` | **NEW** — Pluggable network module (100 lines) |
+| `core/drl_agent.py` | v2.1→v2.2 — network_class param, save/load class name |
+| `PROJECT_MAP.md` | New section 2.4, updated 2.5 |
+
+### Design Rationale
+- **Why extract the network?** The LSTM is one of many possible architectures (Transformer, xLSTM, MLP). By isolating it, future experiments require changing only 1 import line instead of refactoring the agent core.
+- **Why `network_class` as a parameter?** Dependency injection — the agent doesn't know or care which network it uses. This follows the Strategy pattern and makes A/B testing trivial.
+
+## [v5.3.1] - 2026-07-05 — The "DRL Live Agent & Provider-Aware Orchestration" Update
+
+This release delivers an extensive overhaul of the TALOS Deep Reinforcement Learning system. The Live DRL Agent is refactored into reusable `core/` modules with a new **provider-aware observation space** (tracking Gemini/DeepSeek/HuggingFace/Local limits), a **cooldown mechanism** to prevent deterministic action loops, **GWO-optimized hyperparameters**, and **tier-based Gemini rate limits** in `config.json`. The DRL agent now successfully orchestrates all 14 academic API sources.
+
+### Added
+- **`core/live_agent_sources.py` v1.0 (~40 lines, 2 functions):** Source discovery module extracted from `talos_live_agent.py`. Handles dynamic class import with auto-detection (scans module for `*Source` classes — fixes broken class name guessing for DBLP, IEEE, OpenAlex, OSTI, PLOS, PubMed, Springer, OpenArchives). Returns dense action mapping.
+  - **`import_source_class(source_name: str) -> class or None`:** Imports `sources.<name>_source`, scans module attributes for any class ending in `Source`. Handles mixed naming conventions (DBLPSource, IEEEXploreSource, OpenAlexSource, etc.).
+  - **`build_source_map(source_names: list) -> (dict, list)`:** Builds dense `{0: (name, cls), ...}` mapping. Only working sources get indices — no gaps.
+- **`core/live_agent_orchestrator.py` v1.0 (~420 lines, 6 functions):** Core orchestration loop extracted from `talos_live_agent.py`. Handles state calculation, action selection, API fetch, AI evaluation, reward computation, and provider tracking.
+  - **`_get_provider_limits(config: dict) -> dict`:** Reads tier-based provider rate limits from config.json (Gemini free/tier1/tier2, DeepSeek, HuggingFace, Local).
+  - **`calculate_state(...) -> np.ndarray`:** Provider-aware observation vector — `1 (hour) + 14 (source ratios) + 2 (streaks) + 4 (provider ratios)` = 21 dimensions.
+  - **`execute_live_fetch(action, action_map, config) -> tuple`:** Executes one live API call with graceful error handling (HTTPError, ConnectionError, generic).
+  - **`evaluate_paper(paper, ai_manager, provider_call_counts) -> float`:** AI evaluation with provider usage tracking.
+  - **`calculate_reward(score: float) -> float`:** Score-to-reward mapping.
+  - **`run_live_loop(agent, action_map, sources, config, ai_manager, verbose) -> dict`:** Main loop with **v3.1 Cooldown Mechanism** — negative-reward actions get 5-step lockout, overridden by random free action. epsilon=0.05 exploration prevents deadlocks. ASCII-only academic output (no emoji).
+- **Tier-based Gemini configuration in `config.json`:**
+  - **`"gemini_tier": "free"`** — set to `"free"`, `"tier1"`, or `"tier2"` to select rate limit tier.
+  - **`"provider_limits"`** — per-provider RPM/RPD/TPM limits for Gemini (3 tiers), DeepSeek, HuggingFace, Local.
+  - **3 new query keys:** `semantic_scholar_query`, `core_query`, `scigov_query` — completing all 14 source queries.
+  - Updated `ai_provider_priority` to include all 4 providers.
+- **Cooldown mechanism (v3.1):** `active_cooldowns` dict in orchestrator loop. reward < 0 → 5-step lockout. Cooldowns decrement each iteration. If DRL agent picks a cooldown action → random free action override. Prevents Deterministic Loops (e.g., Springer returning empty → -10 → same action repeated infinitely at ε=0.0).
+
+### Fixed
+- **Sparse action mapping bug:** `talos_live_agent.py v2.0` preserved original config indices (0, 1, 3, ...) with gaps. Untrained agent had ~73% chance of picking invalid actions. **Fix:** Dense mapping — only working sources get contiguous indices.
+- **Model dimension mismatch crash:** `drl_agent.py load()` called `load_state_dict()` BEFORE checking saved dimensions, causing PyTorch size mismatch errors. **Fix:** Pre-check saved state_dim/action_dim, recreate networks proactively if needed, THEN load weights. Added `weights_only=True` for security.
+- **Hour normalization inconsistency:** `talos_env.py _build_obs()` used `hour / 23.0` (hour 23 → 1.0, out of range). `talos_live_agent.py` used `hour / 24.0`. **Fix:** Both now use `/24.0` (0.0–0.958).
+- **8 source class names broken:** `_import_source_class()` used `.capitalize()` guessing (e.g., `DblpSource` instead of `DBLPSource`). **Fix:** Auto-detection via module scanning in `live_agent_sources.import_source_class()`.
+- **Local model verification hardcoded:** `ai_manager.py _ensure_local_model()` always checked for `gemma3:12b` regardless of `LOCAL_MODEL_NAME`. **Fix:** Now reads `LOCAL_MODEL_NAME` and `LOCAL_EMBEDDING_MODEL` from `.env`.
+- **Save path mismatch:** `drl_trainer.py` saved to `talos_drl.pth` but `talos_live_agent.py` loaded from `dddqn_trained.pth`. **Fix:** Unified to `dddqn_trained.pth`.
+
+### Changed
+- **`core/drl_agent.py` v2.0 → v2.1:** GWO-optimized hyperparameters applied — `LR = 4.735e-05` (was `1e-4`), `GAMMA = 0.575` (was `0.8`). `load()` pre-checks dimensions before `load_state_dict()`. `weights_only=True` on `torch.load()`.
+- **`core/talos_env.py` v2.0 → v2.1/v3.0:** Hour normalization fix (`/23.0` → `/24.0`). Provider-aware observation space — `_PROVIDER_NAMES` and `_PROVIDER_COUNT` constants. `_build_obs()` outputs 4 provider ratio zeros during training. `get_default_state_space()` returns `1 + N + 2 + 4`.
+- **`scripts/drl_trainer.py` v1.0 → v1.1:** `EPS_DECAY=0.9415` (GWO-optimized, was `0.995`). Save path `talos_drl.pth` → `dddqn_trained.pth`.
+- **`scripts/talos_live_agent.py` v2.0 → v3.1:** Refactored from 530-line monolith to 110-line thin entry. All logic delegated to `core/live_agent_sources` and `core/live_agent_orchestrator`. All emoji replaced with ASCII tags ([ACT], [COOLDOWN], [OK], [ERR], etc.).
+- **`config.json`:** Added `gemini_tier`, `provider_limits`, 3 new query keys. Updated `ai_provider_priority`.
+- **`PROJECT_MAP.md`:** v5.3.0→v5.3.1. Architecture diagram updated (core: 3→7 modules). New sections for `live_agent_sources.py` and `live_agent_orchestrator.py`. Config schema updated. Dependency graph refreshed. File count 59→61.
+
+### Design Rationale
+- **Why refactor to core/ modules?** The 530-line monolith was untestable and unreusable. `talos_service.py` (24/7 daemon) now imports the same orchestrator. Source discovery is testable independently.
+- **Why 4 provider ratios?** The DRL agent must learn to respect Gemini free tier limits (5 RPM) just like it learned source API limits. Without this, the agent burns through free tier credits in seconds.
+- **Why cooldown instead of just epsilon?** ε=0.05 exploration alone doesn't prevent the agent from picking the same exhausted source repeatedly. 5-step lockout forces rotation while still allowing the agent to retry after a cool-off period.
+- **Why tier-based config?** A law student without a credit card gets 5 RPM (free tier). A researcher with Tier 1 gets 1000 RPM. The system adapts to both without code changes.
+- **Why GWO-optimized hyperparameters?** The Grey Wolf Optimizer in `scripts/gwo_rl_optimizer.py` found LR=4.735e-05 and GAMMA=0.575 as optimal — a 30.9% improvement over the default hyperparameters.
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `core/live_agent_sources.py` | **NEW** — Source discovery module (40 lines, 2 functions) |
+| `core/live_agent_orchestrator.py` | **NEW** — Main loop + cooldown (420 lines, 6 functions) |
+| `core/drl_agent.py` | v2.0→v2.1 — GWO params, load() pre-check, weights_only=True |
+| `core/talos_env.py` | v2.0→v2.1 — Hour fix, provider-aware state (21-dim obs) |
+| `core/ai_manager.py` | v3.6 — `_ensure_local_model()` reads LOCAL_MODEL_NAME from .env |
+| `scripts/talos_live_agent.py` | v2.0→v3.1 — Thin entry (530→110 lines), cooldown, ASCII output |
+| `scripts/drl_trainer.py` | v1.0→v1.1 — GWO EPS_DECAY, save path fix |
+| `config.json` | Added gemini_tier, provider_limits, 3 new query keys |
+| `PROJECT_MAP.md` | v5.3.0→v5.3.1 — Architecture diagram, new sections, config schema |
+| `models/dddqn_trained.pth` | **REGENERATED** — 14 sources, state_dim=21, action_dim=15, avg reward 2220.5 |
+
+### Training Results (v5.3.1)
+| Metric | v5.2.0 (3 sources) | v5.3.1 (14 sources) |
+|---|---|---|
+| State dimension | 6 | 21 |
+| Action dimension | 4 | 15 |
+| Sources | 3 (arxiv, crossref, elsevier) | 14 (all) |
+| Avg episode reward | 1695.8 | 2220.5 |
+| Best episode reward | — | 2665.0 |
+| GWO improvement | — | +30.9% |
+| Provider tracking | None | 4 provider ratios in state |
+
 ## [v5.3.0] - 2026-07-04 — The "Multi-Language Documentation Builder" Update
 
 This release introduces `scripts/generate_docs.py` v2.0, a **fully interactive, 18-language, 93+ file** codebase documentation generator that uses a local Ollama instance. Completely rewritten from v1.0 with support for all project files (not just `.py`), a language-agnostic prompt system, interactive checkbox-based file selection, token estimation, and integration into both GUI and TUI.
