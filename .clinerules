@@ -113,6 +113,12 @@
 - If you find a mismatch, FIX PROJECT_MAP.md FIRST before any other work.
 - **This rule overrides all others** — an out-of-date PROJECT_MAP.md is worse than no map at all.
 
+## CRITICAL: NO AUTO-GIT — User Handles Version Control (NEW in v5.2.1)
+- **NEVER run `git add`, `git commit`, `git push`, `git tag`, or any other `git` command** unless the user EXPLICITLY asks you to.
+- The user manages version control manually. Your job is to write code and documentation — NOT to push to GitHub.
+- If the user says "commit and push", THEN you may run the git commands. Otherwise, NEVER.
+- This rule exists to prevent accidental commits and to give the user full control over when changes are versioned.
+
 ## CRITICAL: Documentation Sync — CHANGELOG, README, ROADMAP (NEW in v5.2.0)
 - After **ANY significant code change** (new feature, bugfix, refactor, breaking change), the following files **MUST** be updated before the task is marked complete:
   1. **CHANGELOG_EN.md** AND **CHANGELOG_GR.md** — with **ultra-detailed** entries in both languages.

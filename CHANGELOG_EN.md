@@ -3,6 +3,26 @@
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [v5.2.1] - 2026-07-04 — The "Academic Conference GUI & DRL Flagship" Update
+
+This release completely redesigns the Streamlit GUI for **academic conference presentation** — dual-mode (Simple/Advanced), professional CSS theme in `templates/gui_theme.css`, full bilingual support (EN/GR via `templates/gui_strings.py`), and the DRL-powered **AI Search** as the flagship feature.
+
+### Added
+- **`templates/gui_theme.css` (NEW, 140 lines):** Professional CSS theme with glassmorphism, smooth animations, custom scrollbar, academic typography, dark/light mode via `:root` CSS variables
+- **`templates/gui_strings.py` (NEW, 124 lines):** Translation dict (100+ keys in EN/GR) with dynamic `t()` function
+- **`app.py` — Dual-Mode GUI (Simple + Advanced):** Language toggle, Simple (5 pages) / Advanced (8 pages), AI-Powered Search as flagship tab, Autonomous Daemon (24/7 + DRL), restored Model Management with VRAM-aware badges
+- **`.clinerules`:** Added NO AUTO-GIT rule
+
+### Changed
+- **Search & Discovery tab order:** 1. AI-Powered Search (DRL) → 2. Daily Search → 3. Historical → 4. Autonomous Daemon → 5. Grey Literature
+- **`app.py`:** STR dict → `templates/gui_strings.py`, CSS → `templates/gui_theme.css`
+- **`talos.py`:** Research Pivot (Option 14) in Analysis & Insights
+
+### Fixed
+- **Theme switching:** Replaced broken `config.toml` approach with CSS injection — toggle works immediately
+- **Academic emoji:** Colorful emoji replaced with monochrome symbols (◆ ▷ ▣ ▨ ⊞ ⚙ ⊠ ⊙)
+
+
 ## [v5.2.0] - 2026-07-04 — The "Onboarding & Dynamic Orchestration" Update
 
 This release transforms TALOS into a **fully guided research platform** with a first-run onboarding wizard, research pivot workflow, and a fundamentally upgraded DRL stack that now supports **ALL 14 academic sources dynamically** (not just the original 3). **8 files changed, 1 new file, ~2,000 lines of code added/refactored.**

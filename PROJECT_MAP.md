@@ -712,6 +712,6 @@ verify_dependency_map.py (NEW in v5.0.0)
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-07-04 (v5.2.0: Live Agent + PDF batch + ROADMAP rewrite)
-> **Έκδοση Project:** v5.2.0
-> **Συνολικά αρχεία που καλύπτονται:** 56 (προστέθηκε research_pivot.py, talos_live_agent.py)
+> **Τελευταία ενημέρωση:** 2026-07-04 (v5.2.1: Academic Conference GUI — Dual-mode, Language EN/GR, AI Search flagship, model management restored)
+> **Έκδοση Project:** v5.2.1
+> **Συνολικά αρχεία που καλύπτονται:** 58 (προστέθηκαν research_pivot.py, talos_live_agent.py, gui_theme.css, gui_strings.py)

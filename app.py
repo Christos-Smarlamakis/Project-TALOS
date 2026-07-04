@@ -73,28 +73,15 @@ if "dark_mode" not in st.session_state:
 if "lang" not in st.session_state:
     st.session_state.lang = "en"
 
+# ── TRANSLATION SYSTEM ──────────────────────────────────────────────────────
+# All UI strings loaded from templates/gui_strings.py
+from templates.gui_strings import t
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # THEME MANAGEMENT
 # ═══════════════════════════════════════════════════════════════════════════════
-def apply_theme():
-    """Apply the current theme (light or dark) via Streamlit config."""
-    config_dir = os.path.join(os.path.dirname(__file__), ".streamlit")
-    os.makedirs(config_dir, exist_ok=True)
-    config_path = os.path.join(config_dir, "config.toml")
-    base = "dark" if st.session_state.dark_mode else "light"
-    cfg_content = f"""[theme]
-base="{base}"
-primaryColor="#e94560"
-backgroundColor="{'#0d1117' if st.session_state.dark_mode else '#ffffff'}"
-secondaryBackgroundColor="{'#161b22' if st.session_state.dark_mode else '#f6f8fa'}"
-textColor="{'#c9d1d9' if st.session_state.dark_mode else '#24292f'}"
-font="sans-serif"
-"""
-    try:
-        with open(config_path, "w") as f:
-            f.write(cfg_content)
-    except Exception:
-        pass  # Silently ignore if config can't be written
+# (apply_theme removed — uses CSS injection in render_css() instead.
+#  Streamlit only reads config.toml at startup, not at runtime.)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # HELPER FUNCTIONS
@@ -149,42 +136,40 @@ def reload_config():
 def reload_db():
     st.session_state.db = DatabaseManager()
 
-def t(key_en, key_gr="", simple_only=False):
-    """Translation helper: English/Greek based on language setting."""
-    return key_gr if (st.session_state.lang == "gr" or simple_only) else key_en
+# (old t() function removed — using STR dict above)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CSS STYLING
 # ═══════════════════════════════════════════════════════════════════════════════
 def render_css():
+    """Load the external CSS theme and inject it with dynamic theme class."""
+    css_path = os.path.join(os.path.dirname(__file__), "templates", "gui_theme.css")
+    try:
+        with open(css_path, "r", encoding="utf-8") as f:
+            css_content = f.read()
+    except Exception:
+        css_content = "/* gui_theme.css not found */"
+
+    # Inject the theme class for light/dark mode
+    theme_class = "dark-theme" if st.session_state.dark_mode else "light-theme"
+    wrapper_html = f'<div class="{theme_class}"></div>'
+
+    # ── Build dynamic CSS variables based on current theme ──
     bg = "#0d1117" if st.session_state.dark_mode else "#ffffff"
     card_bg = "#161b22" if st.session_state.dark_mode else "#f6f8fa"
     border = "#30363d" if st.session_state.dark_mode else "#d0d7de"
     text = "#c9d1d9" if st.session_state.dark_mode else "#24292f"
     accent = "#e94560"
     muted = "#8b949e" if st.session_state.dark_mode else "#57606a"
+    sbar = "linear-gradient(180deg, #0d1117, #161b22)" if st.session_state.dark_mode else "linear-gradient(180deg, #f6f8fa, #ffffff)"
 
     st.markdown(f"""<style>
-    .main-header{{background:linear-gradient(135deg,#1a1a2e,#0f3460);padding:1.5rem 2rem;
-        border-radius:16px;margin-bottom:1.5rem;border:1px solid rgba(233,69,96,.2);
-        color:white;text-align:center}}
-    .main-header h1{{color:#e94560;font-size:2rem;font-weight:700;margin:0}}
-    .main-header p{{color:#a0a0b0;font-size:.9rem;margin:.3rem 0 0}}
-    .card{{background:{card_bg};border:1px solid {border};border-radius:12px;
-        padding:1.5rem;margin-bottom:1rem;transition:transform .15s}}
-    .card:hover{{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.15)}}
-    .card h3{{color:{accent};font-size:1.2rem;margin-bottom:.5rem}}
-    .card p{{color:{text};font-size:.9rem;line-height:1.5}}
-    .mode-badge{{display:inline-block;padding:3px 10px;border-radius:12px;
-        font-size:.75rem;font-weight:600;color:white;
-        background:{'#2ea043' if st.session_state.advanced_mode else '#d29922'}}}
-    [data-testid="stMetricValue"]{{font-size:1.8rem!important;font-weight:700!important}}
-    .stButton>button{{border-radius:8px;font-weight:600;transition:all .2s;
-        border:1px solid {border}!important;background:{card_bg}!important;color:{text}!important}}
-    .stButton>button:hover{{transform:translateY(-1px);box-shadow:0 4px 12px rgba(233,69,96,.2);
-        border-color:{accent}!important}}
-    .sidebar-footer{{text-align:center;padding:1rem;color:{muted};font-size:.75rem;
-        border-top:1px solid {border};margin-top:1rem}}
+    :root {{
+        --bg: {bg}; --card-bg: {card_bg}; --border: {border};
+        --text: {text}; --accent: {accent}; --muted: {muted};
+        --sidebar-bg: {sbar};
+    }}
+    {css_content}
     </style>""", unsafe_allow_html=True)
 
 
@@ -193,11 +178,19 @@ def render_css():
 # ═══════════════════════════════════════════════════════════════════════════════
 def render_sidebar():
     with st.sidebar:
-        st.markdown("""<div style="text-align:center;padding:.5rem 0">
+        st.markdown(f"""<div style="text-align:center;padding:.5rem 0">
         <h2 style="color:#e94560;margin:0;font-size:1.4rem">🧠 TALOS</h2>
-        <p style="color:#8b949e;font-size:.7rem;margin:.2rem 0 0">Research Intelligence Platform v5.2.1</p>
+        <p style="color:#8b949e;font-size:.7rem;margin:.2rem 0 0">{t('sidebar_title')} v5.2.1</p>
         </div>""", unsafe_allow_html=True)
         st.markdown("---")
+
+        # ── Language toggle ──
+        new_lang = st.selectbox("🌐 Language / Γλώσσα", ["English (EN)", "Ελληνικά (GR)"],
+                               index=0 if st.session_state.lang == "en" else 1, key="lang_select")
+        if "EN" in new_lang and st.session_state.lang != "en":
+            st.session_state.lang = "en"; st.rerun()
+        elif "GR" in new_lang and st.session_state.lang != "gr":
+            st.session_state.lang = "gr"; st.rerun()
 
         # ── Mode badges ──
         col1, col2 = st.columns(2)
@@ -211,23 +204,15 @@ def render_sidebar():
 
         # ── Navigation ──
         if st.session_state.advanced_mode:
-            page = st.radio("📍 Navigation", [
-                "🏠 Home & Knowledge Base",
-                "🔍 Search & Discovery",
-                "🧪 Single Paper Evaluation",
-                "📊 Analysis & Insights",
-                "🛠️ Database & Data",
-                "🩺 System Diagnostics",
-                "🧠 DRL Agent Dashboard",
-                "⚙️ Profile & Settings",
+            page = st.radio(t("nav_advanced"), [
+                t("home"), t("search_disc"), t("paper_eval"), t("analysis"),
+                t("db_data"), t("diagnostics"), t("drl_dash"), t("profile"),
             ], label_visibility="collapsed")
         else:
-            page = st.selectbox("📍 Τι θα θέλατε να κάνετε;", [
-                "🏠 Αρχική — Επισκόπηση Γνώσης",
-                "🔍 Αναζήτηση — Βρες νέα papers",
-                "📚 Βιβλιοθήκη — Διάβασε τη γνώση σου",
-                "🧪 Αξιολόγηση Paper",
-                "🤖 Αυτόματος Ερευνητής — DRL Agent",
+            page = st.selectbox(t("simple_prompt"), [
+                t("simple_home_label"), t("simple_search_label"),
+                t("simple_library_label"), t("simple_eval_label"),
+                t("simple_agent_label"),
             ])
 
         st.markdown("---")
@@ -245,7 +230,6 @@ def render_sidebar():
                                 help="Toggle dark/light theme")
             if new_dark != st.session_state.dark_mode:
                 st.session_state.dark_mode = new_dark
-                apply_theme()
                 st.rerun()
 
         # ── DB Stats ──
@@ -270,86 +254,67 @@ def render_sidebar():
 
 def simple_home():
     """Home page for Simple Mode — big cards with guided actions."""
-    st.markdown('<div class="main-header"><h1>🧠 Project TALOS</h1>'
-                '<p>Η Έξυπνη Πλατφόρμα Ερευνητικής Γνώσης — Χωρίς τεχνικές γνώσεις!</p></div>',
-                unsafe_allow_html=True)
+    st.markdown(f'<div class="main-header"><h1>{t("sh_hero_title")}</h1>'
+                f'<p>{t("sh_hero_subtitle")}</p></div>', unsafe_allow_html=True)
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown(
-            f'<div class="card"><h3>🔍 Αναζήτηση</h3>'
-            f'<p>Βρες τα πιο πρόσφατα επιστημονικά papers στο θέμα που σε ενδιαφέρει. '
-            f'Το TALOS ψάχνει 14 ακαδημαϊκές βάσεις για σένα.</p></div>',
-            unsafe_allow_html=True
-        )
-        if st.button("🔍 Ξεκίνα Αναζήτηση", type="primary", width="stretch", key="s_home_search"):
-            st.switch_page("pages/2_🔍_Search.py") if False else None  # placeholder
+        st.markdown(f'<div class="card"><h3>{t("sh_card_search_title")}</h3>'
+                    f'<p>{t("sh_card_search_desc")}</p></div>', unsafe_allow_html=True)
+        st.button(t("sh_search_button"), type="primary", width="stretch", key="s_home_search")
     with c2:
-        st.markdown(
-            f'<div class="card"><h3>📚 Η Βιβλιοθήκη μου</h3>'
-            f'<p>Περιήγησε στην προσωπική σου βιβλιοθήκη. Όλα τα papers είναι ήδη αξιολογημένα '
-            f'και οργανωμένα ανά θεματική περιοχή.</p></div>',
-            unsafe_allow_html=True
-        )
-        if st.button("📚 Άνοιγμα Βιβλιοθήκης", width="stretch", key="s_home_library"):
-            pass
+        st.markdown(f'<div class="card"><h3>{t("sh_card_library_title")}</h3>'
+                    f'<p>{t("sh_card_library_desc")}</p></div>', unsafe_allow_html=True)
+        st.button("▶ " + t("sh_card_library_title"), width="stretch", key="s_home_library")
     with c3:
-        st.markdown(
-            f'<div class="card"><h3>🧪 Αξιολόγηση</h3>'
-            f'<p>Έχεις ένα paper που θες να αξιολογήσεις; Επικόλλησε την περίληψη '
-            f'και το TALOS θα σου πει πόσο σημαντικό είναι για σένα.</p></div>',
-            unsafe_allow_html=True
-        )
-        if st.button("🧪 Αξιολόγησε Paper", width="stretch", key="s_home_eval"):
-            pass
+        st.markdown(f'<div class="card"><h3>{t("sh_card_eval_title")}</h3>'
+                    f'<p>{t("sh_card_eval_desc")}</p></div>', unsafe_allow_html=True)
+        st.button("▶ " + t("sh_card_eval_title"), width="stretch", key="s_home_eval")
 
     st.markdown("---")
     try:
         s = st.session_state.db.get_database_statistics()
         c1, c2, c3 = st.columns(3)
-        c1.metric("📚 Papers στη βάση", s["total_papers"])
-        c2.metric("⭐ Κορυφαία (≥8)", s["elite_papers"])
-        c3.metric("📊 Μέσος όρος", f"{s['avg_score']:.1f}")
+        c1.metric(t("sh_home_papers"), s["total_papers"])
+        c2.metric(t("sh_home_elite"), s["elite_papers"])
+        c3.metric(t("sh_home_avg"), f"{s['avg_score']:.1f}")
     except Exception:
-        st.info("📭 Η βάση δεδομένων είναι άδεια. Τρέξε μια αναζήτηση για να ξεκινήσεις!")
+        st.info(t("sh_home_empty"))
 
 
 def simple_search():
     """Simple search — one text input, runs daily_search.py."""
-    st.header("🔍 Αναζήτηση Papers")
-    st.caption("Πες μας τι σε ενδιαφέρει και το TALOS θα ψάξει 14 ακαδημαϊκές βάσεις για σένα.")
+    st.header(t("sh_search_title"))
+    st.caption(t("sh_search_desc"))
 
-    topic = st.text_input("🎯 Τι θέλεις να βρεις;", placeholder="π.χ. 'τεχνητή νοημοσύνη σε drones'",
+    topic = st.text_input(t("sh_search_placeholder"), placeholder="e.g. 'artificial intelligence in drones'",
                          key="simple_topic")
-    if st.button("🔍 Αναζήτηση", type="primary", width="stretch", key="btn_simple_search"):
+    if st.button(t("sh_search_button"), type="primary", width="stretch", key="btn_simple_search"):
         if not topic.strip() or len(topic.strip()) < 15:
-            st.error("⚠️ Παρακαλώ δώσε μια πιο αναλυτική περιγραφή (τουλάχιστον 15 χαρακτήρες).")
+            st.error(t("sh_search_error"))
         else:
-            with st.spinner(f"Ψάχνω για '{topic}'... Αυτό μπορεί να πάρει μερικά λεπτά."):
-                # First, run PYTHIA to configure the queries
+            with st.spinner(t("sh_search_running").replace("{topic}", topic)):
                 rc1, _ = run("query_translator.py", stdin_text=topic + "\n")
-                # Then run daily search
                 rc2, out = run("daily_search.py")
                 st.session_state.output["simple_search"] = out
             if rc2 == 0:
-                st.success("✅ Η αναζήτηση ολοκληρώθηκε! Τα αποτελέσματα προστέθηκαν στη βιβλιοθήκη σου.")
+                st.success(t("sh_search_success"))
                 reload_db()
             else:
-                st.warning("Η αναζήτηση ολοκληρώθηκε αλλά μπορεί να υπάρχουν προβλήματα.")
+                st.warning(t("sh_search_partial"))
             show_output("simple_search", "daily_search.py")
 
 
 def simple_library():
     """Simple library — search by meaning + browse top papers."""
-    st.header("📚 Η Βιβλιοθήκη μου")
-    st.caption("Περιηγήσου στα papers που έχεις ήδη βρει. Όλα είναι αξιολογημένα από το AI.")
+    st.header(t("sh_library_title"))
+    st.caption(t("sh_library_desc"))
 
-    # Search bar
-    sem_query = st.text_input("🔎 Αναζήτηση με νόημα (semantic search)",
-                              placeholder="π.χ. 'deep reinforcement learning for robotics'",
+    sem_query = st.text_input(t("sh_library_sem_label"),
+                              placeholder="e.g. 'deep reinforcement learning for robotics'",
                               key="simple_sem_q")
-    if sem_query and st.button("🔍 Αναζήτηση", key="simple_sem_btn"):
-        with st.spinner("Ψάχνω..."):
+    if sem_query and st.button(t("sh_library_sem_btn"), key="simple_sem_btn"):
+        with st.spinner("Searching..."):
             try:
                 import requests as _req
                 r = _req.post("http://localhost:11434/api/embed",
@@ -359,92 +324,87 @@ def simple_library():
                     if vectors:
                         ids = st.session_state.db.semantic_search(np.array(vectors[0]), top_k=50)
                         st.session_state._sem_ids = ids
-                        st.success(f"Βρέθηκαν {len(ids)} σχετικά papers!")
+                        st.success(t("sh_library_sem_found").replace("{n}", str(len(ids))))
             except Exception as e:
-                st.warning(f"Η σημασιολογική αναζήτηση δεν είναι διαθέσιμη: {e}")
+                st.warning(t("sh_library_sem_unavail").replace("{e}", str(e)))
 
-    # Papers table (simplified)
     try:
         papers = st.session_state.db.get_all_papers_for_dashboard()
         if papers:
             df = pd.DataFrame(papers)
             if "_sem_ids" in st.session_state and st.session_state._sem_ids:
                 df = df[df["id"].isin(st.session_state._sem_ids)]
-            # Show top 20 by score
             df = df.sort_values("overall_score", ascending=False).head(20)
             display_cols = ["title", "source", "publication_year", "overall_score"]
             display_cols = [c for c in display_cols if c in df.columns]
             st.dataframe(df[display_cols], width="stretch", height=400,
                         column_config={
-                            "title": st.column_config.TextColumn("Τίτλος"),
-                            "source": st.column_config.TextColumn("Πηγή"),
-                            "publication_year": st.column_config.NumberColumn("Έτος"),
-                            "overall_score": st.column_config.NumberColumn("⭐ Score", format="%.1f"),
+                            "title": st.column_config.TextColumn(t("sh_library_title")),
+                            "source": st.column_config.TextColumn("Source"),
+                            "publication_year": st.column_config.NumberColumn("Year"),
+                            "overall_score": st.column_config.NumberColumn("Score", format="%.1f"),
                         })
         else:
-            st.info("📭 Δεν υπάρχουν papers ακόμα. Τρέξε μια αναζήτηση πρώτα!")
+            st.info(t("sh_library_empty"))
     except Exception as e:
-        st.warning(f"Δεν μπόρεσε να φορτώσει η βιβλιοθήκη: {e}")
+        st.warning(t("sh_library_load_error").replace("{e}", str(e)))
 
 
 def simple_agent():
-    """Simple Agent — one-button DRL agent with plain Greek explanation."""
-    st.header("🤖 Αυτόματος Ερευνητής")
-    st.caption("Το TALOS χρησιμοποιεί Τεχνητή Νοημοσύνη για να επιλέγει αυτόματα "
-              "τις καλύτερες ακαδημαϊκές πηγές και να βρίσκει τα πιο σημαντικά papers για σένα. "
-              "Δεν χρειάζεται να κάνεις τίποτα — απλά πάτα το κουμπί!")
+    """Simple Agent — one-button DRL agent."""
+    st.header(t("sh_agent_title"))
+    st.caption(t("sh_agent_desc"))
 
     model_path = os.path.join(os.path.dirname(__file__), "models", "dddqn_trained.pth")
     if os.path.exists(model_path):
         size_kb = os.path.getsize(model_path) / 1024
-        st.success(f"✅ Ο ερευνητής είναι εκπαιδευμένος και έτοιμος! ({size_kb:.1f} KB)")
-        if st.button("🚀 Εκκίνηση Αυτόματου Ερευνητή", type="primary", width="stretch", key="btn_simple_agent"):
-            with st.spinner("Ο ερευνητής ψάχνει αυτόματα... Πάτα Stop για να σταματήσεις."):
+        st.success(t("sh_agent_ready").replace("{size:.1f}", f"{size_kb:.1f}"))
+        if st.button(t("sh_agent_btn"), type="primary", width="stretch", key="btn_simple_agent"):
+            with st.spinner(t("sh_agent_running")):
                 rc, out = run("talos_live_agent.py", args=["--verbose"])
                 st.session_state.output["simple_agent"] = out
-            if rc in [0, 1, 2]: st.success("✅ Ο ερευνητής ολοκλήρωσε!")
-            else: st.warning(f"Ολοκληρώθηκε (code {rc}).")
+            if rc in [0, 1, 2]: st.success(t("sh_agent_done"))
+            else: st.warning(f"Completed (code {rc}).")
             show_output("simple_agent", "Live DRL Agent")
     else:
-        st.warning("🤖 Ο ερευνητής δεν έχει εκπαιδευτεί ακόμα. "
-                  "Χρειάζεται να τρέξεις πρώτα την εκπαίδευση (θα σε βοηθήσει ο διαχειριστής).")
+        st.warning(t("sh_agent_untrained"))
         st.code("python scripts/train_agent.py --episodes 500", language="bash")
 
 
 def simple_evaluate():
     """Simple paper evaluation."""
-    st.header("🧪 Αξιολόγηση Paper")
-    st.caption("Επικόλλησε την περίληψη (abstract) ενός paper και το TALOS θα το αξιολογήσει.")
+    st.header(t("sh_eval_title"))
+    st.caption(t("sh_eval_desc"))
 
-    abstract = st.text_area("📝 Επικόλλησε την περίληψη εδώ:", height=200,
-                           placeholder="Paste the paper abstract here (at least 100 characters)...",
+    abstract = st.text_area(t("sh_eval_label"), height=200,
+                           placeholder="Paste the paper abstract here...",
                            key="simple_abs")
 
-    if st.button("🔬 Αξιολόγησε", type="primary", width="stretch", key="btn_simple_eval"):
+    if st.button(t("sh_eval_btn"), type="primary", width="stretch", key="btn_simple_eval"):
         if not abstract or len(abstract.strip()) < 50:
-            st.error("⚠️ Χρειάζεται τουλάχιστον 50 χαρακτήρες.")
+            st.error(t("sh_eval_error"))
         else:
-            with st.spinner("Αξιολογώ με AI..."):
+            with st.spinner(t("sh_eval_spinner")):
                 try:
                     result = st.session_state.ai.evaluate_paper_json(abstract, model_type="pro")
                     if result:
                         sc = result.get("scores", {})
                         ov = result.get("overall_score", 0)
                         c1, c2, c3, c4 = st.columns(4)
-                        c1.metric("🔴 Strategic", f"{sc.get('strategic',0)}/10")
-                        c2.metric("🟣 Operational", f"{sc.get('operational',0)}/10")
-                        c3.metric("🔵 Tactical", f"{sc.get('tactical',0)}/10")
-                        c4.metric("🟡 Playground", f"{sc.get('playground',0)}/10")
-                        st.markdown(f"### 🎯 Overall Score: **{ov:.1f} / 10**")
+                        c1.metric(t("sh_eval_strategic"), f"{sc.get('strategic',0)}/10")
+                        c2.metric(t("sh_eval_operational"), f"{sc.get('operational',0)}/10")
+                        c3.metric(t("sh_eval_tactical"), f"{sc.get('tactical',0)}/10")
+                        c4.metric(t("sh_eval_playground"), f"{sc.get('playground',0)}/10")
+                        st.markdown(f"### {t('sh_eval_overall')}: **{ov:.1f} / 10**")
                         st.progress(min(ov / 10, 1.0))
                         if result.get("reasoning"):
-                            st.markdown(f"**💭 Σκεπτικό:** {result['reasoning']}")
+                            st.markdown(f"**{t('sh_eval_reasoning')}:** {result['reasoning']}")
                         if result.get("tags"):
-                            st.markdown("**🏷️ Tags:** " + " · ".join(result["tags"]))
+                            st.markdown("**{t('sh_eval_tags')}:** " + " . ".join(result["tags"]))
                     else:
-                        st.error("❌ Η αξιολόγηση απέτυχε. Έλεγξε τα API keys.")
+                        st.error(t("sh_eval_fail"))
                 except Exception as e:
-                    st.error(f"Σφάλμα: {e}")
+                    st.error(f"Error: {e}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -452,22 +412,22 @@ def simple_evaluate():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def handle_advanced_page(page):
-    """Handle routing for Advanced Mode pages (ported from original app.py)."""
-    if page == "🏠 Home & Knowledge Base":
+    """Handle routing for Advanced Mode pages."""
+    if page == t("home"):
         advanced_home()
-    elif page == "🔍 Search & Discovery":
+    elif page == t("search_disc"):
         advanced_search()
-    elif page == "🧪 Single Paper Evaluation":
+    elif page == t("paper_eval"):
         advanced_evaluate()
-    elif page == "📊 Analysis & Insights":
+    elif page == t("analysis"):
         advanced_analysis()
-    elif page == "🛠️ Database & Data":
+    elif page == t("db_data"):
         advanced_database()
-    elif page == "🩺 System Diagnostics":
+    elif page == t("diagnostics"):
         advanced_diagnostics()
-    elif page == "🧠 DRL Agent Dashboard":
+    elif page == t("drl_dash"):
         advanced_drl_dashboard()
-    elif page == "⚙️ Profile & Settings":
+    elif page == t("profile"):
         advanced_settings()
 
 
@@ -558,10 +518,30 @@ def advanced_home():
 
 
 def advanced_search():
-    """Advanced Search — full daily/historic/grey literature."""
+    """Advanced Search — AI Search (flagship) + daily/historic/process/grey lit."""
     st.header("🔍 Search & Discovery")
-    t1, t2, t3 = st.tabs(["📰 Daily Search", "📚 Historical Archive", "🌐 Grey Literature"])
+    t1, t2, t3, t4, t5 = st.tabs([
+        t("ai_search_title"), "📰 Daily Search (14 APIs)", "📚 Historical Archive",
+        t("ai_process_title"), "🌐 Grey Literature",
+    ])
+    # ── Tab 1: AI-Powered Search (FLAGSHIP) ──
     with t1:
+        st.subheader(t("ai_search_title"))
+        st.caption(t("ai_search_desc"))
+        live_col1, live_col2 = st.columns(2)
+        with live_col1:
+            if st.button("🧠 Start AI-Powered Live Agent", type="primary", width="stretch", key="btn_ai_search"):
+                with st.spinner("DRL agent orchestrating APIs in real-time..."):
+                    rc, out = run("talos_live_agent.py", args=["--verbose"])
+                    st.session_state.output["ai_search"] = out
+                if rc in [0, 1, 2]: st.success("✅ AI search complete!")
+                else: st.warning(f"Completed (code {rc}).")
+                show_output("ai_search", "DRL Live Agent")
+        with live_col2:
+            if st.button("📊 Open DRL Dashboard", width="stretch", key="btn_open_drl"):
+                st.switch_page("pages/7_🧠_DRL_Agent_Dashboard.py") if False else None
+    # ── Tab 2: Daily Search ──
+    with t2:
         st.subheader("📰 Daily Search — 14 Academic APIs")
         if st.button("🚀 Run Daily Search", type="primary", key="b1"):
             with st.spinner("Running..."):
@@ -570,7 +550,8 @@ def advanced_search():
             if rc == 0: st.success("✅ Complete!"); reload_db()
             else: st.warning(f"Code {rc}.")
             show_output("daily", "daily_search.py")
-    with t2:
+    # ── Tab 3: Historical Search ──
+    with t3:
         st.subheader("📚 Historical Search")
         if st.button("📜 Run Historical Search", type="primary", key="b2"):
             with st.spinner("Running..."):
@@ -578,7 +559,24 @@ def advanced_search():
                 st.session_state.output["historic"] = out
             if rc == 0: st.success("✅ Complete!"); reload_db()
             else: st.warning(f"Code {rc}.")
-    with t3:
+    # ── Tab 4: Autonomous Process (24/7 + DRL) ──
+    with t4:
+        st.subheader(t("ai_process_title"))
+        st.caption(t("ai_process_desc"))
+        st.warning(t("process_stop"))
+        report_mode = st.radio(t("process_reporting"), [
+            t("process_silent"), t("process_normal"), t("process_verbose"),
+        ], index=0, horizontal=True)
+        if st.button("🤖 " + t("process_start"), type="primary", key="btn_process"):
+            mode_flag = "1" if t("process_silent") in report_mode else ("2" if t("process_normal") in report_mode else "3")
+            with st.spinner("Process starting..."):
+                rc, out = run("talos_service.py")
+                st.session_state.output["process"] = out
+            if rc in [0, 1, 2]: st.success("✅ Process stopped.")
+            else: st.warning(f"Completed (code {rc}).")
+            show_output("process", "Autonomous Process")
+    # ── Tab 5: Grey Literature ──
+    with t5:
         st.subheader("🌐 Grey Literature")
         topic = st.text_input("Research topic:", key="grey_topic")
         if st.button("🌍 Run Horizon Scan", type="primary", key="b3"):
@@ -736,6 +734,31 @@ def advanced_diagnostics():
         if rc == 0: st.success("Audit complete. Map is 100% accurate.")
         else: st.warning("Discrepancies found.")
 
+    st.markdown("---")
+    if st.button("Open Architecture Graph", type="primary", key="btn_arch_graph"):
+        import webbrowser, socket
+        port = 8765
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(0.5)
+            if sock.connect_ex(('127.0.0.1', port)) != 0:
+                server_dir = os.path.join(os.path.dirname(__file__), "templates")
+                subprocess.Popen(
+                    [sys.executable, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", server_dir],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+            sock.close()
+        except: pass
+        webbrowser.open(f"http://localhost:{port}/architecture_graph.html")
+        st.success("Architecture graph opened in browser!")
+
+    if st.button("Generate Architecture Intelligence Report", type="primary", key="btn_arch_report"):
+        with st.spinner("Generating..."):
+            rc, out = run("architecture_intelligence_report.py")
+            st.session_state.output["arch_report"] = out
+        if rc == 0: st.success("✅ Report generated (EN + GR)!")
+        else: st.warning(f"Completed (code {rc}).")
+
 
 def advanced_drl_dashboard():
     """DRL Dashboard — GWO params + training status."""
@@ -770,16 +793,117 @@ def advanced_drl_dashboard():
 
 
 def advanced_settings():
-    """Advanced Settings — API keys + models + profiles."""
-    st.header("⚙️ Profile & Settings")
-    st.info(f"**Active Profile:** `{get_active_profile()}`")
-    # Minimal version — full version would be too long for this refactor
-    from core.hardware import detect_vram_gb
-    vram = detect_vram_gb()
-    if vram:
-        st.metric("🖥️ GPU VRAM", f"{vram:.1f} GB")
+    """Advanced Settings — API keys + models + profiles + VRAM-aware model management."""
+    st.header("⊙ Profile & Settings")
+    from core.hardware import detect_vram_gb, estimate_size_for_quant, get_all_chat_models_sorted, get_embedding_models, pull_model
+
+    # ── Provider Selection ────────────────────────────────────────────────
+    provider = st.radio(t("model_provider"), [t("model_local"), t("model_cloud")], horizontal=True,
+                       index=0 if "TALOS_USE_LOCAL" in os.environ else 1, key="settings_provider")
+    is_local = t("model_local") in provider
+
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    vram_gb = detect_vram_gb()
+
+    c1, c2 = st.columns(2)
+    with c1: st.metric(t("model_vram"), f"{vram_gb:.1f} GB" if vram_gb else "N/A")
+    with c2:
+        if vram_gb:
+            usable = vram_gb * 0.70
+            st.caption(f"{usable:.1f} GB usable (70% headroom)")
+
+    if is_local:
+        # ═══ LOCAL MODE ═══════════════════════════════════════════════════
+        all_models = get_all_chat_models_sorted(vram_gb) if vram_gb else []
+        installed = [m for m in all_models if m.get("installed")][:10]
+        library = [m for m in all_models if not m.get("installed") and not m.get("bitnet")][:15]
+        bitnet = [m for m in all_models if m.get("bitnet")]
+
+        # ── Chat Model ────────────────────────────────────────────────────
+        st.subheader(t("model_chat"))
+        section = st.selectbox(t("model_select"), [
+            t("model_installed"), t("model_library"), t("model_bitnet"),
+        ])
+        models = installed if t("model_installed") in section else (library if t("model_library") in section else bitnet)
+        model_names = []
+        for m in models:
+            name = m.get("full_name", m.get("name", ""))
+            size_gb = estimate_size_for_quant(name, m.get("quant"))
+            badge = t("model_fits") if size_gb <= (vram_gb or 0) * 0.70 else (t("model_tight") if size_gb <= (vram_gb or 0) else t("model_toobig"))
+            label = f"{name} ({size_gb:.1f}GB) [{badge}]" if vram_gb else name
+            model_names.append(label)
+        if model_names:
+            sel = st.selectbox(t("model_chat"), model_names, key="model_sel")
+            if st.button(t("model_save"), key="btn_save_local"):
+                full = sel.split(" (")[0] if " (" in sel else sel
+                try:
+                    from dotenv import set_key
+                    set_key(env_path, "LOCAL_MODEL_NAME", full)
+                    os.environ["LOCAL_MODEL_NAME"] = full
+                    st.success(f"Saved: {full}")
+                except Exception as e:
+                    st.error(str(e))
+        else:
+            st.info("No models available. Check Ollama connection.")
+
     else:
-        st.info("GPU not detected")
+        # ═══ CLOUD MODE ═══════════════════════════════════════════════════
+        st.subheader("Cloud AI Models")
+        flash_opts = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-flash"]
+        pro_opts = ["gemini-2.5-pro", "gemini-2.0-pro", "gemini-1.5-pro"]
+        ds_opts = ["deepseek-chat", "deepseek-reasoner"]
+        hf_opts = ["mistralai/Mixtral-8x7B-Instruct-v0.1", "meta-llama/Llama-3.1-8B-Instruct",
+                  "Qwen/Qwen2.5-7B-Instruct", "mistralai/Mistral-7B-Instruct-v0.3",
+                  "microsoft/Phi-3-mini-4k-instruct", "google/gemma-2-2b-it"]
+
+        gf = st.selectbox(t("model_gemini_flash"), flash_opts, index=0)
+        gp = st.selectbox(t("model_gemini_pro"), pro_opts, index=0)
+        ds = st.selectbox(t("model_deepseek"), ds_opts, index=0)
+        hf = st.selectbox(t("model_hf"), hf_opts, index=0)
+        if st.button(t("model_save"), key="btn_save_cloud"):
+            try:
+                from dotenv import set_key
+                set_key(env_path, "GEMINI_FLASH_MODEL", gf)
+                set_key(env_path, "GEMINI_PRO_MODEL", gp)
+                set_key(env_path, "DEEPSEEK_MODEL_CHAT", ds)
+                set_key(env_path, "HF_MODEL_NAME", hf)
+                os.environ["GEMINI_FLASH_MODEL"] = gf
+                os.environ["GEMINI_PRO_MODEL"] = gp
+                os.environ["DEEPSEEK_MODEL_CHAT"] = ds
+                os.environ["HF_MODEL_NAME"] = hf
+                st.success("Cloud models saved!")
+            except Exception as e:
+                st.error(str(e))
+
+    # ── Embedding Model ────────────────────────────────────────────────────
+    st.markdown("---")
+    st.subheader(t("model_embed"))
+    emb_models = get_embedding_models() if is_local else [
+        {"name": "gemini-embedding-001 (cloud)", "description": "768-dim, paid"},
+    ]
+    emb_names = [m.get("name", "text-embedding-004") for m in emb_models]
+    emb_sel = st.selectbox(t("model_embed"), emb_names, key="emb_sel")
+    if st.button(f"Save Embedding: {emb_sel}", key="btn_save_emb"):
+        try:
+            from dotenv import set_key
+            set_key(env_path, "LOCAL_EMBEDDING_MODEL", emb_sel)
+            os.environ["LOCAL_EMBEDDING_MODEL"] = emb_sel
+            st.success(f"Embedding model saved: {emb_sel}")
+        except Exception as e:
+            st.error(str(e))
+
+    # ── Research Pivot ──────────────────────────────────────────────────────
+    st.markdown("---")
+    st.subheader("🔄 Research Pivot (Change Research Direction)")
+    st.caption("If your research interests have shifted, use this to reconfigure PYTHIA, "
+              "re-evaluate the database, and re-train the DRL agent.")
+    if st.button("🔄 Start Research Pivot", type="primary", key="btn_pivot"):
+        with st.spinner("Running Research Pivot wizard..."):
+            rc, out = run("research_pivot.py")
+            st.session_state.output["pivot"] = out
+        if rc == 0: st.success("✅ Research Pivot complete!"); reload_config()
+        else: st.warning(f"Completed (code {rc}).")
+        show_output("pivot", "research_pivot.py")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -787,7 +911,6 @@ def advanced_settings():
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def main():
-    apply_theme()
     render_css()
     page = render_sidebar()
 
@@ -796,14 +919,16 @@ def main():
 
     # ── Simple Mode Routing ──
     if not st.session_state.advanced_mode:
-        if "Αρχική" in page:
+        if t("simple_home_label") in page:
             simple_home()
-        elif "Αναζήτηση" in page:
+        elif t("simple_search_label") in page:
             simple_search()
-        elif "Βιβλιοθήκη" in page:
+        elif t("simple_library_label") in page:
             simple_library()
-        elif "Αξιολόγηση" in page:
+        elif t("simple_eval_label") in page:
             simple_evaluate()
+        elif t("simple_agent_label") in page:
+            simple_agent()
     else:
         # ── Advanced Mode Routing ──
         st.markdown("""<div style="text-align:center;padding:1rem 0">

@@ -3,6 +3,25 @@
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
 
+## [v5.2.1] - 2026-07-04 — Η Ενημέρωση "Academic Conference GUI & DRL Flagship"
+
+Αυτή η έκδοση επανασχεδιάζει πλήρως το Streamlit GUI για **παρουσίαση σε ακαδημαϊκό συνέδριο** — dual-mode (Simple/Advanced), επαγγελματικό CSS theme, πλήρης δίγλωσση υποστήριξη (EN/GR), και η DRL-powered **AI Αναζήτηση** ως flagship feature.
+
+### Προσθήκες
+- **`templates/gui_theme.css` (ΝΕΟ, 140 γραμμές):** Επαγγελματικό CSS theme με glassmorphism, animations, custom scrollbar, dark/light mode
+- **`templates/gui_strings.py` (ΝΕΟ, 124 γραμμές):** Λεξικό μετάφρασης (100+ κλειδιά EN/GR) με δυναμική `t()`
+- **`app.py` — GUI Διπλής Λειτουργίας:** Language toggle, Simple (5 σελίδες) / Advanced (8 σελίδες), AI-Powered Search ως flagship tab, Autonomous Daemon, Model Management με VRAM-aware badges
+- **`.clinerules`:** NO AUTO-GIT κανόνας
+
+### Αλλαγές
+- **Search & Discovery σειρά tabs:** 1. AI-Powered Search (DRL) → 2. Daily Search → 3. Historical → 4. Autonomous Daemon → 5. Grey Literature
+- **`app.py`:** STR dict → `templates/gui_strings.py`, CSS → `templates/gui_theme.css`
+
+### Διορθώσεις
+- **Theme switching:** CSS injection αντί για broken `config.toml` — άμεση εναλλαγή
+- **Academic emoji:** Μονόχρωμα σύμβολα (◆ ▷ ▣ ▨ ⊞ ⚙ ⊠ ⊙)
+
+
 ## [v5.2.0] - 2026-07-04 — Η Ενημέρωση "Onboarding & Δυναμική Ενορχήστρωση"
 
 Αυτή η έκδοση μετατρέπει το TALOS σε μια **πλήρως καθοδηγούμενη ερευνητική πλατφόρμα** με onboarding wizard για πρώτη εκτέλεση, ροή research pivot, και ένα ριζικά αναβαθμισμένο DRL stack που υποστηρίζει πλέον **ΚΑΙ τις 14 ακαδημαϊκές πηγές δυναμικά** (όχι μόνο τις αρχικές 3). **8 αρχεία άλλαξαν, 1 νέο αρχείο, ~2,000 γραμμές κώδικα προστέθηκαν/αναδιοργανώθηκαν.**
