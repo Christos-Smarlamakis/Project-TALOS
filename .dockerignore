@@ -1,0 +1,32 @@
+# TALOS v5.3.0 — Docker build exclusions
+# These files/directories are excluded from the Docker build context
+# to keep the image small and fast.
+
+# Generated documentation (regenerate with: python scripts/generate_docs.py)
+docs/
+
+# Runtime data (not needed in the image)
+reports/
+data/
+logs/
+models/
+
+# Sensitive / environment-specific
+.env
+*.db
+talos_research.db
+_profiles/
+__pycache__/
+
+# VCS
+.git/
+.gitignore
+.dockerignore
+
+# Dev utilities
+_bump.py
+_git_status.ps1
+reference_code/
+
+# IDE
+.vscode/
