@@ -227,6 +227,7 @@ def render_sidebar():
                 "🔍 Αναζήτηση — Βρες νέα papers",
                 "📚 Βιβλιοθήκη — Διάβασε τη γνώση σου",
                 "🧪 Αξιολόγηση Paper",
+                "🤖 Αυτόματος Ερευνητής — DRL Agent",
             ])
 
         st.markdown("---")
@@ -386,6 +387,30 @@ def simple_library():
         st.warning(f"Δεν μπόρεσε να φορτώσει η βιβλιοθήκη: {e}")
 
 
+def simple_agent():
+    """Simple Agent — one-button DRL agent with plain Greek explanation."""
+    st.header("🤖 Αυτόματος Ερευνητής")
+    st.caption("Το TALOS χρησιμοποιεί Τεχνητή Νοημοσύνη για να επιλέγει αυτόματα "
+              "τις καλύτερες ακαδημαϊκές πηγές και να βρίσκει τα πιο σημαντικά papers για σένα. "
+              "Δεν χρειάζεται να κάνεις τίποτα — απλά πάτα το κουμπί!")
+
+    model_path = os.path.join(os.path.dirname(__file__), "models", "dddqn_trained.pth")
+    if os.path.exists(model_path):
+        size_kb = os.path.getsize(model_path) / 1024
+        st.success(f"✅ Ο ερευνητής είναι εκπαιδευμένος και έτοιμος! ({size_kb:.1f} KB)")
+        if st.button("🚀 Εκκίνηση Αυτόματου Ερευνητή", type="primary", width="stretch", key="btn_simple_agent"):
+            with st.spinner("Ο ερευνητής ψάχνει αυτόματα... Πάτα Stop για να σταματήσεις."):
+                rc, out = run("talos_live_agent.py", args=["--verbose"])
+                st.session_state.output["simple_agent"] = out
+            if rc in [0, 1, 2]: st.success("✅ Ο ερευνητής ολοκλήρωσε!")
+            else: st.warning(f"Ολοκληρώθηκε (code {rc}).")
+            show_output("simple_agent", "Live DRL Agent")
+    else:
+        st.warning("🤖 Ο ερευνητής δεν έχει εκπαιδευτεί ακόμα. "
+                  "Χρειάζεται να τρέξεις πρώτα την εκπαίδευση (θα σε βοηθήσει ο διαχειριστής).")
+        st.code("python scripts/train_agent.py --episodes 500", language="bash")
+
+
 def simple_evaluate():
     """Simple paper evaluation."""
     st.header("🧪 Αξιολόγηση Paper")
@@ -447,7 +472,7 @@ def handle_advanced_page(page):
 
 
 def advanced_home():
-    """Advanced Home — full dashboard with filters and semantics."""
+    """Advanced Home — full dashboard with filters and semantic search."""
     st.header("🏠 Home — Knowledge Base Overview")
     try:
         s = st.session_state.db.get_database_statistics()
@@ -461,16 +486,70 @@ def advanced_home():
         st.warning(f"Database unavailable: {e}")
 
     st.markdown("---")
-    # Simplified version of the original advanced home (filters + table)
+
+    # ── Filter buttons ──
+    filter_cols = st.columns(7)
+    filters = {"All": None, "Core ≥7": 7.0, "Strategic ≥7": 7.0, "Operational ≥7": 7.0,
+               "Tactical ≥7": 7.0, "Playground ≥7": 7.0, "Elite ≥8": 8.0}
+    active_filter = "All"
+    for i, (label, thresh) in enumerate(filters.items()):
+        with filter_cols[i % 7]:
+            if st.button(label, key=f"hf_{label}", width="stretch"):
+                st.session_state._home_filter = (label, thresh)
+
+    if "_home_filter" not in st.session_state:
+        st.session_state._home_filter = ("All", None)
+    active_filter, active_thresh = st.session_state._home_filter
+
+    # ── Semantic search ──
+    with st.expander("🔍 Semantic Search (search by meaning)", expanded=False):
+        sem_q = st.text_input("Search papers by meaning:", key="adv_sem_q")
+        if sem_q and st.button("🔍 Search", key="adv_sem_btn"):
+            with st.spinner("Searching..."):
+                try:
+                    import requests as _req
+                    r = _req.post("http://localhost:11434/api/embed",
+                                 json={"model": "nomic-embed-text", "input": [sem_q]}, timeout=10)
+                    if r.status_code == 200:
+                        vectors = r.json().get("embeddings")
+                        if vectors:
+                            ids = st.session_state.db.semantic_search(np.array(vectors[0]), top_k=200)
+                            st.session_state._sem_ids = ids
+                            st.success(f"Found {len(ids)} semantically similar papers!")
+                except Exception as e:
+                    st.warning(f"Semantic search unavailable: {e}")
+
+    # ── Papers table ──
     try:
         papers = st.session_state.db.get_all_papers_for_dashboard()
         if papers:
-            df = pd.DataFrame(papers).sort_values("overall_score", ascending=False).head(100)
-            dc = ["title", "authors", "source", "publication_year", "overall_score"]
-            dc = [c for c in dc if c in df.columns]
-            st.dataframe(df[dc], width="stretch", height=500,
+            df = pd.DataFrame(papers)
+            # Apply semantic filter
+            if "_sem_ids" in st.session_state and st.session_state._sem_ids:
+                df = df[df["id"].isin(st.session_state._sem_ids)]
+            # Apply numeric filter
+            if active_thresh is not None:
+                if active_filter == "Core ≥7":
+                    df = df[df["overall_score"] >= 7.0]
+                elif active_filter == "Strategic ≥7":
+                    df = df[df.get("strategic_score", df["overall_score"]) >= active_thresh]
+                elif active_filter == "Operational ≥7":
+                    df = df[df.get("operational_score", df["overall_score"]) >= active_thresh]
+                elif active_filter == "Tactical ≥7":
+                    df = df[df.get("tactical_score", df["overall_score"]) >= active_thresh]
+                elif active_filter == "Playground ≥7":
+                    df = df[df.get("playground_score", df["overall_score"]) >= active_thresh]
+                elif active_filter == "Elite ≥8":
+                    df = df[df["overall_score"] >= 8.0]
+            df = df.sort_values("overall_score", ascending=False).head(200)
+            display_cols = ["title", "source", "publication_year", "overall_score"]
+            if "authors" in df.columns: display_cols.insert(1, "authors")
+            display_cols = [c for c in display_cols if c in df.columns]
+            st.caption(f"Showing {len(df)} papers (filter: {active_filter})")
+            st.dataframe(df[display_cols], width="stretch", height=600,
                         column_config={
                             "overall_score": st.column_config.NumberColumn("⭐ Overall", format="%.1f"),
+                            "title": st.column_config.TextColumn("Title", width="large"),
                         })
         else:
             st.info("📭 No papers yet. Run a Search to populate the database.")
