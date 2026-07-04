@@ -30,6 +30,7 @@ os.makedirs(PDF_DIR, exist_ok=True)
 # Timeout and retry config
 DOWNLOAD_TIMEOUT = 30
 MAX_RETRIES = 2
+MAX_WORKERS = 10  # Thread pool size for multi-threaded batch downloads
 REQUEST_DELAY = 1.0  # Be polite to APIs
 
 

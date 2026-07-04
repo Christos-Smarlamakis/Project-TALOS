@@ -187,6 +187,18 @@
 
 ---
 
+### `scripts/pdf_downloader.py` — Hotfix: Μη Ορισμένη Σταθερά `MAX_WORKERS`
+
+**ΓΙΑΤΙ:** Η λειτουργία multi-threaded batch download (που προστέθηκε στην αρχική έκδοση v5.2.0 Live Agent & PDF Downloader) αναφερόταν στη σταθερά `MAX_WORKERS` στη γραμμή 255 χωρίς να την έχει ορίσει σε επίπεδο module. Αυτό προκαλούσε `NameError` κατά την εκτέλεση όταν ο χρήστης επέλεγε batch mode μέσω του prompt `questionary.confirm("Use multi-threaded batch download?")`, σπάζοντας εντελώς τη multi-threaded διαδρομή λήψης.
+
+**ΤΙ άλλαξε:**
+- **Γραμμή 32:** Προστέθηκε η δήλωση σταθεράς `MAX_WORKERS = 10` αμέσως μετά το `MAX_RETRIES = 2` στο πάνω μέρος του μπλοκ ρυθμίσεων του module (μαζί με `DOWNLOAD_TIMEOUT=30`, `MAX_RETRIES=2`, `REQUEST_DELAY=1.0`).
+- Καμία άλλη γραμμή δεν τροποποιήθηκε — οι υπάρχουσες κλήσεις `print(f"\n  ⚡ Multi-threaded mode: {MAX_WORKERS} workers")` και `ThreadPoolExecutor(max_workers=MAX_WORKERS)` πλέον επιλύονται σωστά στη νέα σταθερά.
+
+**Αρχεία που άλλαξαν:** 1 (`scripts/pdf_downloader.py` — 1 γραμμή προστέθηκε)
+
+---
+
 **Σύνολο: 8 αρχεία άλλαξαν, 1 νέο αρχείο, ~2,000 γραμμές κώδικα προστέθηκαν/αναδιοργανώθηκαν**
 **Integration test: 43/43 Python files περνούν `py_compile` validation**
 

@@ -187,6 +187,18 @@ This release transforms TALOS into a **fully guided research platform** with a f
 
 ---
 
+### `scripts/pdf_downloader.py` — Hotfix: Missing `MAX_WORKERS` Constant
+
+**WHY:** The multi-threaded batch download feature (added in the original v5.2.0 Live Agent & PDF Downloader release) referenced the constant `MAX_WORKERS` at line 255 without defining it at the module level. This caused a `NameError` at runtime whenever the user selected batch mode via the `questionary.confirm("Use multi-threaded batch download?")` prompt, completely breaking the multi-threaded download path.
+
+**WHAT changed:**
+- **Line 32:** Added `MAX_WORKERS = 10` constant declaration immediately after `MAX_RETRIES = 2` at the top of the module-level configuration block (alongside `DOWNLOAD_TIMEOUT=30`, `MAX_RETRIES=2`, `REQUEST_DELAY=1.0`).
+- No other lines modified — the existing `print(f"\n  ⚡ Multi-threaded mode: {MAX_WORKERS} workers")` and `ThreadPoolExecutor(max_workers=MAX_WORKERS)` calls now correctly resolve to the newly defined constant.
+
+**Files changed:** 1 (`scripts/pdf_downloader.py` — 1 line added)
+
+---
+
 **Total: 8 files changed, 1 new file, ~2,000 lines added/refactored**
 **Integration test: 43/43 Python files pass `py_compile` validation**
 
