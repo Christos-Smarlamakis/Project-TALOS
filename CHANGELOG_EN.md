@@ -3,6 +3,194 @@
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [v5.2.0] - 2026-07-04 — The "Onboarding & Dynamic Orchestration" Update
+
+This release transforms TALOS into a **fully guided research platform** with a first-run onboarding wizard, research pivot workflow, and a fundamentally upgraded DRL stack that now supports **ALL 14 academic sources dynamically** (not just the original 3). **8 files changed, 1 new file, ~2,000 lines of code added/refactored.**
+
+---
+
+### `app.py` v5.2.0 — Onboarding Wizard & Research Pivot (from v4.11.0, ~1022 → ~1400 lines)
+
+**WHY:** Before v5.2.0, TALOS had no guided onboarding — new users had to know about PYTHIA, profiles, and the 14-source architecture before they could use the system. There was no GUI-based way to create a profile or recalibrate when research interests shifted. This was a major UX gap compared to professional research tools (Zotero, ResearchRabbit, Elicit).
+
+**WHAT changed — New functions added:**
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `render_onboarding_wizard()` | `() -> None` | Renders a 4-step Streamlit wizard: (1) Profile Name, (2) Research Domain description, (3) PYTHIA AI configuration with inline editing of generated queries/prompts, (4) Review & Launch with optional historic search and daemon start. Uses `st.session_state.onboarding_step` for navigation, progress bar for visual feedback. |
+| `_is_first_run()` | `() -> bool` | Returns `True` if no `_profiles/active_profile.txt` exists or no profiles are found. Called before the normal dashboard renders — if True, the wizard takes over the entire page via `st.stop()`. |
+
+**WHAT changed — New UI sections:**
+- **Research Pivot** section in Profile & Settings → Profiles tab: text area for new research direction + "Start Research Pivot" button that triggers PYTHIA regeneration via subprocess, with step-by-step guidance for re-evaluation and retraining.
+- **Imports added:** `scripts.profile_manager` (6 functions: PROFILES_DIR, ROOT_DIR, ensure_profiles_dir, set_active_profile_name, save_current_state_to_profile, load_profile_to_root), `scripts.query_translator.flatten_json`, `shutil`, `socket`, `webbrowser`, `traceback`.
+
+**WHAT changed — Navigation:**
+- **Sidebar expanded:** 7 → 8 pages (added "🧠 DRL Agent Dashboard" as separate page).
+- **Version bumped:** `v4.11.0` → `v5.2.0` in sidebar header, footer, and docstring.
+
+---
+
+### `core/talos_env.py` v2.0 — Dynamic N-Source Environment (from v1.0, ~303 → ~380 lines)
+
+**WHY:** The original `TalosEnv` hardcoded exactly 3 sources (ArXiv, OpenAlex, Semantic Scholar) with 4 actions (3 query + 1 sleep). This meant the DRL agent could only learn to route between these 3 APIs — ignoring the other 11 sources TALOS supports. To scale the agent to all 14 sources, the environment needed to become dynamic.
+
+**⚠️ BREAKING CHANGES (3):**
+1. Observation space: hardcoded `Box(6,)` → dynamic `Box(1 + N + 2,)` where N = number of sources. Structure: `[hour/23, usage_ratio_0, ..., usage_ratio_N-1, low_streak/10, error_streak/10]`.
+2. Action space: hardcoded `Discrete(4)` → dynamic `Discrete(N + 1)` where N = number of sources. Sleep action = index N (was hardcoded 3).
+3. Internal state: removed individual `self.arxiv_calls`, `self.openalex_calls`, `self.s2_calls` attributes. Replaced with parallel numpy arrays: `self.source_calls` (shape N) and `self.source_limits` (shape N).
+
+**Migration guide:** Old code referencing `env.arxiv_calls`, `action == 3` (sleep), or 6-element observations must be updated. New code should use `env.source_calls[idx]`, `action == env.SLEEP_ACTION`, and the dynamic observation length.
+
+**WHAT changed — New module-level functions:**
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `_load_source_list(config)` | `(dict or None) -> list[str]` | Reads source names from config in 3-tier priority: (1) explicit `source_names` key, (2) auto-detect from `_query` keys, (3) fallback to `["arxiv", "openalex", "semantic_scholar"]`. |
+| `_try_load_config()` | `() -> dict or None` | Loads `config.json` from project root with graceful JSONDecodeError handling. |
+| `_load_source_limits(source_names, config)` | `(list, dict) -> np.ndarray` | Reads per-source limits from `config.json` (`<source>_limit` keys), defaults to 100. |
+| `get_default_state_space()` | `() -> int` | Returns `1 + len(sources) + 2` — the observation vector size for the default source count. |
+| `get_default_action_space()` | `() -> int` | Returns `len(sources) + 1` — the action count (N sources + sleep). |
+
+**WHAT changed — Class `TalosEnv` constructor:**
+- `TalosEnv(source_names=None, source_limits=None, config=None)` — all parameters optional. If `source_names` is None, auto-detected from config.
+- Deduplication of source names while preserving order.
+- `self.SLEEP_ACTION = self.num_sources` — dynamically computed sleep index.
+- New attributes: `source_names` (list), `num_sources` (int), `source_limits` (np.ndarray), `source_calls` (np.ndarray).
+
+**WHAT changed — Method `step(action)`:**
+- Old: massive `if action == 3: ... elif action == 0: ... elif action == 1: ... elif action == 2: ...` chain.
+- New: `if action == self.SLEEP_ACTION: ... elif 0 <= action < self.num_sources: source_name = self.source_names[action]; ...` — clean generic loop.
+- Reward logic IDENTICAL: +20 score≥8, +5 score=7, -10 score<7, -50 API error, +2 sleep when max usage > 80%.
+- Info dict now includes `"source": source_name` in addition to `"action"` and `"score"`.
+
+**WHAT changed — Backward compatibility:**
+- Properties `arxiv_limit`, `openalex_limit`, `s2_limit` still exist — they look up the named source in `self.source_names` and return its limit.
+- `_simulate_score()` and `_score_to_reward()` unchanged.
+
+---
+
+### `core/drl_agent.py` v2.0 — Dynamic Agent (from v1.1, ~393 → ~320 lines)
+
+**WHY:** The original agent had hardcoded `STATE_SPACE = 6` and `ACTION_SPACE = 4` at module level. With the dynamic environment supporting N sources, the agent needed to adapt its neural network input/output dimensions at construction time. Additionally, saved models had no metadata — loading a 3-source model on a 14-source config would silently fail or produce wrong results.
+
+**WHAT changed — Module-level constants:**
+- `STATE_SPACE` and `ACTION_SPACE` are now computed dynamically at import time: `STATE_SPACE = get_default_state_space()`, `ACTION_SPACE = get_default_action_space()`. Fallback to (6, 4) if import fails.
+- ALL hyperparameters unchanged: `LR=1e-4`, `GAMMA=0.8`, `TAU=1e-3`, `BATCH_SIZE=200`, etc.
+
+**WHAT changed — Class `DuelingLSTM`:**
+- Constructor: `DuelingLSTM(input_dim, output_dim)` — both parameters passed at construction, no longer relying on module-level constants. The LSTM layers now accept `input_size=input_dim` for the first layer and output `output_dim` Q-values from the advantage head.
+
+**WHAT changed — Class `TalosDRLAgent`:**
+- Constructor: `TalosDRLAgent(state_dim=None, action_dim=None)` — when None, uses module-level defaults. Stores `self.state_dim`, `self.action_dim`, and `self.source_names` (loaded from `talos_env._load_source_list()`).
+
+**WHAT changed — Method `save(path)`:**
+- Old format: `T.save(self.actor_online.state_dict(), path)` — raw `OrderedDict`.
+- New format: `T.save({"state_dim": ..., "action_dim": ..., "source_names": ..., "weights": ...}, path)` — dict with metadata.
+
+**WHAT changed — Method `load(path)`:**
+- Detects old vs new format: checks if loaded data is a dict with `"weights"` key.
+- Extracts metadata: `state_dim`, `action_dim`, `source_names` from the saved dict.
+- If dimensions don't match existing networks, **re-creates** both `actor_online` and `actor_target` with the correct `DuelingLSTM(input_dim, output_dim)`, re-creates the optimizer, then loads weights via `load_state_dict()`.
+- This enables loading a 3-source model on a 14-source config (and vice versa) — a warning should be printed but the code handles it.
+
+---
+
+### `scripts/talos_service.py` v2.0 — Profile-Aware Daemon (from v1.1, ~472 → ~430 lines)
+
+**WHY:** The v1.1 daemon had 4 hardcoded issues: (1) `action == 3` for sleep, (2) `{0: "ArXiv", 1: "OpenAlex", 2: "S2"}` for source names, (3) always loaded model from `models/dddqn_trained.pth` ignoring profiles, (4) agent created with default dimensions that might not match the environment. This meant the daemon couldn't adapt when the user switched profiles or when sources changed.
+
+**WHAT changed — Initialisation:**
+- Reads active profile from `_profiles/active_profile.txt` at startup, displays profile name in header.
+- Creates `OfflineTalosEnv()` FIRST to get the actual `num_sources` and `SLEEP_ACTION`.
+- Creates agent with: `TalosDRLAgent(state_dim=env.observation_space.shape[0], action_dim=env.action_space.n)`.
+- Model loading: checks `_profiles/<name>/models/dddqn_trained.pth` first, then global `models/dddqn_trained.pth` as fallback.
+
+**WHAT changed — Main loop:**
+- `action == 3` → `action == sleep_action` (where `sleep_action = env.SLEEP_ACTION`).
+- `action_name = {0: "ArXiv", 1: "OpenAlex", 2: "S2"}.get(action, "?")` → `source_name = info.get("source", "unknown")`.
+- Alert formatting: `format_paper_alert()` now uses dynamic source display names (`source.replace('_', ' ').title()`).
+
+**WHAT changed — Version strings:**
+- Header: `v5.0.0 (Phase 4)` → `v5.2.0`
+- Weekly digest: `v5.0.0` → `v5.2.0`
+
+---
+
+### `scripts/talos_live_agent.py` v2.0 — Dynamic N-Source Live Agent (from v1.0, ~409 → ~390 lines)
+
+**WHY:** The v1.0 live agent had hardcoded imports for exactly 3 source classes (`ArxivSource`, `OpenAlexSource`, `SemanticScholarSource`) and a hardcoded 6-element state vector. It could only make real API calls to those 3 sources. For the agent to orchestrate all 14 sources, every hardcoded reference needed to be replaced with dynamic discovery.
+
+**WHAT changed — New functions:**
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `_import_source_class(source_name)` | `(str) -> class or None` | Dynamically imports `sources.<name>_source.<Name>Source` using `__import__()` and `getattr()`. Handles TitleCase conversion (e.g., `semantic_scholar` → `SemanticScholarSource`). Returns `None` with warning on import failure. |
+| `_build_source_map(source_names)` | `(list[str]) -> dict` | Builds `{action_index: (source_name, SourceClass)}` dict for all importable sources. Sources that fail import are silently excluded. |
+
+**WHAT changed — Modified functions:**
+- `calculate_state()`: Signature changed from fixed 6-element array to dynamic `(normalized_hour, call_counts, source_limits, low_score_streak, error_streak, source_names)`. Returns `np.array([hour] + ratios + [low_norm, error_norm])`.
+- `execute_live_fetch()`: Added `action_map` parameter (was using hardcoded `{0: ("ArXiv", ArxivSource), ...}`). Now returns 3-tuple `(papers, error, source_name)`.
+- `main()`: Auto-detects sources via `_load_source_list(config)`, builds `action_map` via `_build_source_map()`, computes `sleep_action = len(source_names)`. Profile-aware model loading (same as daemon).
+
+**WHAT changed — Removed imports:**
+- Old: `from sources.arxiv_source import ArxivSource`, `from sources.openalex_source import OpenAlexSource`, `from sources.semantic_scholar_source import SemanticScholarSource`.
+- New: `from core.talos_env import _load_source_list, _try_load_config` — no source-specific imports.
+
+---
+
+### `scripts/train_agent.py` — Dynamic Source Display (from v1.0, ~283 → ~290 lines)
+
+**WHY:** The training script was unchanged in logic but needed to display dynamic source information so users know how many sources and what dimensions the agent is training with.
+
+**WHAT changed:**
+- Startup display: added source count, source names (truncated to first 5 if >5), observation dimension, and action dimension.
+- Agent creation: `TalosDRLAgent()` → `TalosDRLAgent(state_dim=env.observation_space.shape[0], action_dim=env.action_space.n)`.
+- Version string: `Database-Driven` → `Database-Driven (v5.2.0)`.
+
+---
+
+### `scripts/research_pivot.py` v1.0 — **NEW FILE** (~180 lines)
+
+**WHY:** There was no automated workflow for users whose research interests shifted. They had to manually: (1) re-run PYTHIA via CLI, (2) remember to re-evaluate the database, (3) remember to retrain the agent, (4) manually save to profile. This script automates the entire pivot workflow.
+
+**Functions:**
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `get_active_profile_name()` | `() -> str` | Reads active profile from `_profiles/active_profile.txt`, defaults to "default". |
+| `save_state_to_profile(profile_name)` | `(str) -> None` | Copies root `config.json` and `talos_research.db` into `_profiles/<name>/`. |
+| `run_script(script_name, stdin_text, args)` | `(str, str, list) -> (int, str)` | Executes a TALOS script as subprocess with `TALOS_GUI_STDIN` piping. 30-minute timeout. |
+| `main()` | `() -> None` | 5-step interactive wizard: (1) collect new direction, (2) run PYTHIA, (3) optionally re-evaluate DB, (4) optionally retrain agent with custom episode count, (5) save to profile. Supports `--auto` flag for GUI integration (reads from env var). |
+
+**Imports:** `questionary`, `subprocess`, `shutil`, `sys`, `os`.
+
+---
+
+### Documentation Updates
+
+**`PROJECT_MAP.md`:**
+- Added Section 2.0: `core/talos_env.py` v2.0 with all 8 functions documented.
+- Added Section 2.3: `core/notifier.py` (TalosNotifier — was completely undocumented before).
+- Updated Section 2.2: `core/drl_agent.py` from v1.1 → v2.0 with new signatures.
+- Updated Section 3.2: `app.py` from v4.10.1 → v5.2.0, pages 6 → 8, new functions table.
+- Added new integration script docs: `scripts/drl_trainer.py`, `scripts/talos_live_agent.py` v2.0, `scripts/talos_service_api.py`, `scripts/research_pivot.py`.
+- Last Updated: 2026-07-04, Version: v5.2.0, File count: 56.
+- **Function audit improvement:** 166 → 183 matched (+17 newly documented functions).
+
+**`.clinerules`:**
+- Added "CRITICAL: Project Version & PROJECT_MAP.md Synchronization" rule — mandates map update after every .py change, overrides all other rules.
+- Added "CRITICAL: Documentation Sync — CHANGELOG, README, ROADMAP" rule — mandates ultra-detailed changelog entries with exact filenames, signatures, and rationale after every significant change.
+
+**`README.md`:** Version v5.0.0 → v5.2.0. Tagline updated to "Now with Guided Onboarding, Research Pivot & Dynamic 14-Source DRL Orchestration".
+
+**`ROADMAP.md`:** v5.2.0 section updated from "In Progress" to "COMPLETED ✅" with detailed feature table covering Onboarding, DRL Stack, Documentation, and Files Changed.
+
+---
+
+**Total: 8 files changed, 1 new file, ~2,000 lines added/refactored**
+**Integration test: 43/43 Python files pass `py_compile` validation**
+
+
 ## [v5.1.0] - 2026-07-04 — DRL Dashboard & TUI/GUI Reorganization
 
 This release brings the DRL ecosystem to the forefront with a dedicated Streamlit dashboard, interactive TUI features, and a comprehensive project roadmap update.

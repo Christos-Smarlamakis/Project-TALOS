@@ -1,5 +1,5 @@
 @echo off
-title Project TALOS v5.0.0 Launcher
+title Project TALOS v5.2.0 Launcher
 
 REM Activate the conda environment
 call C:\ProgramData\miniconda3\Scripts\activate.bat talosenv
@@ -14,7 +14,7 @@ IF ERRORLEVEL 1 (
 :MENU
 cls
 echo =============================================
-echo    Project TALOS v5.0.0
+echo    Project TALOS v5.2.0
 echo    Research Intelligence Platform
 echo =============================================
 echo.
@@ -23,16 +23,18 @@ echo    [2] Web GUI (Streamlit - Recommended)
 echo    [3] Legacy Dashboard (Flask)
 echo    [4] Generate Baseline Report
 echo    [5] Autonomous Research Service (24/7)
-echo    [6] Exit
+echo    [6] Live DRL Agent (Real APIs)
+echo    [7] Exit
 echo.
-set /p choice="    Select mode [1-6]: "
+set /p choice="    Select mode [1-7]: "
 
 if "%choice%"=="1" goto CLI
 if "%choice%"=="2" goto GUI
 if "%choice%"=="3" goto DASHBOARD
 if "%choice%"=="4" goto REPORT
 if "%choice%"=="5" goto SERVICE
-if "%choice%"=="6" goto END
+if "%choice%"=="6" goto LIVEAGENT
+if "%choice%"=="7" goto END
 goto MENU
 
 :CLI
@@ -79,6 +81,16 @@ echo    Starting Autonomous Research Service...
 echo    Press Ctrl+C to stop
 echo =============================================
 python scripts\talos_service.py
+goto MENU
+
+:LIVEAGENT
+cls
+echo =============================================
+echo    Starting Live DRL Agent (Real APIs)...
+echo    ⚠️  This makes REAL API calls.
+echo    Press Ctrl+C to stop
+echo =============================================
+python scripts\talos_live_agent.py --verbose
 goto MENU
 
 :END

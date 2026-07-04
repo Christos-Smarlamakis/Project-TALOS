@@ -674,6 +674,7 @@ def main_menu():
     event loop with hierarchical sub-menus for all TALOS operations.
     """
     python_exe = sys.executable or "python"
+    project_root = os.path.dirname(os.path.abspath(__file__))
     print(f"INFO: Using Python from: {python_exe}")
 
     check_first_run(python_exe)
@@ -840,9 +841,17 @@ def main_menu():
                     print(f"\n  ⚠️  No baseline reports found.")
                     print(f"  Use 'Generate Baseline Report' from System Diagnostics first.")
             print("=" * 65)
-        elif choice.startswith("11."): database_data_menu(python_exe)
-        elif choice.startswith("12."): system_health_menu(python_exe)
-        elif choice.startswith("13."): profile_settings_menu(python_exe)
+        elif choice.startswith("11."):
+            print("\n" + "=" * 65)
+            print("  Live DRL Agent — Real API Orchestration")
+            print("=" * 65)
+            print("\n  ⚠️  This makes REAL API calls to ArXiv, OpenAlex, and Semantic Scholar.")
+            print("  The trained DRL agent selects the optimal source in real-time.")
+            if questionary.confirm("Start live agent? (runs until Ctrl+C)", default=True).ask():
+                run_script("talos_live_agent.py", python_exe, args=["--verbose"])
+        elif choice.startswith("12."): database_data_menu(python_exe)
+        elif choice.startswith("13."): system_health_menu(python_exe)
+        elif choice.startswith("14."): profile_settings_menu(python_exe)
 
         if choice != "Exit": input(final_message)
 

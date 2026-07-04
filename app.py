@@ -1,13 +1,23 @@
 # -*- coding: utf-8 -*-
 """
-Module: app.py (Streamlit Web GUI — Complete TALOS CLI Replacement)
-Project: TALOS v4.10.1
+Module: app.py (Streamlit Web GUI — v5.2.0 Onboarding + Research Pivot)
+Project: TALOS v5.2.0
 Description:
-    Complete Multi-Page Streamlit Web GUI replicating ALL functionality of
-    the TALOS CLI. Every script is executed as a real subprocess.
-    User input required by scripts is collected via Streamlit widgets
-    and piped through stdin. Auto-confirms questionary.confirm() prompts.
-    100% console-free.
+    Complete Multi-Page Streamlit Web GUI with a first-run onboarding wizard
+    (4-step: Profile Name → Research Domain → PYTHIA AI Configuration →
+    Review & Launch) and a Research Pivot tool for users whose research
+    interests have shifted. Every TALOS script is executed as a real
+    subprocess via _gui_runner.py. User input is piped through env var
+    TALOS_GUI_STDIN for reliable Windows operation. 100% console-free.
+
+    Key design decisions:
+    - Onboarding wizard renders instead of the dashboard when no active
+      profile is detected (_is_first_run() returns True).
+    - PYTHIA is integrated directly (not as subprocess) in Step 3 to
+      show generated queries/prompts for user review before saving.
+    - Research Pivot button in Profile & Settings triggers PYTHIA with
+      the new research description, then guides user through re-evaluation
+      and agent retraining.
 """
 
 import streamlit as st
@@ -148,6 +158,412 @@ def reload_db():
     st.session_state.db = DatabaseManager()
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# ONBOARDING WIZARD — First-run experience for new users
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def render_onboarding_wizard():
+    """
+    Render the multi-step onboarding wizard for first-time TALOS users.
+
+    This wizard guides the user through:
+      Step 1: Profile name (required)
+      Step 2: Research domain description (the user describes their area)
+      Step 3: PYTHIA configuration — AI generates search queries + prompts
+              from the research description, displayed for user review/editing
+      Step 4: Review & launch — summary, optional historic search, daemon start
+
+    The wizard uses st.session_state.onboarding_step to track progress.
+    After completion, saves the profile and sets active_profile.txt so the
+    normal dashboard appears on next launch.
+    """
+    # ── Initialise wizard state ─────────────────────────────────────────────
+    if "onboarding_step" not in st.session_state:
+        st.session_state.onboarding_step = 1
+    if "onboarding_profile_name" not in st.session_state:
+        st.session_state.onboarding_profile_name = ""
+    if "onboarding_research_desc" not in st.session_state:
+        st.session_state.onboarding_research_desc = ""
+    if "onboarding_generated_queries" not in st.session_state:
+        st.session_state.onboarding_generated_queries = {}
+    if "onboarding_generated_prompts" not in st.session_state:
+        st.session_state.onboarding_generated_prompts = {}
+    if "onboarding_pythia_done" not in st.session_state:
+        st.session_state.onboarding_pythia_done = False
+    if "onboarding_complete" not in st.session_state:
+        st.session_state.onboarding_complete = False
+
+    step = st.session_state.onboarding_step
+
+    # ── Header with progress bar ────────────────────────────────────────────
+    st.markdown("""<div style="text-align:center;padding:2rem 0 1rem">
+    <h1 style="color:#e94560;font-size:2.4rem;margin:0">🧠 Welcome to TALOS</h1>
+    <p style="color:#a0a0b0;font-size:1.1rem;margin:.5rem 0 0">
+    Your AI-Powered Research Intelligence Platform</p>
+    </div>""", unsafe_allow_html=True)
+
+    # Progress indicator (4 steps)
+    step_labels = ["1. Profile", "2. Research Area", "3. AI Configuration", "4. Launch"]
+    progress_val = (step - 1) / 3.0  # 0.0, 0.33, 0.66, 1.0
+    st.progress(progress_val)
+
+    cols = st.columns(4)
+    for i, label in enumerate(step_labels):
+        with cols[i]:
+            if i + 1 < step:
+                st.markdown(f"✅ ~~{label}~~")
+            elif i + 1 == step:
+                st.markdown(f"**🔵 {label}**")
+            else:
+                st.markdown(f"⚪ {label}")
+
+    st.markdown("---")
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # STEP 1: Profile Name
+    # ═══════════════════════════════════════════════════════════════════════
+    if step == 1:
+        st.markdown("### Step 1: Name Your Research Profile")
+        st.caption("Create a profile to keep your research organised. You can have multiple profiles for different research areas.")
+
+        profile_name = st.text_input(
+            "Profile Name",
+            value=st.session_state.onboarding_profile_name,
+            placeholder="e.g. 'bioinformatics', 'drone-swarm-research', 'nlp-thesis'",
+            key="wizard_profile_name"
+        )
+        st.caption("Use letters, numbers, underscores, and hyphens. Spaces will be converted to underscores.")
+
+        if st.button("Next →", type="primary", key="wiz_next_1"):
+            if not profile_name.strip():
+                st.error("Please enter a profile name.")
+            else:
+                # ── Sanitise profile name ───────────────────────────────────
+                safe_name = "".join([
+                    c for c in profile_name.strip()
+                    if c.isalnum() or c in (' ', '_', '-')
+                ]).replace(' ', '_')
+                if not safe_name:
+                    st.error("Profile name must contain at least one letter or number.")
+                else:
+                    st.session_state.onboarding_profile_name = safe_name
+                    st.session_state.onboarding_step = 2
+                    st.rerun()
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # STEP 2: Research Domain
+    # ═══════════════════════════════════════════════════════════════════════
+    elif step == 2:
+        st.markdown("### Step 2: Describe Your Research Domain")
+        st.caption(
+            "Tell TALOS what you're researching. Be as detailed as possible — "
+            "this helps the AI generate precise search queries and evaluation criteria."
+        )
+
+        research_desc = st.text_area(
+            "Research Description (in English)",
+            value=st.session_state.onboarding_research_desc,
+            placeholder=(
+                "Example: 'I am researching autonomous drone swarm intelligence using "
+                "multi-agent reinforcement learning and graph neural networks for urban "
+                "search-and-rescue operations. I'm interested in emergent communication "
+                "protocols between agents, hierarchical task decomposition, and real-time "
+                "decision making under uncertainty...'"
+            ),
+            height=200,
+            key="wizard_research_desc"
+        )
+        st.caption(f"Characters: {len(research_desc)} (minimum 50 recommended)")
+
+        col_back, col_next = st.columns([1, 3])
+        with col_back:
+            if st.button("← Back", key="wiz_back_2"):
+                st.session_state.onboarding_step = 1
+                st.rerun()
+        with col_next:
+            if st.button("Next →", type="primary", key="wiz_next_2"):
+                if len(research_desc.strip()) < 20:
+                    st.error("Please describe your research in more detail (at least 20 characters).")
+                else:
+                    st.session_state.onboarding_research_desc = research_desc.strip()
+                    st.session_state.onboarding_step = 3
+                    st.rerun()
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # STEP 3: PYTHIA Configuration
+    # ═══════════════════════════════════════════════════════════════════════
+    elif step == 3:
+        st.markdown("### Step 3: AI-Powered Configuration (PYTHIA)")
+        st.caption(
+            "PYTHIA will analyse your research description and generate:\n"
+            "- **14 API search queries** (one per academic source)\n"
+            "- **Evaluation prompts** (PhD focus, pre-screening)\n"
+            "- **4-layer scoring semantics** (strategic, operational, tactical, playground)"
+        )
+
+        # ── Run PYTHIA if not done yet ──────────────────────────────────────
+        if not st.session_state.onboarding_pythia_done:
+            if st.button("🔮 Generate Configuration with PYTHIA", type="primary", key="wiz_run_pythia"):
+                with st.spinner("PYTHIA is analysing your research domain and generating optimal queries..."):
+                    try:
+                        # Use AIManager directly (not subprocess) for better integration
+                        config = st.session_state.config
+                        ai = st.session_state.ai
+                        research_goal = st.session_state.onboarding_research_desc
+
+                        # ── Build the PYTHIA prompt ──────────────────────────
+                        meta_prompt = config.get("query_translator_prompt",
+                            "Act as a Research Architect. Generate a flat JSON object with optimized search queries "
+                            "(keys like 'arxiv_query') and customized system prompts (keys like 'phd_focus_system_prompt') "
+                            "for the user's research goal. Do NOT nest the JSON.")
+
+                        template_guidance = f"""
+                        **REFERENCE TEMPLATE FOR PROMPTS (Keep JSON structure, change content):**
+                        {config.get('phd_focus_system_prompt', '')}
+
+                        **USER RESEARCH GOAL:**
+                        {research_goal}
+                        """
+
+                        # ── Call AI with system prompt override ──────────────
+                        from scripts.query_translator import flatten_json
+                        generated_raw = ai.evaluate_paper_json(
+                            paper_content=template_guidance,
+                            model_type='pro',
+                            system_prompt_override=meta_prompt
+                        )
+
+                        if generated_raw:
+                            generated = flatten_json(generated_raw)
+
+                            # Extract queries
+                            queries = {}
+                            for k, v in generated.items():
+                                if 'query' in k and k != "query_translator_prompt":
+                                    queries[k] = v
+
+                            # Extract prompts
+                            prompts = {}
+                            for k, v in generated.items():
+                                if 'prompt' in k or 'phd_focus' in k:
+                                    prompts[k] = v
+
+                            st.session_state.onboarding_generated_queries = queries
+                            st.session_state.onboarding_generated_prompts = prompts
+                            st.session_state.onboarding_pythia_done = True
+                            st.success(f"✅ PYTHIA generated {len(queries)} queries and {len(prompts)} prompts!")
+                            st.rerun()
+                        else:
+                            st.error("❌ PYTHIA could not generate configuration. Please try again or describe your research differently.")
+                    except Exception as e:
+                        st.error(f"Error running PYTHIA: {e}")
+
+        # ── Show generated queries for review/editing ───────────────────────
+        else:
+            queries = st.session_state.onboarding_generated_queries
+            prompts = st.session_state.onboarding_generated_prompts
+
+            if queries:
+                st.markdown("#### 📋 Generated Search Queries")
+                st.caption("Review and edit each query below. These will be used to search academic APIs.")
+
+                edited_queries = {}
+                for key, value in sorted(queries.items()):
+                    source_label = key.replace('_query', '').replace('_', ' ').title()
+                    edited_val = st.text_area(
+                        f"**{source_label}**",
+                        value=value,
+                        height=80,
+                        key=f"wiz_query_{key}"
+                    )
+                    edited_queries[key] = edited_val
+
+                st.session_state.onboarding_generated_queries = edited_queries
+
+            if prompts:
+                st.markdown("#### 🧠 Generated Evaluation Prompts")
+                edited_prompts = {}
+                for key, value in sorted(prompts.items()):
+                    prompt_label = key.replace('_', ' ').title()
+                    edited_val = st.text_area(
+                        f"**{prompt_label}**",
+                        value=value,
+                        height=120,
+                        key=f"wiz_prompt_{key}"
+                    )
+                    edited_prompts[key] = edited_val
+                st.session_state.onboarding_generated_prompts = edited_prompts
+
+            col_back, col_regenerate, col_next = st.columns([1, 2, 2])
+            with col_back:
+                if st.button("← Back", key="wiz_back_3"):
+                    st.session_state.onboarding_step = 2
+                    st.rerun()
+            with col_regenerate:
+                if st.button("🔄 Regenerate with PYTHIA", key="wiz_regen"):
+                    st.session_state.onboarding_pythia_done = False
+                    st.rerun()
+            with col_next:
+                if st.button("Next →", type="primary", key="wiz_next_3"):
+                    st.session_state.onboarding_step = 4
+                    st.rerun()
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # STEP 4: Review & Launch
+    # ═══════════════════════════════════════════════════════════════════════
+    elif step == 4:
+        st.markdown("### Step 4: Review & Launch")
+        st.success("🎉 Your TALOS profile is ready!")
+
+        profile_name = st.session_state.onboarding_profile_name
+        research_desc = st.session_state.onboarding_research_desc
+        n_queries = len(st.session_state.onboarding_generated_queries)
+        n_prompts = len(st.session_state.onboarding_generated_prompts)
+
+        # ── Summary cards ──────────────────────────────────────────────────
+        col1, col2, col3 = st.columns(3)
+        col1.metric("📂 Profile", profile_name)
+        col2.metric("🔍 Search Queries", n_queries)
+        col3.metric("🧠 AI Prompts", n_prompts)
+
+        st.markdown("---")
+        st.markdown("#### 📝 Research Description")
+        st.info(research_desc[:500] + ("..." if len(research_desc) > 500 else ""))
+
+        # ── Show queries summary ────────────────────────────────────────────
+        with st.expander("📋 View Generated Queries & Prompts", expanded=False):
+            for k, v in sorted(st.session_state.onboarding_generated_queries.items()):
+                st.caption(f"**{k}:** {v[:100]}...")
+            for k, v in sorted(st.session_state.onboarding_generated_prompts.items()):
+                st.caption(f"**{k}:** {v[:100]}...")
+
+        st.markdown("---")
+
+        # ── Optional actions before launching ──────────────────────────────
+        st.markdown("#### ⚙️ Launch Options")
+
+        col_run_search, col_start_daemon = st.columns(2)
+        with col_run_search:
+            run_initial_search = st.checkbox(
+                "📚 Run initial historical search (populate database with relevant papers)",
+                value=True, key="wiz_run_search"
+            )
+        with col_start_daemon:
+            start_daemon = st.checkbox(
+                "🤖 Start 24/7 autonomous research agent (discovers new papers continuously)",
+                value=False, key="wiz_start_daemon"
+            )
+
+        col_back, col_launch = st.columns([1, 3])
+        with col_back:
+            if st.button("← Back", key="wiz_back_4"):
+                st.session_state.onboarding_step = 3
+                st.rerun()
+        with col_launch:
+            if st.button("🚀 Launch TALOS", type="primary", key="wiz_launch"):
+                with st.spinner("Setting up your profile..."):
+                    try:
+                        from scripts.profile_manager import (
+                            ensure_profiles_dir, set_active_profile_name,
+                            save_current_state_to_profile, load_profile_to_root,
+                            PROFILES_DIR, ROOT_DIR
+                        )
+                        import shutil
+
+                        # ── Create profile directory ────────────────────────
+                        ensure_profiles_dir()
+                        profile_path = os.path.join(PROFILES_DIR, profile_name)
+                        os.makedirs(profile_path, exist_ok=True)
+
+                        # ── Copy template config if no existing config ──────
+                        config_src = os.path.join(ROOT_DIR, "config.json")
+                        if not os.path.exists(config_src):
+                            config_src = os.path.join(ROOT_DIR, "config.template.json")
+                        shutil.copy2(config_src, os.path.join(profile_path, "config.json"))
+
+                        # ── Update profile config with generated queries ────
+                        profile_config_path = os.path.join(profile_path, "config.json")
+                        with open(profile_config_path, "r", encoding="utf-8") as f:
+                            profile_config = json.load(f)
+
+                        # Apply generated queries
+                        for k, v in st.session_state.onboarding_generated_queries.items():
+                            profile_config[k] = v
+                        # Apply generated prompts
+                        for k, v in st.session_state.onboarding_generated_prompts.items():
+                            profile_config[k] = v
+
+                        with open(profile_config_path, "w", encoding="utf-8") as f:
+                            json.dump(profile_config, f, indent=2, ensure_ascii=False)
+
+                        # ── Set active profile ──────────────────────────────
+                        set_active_profile_name(profile_name)
+
+                        # ── Load profile to root ────────────────────────────
+                        load_profile_to_root(profile_name)
+
+                        # ── Reload config in session ────────────────────────
+                        reload_config()
+
+                        st.session_state.onboarding_complete = True
+
+                        # ── Run optional actions ────────────────────────────
+                        results = []
+                        if run_initial_search:
+                            st.info("Running initial historical search... This may take a few minutes.")
+                            rc, out = run("historic_search.py", stdin_text="y\n")
+                            results.append(f"Historical search: {'✅' if rc == 0 else '⚠️'}")
+
+                        if start_daemon:
+                            st.info("Starting autonomous research agent in background...")
+                            # Launch daemon in background (non-blocking)
+                            import subprocess as _sp
+                            daemon_path = os.path.join(
+                                os.path.dirname(__file__), "scripts", "talos_service.py"
+                            )
+                            _sp.Popen(
+                                [sys.executable, daemon_path],
+                                stdout=_sp.DEVNULL, stderr=_sp.DEVNULL,
+                                env=os.environ.copy()
+                            )
+                            results.append("Daemon started ✅")
+
+                        if results:
+                            st.success(" | ".join(results))
+
+                        st.balloons()
+                        st.success(f"## 🎉 Welcome to TALOS, {profile_name}!")
+                        st.info("Your research intelligence platform is ready. Use the sidebar to navigate.")
+                        time.sleep(2)
+                        st.rerun()
+
+                    except Exception as e:
+                        st.error(f"Error creating profile: {e}")
+                        import traceback
+                        st.code(traceback.format_exc())
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DETECT FIRST RUN — if no active profile, show onboarding wizard
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _is_first_run():
+    """Check if this is the first time TALOS is being run (no active profile)."""
+    profiles_dir = os.path.join(os.path.dirname(__file__), "_profiles")
+    active_file = os.path.join(profiles_dir, "active_profile.txt")
+    # First run = no active profile file OR no profiles directory at all
+    if not os.path.exists(active_file):
+        return True
+    # Also check if there are NO profiles at all (fresh install)
+    if not os.path.exists(profiles_dir):
+        return True
+    profiles = [d for d in os.listdir(profiles_dir)
+                if os.path.isdir(os.path.join(profiles_dir, d))]
+    if not profiles:
+        return True
+    return False
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""<style>
 .main-header{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);padding:1.8rem 2rem;border-radius:12px;margin-bottom:1.2rem;border:1px solid rgba(255,255,255,.08)}
 .main-header h1{color:#e94560;font-size:2.2rem;font-weight:700;margin:0}
@@ -160,7 +576,7 @@ st.markdown("""<style>
 # ═══════════════════════════════════════════════════════════════════════════════
 with st.sidebar:
     st.markdown("""<div style="text-align:center;padding:1rem 0">
-    <h2 style="color:#e94560;margin:0;font-size:1.5rem">🧠 TALOS v4.11.0</h2>
+    <h2 style="color:#e94560;margin:0;font-size:1.5rem">🧠 TALOS v5.2.0</h2>
     <p style="color:#8b949e;font-size:.75rem;margin:.2rem 0 0">Research Intelligence Platform</p></div>""", unsafe_allow_html=True)
     st.markdown("---")
 
@@ -227,6 +643,13 @@ with st.sidebar:
             os.environ["TALOS_ALLOW_LOCAL_FALLBACK"] = "1" if fallback else "0"
 
     st.sidebar.caption(f"Priority: {' → '.join(st.session_state.config.get('ai_provider_priority', ['gemini']))}")
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ONBOARDING CHECK — Show wizard on first run (no active profile)
+# ═══════════════════════════════════════════════════════════════════════════════
+if _is_first_run() and not st.session_state.get("onboarding_complete", False):
+    render_onboarding_wizard()
+    st.stop()
 
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("""<div class="main-header"><h1>🧠 Project TALOS</h1>
@@ -730,6 +1153,19 @@ elif page == "📊 Analysis & Insights":
             if rc in [0, 1, 2]: st.success("✅ API server terminated.")
             else: st.warning(f"Completed (code {rc}).")
             show_output("service_api", "talos_service_api.py")
+
+    elif "Live DRL Agent" in opt:
+        st.subheader("🧠 Live DRL Agent — Real API Orchestration")
+        st.caption("The trained LSTM-DDDQN agent makes REAL API calls to ArXiv, OpenAlex, and Semantic Scholar in real-time. "
+                   "Uses pure exploitation (ε=0.0) — the agent's learned policy controls everything.")
+        st.warning("⚠️ This makes REAL API calls. It runs until you press 'Stop' or Ctrl+C.")
+        if st.button("🧠 Start Live Agent (Real APIs)", type="primary", key="btn_live_agent"):
+            with st.spinner("Starting live DRL agent..."):
+                rc, out = run("talos_live_agent.py", args=["--verbose"])
+                st.session_state.output["live_agent"] = out
+            if rc in [0, 1, 2]: st.success("✅ Live agent terminated.")
+            else: st.warning(f"Completed (code {rc}).")
+            show_output("live_agent", "talos_live_agent.py")
 
     elif "Baseline Report" in opt:
         is_academic = "Academic" in opt
@@ -1244,6 +1680,42 @@ elif page == "⚙️ Profile & Settings":
                 st.markdown(f"- {'🟢' if p == ap else '⚪'} `{p}`")
         st.caption("💡 Profile management via CLI: `python talos.py` → Profile & Settings.")
         
+        # ── Research Pivot Button ──────────────────────────────────────────
+        st.markdown("---")
+        st.subheader("🔄 Research Pivot — My Research Focus Has Shifted")
+        st.caption(
+            "If your research interests have changed, use the Pivot Wizard to recalibrate "
+            "TALOS. The wizard will: ask about your new direction → regenerate search queries "
+            "→ optionally re-evaluate your database → retrain the DRL agent."
+        )
+        col_pivot1, col_pivot2 = st.columns([3, 1])
+        with col_pivot1:
+            pivot_desc = st.text_area(
+                "Describe your NEW research direction (what has changed?):",
+                placeholder="e.g. 'I was studying drone swarms, but now moving into large language model safety and alignment...'",
+                height=80, key="pivot_desc"
+            )
+        with col_pivot2:
+            st.write("")
+            if st.button("🔄 Start Research Pivot", type="primary", width="stretch", key="btn_pivot"):
+                if not pivot_desc.strip() or len(pivot_desc.strip()) < 20:
+                    st.error("Please describe your new research direction (min. 20 characters).")
+                else:
+                    with st.spinner("Recalibrating TALOS for your new research direction..."):
+                        # Step 1: Run PYTHIA with the new research description
+                        rc, out = run("query_translator.py", stdin_text=pivot_desc + "\n")
+                        st.session_state.output["pivot_step1"] = out
+                        if rc == 0:
+                            st.success("✅ Step 1/3: PYTHIA regenerated queries and prompts.")
+                            reload_config()
+                        else:
+                            st.warning(f"PYTHIA completed (code {rc}). Check output below.")
+                            show_output("pivot_step1", "PYTHIA Reconfiguration")
+                        
+                        # Step 2: Optionally re-evaluate database
+                        st.info("💡 Next step: Go to Database & Data → AI Re-evaluation to reassess papers with new criteria.")
+                        st.info("💡 Then: go to DRL Agent Dashboard and retrain the agent with updated scores.")
+        
         st.markdown("---")
         st.subheader("🔮 PYTHIA — Research Goal Configuration")
         st.caption("AI-powered configuration of search queries and evaluation prompts.")
@@ -1380,7 +1852,7 @@ elif page == "🧠 DRL Agent Dashboard":
 # ═══════════════════════════════════════════════════════════════════════════════
 st.markdown("---")
 st.markdown(f"""<div style="text-align:center;padding:1rem;color:#8b949e;font-size:.85rem">
-<strong>Project TALOS v4.11.0</strong> · © 2026 Christos Smarlamakis ·
+<strong>Project TALOS v5.2.0</strong> · © 2026 Christos Smarlamakis ·
 Provider: {system_info()['prov'].title()} · Profile: <code>{get_active_profile()}</code> ·
 {datetime.now().strftime('%Y-%m-%d %H:%M')}
 </div>""", unsafe_allow_html=True)

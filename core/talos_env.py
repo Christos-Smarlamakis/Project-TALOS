@@ -1,97 +1,239 @@
 # -*- coding: utf-8 -*-
 """
-Module: talos_env.py (v1.0)
-Project: TALOS v5.0.0
+Module: talos_env.py (v2.0 — Dynamic 14-Source Environment)
+Project: TALOS v5.2.0
 Description:
     Gymnasium reinforcement learning environment for TALOS API source selection.
-    Models the problem of choosing which academic API to query next (ArXiv,
-    OpenAlex, or Semantic Scholar) based on daily call limits, recent success
-    rates, and time of day. A "Sleep" action lets the agent rest when limits
-    are nearly exhausted, conserving API quotas for the next day.
+    Supports ALL 14 academic sources dynamically (not just the original 3).
+    The agent chooses which API to query next from N sources plus a "sleep"
+    option. Each source has a daily call limit read from config.json.
+
+    How it works:
+    - On init, reads the list of sources from a well-known config key
+      ("source_names") or auto-detects them from config keys ending in "_query".
+    - For each source, reads its per-day API limit from config (defaults to 100).
+    - Action indices 0..N-1 correspond to the N sources.
+    - Action N is the sleep/cooldown action.
+    - Observation vector: [hour/23, usage_ratio_0, ..., usage_ratio_N-1,
+      low_score_streak/10, error_streak/10] — fully dynamic.
 
     Key design decisions:
-    - Observation space is a 6-element flat array (not an image) because the
-      state is small and fully observable — no need for CNNs.
-    - Reward function heavily penalizes API errors (-50) to teach the agent
-      to avoid rate-limit violations.
-    - Sleep action is rewarded (+2) only when limits are near max, so the
-      agent learns to rest strategically, not just sleep all the time.
-    - All values are normalized (0.0-1.0) for stable neural network training.
+    - All source state is stored in parallel numpy arrays (calls, limits) so
+      the step() method is a clean for-loop over action indices, not a
+      massive if/elif chain.
+    - Backward compatible: if no source_names config exists, falls back to the
+      original 3-source behaviour (ArXiv, OpenAlex, Semantic Scholar).
+    - Reward function is unchanged: +20 for elite (≥8), +5 for decent (7),
+      -10 for low (<7), -50 for rate-limit errors, +2 for smart sleep.
+    - All values normalized to 0.0–1.0 for stable neural network training.
 """
+import os
+import sys
+import json
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 
-# ── Hour of day → normalized 0.0-1.0 ────────────────────────────────────────
-# We divide current hour (0-23) by 23 to get a 0.0-1.0 range.
-# This helps the agent understand "time of day" — some hours are busier.
+# ── Default API limit when config doesn't specify one ────────────────────────
+DEFAULT_SOURCE_LIMIT = 100
 
-# ── API daily limits (realistic defaults for free tiers) ─────────────────────
-DEFAULT_ARXIV_LIMIT = 100
-DEFAULT_OPENALEX_LIMIT = 100
-DEFAULT_S2_LIMIT = 100
+# ── Known 14-source list (used as fallback when config doesn't define them) ───
+ALL_KNOWN_SOURCES = [
+    "arxiv", "openalex", "semantic_scholar", "crossref", "dblp",
+    "pubmed", "plos", "core", "osti", "scigov",
+    "openarchives", "ieee", "elsevier", "springer",
+]
 
 
+def _load_source_list(config=None):
+    """
+    Read the ordered list of source names from config.json.
+
+    Strategy (in priority order):
+      1. Look for a "source_names" key in config (explicit list).
+      2. Auto-detect: scan all config keys ending in "_query", extract the
+         source name before "_query", and sort alphabetically for determinism.
+      3. If neither works (no config file at all), return the 3 original sources.
+
+    Args:
+        config (dict, optional): Loaded config.json as a dict.
+
+    Returns:
+        list of str: Ordered source names (e.g. ["arxiv", "core", ...]).
+    """
+    if config is None:
+        config = _try_load_config()
+
+    # ── Explicit source_names list ───────────────────────────────────────────
+    if config and "source_names" in config:
+        return list(config["source_names"])
+
+    # ── Auto-detect from _query keys ────────────────────────────────────────
+    if config:
+        detected = sorted([
+            k.replace("_query", "")
+            for k in config.keys()
+            if k.endswith("_query") and k != "query_translator_prompt"
+        ])
+        if detected:
+            return detected
+
+    # ── Fallback to the original 3 sources ──────────────────────────────────
+    return ["arxiv", "openalex", "semantic_scholar"]
+
+
+def _try_load_config():
+    """
+    Attempt to load config.json from the project root.
+
+    Returns:
+        dict or None: The loaded config, or None if the file is missing.
+    """
+    project_root = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), ".."))
+    config_path = os.path.join(project_root, "config.json")
+    if not os.path.exists(config_path):
+        return None
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except (json.JSONDecodeError, IOError):
+        return None
+
+
+def _load_source_limits(source_names, config=None):
+    """
+    Read the per-source API call limits from config.json.
+
+    Looks for keys like "arxiv_limit", "openalex_limit", etc.
+    If a source has no limit defined, uses DEFAULT_SOURCE_LIMIT (100).
+
+    Args:
+        source_names (list of str): Ordered source names (e.g. ["arxiv", ...]).
+        config (dict, optional): Loaded config.json.
+
+    Returns:
+        np.ndarray: Array of limits, one per source (shape (N,)).
+    """
+    if config is None:
+        config = _try_load_config()
+    limits = []
+    for name in source_names:
+        key = f"{name}_limit"
+        limit = config.get(key, DEFAULT_SOURCE_LIMIT) if config else DEFAULT_SOURCE_LIMIT
+        limits.append(int(limit))
+    return np.array(limits, dtype=np.float32)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 class TalosEnv(gym.Env):
     """
-    Gymnasium environment for TALOS API source selection.
+    Gymnasium environment for TALOS API source selection (N sources + sleep).
 
-    The agent must choose which academic API to query next from three sources
-    plus a "sleep" option. Each API has a daily call limit. The agent receives
-    a score (0-10) after each query, and must learn to manage its limited
-    API calls to maximize total score over time.
+    Supports ALL available academic APIs dynamically.  Each source has a
+    daily call limit.  The agent receives a score (0-10) after each query
+    and must learn to manage its limited API calls across all sources to
+    maximize total score over time.
 
     Attributes:
-        arxiv_limit (int): Maximum ArXiv calls allowed per day.
-        openalex_limit (int): Maximum OpenAlex calls per day.
-        s2_limit (int): Maximum Semantic Scholar calls per day.
-        arxiv_calls (int): ArXiv calls made so far this episode.
-        openalex_calls (int): OpenAlex calls made so far this episode.
-        s2_calls (int): Semantic Scholar calls made so far this episode.
+        source_names (list of str): Ordered source names.
+        num_sources (int): Number of API sources (N).
+        source_limits (np.ndarray): Daily call limit per source (shape (N,)).
+        source_calls (np.ndarray): Calls made so far this episode (shape (N,)).
         total_score (float): Running sum of scores received this episode.
         current_step (int): Step counter for the current episode.
+        consecutive_low_scores (int): How many queries in a row scored < 7.
+        consecutive_errors (int): How many queries in a row got API errors.
+        current_hour (int): Simulated hour (0-23).
     """
 
-    def __init__(self, arxiv_limit=100, openalex_limit=100, s2_limit=100):
+    def __init__(self, source_names=None, source_limits=None, config=None):
         """
-        Initialize the environment with per-API daily limits.
+        Initialize the environment with N dynamic sources + sleep action.
 
         Args:
-            arxiv_limit (int): Max ArXiv queries per day.
-            openalex_limit (int): Max OpenAlex queries per day.
-            s2_limit (int): Max Semantic Scholar queries per day.
+            source_names (list of str, optional): Ordered list of source names.
+                If None, auto-detected from config.json.
+            source_limits (list or np.ndarray, optional): Per-source limits.
+                If None, read from config.json or default to 100.
+            config (dict, optional): Pre-loaded config.json. If None, auto-loaded.
         """
         super().__init__()
 
-        # ── Store API limits ───────────────────────────────────────────────
-        self.arxiv_limit = arxiv_limit
-        self.openalex_limit = openalex_limit
-        self.s2_limit = s2_limit
+        # ── Resolve config ───────────────────────────────────────────────────
+        if config is None:
+            config = _try_load_config()
+        self.config = config
 
-        # ── 6-element observation vector (all values 0.0–1.0) ───────────────
-        # Index 0: normalized hour (0.0 = midnight, 1.0 = 23:00)
-        # Index 1: arxiv calls / arxiv limit
-        # Index 2: openalex calls / openalex limit
-        # Index 3: semanticscholar calls / s2 limit
-        # Index 4: consecutive low scores / 10.0
-        # Index 5: consecutive errors / 10.0
-        low = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32)
-        high = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0], dtype=np.float32)
+        # ── Resolve source list ──────────────────────────────────────────────
+        if source_names is None:
+            source_names = _load_source_list(config)
+        # Deduplicate while preserving order
+        seen = set()
+        self.source_names = []
+        for n in source_names:
+            if n not in seen:
+                self.source_names.append(n)
+                seen.add(n)
+        self.num_sources = len(self.source_names)
+
+        # ── Resolve per-source limits ────────────────────────────────────────
+        if source_limits is not None:
+            self.source_limits = np.array(source_limits, dtype=np.float32)
+            # Pad or truncate to match num_sources
+            if len(self.source_limits) < self.num_sources:
+                pad = np.full(self.num_sources - len(self.source_limits),
+                              DEFAULT_SOURCE_LIMIT, dtype=np.float32)
+                self.source_limits = np.concatenate([self.source_limits, pad])
+            else:
+                self.source_limits = self.source_limits[:self.num_sources]
+        else:
+            self.source_limits = _load_source_limits(self.source_names, config)
+
+        # ── Build observation space dynamically ──────────────────────────────
+        # Structure: [hour/23, usage_ratio_0, ..., usage_ratio_N-1,
+        #             low_score_streak/10, error_streak/10]
+        # Total size = 1 (hour) + N (source usage ratios) + 2 (patterns)
+        obs_size = 1 + self.num_sources + 2
+        low = np.zeros(obs_size, dtype=np.float32)
+        high = np.ones(obs_size, dtype=np.float32)
         self.observation_space = spaces.Box(low=low, high=high, dtype=np.float32)
 
-        # ── 4 possible actions ──────────────────────────────────────────────
-        # 0 = Query ArXiv
-        # 1 = Query OpenAlex
-        # 2 = Query Semantic Scholar
-        # 3 = Sleep (cooldown, wait until next time step)
-        self.action_space = spaces.Discrete(4)
+        # ── Action space: N sources (indices 0..N-1) + 1 sleep (index N) ────
+        self.action_space = spaces.Discrete(self.num_sources + 1)
+        # Convenience attribute: sleep action index = num_sources
+        self.SLEEP_ACTION = self.num_sources
+
+    # ── Public properties for external code that references old names ────────
+    @property
+    def arxiv_limit(self):
+        """Backward-compat: return limit for 'arxiv' if it exists."""
+        return self._get_limit("arxiv")
+
+    @property
+    def openalex_limit(self):
+        """Backward-compat: return limit for 'openalex' if it exists."""
+        return self._get_limit("openalex")
+
+    @property
+    def s2_limit(self):
+        """Backward-compat: return limit for 'semantic_scholar' if it exists."""
+        return self._get_limit("semantic_scholar")
+
+    def _get_limit(self, name):
+        """Get the limit for a named source, or DEFAULT_SOURCE_LIMIT."""
+        try:
+            idx = self.source_names.index(name)
+            return int(self.source_limits[idx])
+        except ValueError:
+            return DEFAULT_SOURCE_LIMIT
 
     def reset(self, seed=None, options=None):
         """
         Reset the environment to start a new episode (a new "day").
 
-        All API call counters go back to zero. The hour is randomized.
-        Step counter resets. Returns the initial observation.
+        All per-source call counters go back to zero. The hour is randomized.
+        Step counter and pattern trackers reset.
 
         Args:
             seed (int, optional): Random seed for reproducibility.
@@ -103,15 +245,12 @@ class TalosEnv(gym.Env):
         # ── Seed the random number generator if requested ──────────────────
         super().reset(seed=seed)
 
-        # ── Reset all counters to zero ──────────────────────────────────────
-        self.arxiv_calls = 0
-        self.openalex_calls = 0
-        self.s2_calls = 0
+        # ── Reset all source call counters to zero ──────────────────────────
+        self.source_calls = np.zeros(self.num_sources, dtype=np.float32)
 
-        # These track patterns in the agent's recent performance
-        # so it can learn to stop choosing bad sources.
-        self.consecutive_low_scores = 0  # How many queries in a row scored < 7
-        self.consecutive_errors = 0      # How many queries in a row got API errors
+        # ── Reset pattern trackers ──────────────────────────────────────────
+        self.consecutive_low_scores = 0
+        self.consecutive_errors = 0
 
         # ── Running score for this episode ──────────────────────────────────
         self.total_score = 0.0
@@ -129,87 +268,62 @@ class TalosEnv(gym.Env):
 
     def step(self, action):
         """
-        Execute one action (choose an API or sleep) and return the result.
+        Execute one action (choose a source index or sleep) and return result.
 
-        The environment simulates the outcome of querying an API:
-        - If the API is over its daily limit, the call fails with an error.
-        - Otherwise, a random score is generated (weighted towards higher
-          scores for demonstration; in production, real scores from the
-          TALOS pipeline would be fed in).
+        Actions 0..N-1 query source_names[action].
+        Action N (SLEEP_ACTION) is the cooldown/sleep action.
+
+        The environment simulates querying an API:
+        - If the source is over its daily limit, the action fails (penalty).
+        - Otherwise, a score is sampled (simulated or real) and converted
+          to a reward.
 
         Args:
-            action (int): 0=ArXiv, 1=OpenAlex, 2=SemanticScholar, 3=Sleep.
+            action (int): 0..N-1 = query source, N = sleep.
 
         Returns:
             tuple: (observation, reward, terminated, truncated, info)
-                observation (np.ndarray): 6-element observation vector.
+                observation (np.ndarray): Dynamic observation vector.
                 reward (float): Reward for this step.
                 terminated (bool): True if episode is over (max steps).
-                truncated (bool): Always False in this implementation.
-                info (dict): Diagnostics dictionary with 'action' and 'score'.
+                truncated (bool): Always False.
+                info (dict): {'action', 'source', 'score'}.
         """
         self.current_step += 1
         reward = 0.0
-        score = 0  # The hypothetical LLM score (0-10)
+        score = 0
+        source_name = "sleep"
 
-        # ── Action 3: SLEEP / COOLDOWN ──────────────────────────────────────
-        if action == 3:
-            # The agent chooses to wait. This is a strategic pause to avoid
-            # hitting rate limits. We reward sleep ONLY if limits are near max.
-            used_ratio = max(
-                self.arxiv_calls / self.arxiv_limit,
-                self.openalex_calls / self.openalex_limit,
-                self.s2_calls / self.s2_limit
-            )
-            if used_ratio > 0.8:
-                reward = 2.0  # Smart sleep — limits are nearly exhausted
+        # ═══════════════════════════════════════════════════════════════════
+        # SLEEP / COOLDOWN (action = self.SLEEP_ACTION)
+        # ═══════════════════════════════════════════════════════════════════
+        if action == self.SLEEP_ACTION:
+            # Reward sleep only when limits are near exhaustion
+            if self.num_sources > 0:
+                used_ratios = self.source_calls / np.maximum(self.source_limits, 1.0)
+                max_ratio = float(np.max(used_ratios))
+                if max_ratio > 0.8:
+                    reward = 2.0  # Smart sleep — limits are nearly exhausted
 
-        # ── Action 0: ARXIV ─────────────────────────────────────────────────
-        elif action == 0:
-            if self.arxiv_calls >= self.arxiv_limit:
-                # Limit exceeded → this is an error (rate limit hit)
+        # ═══════════════════════════════════════════════════════════════════
+        # QUERY A SOURCE (action 0..N-1)
+        # ═══════════════════════════════════════════════════════════════════
+        elif 0 <= action < self.num_sources:
+            source_name = self.source_names[action]
+            limit = int(self.source_limits[action])
+            current_calls = int(self.source_calls[action])
+
+            if current_calls >= limit:
+                # ── Rate limit hit — strong penalty ────────────────────────
                 reward = -50.0
                 self.consecutive_errors += 1
                 self.consecutive_low_scores = 0
             else:
-                self.arxiv_calls += 1
-                # Simulate a score. In production, a real LLM evaluator would
-                # provide the actual score for the retrieved paper.
+                # ── Execute the query ──────────────────────────────────────
+                self.source_calls[action] += 1
                 score = self._simulate_score()
                 reward = self._score_to_reward(score)
-                # Track patterns
-                if score < 7:
-                    self.consecutive_low_scores += 1
-                else:
-                    self.consecutive_low_scores = 0
-                self.consecutive_errors = 0
-
-        # ── Action 1: OPENALEX ──────────────────────────────────────────────
-        elif action == 1:
-            if self.openalex_calls >= self.openalex_limit:
-                reward = -50.0
-                self.consecutive_errors += 1
-                self.consecutive_low_scores = 0
-            else:
-                self.openalex_calls += 1
-                score = self._simulate_score()
-                reward = self._score_to_reward(score)
-                if score < 7:
-                    self.consecutive_low_scores += 1
-                else:
-                    self.consecutive_low_scores = 0
-                self.consecutive_errors = 0
-
-        # ── Action 2: SEMANTIC SCHOLAR ──────────────────────────────────────
-        elif action == 2:
-            if self.s2_calls >= self.s2_limit:
-                reward = -50.0
-                self.consecutive_errors += 1
-                self.consecutive_low_scores = 0
-            else:
-                self.s2_calls += 1
-                score = self._simulate_score()
-                reward = self._score_to_reward(score)
+                # Track patterns for observation
                 if score < 7:
                     self.consecutive_low_scores += 1
                 else:
@@ -219,10 +333,8 @@ class TalosEnv(gym.Env):
         # ── Accumulate score ────────────────────────────────────────────────
         self.total_score += score if score else 0
 
-        # ── Advance time ────────────────────────────────────────────────────
-        # Each successful API call takes some time. We move the hour forward
-        # slightly after a non-sleep action.
-        if action != 3:
+        # ── Advance time (one hour per non-sleep action) ─────────────────────
+        if action != self.SLEEP_ACTION:
             self.current_hour = (self.current_hour + 1) % 24
 
         # ── Cap consecutive counters at 10 (for normalized observation) ─────
@@ -230,13 +342,12 @@ class TalosEnv(gym.Env):
         self.consecutive_errors = min(self.consecutive_errors, 10)
 
         # ── Episode termination ─────────────────────────────────────────────
-        # End the episode after 200 steps (a simulated "day").
         terminated = self.current_step >= 200
         truncated = False
 
         # ── Build next observation ──────────────────────────────────────────
         obs = self._build_obs()
-        info = {"action": int(action), "score": score}
+        info = {"action": int(action), "source": source_name, "score": score}
 
         return obs, reward, terminated, truncated, info
 
@@ -244,28 +355,37 @@ class TalosEnv(gym.Env):
         """
         Construct the normalized observation vector from current state.
 
-        All six values are in the range [0.0, 1.0] to help the neural
-        network converge faster.
+        Structure:
+            [0]           hour / 23.0  (0.0–1.0)
+            [1 .. N]       usage ratio per source (calls/limit, 0.0–1.0)
+            [N+1]          consecutive_low_scores / 10.0
+            [N+2]          consecutive_errors / 10.0
 
         Returns:
-            np.ndarray: Shape (6,) float32 array.
+            np.ndarray: Shape (1 + num_sources + 2,) float32 array.
         """
-        return np.array([
-            self.current_hour / 23.0,                          # Normalized hour
-            self.arxiv_calls / self.arxiv_limit,               # ArXiv usage ratio
-            self.openalex_calls / self.openalex_limit,         # OpenAlex usage ratio
-            self.s2_calls / self.s2_limit,                     # S2 usage ratio
-            self.consecutive_low_scores / 10.0,                # Low score streak
-            self.consecutive_errors / 10.0,                    # Error streak
-        ], dtype=np.float32)
+        # ── Usage ratios: calls / limit, safe-division ──────────────────────
+        ratios = self.source_calls / np.maximum(self.source_limits, 1.0)
+
+        # ── Assemble vector ─────────────────────────────────────────────────
+        obs = np.concatenate([
+            np.array([self.current_hour / 23.0], dtype=np.float32),
+            ratios.astype(np.float32),
+            np.array([
+                self.consecutive_low_scores / 10.0,
+                self.consecutive_errors / 10.0,
+            ], dtype=np.float32),
+        ])
+        return obs
 
     def _simulate_score(self):
         """
         Generate a simulated LLM evaluation score (0-10).
 
         The distribution is weighted towards higher scores so the agent
-        can learn to find good papers. In production, this would be
-        replaced by actual TALOS evaluation pipeline results.
+        can learn to find good papers. In production, this should be
+        replaced by real TALOS pipeline scores (see OfflineTalosEnv subclass
+        in scripts/train_agent.py).
 
         Returns:
             int: Score between 0 and 10.
@@ -301,3 +421,32 @@ class TalosEnv(gym.Env):
             return 5.0
         else:
             return -10.0
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MODULE-LEVEL CONSTANTS (exported for drl_agent.py to reference)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def get_default_state_space():
+    """
+    Return the STATE_SPACE size for the default auto-detected source count.
+
+    This is a convenience function so external code (like drl_agent.py) can
+    determine the observation size before instantiating the environment.
+
+    Returns:
+        int: Default observation vector length (1 + num_sources + 2).
+    """
+    names = _load_source_list()
+    return 1 + len(names) + 2
+
+
+def get_default_action_space():
+    """
+    Return the ACTION_SPACE size for the default auto-detected source count.
+
+    Returns:
+        int: Default number of actions (num_sources + 1 sleep).
+    """
+    names = _load_source_list()
+    return len(names) + 1

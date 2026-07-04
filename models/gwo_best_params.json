@@ -1,0 +1,9 @@
+{
+  "learning_rate": 4.735127568587652e-05,
+  "gamma": 0.57512597703336,
+  "epsilon_decay": 0.9414814951757835,
+  "best_fitness": -1695.8333333333333,
+  "best_avg_reward": 1695.8333333333333,
+  "iterations": 700,
+  "gwo_time_seconds": 9975.4
+}

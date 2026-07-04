@@ -1,4 +1,4 @@
-# PROJECT_MAP.md — Πλήρης Χάρτης του Project TALOS v4.10.1
+# PROJECT_MAP.md — Πλήρης Χάρτης του Project TALOS v5.2.0
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται — χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
@@ -68,6 +68,26 @@ Data Flow:
 
 ## 2. Core Modules
 
+### 2.0 `core/talos_env.py` — Gymnasium Environment (v2.0, Dynamic N-Source)
+
+**Ρόλος:** RL environment για API source selection. **V2.0:** υποστηρίζει ΔΥΝΑΜΙΚΟ αριθμό πηγών (όχι μόνο 3).
+
+| Μέθοδος | Υπογραφή | Περιγραφή |
+|---------|----------|-----------|
+| `_load_source_list` | `(config=None) -> list` | Διαβάζει τη λίστα πηγών από config.json (source_names ή auto-detect από _query keys). |
+| `_try_load_config` | `() -> dict or None` | Φορτώνει config.json από το project root. |
+| `_load_source_limits` | `(source_names, config=None) -> np.ndarray` | Διαβάζει per-source API limits από config. |
+| `__init__` | `(self, source_names=None, source_limits=None, config=None)` | Dynamic init με N πηγές. Το source_names auto-detected αν είναι None. |
+| `reset` | `(seed=None, options=None) -> (obs, info)` | Μηδενίζει όλους τους counters. |
+| `step` | `(action) -> (obs, reward, terminated, truncated, info)` | Εκτελεί action. Actions 0..N-1 = query πηγή, N = sleep. |
+| `_build_obs` | `() -> np.ndarray` | Κατασκευάζει δυναμικό observation vector: [hour, usage_ratios..., low_streak, error_streak]. |
+| `get_default_state_space` | `() -> int` | Επιστρέφει default STATE_SPACE (1 + N + 2). |
+| `get_default_action_space` | `() -> int` | Επιστρέφει default ACTION_SPACE (N + 1 sleep). |
+
+**Key attributes:** `source_names` (list), `num_sources` (int), `source_limits` (np.ndarray), `source_calls` (np.ndarray), `SLEEP_ACTION` (int).
+
+**Backward compat:** Properties `arxiv_limit`, `openalex_limit`, `s2_limit` επιστρέφουν limits για τα αντίστοιχα sources αν υπάρχουν.
+
 ### 2.1 `core/ai_manager.py` — Κλάση `AIManager` (v3.5, 380 γραμμές)
 
 **Ρόλος:** Multi-provider LLM interface με circuit breaker pattern. Διαχειρίζεται 4 providers: Gemini (πρωτεύων cloud), DeepSeek (fallback), HuggingFace (δωρεάν cloud), Local/Ollama (offline).
@@ -98,7 +118,43 @@ Data Flow:
 
 ---
 
-### 2.2 `core/database_manager.py` — Κλάση `DatabaseManager` (v4.8.5, 569 γραμμές)
+### 2.2 `core/drl_agent.py` — DRL Agent (v2.0, Dynamic N-Source)
+
+**Ρόλος:** Double Dueling DQN agent. **V2.0:** δυναμικό state_dim/action_dim από το environment.
+
+**Κλάση `DuelingLSTM`:**
+| Μέθοδος | Υπογραφή | Περιγραφή |
+|---------|----------|-----------|
+| `__init__` | `(input_dim=STATE_SPACE, output_dim=ACTION_SPACE)` | 3-layer LSTM (128→64→32) με dueling heads. Δυναμικά input/output dims. |
+| `forward` | `(state) -> Q-values` | Forward pass με CuDNN flatten_parameters(). |
+
+**Κλάση `TalosDRLAgent`:**
+| Μέθοδος | Υπογραφή | Περιγραφή |
+|---------|----------|-----------|
+| `__init__` | `(state_dim=None, action_dim=None)` | Δυναμική αρχικοποίηση. Αν None, auto-detect από config. |
+| `act` | `(state, eps=0.0) -> int` | ε-greedy action selection. |
+| `learn` | `()` | DDQN learning step (experience replay + target network). |
+| `save` | `(path)` | Αποθηκεύει weights + metadata (state_dim, action_dim, source_names). |
+| `load` | `(path)` | Φορτώνει weights + metadata. Αναδημιουργεί networks αν δεν ταιριάζουν τα dimensions. |
+
+**Module-level:** `STATE_SPACE`, `ACTION_SPACE` υπολογίζονται δυναμικά από `talos_env.get_default_*()`.
+
+### 2.3 `core/notifier.py` — Κλάση `TalosNotifier` (v1.0, ~202 γραμμές)
+
+**Ρόλος:** Multi-channel notification system για τον TALOS daemon.
+
+| Μέθοδος | Υπογραφή | Περιγραφή |
+|---------|----------|-----------|
+| `__init__` | `(self)` | Διαβάζει Telegram/Discord/Email ρυθμίσεις από environment variables. |
+| `telegram_send` | `(self, message: str)` | Στέλνει μήνυμα μέσω Telegram Bot API (HTML parse mode, truncation στα 4000 chars). |
+| `discord_send` | `(self, message: str)` | Στέλνει μήνυμα μέσω Discord Webhook (truncation στα 1950 chars). |
+| `email_send` | `(self, subject: str, body: str)` | Στέλνει email μέσω SMTP (STARTTLS, HTML body). |
+
+**Imports:** `smtplib`, `requests`, `email.mime.text.MIMEText`, `email.mime.multipart.MIMEMultipart`
+
+**Channel config (.env keys):** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `DISCORD_WEBHOOK_URL`, `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_TO`
+
+### 2.4 `core/database_manager.py` — Κλάση `DatabaseManager` (v4.8.5, 569 γραμμές)
 
 **Ρόλος:** SQLite database layer με embeddings, semantic search, και profile-aware initialization.
 
@@ -144,7 +200,7 @@ Data Flow:
 
 ---
 
-### 2.3 `core/hardware.py` (v4.8.5, 429 γραμμές)
+### 2.5 `core/hardware.py` (v4.8.5, 429 γραμμές)
 
 **Ρόλος:** Ανίχνευση GPU VRAM, προτάσεις μοντέλων Ollama, εκτίμηση μεγεθών quantization.
 
@@ -196,7 +252,7 @@ Data Flow:
 
 ---
 
-### 3.2 `app.py` (v4.10.1, 1022 γραμμές)
+### 3.2 `app.py` (v5.2.0, ~1400 γραμμές)
 
 **Ρόλος:** Streamlit Web GUI — πλήρες UI που αντικαθιστά το CLI. Εκτελεί όλα τα scripts ως subprocesses με stdin piping μέσω `_gui_runner.py`.
 
@@ -210,15 +266,23 @@ Data Flow:
 | `reload_config` | `()` | Ξαναφορτώνει config.json + AIManager. |
 | `reload_db` | `()` | Ξαναφορτώνει DatabaseManager. |
 
-**Pages (6):**
+**Pages (8):**
 1. Home & Knowledge Base (semantic search, filters, analytics)
 2. Search & Discovery (daily, historic, grey literature)
 3. Single Paper Evaluation (quad-layer framework, DOI fetch, DB select)
 4. Analysis & Insights (CHIRON, ORPHEUS, Recommender, Author Tools, Dashboard)
 5. Database Maintenance (Stats, APOLLO, Zotero, Embeddings, Re-eval, Enrichment, Scientometrics, PDF)
-6. Settings (API keys, model selection, profiles/PYTHIA, diagnostics)
+6. System Diagnostics (Code Integrity, Documentation Audit, Architecture Intelligence Report)
+7. DRL Agent Dashboard (GWO params, training status, reward progression chart)
+8. Profile & Settings (API keys, model selection, profiles, PYTHIA, Research Pivot)
 
-**Imports:** `streamlit`, `core.database_manager`, `core.ai_manager`, `pandas`, `numpy`
+**Νέες συναρτήσεις (v5.2.0):**
+| Συνάρτηση | Υπογραφή | Περιγραφή |
+|-----------|----------|-----------|
+| `render_onboarding_wizard` | `()` | 4-step onboarding: Profile → Research Domain → PYTHIA → Launch. |
+| `_is_first_run` | `() -> bool` | Επιστρέφει True αν δεν υπάρχει active profile (πρώτη εκτέλεση). |
+
+**Imports:** `streamlit`, `core.database_manager`, `core.ai_manager`, `core.hardware`, `pandas`, `numpy`, `scripts.profile_manager`, `scripts.query_translator`, `shutil`, `socket`, `webbrowser`, `traceback`
 
 ---
 
@@ -334,6 +398,55 @@ Data Flow:
 ---
 
 ### 4.5 Integration Scripts
+
+#### `scripts/drl_trainer.py` (v1.0)
+
+**Σκοπός:** Απλοποιημένο training script για τον DRL agent (παρόμοιο με train_agent.py αλλά χωρίς φόρτωση real scores από τη βάση).
+
+**Συναρτήσεις:** `main()` — Εκτελεί training loop με simulated scores. Χρησιμοποιεί `TalosEnv` (όχι OfflineTalosEnv).
+
+**Imports:** `core.talos_env.TalosEnv`, `core.drl_agent`
+
+#### `scripts/talos_live_agent.py` (v2.0 — Dynamic N-Source)
+
+**Σκοπός:** Live DRL inference engine που κάνει ΠΡΑΓΜΑΤΙΚΑ API calls με βάση τις αποφάσεις του agent. **V2.0:** δυναμική υποστήριξη όλων των πηγών.
+
+**Συναρτήσεις:** `_import_source_class(source_name)`, `_build_source_map(source_names)`, `calculate_state(...)`, `execute_live_fetch(action, action_map, config)`, `evaluate_paper(paper, ai_manager)`, `calculate_reward(score)`, `main()`
+
+**Imports:** `core.drl_agent`, `core.ai_manager`, `core.talos_env`, `sources.*` (δυναμικό import)
+
+#### `scripts/talos_service_api.py` (v1.0)
+
+**Σκοπός:** Micro-Flask API server (port 5002) για έκθεση του status του autonomous service.
+
+**Endpoints:** `GET /api/status` (uptime, papers found, DB stats), `GET /api/report` (σημερινό HTML report)
+
+**Συναρτήσεις:** `_get_today_folder()`, `api_status()`, `api_report()`
+
+#### `scripts/research_pivot.py` (v1.0 — NEW in v5.2.0)
+
+**Σκοπός:** Interactive Research Pivot Wizard. Καθοδηγεί τον χρήστη όταν αλλάζει ερευνητικό ενδιαφέρον.
+
+**Βήματα:**
+1. Συλλογή νέας ερευνητικής κατεύθυνσης
+2. Εκτέλεση PYTHIA για αναγέννηση queries/prompts
+3. Προαιρετικό re-evaluate βάσης δεδομένων
+4. Προαιρετικό retrain DRL agent
+5. Αποθήκευση στο ενεργό profile
+
+**Συναρτήσεις:** `get_active_profile_name()`, `save_state_to_profile(profile_name)`, `run_script(script_name, stdin_text, args)`, `main()`
+
+**Usage:** `python scripts/research_pivot.py` (interactive), `python scripts/research_pivot.py --auto` (non-interactive)
+
+#### `scripts/talos_service.py` (v2.0 — Profile-Aware)
+
+**Σκοπός:** 24/7 autonomous research daemon. **V2.0:** profile-aware, δυναμικό source mapping.
+
+**Αλλαγές από v1.1:**
+- Διαβάζει active profile και φορτώνει profile-specific model
+- Χρησιμοποιεί `env.SLEEP_ACTION` αντί για hardcoded `action == 3`
+- Διαβάζει source names από `info["source"]` (δυναμικό, όχι hardcoded {0: "ArXiv"...})
+- Δημιουργεί agent με exact dimensions από το environment
 
 #### `scripts/zotero_connector.py`
 **Σκοπός:** Συγχρονισμός με Zotero library.
@@ -598,6 +711,6 @@ verify_dependency_map.py (NEW in v5.0.0)
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-07-02
-> **Έκδοση Project:** v4.11.0
-> **Συνολικά αρχεία που καλύπτονται:** 55
+> **Τελευταία ενημέρωση:** 2026-07-04
+> **Έκδοση Project:** v5.2.0
+> **Συνολικά αρχεία που καλύπτονται:** 56 (προστέθηκε research_pivot.py)

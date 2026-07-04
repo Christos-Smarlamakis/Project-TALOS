@@ -3,6 +3,194 @@
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
 
+## [v5.2.0] - 2026-07-04 — Η Ενημέρωση "Onboarding & Δυναμική Ενορχήστρωση"
+
+Αυτή η έκδοση μετατρέπει το TALOS σε μια **πλήρως καθοδηγούμενη ερευνητική πλατφόρμα** με onboarding wizard για πρώτη εκτέλεση, ροή research pivot, και ένα ριζικά αναβαθμισμένο DRL stack που υποστηρίζει πλέον **ΚΑΙ τις 14 ακαδημαϊκές πηγές δυναμικά** (όχι μόνο τις αρχικές 3). **8 αρχεία άλλαξαν, 1 νέο αρχείο, ~2,000 γραμμές κώδικα προστέθηκαν/αναδιοργανώθηκαν.**
+
+---
+
+### `app.py` v5.2.0 — Onboarding Wizard & Research Pivot (από v4.11.0, ~1022 → ~1400 γραμμές)
+
+**ΓΙΑΤΙ:** Πριν την v5.2.0, ο TALOS δεν είχε καθοδηγούμενο onboarding — οι νέοι χρήστες έπρεπε να γνωρίζουν ήδη για την PYTHIA, τα profiles, και την αρχιτεκτονική 14 πηγών για να χρησιμοποιήσουν το σύστημα. Δεν υπήρχε τρόπος μέσω GUI για δημιουργία profile ή επαναβαθμονόμηση όταν άλλαζε το ερευνητικό ενδιαφέρον. Αυτό ήταν ένα σημαντικό κενό UX σε σύγκριση με επαγγελματικά ερευνητικά εργαλεία (Zotero, ResearchRabbit, Elicit).
+
+**ΤΙ άλλαξε — Νέες συναρτήσεις:**
+
+| Συνάρτηση | Υπογραφή | Περιγραφή |
+|-----------|----------|-----------|
+| `render_onboarding_wizard()` | `() -> None` | Αποδίδει έναν οδηγό 4 βημάτων στο Streamlit: (1) Όνομα Προφίλ, (2) Περιγραφή Ερευνητικού Τομέα, (3) PYTHIA AI configuration με inline επεξεργασία των παραγόμενων queries/prompts, (4) Review & Launch με προαιρετικό historic search και daemon start. Χρησιμοποιεί `st.session_state.onboarding_step` για πλοήγηση, progress bar για οπτική ανατροφοδότηση. |
+| `_is_first_run()` | `() -> bool` | Επιστρέφει `True` αν δεν υπάρχει `_profiles/active_profile.txt` ή δεν βρέθηκαν profiles. Καλείται πριν την απόδοση του dashboard — αν True, ο wizard καταλαμβάνει ολόκληρη τη σελίδα μέσω `st.stop()`. |
+
+**ΤΙ άλλαξε — Νέες ενότητες UI:**
+- **Research Pivot** ενότητα στο Profile & Settings → Profiles tab: text area για νέα ερευνητική κατεύθυνση + κουμπί "Start Research Pivot" που ενεργοποιεί την αναγέννηση της PYTHIA μέσω subprocess, με καθοδήγηση βήμα-βήμα για re-evaluation και retraining.
+- **Imports που προστέθηκαν:** `scripts.profile_manager` (6 συναρτήσεις: PROFILES_DIR, ROOT_DIR, ensure_profiles_dir, set_active_profile_name, save_current_state_to_profile, load_profile_to_root), `scripts.query_translator.flatten_json`, `shutil`, `socket`, `webbrowser`, `traceback`.
+
+**ΤΙ άλλαξε — Πλοήγηση:**
+- **Sidebar επεκτάθηκε:** 7 → 8 σελίδες (προστέθηκε "🧠 DRL Agent Dashboard" ως ξεχωριστή σελίδα).
+- **Έκδοση:** `v4.11.0` → `v5.2.0` σε sidebar header, footer, και docstring.
+
+---
+
+### `core/talos_env.py` v2.0 — Δυναμικό Περιβάλλον N Πηγών (από v1.0, ~303 → ~380 γραμμές)
+
+**ΓΙΑΤΙ:** Το αρχικό `TalosEnv` είχε hardcoded ακριβώς 3 πηγές (ArXiv, OpenAlex, Semantic Scholar) με 4 actions (3 query + 1 sleep). Αυτό σήμαινε ότι ο DRL agent μπορούσε να μάθει να δρομολογεί μόνο μεταξύ αυτών των 3 APIs — αγνοώντας τις άλλες 11 πηγές που υποστηρίζει ο TALOS. Για να κλιμακωθεί ο agent και στις 14 πηγές, το περιβάλλον έπρεπε να γίνει δυναμικό.
+
+**⚠️ BREAKING ΑΛΛΑΓΕΣ (3):**
+1. Observation space: hardcoded `Box(6,)` → δυναμικό `Box(1 + N + 2,)` όπου N = αριθμός πηγών. Δομή: `[ώρα/23, usage_ratio_0, ..., usage_ratio_N-1, low_streak/10, error_streak/10]`.
+2. Action space: hardcoded `Discrete(4)` → δυναμικό `Discrete(N + 1)` όπου N = αριθμός πηγών. Sleep action = δείκτης N (ήταν hardcoded 3).
+3. Εσωτερική κατάσταση: αφαιρέθηκαν τα `self.arxiv_calls`, `self.openalex_calls`, `self.s2_calls`. Αντικαταστάθηκαν με παράλληλους numpy πίνακες: `self.source_calls` (σχήμα N) και `self.source_limits` (σχήμα N).
+
+**Οδηγός μετάβασης:** Παλιός κώδικας που αναφέρεται σε `env.arxiv_calls`, `action == 3` (sleep), ή 6-στοιχείων observations πρέπει να ενημερωθεί. Νέος κώδικας πρέπει να χρησιμοποιεί `env.source_calls[idx]`, `action == env.SLEEP_ACTION`, και το δυναμικό μήκος observation.
+
+**ΤΙ άλλαξε — Νέες συναρτήσεις επιπέδου module:**
+
+| Συνάρτηση | Υπογραφή | Περιγραφή |
+|-----------|----------|-----------|
+| `_load_source_list(config)` | `(dict ή None) -> list[str]` | Διαβάζει ονόματα πηγών από το config με προτεραιότητα 3 επιπέδων: (1) ρητό κλειδί `source_names`, (2) auto-detect από `_query` keys, (3) fallback σε `["arxiv", "openalex", "semantic_scholar"]`. |
+| `_try_load_config()` | `() -> dict ή None` | Φορτώνει `config.json` από το project root με graceful χειρισμό JSONDecodeError. |
+| `_load_source_limits(source_names, config)` | `(list, dict) -> np.ndarray` | Διαβάζει per-source limits από `config.json` (κλειδιά `<source>_limit`), default 100. |
+| `get_default_state_space()` | `() -> int` | Επιστρέφει `1 + len(sources) + 2` — το μέγεθος observation για τον default αριθμό πηγών. |
+| `get_default_action_space()` | `() -> int` | Επιστρέφει `len(sources) + 1` — το πλήθος actions (N πηγές + sleep). |
+
+**ΤΙ άλλαξε — Constructor κλάσης `TalosEnv`:**
+- `TalosEnv(source_names=None, source_limits=None, config=None)` — όλες οι παράμετροι προαιρετικές. Αν `source_names` είναι None, auto-detected από config.
+- Deduplication ονομάτων πηγών με διατήρηση σειράς.
+- `self.SLEEP_ACTION = self.num_sources` — δυναμικά υπολογισμένος δείκτης sleep.
+- Νέα attributes: `source_names` (list), `num_sources` (int), `source_limits` (np.ndarray), `source_calls` (np.ndarray).
+
+**ΤΙ άλλαξε — Μέθοδος `step(action)`:**
+- Παλιό: τεράστια αλυσίδα `if action == 3: ... elif action == 0: ... elif action == 1: ... elif action == 2: ...`.
+- Νέο: `if action == self.SLEEP_ACTION: ... elif 0 <= action < self.num_sources: source_name = self.source_names[action]; ...` — καθαρός γενικός βρόχος.
+- Λογική reward ΠΑΝΟΜΟΙΟΤΥΠΗ: +20 score≥8, +5 score=7, -10 score<7, -50 API error, +2 sleep όταν max usage > 80%.
+- Το info dict περιλαμβάνει πλέον `"source": source_name` επιπλέον των `"action"` και `"score"`.
+
+**ΤΙ άλλαξε — Backward compatibility:**
+- Properties `arxiv_limit`, `openalex_limit`, `s2_limit` εξακολουθούν να υπάρχουν — αναζητούν την ονομασμένη πηγή στο `self.source_names` και επιστρέφουν το limit της.
+- `_simulate_score()` και `_score_to_reward()` αμετάβλητες.
+
+---
+
+### `core/drl_agent.py` v2.0 — Δυναμικός Agent (από v1.1, ~393 → ~320 γραμμές)
+
+**ΓΙΑΤΙ:** Ο αρχικός agent είχε hardcoded `STATE_SPACE = 6` και `ACTION_SPACE = 4` σε επίπεδο module. Με το δυναμικό περιβάλλον που υποστηρίζει N πηγές, ο agent έπρεπε να προσαρμόζει τις διαστάσεις εισόδου/εξόδου του νευρωνικού δικτύου κατά την κατασκευή. Επιπλέον, τα αποθηκευμένα μοντέλα δεν είχαν metadata — η φόρτωση ενός μοντέλου 3 πηγών σε config 14 πηγών θα αποτύγχανε σιωπηλά ή θα παρήγαγε λάθος αποτελέσματα.
+
+**ΤΙ άλλαξε — Σταθερές επιπέδου module:**
+- `STATE_SPACE` και `ACTION_SPACE` υπολογίζονται πλέον δυναμικά κατά το import: `STATE_SPACE = get_default_state_space()`, `ACTION_SPACE = get_default_action_space()`. Fallback σε (6, 4) αν το import αποτύχει.
+- ΟΛΕΣ οι υπερπαράμετροι αμετάβλητες: `LR=1e-4`, `GAMMA=0.8`, `TAU=1e-3`, `BATCH_SIZE=200`, κλπ.
+
+**ΤΙ άλλαξε — Κλάση `DuelingLSTM`:**
+- Constructor: `DuelingLSTM(input_dim, output_dim)` — και οι δύο παράμετροι περνιούνται κατά την κατασκευή, δεν βασίζονται πλέον σε σταθερές επιπέδου module. Τα LSTM layers δέχονται πλέον `input_size=input_dim` για το πρώτο layer και εξάγουν `output_dim` Q-values από το advantage head.
+
+**ΤΙ άλλαξε — Κλάση `TalosDRLAgent`:**
+- Constructor: `TalosDRLAgent(state_dim=None, action_dim=None)` — όταν None, χρησιμοποιεί τις προεπιλογές επιπέδου module. Αποθηκεύει `self.state_dim`, `self.action_dim`, και `self.source_names` (φορτωμένο από `talos_env._load_source_list()`).
+
+**ΤΙ άλλαξε — Μέθοδος `save(path)`:**
+- Παλιό format: `T.save(self.actor_online.state_dict(), path)` — raw `OrderedDict`.
+- Νέο format: `T.save({"state_dim": ..., "action_dim": ..., "source_names": ..., "weights": ...}, path)` — dict με metadata.
+
+**ΤΙ άλλαξε — Μέθοδος `load(path)`:**
+- Ανιχνεύει παλιό vs νέο format: ελέγχει αν τα φορτωμένα δεδομένα είναι dict με κλειδί `"weights"`.
+- Εξάγει metadata: `state_dim`, `action_dim`, `source_names` από το αποθηκευμένο dict.
+- Αν οι διαστάσεις δεν ταιριάζουν με τα υπάρχοντα δίκτυα, **αναδημιουργεί** και τα δύο `actor_online` και `actor_target` με το σωστό `DuelingLSTM(input_dim, output_dim)`, αναδημιουργεί τον optimizer, και μετά φορτώνει weights μέσω `load_state_dict()`.
+- Αυτό επιτρέπει τη φόρτωση μοντέλου 3 πηγών σε config 14 πηγών (και αντίστροφα).
+
+---
+
+### `scripts/talos_service.py` v2.0 — Profile-Aware Daemon (από v1.1, ~472 → ~430 γραμμές)
+
+**ΓΙΑΤΙ:** Ο v1.1 daemon είχε 4 hardcoded προβλήματα: (1) `action == 3` για sleep, (2) `{0: "ArXiv", 1: "OpenAlex", 2: "S2"}` για source names, (3) πάντα φόρτωνε μοντέλο από `models/dddqn_trained.pth` αγνοώντας profiles, (4) agent δημιουργούνταν με προεπιλεγμένες διαστάσεις που μπορεί να μην ταίριαζαν με το περιβάλλον. Αυτό σήμαινε ότι ο daemon δεν μπορούσε να προσαρμοστεί όταν ο χρήστης άλλαζε profile ή όταν άλλαζαν οι πηγές.
+
+**ΤΙ άλλαξε — Αρχικοποίηση:**
+- Διαβάζει ενεργό profile από `_profiles/active_profile.txt` κατά την εκκίνηση, εμφανίζει όνομα profile στην κεφαλίδα.
+- Δημιουργεί `OfflineTalosEnv()` ΠΡΩΤΑ για να πάρει το πραγματικό `num_sources` και `SLEEP_ACTION`.
+- Δημιουργεί agent με: `TalosDRLAgent(state_dim=env.observation_space.shape[0], action_dim=env.action_space.n)`.
+- Φόρτωση μοντέλου: ελέγχει πρώτα `_profiles/<name>/models/dddqn_trained.pth`, μετά το global `models/dddqn_trained.pth` ως fallback.
+
+**ΤΙ άλλαξε — Κυρίως βρόχος:**
+- `action == 3` → `action == sleep_action` (όπου `sleep_action = env.SLEEP_ACTION`).
+- `action_name = {0: "ArXiv", 1: "OpenAlex", 2: "S2"}.get(action, "?")` → `source_name = info.get("source", "unknown")`.
+- Μορφοποίηση ειδοποιήσεων: `format_paper_alert()` χρησιμοποιεί πλέον δυναμικά ονόματα εμφάνισης πηγών (`source.replace('_', ' ').title()`).
+
+**ΤΙ άλλαξε — Strings έκδοσης:**
+- Κεφαλίδα: `v5.0.0 (Phase 4)` → `v5.2.0`
+- Εβδομαδιαίο digest: `v5.0.0` → `v5.2.0`
+
+---
+
+### `scripts/talos_live_agent.py` v2.0 — Dynamic N-Source Live Agent (από v1.0, ~409 → ~390 γραμμές)
+
+**ΓΙΑΤΙ:** Ο v1.0 live agent είχε hardcoded imports για ακριβώς 3 κλάσεις πηγών (`ArxivSource`, `OpenAlexSource`, `SemanticScholarSource`) και hardcoded 6-στοιχείων state vector. Μπορούσε να κάνει πραγματικά API calls μόνο σε αυτές τις 3 πηγές. Για να ενορχηστρώσει ο agent και τις 14 πηγές, κάθε hardcoded αναφορά έπρεπε να αντικατασταθεί με δυναμική ανακάλυψη.
+
+**ΤΙ άλλαξε — Νέες συναρτήσεις:**
+
+| Συνάρτηση | Υπογραφή | Περιγραφή |
+|-----------|----------|-----------|
+| `_import_source_class(source_name)` | `(str) -> class ή None` | Εισάγει δυναμικά `sources.<name>_source.<Name>Source` χρησιμοποιώντας `__import__()` και `getattr()`. Χειρίζεται μετατροπή TitleCase (π.χ., `semantic_scholar` → `SemanticScholarSource`). Επιστρέφει `None` με warning σε αποτυχία import. |
+| `_build_source_map(source_names)` | `(list[str]) -> dict` | Χτίζει dict `{action_index: (source_name, SourceClass)}` για όλες τις εισαγώγιμες πηγές. Οι πηγές που αποτυγχάνουν στο import εξαιρούνται σιωπηλά. |
+
+**ΤΙ άλλαξε — Τροποποιημένες συναρτήσεις:**
+- `calculate_state()`: Η υπογραφή άλλαξε από σταθερό 6-στοιχείων πίνακα σε δυναμικό `(normalized_hour, call_counts, source_limits, low_score_streak, error_streak, source_names)`. Επιστρέφει `np.array([hour] + ratios + [low_norm, error_norm])`.
+- `execute_live_fetch()`: Προστέθηκε παράμετρος `action_map` (χρησιμοποιούσε hardcoded `{0: ("ArXiv", ArxivSource), ...}`). Πλέον επιστρέφει 3-πλέτα `(papers, error, source_name)`.
+- `main()`: Auto-detects πηγές μέσω `_load_source_list(config)`, χτίζει `action_map` μέσω `_build_source_map()`, υπολογίζει `sleep_action = len(source_names)`. Profile-aware φόρτωση μοντέλου (ίδια με τον daemon).
+
+**ΤΙ άλλαξε — Imports που αφαιρέθηκαν:**
+- Παλιό: `from sources.arxiv_source import ArxivSource`, `from sources.openalex_source import OpenAlexSource`, `from sources.semantic_scholar_source import SemanticScholarSource`.
+- Νέο: `from core.talos_env import _load_source_list, _try_load_config` — καθόλου source-specific imports.
+
+---
+
+### `scripts/train_agent.py` — Δυναμική Εμφάνιση Πηγών (από v1.0, ~283 → ~290 γραμμές)
+
+**ΓΙΑΤΙ:** Το training script δεν άλλαξε σε λογική αλλά χρειαζόταν να εμφανίζει δυναμικές πληροφορίες πηγών ώστε οι χρήστες να γνωρίζουν πόσες πηγές και ποιες διαστάσεις έχει ο agent κατά την εκπαίδευση.
+
+**ΤΙ άλλαξε:**
+- Εμφάνιση εκκίνησης: προστέθηκε αριθμός πηγών, ονόματα πηγών (περικομμένα στα πρώτα 5 αν >5), διάσταση observation, και διάσταση action.
+- Δημιουργία agent: `TalosDRLAgent()` → `TalosDRLAgent(state_dim=env.observation_space.shape[0], action_dim=env.action_space.n)`.
+- String έκδοσης: `Database-Driven` → `Database-Driven (v5.2.0)`.
+
+---
+
+### `scripts/research_pivot.py` v1.0 — **ΝΕΟ ΑΡΧΕΙΟ** (~180 γραμμές)
+
+**ΓΙΑΤΙ:** Δεν υπήρχε αυτοματοποιημένη ροή εργασίας για χρήστες που άλλαξαν ερευνητικό ενδιαφέρον. Έπρεπε χειροκίνητα να: (1) ξανατρέξουν PYTHIA μέσω CLI, (2) θυμηθούν να κάνουν re-evaluate τη βάση, (3) θυμηθούν να κάνουν retrain τον agent, (4) αποθηκεύσουν χειροκίνητα στο profile. Αυτό το script αυτοματοποιεί ολόκληρη τη ροή pivot.
+
+**Συναρτήσεις:**
+
+| Συνάρτηση | Υπογραφή | Περιγραφή |
+|-----------|----------|-----------|
+| `get_active_profile_name()` | `() -> str` | Διαβάζει το ενεργό profile από `_profiles/active_profile.txt`, default "default". |
+| `save_state_to_profile(profile_name)` | `(str) -> None` | Αντιγράφει το root `config.json` και `talos_research.db` στο `_profiles/<name>/`. |
+| `run_script(script_name, stdin_text, args)` | `(str, str, list) -> (int, str)` | Εκτελεί ένα TALOS script ως subprocess με piping `TALOS_GUI_STDIN`. Timeout 30 λεπτών. |
+| `main()` | `() -> None` | Διαδραστικός οδηγός 5 βημάτων: (1) συλλογή νέας κατεύθυνσης, (2) εκτέλεση PYTHIA, (3) προαιρετικό re-evaluate βάσης, (4) προαιρετικό retrain agent με προσαρμοσμένο αριθμό επεισοδίων, (5) αποθήκευση στο profile. Υποστηρίζει `--auto` flag για ενσωμάτωση GUI (διαβάζει από env var). |
+
+**Imports:** `questionary`, `subprocess`, `shutil`, `sys`, `os`.
+
+---
+
+### Ενημερώσεις Τεκμηρίωσης
+
+**`PROJECT_MAP.md`:**
+- Προστέθηκε Section 2.0: `core/talos_env.py` v2.0 με όλες τις 8 συναρτήσεις τεκμηριωμένες.
+- Προστέθηκε Section 2.3: `core/notifier.py` (TalosNotifier — ήταν εντελώς ατεκμηρίωτο πριν).
+- Ενημερώθηκε Section 2.2: `core/drl_agent.py` από v1.1 → v2.0 με νέες υπογραφές.
+- Ενημερώθηκε Section 3.2: `app.py` από v4.10.1 → v5.2.0, σελίδες 6 → 8, νέος πίνακας συναρτήσεων.
+- Προστέθηκαν νέα docs για integration scripts: `scripts/drl_trainer.py`, `scripts/talos_live_agent.py` v2.0, `scripts/talos_service_api.py`, `scripts/research_pivot.py`.
+- Τελευταία Ενημέρωση: 2026-07-04, Έκδοση: v5.2.0, Αριθμός αρχείων: 56.
+- **Βελτίωση function audit:** 166 → 183 matched (+17 νέες τεκμηριωμένες συναρτήσεις).
+
+**`.clinerules`:**
+- Προστέθηκε κανόνας "CRITICAL: Project Version & PROJECT_MAP.md Synchronization" — επιβάλλει ενημέρωση χάρτη μετά από κάθε αλλαγή .py, υπερισχύει όλων των άλλων κανόνων.
+- Προστέθηκε κανόνας "CRITICAL: Documentation Sync — CHANGELOG, README, ROADMAP" — επιβάλλει υπερ-αναλυτικές καταχωρήσεις changelog με ακριβή ονόματα αρχείων, υπογραφές, και αιτιολόγηση μετά από κάθε σημαντική αλλαγή.
+
+**`README.md`:** Έκδοση v5.0.0 → v5.2.0. Tagline ενημερώθηκε σε "Now with Guided Onboarding, Research Pivot & Dynamic 14-Source DRL Orchestration".
+
+**`ROADMAP.md`:** Ενότητα v5.2.0 ενημερώθηκε από "In Progress" σε "COMPLETED ✅" με αναλυτικό πίνακα χαρακτηριστικών που καλύπτει Onboarding, DRL Stack, Documentation, και Files Changed.
+
+---
+
+**Σύνολο: 8 αρχεία άλλαξαν, 1 νέο αρχείο, ~2,000 γραμμές κώδικα προστέθηκαν/αναδιοργανώθηκαν**
+**Integration test: 43/43 Python files περνούν `py_compile` validation**
+
+
 ## [v5.1.0] - 2026-07-04 — DRL Dashboard & Αναδιοργάνωση TUI/GUI
 
 Αυτή η έκδοση φέρνει το DRL οικοσύστημα στο προσκήνιο με ένα αποκλειστικό Streamlit dashboard, διαδραστικές λειτουργίες TUI, και μια ολοκληρωμένη ενημέρωση του project roadmap.

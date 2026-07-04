@@ -1,8 +1,8 @@
-# Project TALOS (v5.0.0)
+# Project TALOS (v5.2.0)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Τακτικό Πρακτορικό Σύστημα Ενορχήστρωσης Βιβλιογραφίας)*
-### **Now with Deep Reinforcement Learning — LSTM-DDDQN API Orchestrator**
+### **Now with Guided Onboarding, Research Pivot & Dynamic 14-Source DRL Orchestration**
 
 > **An Autonomous Research Intelligence Platform for the AI Era.**
 

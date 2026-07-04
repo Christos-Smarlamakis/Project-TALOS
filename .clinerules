@@ -106,6 +106,29 @@
 - **`_fix_embedding_labels.py`** renamed legacy "gemini" → "gemini:gemini-embedding-001" (one-time fix)
 - **Gemini SDK:** Uses new `google.genai` GA SDK (NOT deprecated `google.generativeai`) with `gemini-embedding-001` model, `RETRIEVAL_DOCUMENT` task type, and 768-dim output dimensionality
 
+## CRITICAL: Project Version & PROJECT_MAP.md Synchronization (NEW in v5.2.0)
+- Every time you modify ANY .py file, you MUST update the "Last Updated" date and version in PROJECT_MAP.md BEFORE completing the task.
+- If the version number in PROJECT_MAP.md footer doesn't match the version string in the code (e.g., app.py sidebar "TALOS vX.Y.Z"), the MAP IS STALE — fix it immediately.
+- The first thing to check when opening a project: does PROJECT_MAP.md version match the actual code version?
+- If you find a mismatch, FIX PROJECT_MAP.md FIRST before any other work.
+- **This rule overrides all others** — an out-of-date PROJECT_MAP.md is worse than no map at all.
+
+## CRITICAL: Documentation Sync — CHANGELOG, README, ROADMAP (NEW in v5.2.0)
+- After **ANY significant code change** (new feature, bugfix, refactor, breaking change), the following files **MUST** be updated before the task is marked complete:
+  1. **CHANGELOG_EN.md** AND **CHANGELOG_GR.md** — with **ultra-detailed** entries in both languages.
+  2. **README.md** — version number, tagline, feature list.
+  3. **ROADMAP.md** — milestone status (In Progress → Complete).
+- **Each changelog entry MUST include:**
+  - Exact filename and version number (e.g., `core/talos_env.py v2.0`)
+  - WHAT exactly changed: function signatures, line counts, new flags/arguments, new/deleted imports
+  - WHY the change was made: design rationale, problem it solves
+  - BREAKING changes clearly marked with **⚠️ BREAKING** prefix and migration guidance
+  - If a new file was created: full list of functions with signatures and descriptions
+  - If an existing file was modified: before/after comparison where relevant
+- **Changelog entries must be written at the level of detail that a new developer could understand the entire change without reading the source code.**
+- **Do NOT write vague entries** like "Updated X for better performance." Instead write: "Replaced `for` loop with `ThreadPoolExecutor(max_workers=15)` in `pdf_downloader.py:download_batch()`, reducing download time from ~45s to ~3s for 100 papers."
+- **This rule overrides all other completion rules** — a task is NOT complete until all 4 documentation files (CHANGELOG_EN, CHANGELOG_GR, README, ROADMAP) are updated.
+
 ## Progressive Documentation Rule (v5.0.0)
 - **Every time you open a `.py` file for ANY reason (reading, editing, checking):**
   1. Read the ENTIRE file first

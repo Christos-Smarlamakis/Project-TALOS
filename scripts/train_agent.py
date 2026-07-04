@@ -171,7 +171,7 @@ def main():
         da.GAMMA = args.gamma
 
     print("=" * 65)
-    print("  TALOS Offline DRL Training — Database-Driven")
+    print("  TALOS Offline DRL Training — Database-Driven (v5.2.0)")
     print("=" * 65)
     print(f"  Device: {DEVICE}")
     print(f"  Episodes: {args.episodes}")
@@ -183,8 +183,18 @@ def main():
 
     # ── Create the offline environment and RL agent ────────────────────────
     # OfflineTalosEnv loads real scores from the papers table.
+    # It now auto-detects all available sources from config.json.
     env = OfflineTalosEnv()
-    agent = TalosDRLAgent()
+    print(f"  Sources: {len(env.source_names)} ({', '.join(env.source_names[:5])}...)" if len(env.source_names) > 5 else f"  Sources: {len(env.source_names)} ({', '.join(env.source_names)})")
+    print(f"  Observation dim: {env.observation_space.shape[0]}")
+    print(f"  Action dim: {env.action_space.n}")
+    print()
+
+    # Create agent with the exact dimensions from the environment
+    agent = TalosDRLAgent(
+        state_dim=env.observation_space.shape[0],
+        action_dim=env.action_space.n
+    )
 
     # Re-create optimizer if LR was overridden
     if args.lr is not None:
