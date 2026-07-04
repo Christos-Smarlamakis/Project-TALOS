@@ -10,16 +10,20 @@ This release completely redesigns the Streamlit GUI for **academic conference pr
 ### Added
 - **`templates/gui_theme.css` (NEW, 140 lines):** Professional CSS theme with glassmorphism, smooth animations, custom scrollbar, academic typography, dark/light mode via `:root` CSS variables
 - **`templates/gui_strings.py` (NEW, 124 lines):** Translation dict (100+ keys in EN/GR) with dynamic `t()` function
-- **`app.py` — Dual-Mode GUI (Simple + Advanced):** Language toggle, Simple (5 pages) / Advanced (8 pages), AI-Powered Search as flagship tab, Autonomous Daemon (24/7 + DRL), restored Model Management with VRAM-aware badges
-- **`.clinerules`:** Added NO AUTO-GIT rule
+- **`app.py` — Dual-Mode GUI (Simple + Advanced):** Language toggle, Simple (5 pages) / Advanced (8 pages), AI-Powered Search as flagship tab, Autonomous Process (24/7 + DRL), restored Model Management with VRAM-aware badges, Author Analysis Tools, Architecture Graph, Architecture Intelligence Report
+- **`.clinerules`:** Added NO AUTO-GIT rule and Compile Check rule (`py_compile` on every changed file)
 
 ### Changed
-- **Search & Discovery tab order:** 1. AI-Powered Search (DRL) → 2. Daily Search → 3. Historical → 4. Autonomous Daemon → 5. Grey Literature
+- **Search & Discovery tab order:** 1. AI-Powered Search (DRL) → 2. Daily Search → 3. Historical → 4. Autonomous Process → 5. Grey Literature
 - **`app.py`:** STR dict → `templates/gui_strings.py`, CSS → `templates/gui_theme.css`
-- **`talos.py`:** Research Pivot (Option 14) in Analysis & Insights
+- **`talos.py`:** Complete rewrite — v5.2.1 header, 15-item menu (AI-Powered Search section), Research Pivot, Autonomous Process
+- **daemon renamed to "autonomous process"** throughout GUI and TUI
 
 ### Fixed
 - **Theme switching:** Replaced broken `config.toml` approach with CSS injection — toggle works immediately
+- **Color palette:** Red (`#e94560`) → Blue/Teal (`#1a73e8`) — academic, eye-friendly, scientific
+- **Header visibility:** Light mode header now uses light blue gradient (`#e8f0fe→#c6dafb`) with dark text instead of invisible dark-on-dark
+- **Light badge:** Dynamic background color (`#1a73e8` light / `#4a5568` dark)
 - **Academic emoji:** Colorful emoji replaced with monochrome symbols (◆ ▷ ▣ ▨ ⊞ ⚙ ⊠ ⊙)
 
 

@@ -159,12 +159,19 @@ def render_css():
     accent = "#4a9eff" if st.session_state.dark_mode else "#1a73e8"
     muted = "#7a9fc0" if st.session_state.dark_mode else "#5a6a7a"
     sbar = "linear-gradient(180deg, #0a1628, #0f1f38)" if st.session_state.dark_mode else "linear-gradient(180deg, #f0f4f8, #ffffff)"
+    # Header variables — different from main bg for visual distinction
+    hdr_bg = "linear-gradient(135deg, #0d2137 0%, #0a3d6b 50%, #0c2d4a 100%)" if st.session_state.dark_mode else "linear-gradient(135deg, #e8f0fe 0%, #d2e3fc 50%, #c6dafb 100%)"
+    hdr_text = "#d4e4f7" if st.session_state.dark_mode else "#1a2a3a"
+    hdr_accent = "#4a9eff" if st.session_state.dark_mode else "#1a73e8"
+    hdr_sub = "rgba(255,255,255,.7)" if st.session_state.dark_mode else "rgba(0,0,0,.55)"
 
     st.markdown(f"""<style>
     :root {{
         --bg: {bg}; --card-bg: {card_bg}; --border: {border};
         --text: {text}; --accent: {accent}; --muted: {muted};
         --sidebar-bg: {sbar};
+        --header-bg: {hdr_bg}; --header-text: {hdr_text};
+        --header-accent: {hdr_accent}; --header-sub: {hdr_sub};
     }}
     {css_content}
     </style>""", unsafe_allow_html=True)
