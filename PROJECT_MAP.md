@@ -453,8 +453,9 @@ Data Flow:
 **Συναρτήσεις:** `main()`
 
 #### `scripts/pdf_downloader.py`
-**Σκοπός:** Κατέβασμα open access PDFs μέσω Unpaywall.
-**Συναρτήσεις:** `get_mailto()`, `find_oa_pdf(doi, mailto)`, `download_pdf(pdf_url, filename, max_retries=3)`, `get_papers_to_process(db_manager, limit=None)`, `update_paper_pdf(db_manager, paper_id, pdf_url, local_path)`, `main()`
+**Σκοπός:** Κατέβασμα open access PDFs μέσω Unpaywall, OpenAlex, και CORE API. Multi-threaded batch download με ThreadPoolExecutor.
+**Συναρτήσεις:** `get_mailto()`, `find_oa_pdf(doi, mailto)`, `download_pdf(pdf_url, filename, max_retries=MAX_RETRIES)`, `get_papers_to_process(db_manager, limit=None)`, `update_paper_pdf(db_manager, paper_id, pdf_url, local_path)`, `main()`
+**Σταθερές:** `DOWNLOAD_TIMEOUT=30`, `MAX_RETRIES=2`, `MAX_WORKERS=10`, `REQUEST_DELAY=1.0`
 
 #### `scripts/interactive_dashboard.py`
 **Σκοπός:** Flask/Tabulator.js dashboard στο port 5000 (legacy).
@@ -711,6 +712,6 @@ verify_dependency_map.py (NEW in v5.0.0)
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-07-04
+> **Τελευταία ενημέρωση:** 2026-07-04 (v5.2.0: Live Agent + PDF batch + ROADMAP rewrite)
 > **Έκδοση Project:** v5.2.0
-> **Συνολικά αρχεία που καλύπτονται:** 56 (προστέθηκε research_pivot.py)
+> **Συνολικά αρχεία που καλύπτονται:** 56 (προστέθηκε research_pivot.py, talos_live_agent.py)
