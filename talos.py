@@ -272,6 +272,7 @@ def system_health_menu(python_exe: str):
             questionary.Separator(),
             "5. Generate Baseline Report (Standard)",
             "6. Generate Baseline Report (Academic — 600 DPI)",
+            "7. DRL Agent Status (Training Health)",
             questionary.Separator(),
             "Back to Main Menu"
         ]
@@ -345,6 +346,65 @@ def system_health_menu(python_exe: str):
         run_script("generate_baseline_report.py", python_exe)
     elif choice.startswith("6."):
         run_script("generate_baseline_report.py", python_exe, args=["--academic"])
+    elif choice.startswith("7."):
+        models_dir = os.path.join(project_root, "models")
+        model_path = os.path.join(models_dir, "dddqn_trained.pth")
+        gwo_path = os.path.join(models_dir, "gwo_best_params.json")
+        # Try rich formatting, fall back to plain text
+        try:
+            from rich.console import Console
+            from rich.table import Table
+            from rich.panel import Panel
+            from rich.text import Text
+            console = Console()
+            console.print()
+            table = Table(show_header=False, box=None, padding=(0, 2))
+            table.add_column("Key", style="bold cyan", no_wrap=True)
+            table.add_column("Value", style="white")
+            # ── Check trained model ──
+            if os.path.exists(model_path):
+                size_kb = os.path.getsize(model_path) / 1024
+                table.add_row("Trained Model", f"[green]✅ Present[/green] ({size_kb:.1f} KB)")
+            else:
+                table.add_row("Trained Model", "[red]❌ Not found[/red] — run DRL Training first")
+            table.add_section()
+            # ── Check GWO params ──
+            if os.path.exists(gwo_path):
+                import json
+                with open(gwo_path, "r") as f:
+                    params = json.load(f)
+                table.add_row("GWO Params", "[green]✅ Present[/green]")
+                table.add_row("Learning Rate", f"[bold yellow]{params['learning_rate']:.6e}[/bold yellow]")
+                table.add_row("Gamma", f"[bold yellow]{params['gamma']:.4f}[/bold yellow]")
+                table.add_row("Epsilon Decay", f"[bold yellow]{params['epsilon_decay']:.6f}[/bold yellow]")
+                table.add_row("Best Fitness", f"[bold magenta]{params['best_fitness']:.1f}[/bold magenta]")
+                table.add_row("Best Avg Reward", f"[bold green]{params['best_avg_reward']:.1f}[/bold green]")
+                table.add_row("Iterations", str(params['iterations']))
+                table.add_row("Time", f"{params['gwo_time_seconds']}s")
+            else:
+                table.add_row("GWO Params", "[red]❌ Not found[/red] — run GWO optimizer first")
+            console.print(Panel(table, title="[bold]🧠 DRL Agent Status[/bold]", border_style="cyan", padding=(1, 2)))
+        except ImportError:
+            # Fallback: plain text output
+            print("\n" + "=" * 50)
+            print("  DRL Agent Status")
+            print("=" * 50)
+            if os.path.exists(model_path):
+                size_kb = os.path.getsize(model_path) / 1024
+                print(f"  ✅ Trained model:  {model_path} ({size_kb:.1f} KB)")
+            else:
+                print(f"  ❌ No trained model found (run DRL Training first)")
+            if os.path.exists(gwo_path):
+                import json
+                with open(gwo_path, "r") as f:
+                    params = json.load(f)
+                print(f"  ✅ GWO Best Params: {gwo_path}")
+                print(f"     LR={params['learning_rate']:.6e}  GAMMA={params['gamma']:.4f}  EPS_DECAY={params['epsilon_decay']:.6f}")
+                print(f"     Best fitness={params['best_fitness']:.1f}  Reward={params['best_avg_reward']:.1f}")
+                print(f"     Iterations={params['iterations']}  Time={params['gwo_time_seconds']}s")
+            else:
+                print(f"  ❌ No GWO params found (run GWO optimizer first)")
+        print("=" * 50)
 
     print()
     input("Press Enter to continue...")
@@ -701,10 +761,11 @@ def main_menu():
             "7. Author Analysis Tools",
             "8. Interactive Dashboard",
             "9. DRL Training (API Orchestrator)",
+            "10. Compare Baselines (Pre/Post DRL)",
             questionary.Separator("  DATABASE & SETTINGS"),
-            "10. Database & Data",
-            "11. System Diagnostics",
-            "12. Profile & Settings",
+            "11. Database & Data",
+            "12. System Diagnostics",
+            "13. Profile & Settings",
                 questionary.Separator(),
                 "Exit"
             ]
@@ -727,9 +788,61 @@ def main_menu():
             run_script("interactive_dashboard.py", python_exe)
             final_message = "Dashboard server terminated. Press Enter to return to the menu..."
         elif choice.startswith("9."): run_script("drl_trainer.py", python_exe)
-        elif choice.startswith("10."): database_data_menu(python_exe)
-        elif choice.startswith("11."): system_health_menu(python_exe)
-        elif choice.startswith("12."): profile_settings_menu(python_exe)
+        elif choice.startswith("10."):
+            print("\n" + "=" * 65)
+            print("  Compare Baselines — Pre/Post DRL Agent")
+            print("=" * 65)
+            print("\n  This will generate a NEW baseline report and compare")
+            print("  it against the previous one (if it exists).")
+            print("\n  Reports are read from: reports/general_status_report/")
+            print()
+            if questionary.confirm("Generate new baseline and compare?", default=True).ask():
+                # Run a fresh baseline report
+                run_script("generate_baseline_report.py", python_exe, args=["--academic"])
+                # Try to find two most recent report folders
+                report_base = os.path.join(project_root, "reports", "general_status_report")
+                if os.path.exists(report_base):
+                    folders = sorted([d for d in os.listdir(report_base) if os.path.isdir(os.path.join(report_base, d))], reverse=True)
+                    if len(folders) >= 2:
+                        latest = folders[0]
+                        previous = folders[1]
+                        print(f"\n  📊 Latest report:   reports/general_status_report/{latest}/")
+                        print(f"  📊 Previous report: reports/general_status_report/{previous}/")
+                        # Try to read metrics from both reports
+                        import json as _json
+                        def _read_metrics(folder_name):
+                            rpt_path = os.path.join(report_base, folder_name, "report.md")
+                            if not os.path.exists(rpt_path): return None
+                            with open(rpt_path, "r", encoding="utf-8") as f:
+                                text = f.read()
+                            import re
+                            total = re.search(r"Total Papers\s*\|\s*([\d,]+)", text)
+                            elite = re.search(r"Elite Papers.*\|\s*([\d,]+)", text)
+                            avg   = re.search(r"Average Score\s*\|\s*([\d.]+)", text)
+                            return {
+                                "total": int(total.group(1).replace(",","")) if total else 0,
+                                "elite": int(elite.group(1).replace(",","")) if elite else 0,
+                                "avg": float(avg.group(1)) if avg else 0.0,
+                            }
+                        m1 = _read_metrics(latest)
+                        m2 = _read_metrics(previous)
+                        if m1 and m2:
+                            print("\n  📈 Comparison:")
+                            print(f"    Total Papers:  {m2['total']:,} → {m1['total']:,}  (Δ = {m1['total']-m2['total']:+,})")
+                            print(f"    Elite Papers:  {m2['elite']:,} → {m1['elite']:,}  (Δ = {m1['elite']-m2['elite']:+,})")
+                            print(f"    Avg Score:     {m2['avg']:.2f} → {m1['avg']:.2f}  (Δ = {m1['avg']-m2['avg']:+.2f})")
+                        else:
+                            print("\n  ⚠️  Could not read metrics from both reports.")
+                    else:
+                        print(f"\n  ⚠️  Only {len(folders)} report(s) found. Need 2 for comparison.")
+                        print(f"  Run a baseline report first, then deploy the DRL agent and run again.")
+                else:
+                    print(f"\n  ⚠️  No baseline reports found.")
+                    print(f"  Use 'Generate Baseline Report' from System Diagnostics first.")
+            print("=" * 65)
+        elif choice.startswith("11."): database_data_menu(python_exe)
+        elif choice.startswith("12."): system_health_menu(python_exe)
+        elif choice.startswith("13."): profile_settings_menu(python_exe)
 
         if choice != "Exit": input(final_message)
 
