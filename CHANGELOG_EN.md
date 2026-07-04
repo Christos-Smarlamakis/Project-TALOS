@@ -3,6 +3,58 @@
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [v5.3.0] - 2026-07-04 — The "Multi-Language Documentation Builder" Update
+
+This release introduces `scripts/generate_docs.py` v2.0, a **fully interactive, 18-language, 93+ file** codebase documentation generator that uses a local Ollama instance. Completely rewritten from v1.0 with support for all project files (not just `.py`), a language-agnostic prompt system, interactive checkbox-based file selection, token estimation, and integration into both GUI and TUI.
+
+### Added
+- **`scripts/generate_docs.py` v2.0 (~350 lines, 7 functions):** Complete rewrite — now documents the **ENTIRE codebase (93+ files)** including `.py`, `.html`, `.css`, `.js`, `.json`, Dockerfile, `.bat`, `.ps1`, `.cff`, `.clinerules` and more.
+  - **`check_ollama(url) -> bool`:** Health check at startup — verifies Ollama is running. If offline, prints clear error message and exits. **Never falls back to cloud APIs.**
+  - **`load_configuration() -> Dict[str, str]`:** Reads model name with priority: `OLLAMA_MODEL` → `LOCAL_MODEL_NAME` → `gemma4` fallback. Also reads `OLLAMA_HOST` for custom endpoints.
+  - **`get_code_files(selected_dirs) -> List[str]`:** Recursively collects ALL code/text files from 6 directory groups: `core/` (7 files), `scripts/` (35 files), `sources/` (14 files), `templates/` (7 files — HTML/CSS/JS/JSON), `reference_code/` (17 files), and Root files (~9 files). Excludes binary, cache, data, logs, models.
+  - **`estimate_file_info(file_paths) -> Dict`:** Counts total files, lines, and bytes before generation starts — displayed in the summary.
+  - **`generate_documentation(source_code, file_path, model, ollama_url, language_keyword) -> Optional[str]`:** Dynamic multi-language prompt — sends file content + language instruction to Ollama `/api/generate`. Supports 18 languages via keyword mapping (GREEK, ENGLISH, CHINESE, HINDI, etc.).
+  - **`save_documentation(file_path, content, output_dir, lang_code) -> None`:** Creates `docs/{lang_code}/` directory structure. Filenames derived from relative paths: `core_ai_manager_doc.md`, `templates_dashboard_doc.md`, `Dockerfile_doc.md`.
+  - **`main() -> None`:** 7-step interactive workflow: (1) Ollama health check, (2) questionary select for language (18 options), (3) questionary checkbox for directory selection, (4) collect files + estimate, (5) confirmation with summary, (6) tqdm progress bar, (7) final report.
+- **18 supported languages:** Ελληνικά, English, 中文 (Mandarin), हिन्दी (Hindi), Español, العربية (Arabic), Français, বাংলা (Bengali), Русский, Português, اردو (Urdu), Bahasa Indonesia, Deutsch, 日本語, Italiano, 한국어 (Korean), Türkçe, فارسی (Persian/Farsi).
+- **GUI integration (`app.py` v5.3.0):** System Diagnostics page now includes:
+  - Language dropdown with all 18 languages
+  - 6 checkboxes for directory selection (core, scripts, sources, templates, reference_code, root)
+  - "Generate Codebase Documentation" button that runs `generate_docs.py`
+- **TUI integration (`talos.py` v5.3.0):** System Diagnostics menu now includes Option 8: "Generate Codebase Docs (18 Languages, LOCAL Only)".
+- **New `.env` key:** `OLLAMA_MODEL` — optional override for documentation generation model (falls back to `LOCAL_MODEL_NAME` then `gemma4`).
+- **New output structure:** `docs/{lang_code}/` — multi-language directory tree.
+- **Token estimator:** Before generation starts, shows total files, lines, estimated time, and confirms "💰 Cost: €0.00 (local Ollama)".
+
+### Changed
+- **`PROJECT_MAP.md`:** Bumped v5.2.1→v5.3.0. Updated Section 4.7 `generate_docs.py` entry from v1.0 → v2.0 (7 functions, 18 languages, 93+ files). Updated architecture diagram and dependency graph. Version strings throughout.
+- **`example.env`:** Added `OLLAMA_MODEL = ""` key with comment.
+- **`ROADMAP.md`:** v5.3.0 milestone marked COMPLETED ✅ with detailed implementation table.
+- **`README.md`:** v5.2.0→v5.3.0, bilingual EN+GR sections throughout, new "Documentation Builder" feature section.
+
+### Design Rationale
+- **Why 18 languages?** The PhD thesis is bilingual (Greek/English) and the researcher wants to present the codebase to diverse international audiences. All 18 are the most spoken languages globally.
+- **Why 100% local (Ollama)?** Zero cloud cost, full source code privacy, unlimited usage. The `check_ollama()` function guarantees no cloud fallback ever happens.
+- **Why 93+ files (not just .py)?** The codebase includes critical non-Python files (HTML dashboards, CSS themes, JS graphs, JSON configs, Docker setup) that are essential to document for a complete methodology chapter.
+- **Why fully interactive (no CLI args)?** The user explicitly requested terminal-based prompts — zero command-line arguments. Everything is done through `questionary.select()` and `questionary.checkbox()`.
+- **Why per-file resilience?** With 93+ files, a single timeout shouldn't abort the entire batch. Failed files are counted and reported, successful ones are saved immediately.
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `scripts/generate_docs.py` | **REWRITTEN** — v1.0→v2.0, ~197→~350 lines, 5→7 functions, 18 languages, 93+ files |
+| `talos.py` | System Diagnostics menu + Option 8, version v5.2.1→v5.3.0 |
+| `app.py` | System Diagnostics page + language dropdown + checkboxes + button, version v5.2.1→v5.3.0 |
+| `PROJECT_MAP.md` | Section 4.7 updated to v2.0, version bump, dependency graph |
+| `example.env` | Added `OLLAMA_MODEL` key |
+| `ROADMAP.md` | v5.3.0 marked COMPLETED with full feature table |
+| `README.md` | v5.3.0, bilingual EN+GR, new Documentation Builder section |
+| `CHANGELOG_EN.md` | This entry (rewritten from v1.0) |
+| `CHANGELOG_GR.md` | v5.3.0 entry rewritten in Greek |
+
+**Total: 1 file rewritten, 8 files updated**
+
+
 ## [v5.2.1] - 2026-07-04 — The "Academic Conference GUI & DRL Flagship" Update
 
 This release completely redesigns the Streamlit GUI for **academic conference presentation** — dual-mode (Simple/Advanced), professional CSS theme in `templates/gui_theme.css`, full bilingual support (EN/GR via `templates/gui_strings.py`), and the DRL-powered **AI Search** as the flagship feature.

@@ -143,6 +143,8 @@ def system_health_menu(python_exe):
         "3. Open Architecture Graph", "4. Architecture Intelligence Report",
         questionary.Separator(), "5. Baseline Report (Standard)",
         "6. Baseline Report (Academic — 600 DPI)", "7. DRL Agent Status",
+        questionary.Separator(),
+        "8. Generate Codebase Docs (18 Languages, LOCAL Only)",
         questionary.Separator(), "Back"
     ])
     if choice is None or "Back" in choice: return
@@ -196,6 +198,14 @@ def system_health_menu(python_exe):
                 import json
                 with open(gp) as f: p = json.load(f)
                 print(f"  LR={p['learning_rate']:.6e} GAMMA={p['gamma']:.4f} EPS={p['epsilon_decay']:.6f} Fitness={p['best_fitness']:.1f}")
+    elif choice.startswith("8."):
+        print("\n" + "=" * 65)
+        print("  Codebase Documentation Generator (18 Languages)")
+        print("=" * 65)
+        print("\n  Uses LOCAL Ollama — zero cloud cost, full privacy.")
+        print("  Produces detailed Markdown docs for every code file you select.")
+        if questionary.confirm("Launch documentation generator?", default=True).ask():
+            run_script("generate_docs.py", python_exe)
     print(); input("Press Enter...")
 
 def api_keys_menu(python_exe):
@@ -311,7 +321,7 @@ def main_menu():
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
         ap = get_active_profile_name()
-        header = f"TALOS v5.2.1 | Profile: [{ap}]"
+        header = f"TALOS v5.3.0 | Profile: [{ap}]"
         try:
             from core.database_manager import DatabaseManager
             db = DatabaseManager(); s = db.get_database_statistics()
@@ -322,7 +332,7 @@ def main_menu():
                 v = detect_vram_gb()
                 if v: vr = f" | VRAM: {v:.0f}GB"
             except: pass
-            header = f"TALOS v5.2.1 | Profile: [{ap}] | {s['total_papers']} papers | {s['elite_papers']} elite | {prov}{vr}"
+            header = f"TALOS v5.3.0 | Profile: [{ap}] | {s['total_papers']} papers | {s['elite_papers']} elite | {prov}{vr}"
         except: pass
 
         choice = safe_select(header, choices=[

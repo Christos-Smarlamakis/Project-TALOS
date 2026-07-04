@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform — and maps the path forward.
 
-> **Current Version:** v5.2.0 (The Live Agent)
+> **Current Version:** v5.3.0 (Auto-Docs)
 > **Last Updated:** 2026-07-04
 
 ---
@@ -166,25 +166,44 @@ This version transforms TALOS into a **fully guided research platform** with a 4
 
 ---
 
-## 5. v5.3.0 — Automated Documentation (UPCOMING 📅)
+## 5. v5.3.0 — Automated Documentation (COMPLETED ✅)
 
-### 5.1 Local LLM Codebase Documentation
+### 5.1 `scripts/generate_docs.py` v1.0
 
-| Component | Description |
-|-----------|-------------|
-| **generate_docs.py** | A script that uses a local LLM (Ollama, e.g., Gemma 4 or similar) to automatically document the entire codebase |
-| **Language** | Documentation generated in **Greek** — acting as a personal codebase tutor for academic paper writing |
-| **Output** | Google-style docstrings, inline comments, module-level overviews — all in Greek, explaining WHAT, HOW, and WHY for each function |
-| **Goal** | Enable the researcher to understand and explain every architectural decision in their codebase for the PhD thesis defense and academic publications |
+| Component | Description | Status |
+|-----------|-------------|--------|
+| **generate_docs.py** | Iterates through all `.py` files in `core/` and `scripts/`, sends each to local Ollama (`/api/generate`), saves Greek Markdown in `docs/` | ✅ Complete |
+| **load_configuration()** | Reads `OLLAMA_MODEL` → `LOCAL_MODEL_NAME` → `gemma4` fallback, plus `OLLAMA_HOST` for custom endpoints | ✅ Complete |
+| **get_python_files()** | Recursively discovers all `.py` files in given directories, sorted alphabetically | ✅ Complete |
+| **generate_documentation()** | POSTs source code to Ollama with 120s timeout, returns Greek Markdown or None on failure | ✅ Complete |
+| **save_documentation()** | Creates `docs/` directory, writes UTF-8 Markdown as `{basename}_doc.md` | ✅ Complete |
+| **main()** | Orchestrator with tqdm progress bar, per-file try/except, 1s delay between requests, final summary | ✅ Complete |
+| **Prompt** | English instruction: "Act as a Senior Python Architect..." → output entirely in Greek | ✅ Complete |
+| **Robustness** | Timeout handling, connection error handling, JSON decode error handling, per-file resilience (one failure never aborts the batch) | ✅ Complete |
+
+**Model:** Uses local Ollama (default: `gemma4`). Zero cost, offline, full privacy — source code never leaves the local machine.
 
 **Why Greek?** The PhD thesis and academic papers are written in Greek/English. Having the codebase documented in Greek ensures the researcher can fluently explain technical decisions during the defense and in the methodology sections of papers.
 
 ### 5.2 Integration with Existing Tools
 
-The generated documentation will complement:
+The generated documentation complements:
 - **`.clinerules`** Progressive Documentation Rule (English — for AI agents)
 - **`PROJECT_MAP.md`** (English — architectural blueprint)
-- **New Greek docstrings** (Greek — for the researcher and thesis)
+- **`docs/*.md`** (Greek — for the researcher and thesis)
+- **New `.env` key `OLLAMA_MODEL`** added to `example.env`
+
+### 5.3 Files Changed
+
+| File | Change |
+|------|--------|
+| `scripts/generate_docs.py` | **NEW** — 197 lines, 5 functions |
+| `PROJECT_MAP.md` | Section 4.7 entry, version v5.2.1→v5.3.0, file count 58→59, dependency graph |
+| `example.env` | Added `OLLAMA_MODEL` key |
+| `CHANGELOG_EN.md` | v5.3.0 entry |
+| `CHANGELOG_GR.md` | v5.3.0 entry |
+
+**Total: 1 new file, 4 updated files**
 
 ---
 
@@ -255,7 +274,7 @@ The v6.0 series represents the **third generation** of TALOS — decoupling the 
 | **v5.0.1** | GWO Export | JSON output for hyperparameters | ✅ Complete |
 | **v5.1.0** | The Insights UI | DRL Dashboard + TUI Reorganization | ✅ Complete |
 | **v5.2.0** | The Live Agent | Live API Routing + PDF Downloader | ⚡ Current |
-| **v5.3.0** | Auto-Docs | Local LLM Greek documentation generator | 📅 Upcoming |
+| **v5.3.0** | Auto-Docs | Local LLM Greek documentation generator | ✅ Complete |
 | **v5.4.0** | Deployment | PyInstaller .exe packaging | 📅 Upcoming |
 | **v6.0.0+** | ALEXANDRIA | FastAPI + Flutter + RAG + 3D Viz | 🔮 Future |
 

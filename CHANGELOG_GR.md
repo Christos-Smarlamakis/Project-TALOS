@@ -3,6 +3,58 @@
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
 
+## [v5.3.0] - 2026-07-04 — Η Ενημέρωση "Multi-Language Documentation Builder"
+
+Αυτή η έκδοση εισάγει το `scripts/generate_docs.py` v2.0, μια **πλήρως διαδραστική, 18-γλωσση γεννήτρια τεκμηρίωσης για 93+ αρχεία** που χρησιμοποιεί τοπικό Ollama instance. Πλήρης επανεγγραφή από την v1.0 με υποστήριξη για όλα τα αρχεία του project (όχι μόνο `.py`), language-agnostic prompt system, διαδραστική επιλογή φακέλων μέσω checkbox, token estimation, και ενσωμάτωση σε GUI και TUI.
+
+### Προστέθηκε
+- **`scripts/generate_docs.py` v2.0 (~350 γραμμές, 7 συναρτήσεις):** Πλήρης επανεγγραφή — τεκμηριώνει πλέον **ΟΛΟΚΛΗΡΟ το codebase (93+ αρχεία)** συμπεριλαμβανομένων `.py`, `.html`, `.css`, `.js`, `.json`, Dockerfile, `.bat`, `.ps1`, `.cff`, `.clinerules` και άλλων.
+  - **`check_ollama(url) -> bool`:** Health check κατά την εκκίνηση — επαληθεύει ότι το Ollama τρέχει. Αν είναι offline, εμφανίζει σαφές μήνυμα σφάλματος και τερματίζει. **Ποτέ δεν κάνει fallback σε cloud APIs.**
+  - **`load_configuration() -> Dict[str, str]`:** Διαβάζει το όνομα μοντέλου με προτεραιότητα: `OLLAMA_MODEL` → `LOCAL_MODEL_NAME` → `gemma4` fallback. Διαβάζει επίσης το `OLLAMA_HOST` για custom endpoints.
+  - **`get_code_files(selected_dirs) -> List[str]`:** Συλλέγει αναδρομικά ΟΛΑ τα code/text files από 6 ομάδες φακέλων: `core/` (7 αρχεία), `scripts/` (35 αρχεία), `sources/` (14 αρχεία), `templates/` (7 αρχεία — HTML/CSS/JS/JSON), `reference_code/` (17 αρχεία), και Root files (~9 αρχεία). Εξαιρεί binary, cache, data, logs, models.
+  - **`estimate_file_info(file_paths) -> Dict`:** Μετράει συνολικά αρχεία, γραμμές, και bytes πριν ξεκινήσει η παραγωγή — εμφανίζεται στο summary.
+  - **`generate_documentation(source_code, file_path, model, ollama_url, language_keyword) -> Optional[str]`:** Δυναμικό multi-language prompt — στέλνει περιεχόμενο αρχείου + οδηγία γλώσσας στο Ollama `/api/generate`. Υποστηρίζει 18 γλώσσες μέσω keyword mapping (GREEK, ENGLISH, CHINESE, HINDI, κ.λπ.).
+  - **`save_documentation(file_path, content, output_dir, lang_code) -> None`:** Δημιουργεί δομή `docs/{lang_code}/`. Ονόματα αρχείων από σχετικές διαδρομές: `core_ai_manager_doc.md`, `templates_dashboard_doc.md`, `Dockerfile_doc.md`.
+  - **`main() -> None`:** 7-βήμα διαδραστική ροή: (1) Ollama health check, (2) questionary select για γλώσσα (18 επιλογές), (3) questionary checkbox για επιλογή φακέλων, (4) συλλογή αρχείων + estimate, (5) confirmation με summary, (6) tqdm progress bar, (7) τελική αναφορά.
+- **18 υποστηριζόμενες γλώσσες:** Ελληνικά, English, 中文 (Mandarin), हिन्दी (Hindi), Español, العربية (Arabic), Français, বাংলা (Bengali), Русский, Português, اردو (Urdu), Bahasa Indonesia, Deutsch, 日本語, Italiano, 한국어 (Korean), Türkçe, فارسی (Persian/Farsi).
+- **GUI integration (`app.py` v5.3.0):** Η σελίδα System Diagnostics περιλαμβάνει πλέον:
+  - Language dropdown με και τις 18 γλώσσες
+  - 6 checkboxes για επιλογή φακέλων (core, scripts, sources, templates, reference_code, root)
+  - Κουμπί "Generate Codebase Documentation" που εκτελεί το `generate_docs.py`
+- **TUI integration (`talos.py` v5.3.0):** Το μενού System Diagnostics περιλαμβάνει πλέον την Επιλογή 8: "Generate Codebase Docs (18 Languages, LOCAL Only)".
+- **Νέο `.env` key:** `OLLAMA_MODEL` — προαιρετικό override για το μοντέλο παραγωγής τεκμηρίωσης (πέφτει σε `LOCAL_MODEL_NAME` και μετά `gemma4`).
+- **Νέα δομή εξόδου:** `docs/{lang_code}/` — multi-language directory tree.
+- **Token estimator:** Πριν ξεκινήσει η παραγωγή, δείχνει συνολικά αρχεία, γραμμές, εκτιμώμενο χρόνο, και επιβεβαιώνει "💰 Κόστος: €0.00 (τοπικό Ollama)".
+
+### Άλλαξε
+- **`PROJECT_MAP.md`:** Αναβάθμιση v5.2.1→v5.3.0. Ενημερώθηκε η καταχώρηση Section 4.7 `generate_docs.py` από v1.0 → v2.0 (7 συναρτήσεις, 18 γλώσσες, 93+ αρχεία). Ενημερώθηκε το διάγραμμα αρχιτεκτονικής και το dependency graph. Version strings παντού.
+- **`example.env`:** Προστέθηκε το key `OLLAMA_MODEL = ""` με σχόλιο.
+- **`ROADMAP.md`:** Το milestone v5.3.0 σημειώθηκε COMPLETED ✅ με αναλυτικό πίνακα υλοποίησης.
+- **`README.md`:** v5.2.0→v5.3.0, δίγλωσσες ενότητες EN+GR σε όλο το κείμενο, νέα ενότητα "Documentation Builder".
+
+### Σχεδιαστική Λογική
+- **Γιατί 18 γλώσσες;** Η διδακτορική διατριβή είναι δίγλωσση (Ελληνικά/Αγγλικά) και ο ερευνητής θέλει να παρουσιάσει το codebase σε διαφορετικά διεθνή ακροατήρια. Και οι 18 είναι οι πιο ομιλούμενες γλώσσες παγκοσμίως.
+- **Γιατί 100% τοπικό (Ollama);** Μηδενικό κόστος cloud, πλήρης ιδιωτικότητα πηγαίου κώδικα, απεριόριστη χρήση. Η συνάρτηση `check_ollama()` εγγυάται ότι δεν θα συμβεί ποτέ cloud fallback.
+- **Γιατί 93+ αρχεία (όχι μόνο .py);** Το codebase περιλαμβάνει κρίσιμα μη-Python αρχεία (HTML dashboards, CSS themes, JS graphs, JSON configs, Docker setup) που είναι απαραίτητα για την τεκμηρίωση ενός πλήρους κεφαλαίου μεθοδολογίας.
+- **Γιατί πλήρως διαδραστικό (χωρίς CLI args);** Ο χρήστης ζήτησε ρητά τερματικές προτροπές — μηδενικά command-line arguments. Όλα γίνονται μέσω `questionary.select()` και `questionary.checkbox()`.
+- **Γιατί ανθεκτικότητα ανά αρχείο;** Με 93+ αρχεία, ένα μεμονωμένο timeout δεν πρέπει να διακόπτει ολόκληρη τη διαδικασία. Τα αποτυχημένα αρχεία καταμετρώνται και αναφέρονται, τα επιτυχημένα αποθηκεύονται άμεσα.
+
+### Αρχεία που Άλλαξαν
+| Αρχείο | Αλλαγή |
+|------|--------|
+| `scripts/generate_docs.py` | **ΕΠΑΝΕΓΓΡΑΦΗ** — v1.0→v2.0, ~197→~350 γραμμές, 5→7 συναρτήσεις, 18 γλώσσες, 93+ αρχεία |
+| `talos.py` | System Diagnostics menu + Επιλογή 8, version v5.2.1→v5.3.0 |
+| `app.py` | System Diagnostics page + language dropdown + checkboxes + button, version v5.2.1→v5.3.0 |
+| `PROJECT_MAP.md` | Section 4.7 ενημερώθηκε σε v2.0, version bump, dependency graph |
+| `example.env` | Προστέθηκε `OLLAMA_MODEL` key |
+| `ROADMAP.md` | v5.3.0 marked COMPLETED με πλήρη πίνακα χαρακτηριστικών |
+| `README.md` | v5.3.0, bilingual EN+GR, νέα ενότητα Documentation Builder |
+| `CHANGELOG_EN.md` | v5.3.0 entry rewritten from v1.0 |
+| `CHANGELOG_GR.md` | Αυτή η καταχώρηση (rewritten from v1.0) |
+
+**Σύνολο: 1 αρχείο επανεγγράφη, 8 αρχεία ενημερώθηκαν**
+
+
 ## [v5.2.1] - 2026-07-04 — Η Ενημέρωση "Academic Conference GUI & DRL Flagship"
 
 Αυτή η έκδοση επανασχεδιάζει πλήρως το Streamlit GUI για **παρουσίαση σε ακαδημαϊκό συνέδριο** — dual-mode (Simple/Advanced), επαγγελματικό CSS theme, πλήρης δίγλωσση υποστήριξη (EN/GR), και η DRL-powered **AI Αναζήτηση** ως flagship feature.

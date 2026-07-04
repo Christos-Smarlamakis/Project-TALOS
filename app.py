@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: app.py (Streamlit Web GUI v5.2.1 — Simple/Advanced Dual-Mode)
-Project: TALOS v5.2.1
+Module: app.py (Streamlit Web GUI v5.3.0 — Simple/Advanced Dual-Mode)
+Project: TALOS v5.3.0
 Description:
     Complete Multi-Page Streamlit Web GUI with TWO modes:
     - Simple Mode: 4 pages for non-technical users (students, researchers from any field)
@@ -184,7 +184,7 @@ def render_sidebar():
     with st.sidebar:
         st.markdown(f"""<div style="text-align:center;padding:.5rem 0">
         <h2 style="color:#4a9eff;margin:0;font-size:1.4rem">🧠 TALOS</h2>
-        <p style="color:var(--muted);font-size:.7rem;margin:.2rem 0 0">{t('sidebar_title')} v5.2.1</p>
+        <p style="color:var(--muted);font-size:.7rem;margin:.2rem 0 0">{t('sidebar_title')} v5.3.0</p>
         </div>""", unsafe_allow_html=True)
         st.markdown("---")
 
@@ -938,14 +938,14 @@ def main():
         # ── Advanced Mode Routing ──
         st.markdown("""<div style="text-align:center;padding:1rem 0">
         <h2 style="color:#4a9eff;margin:0;font-size:1.5rem">🧠 Project TALOS</h2>
-        <p style="color:var(--muted);font-size:.85rem">Research Intelligence Platform v5.2.1</p>
+        <p style="color:var(--muted);font-size:.85rem">Research Intelligence Platform v5.3.0</p>
         </div>""", unsafe_allow_html=True)
         handle_advanced_page(page)
 
     # ── Footer ──
     st.markdown("---")
     st.markdown(f"""<div style="text-align:center;color:#8b949e;font-size:.75rem;padding:0 0 1rem 0">
-    TALOS v5.2.1 · © 2026 Christos Smarlamakis · {datetime.now().strftime('%Y-%m-%d %H:%M')}
+    TALOS v5.3.0 · © 2026 Christos Smarlamakis · {datetime.now().strftime('%Y-%m-%d %H:%M')}
     </div>""", unsafe_allow_html=True)
 
 

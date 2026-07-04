@@ -1,4 +1,4 @@
-# PROJECT_MAP.md — Πλήρης Χάρτης του Project TALOS v5.2.0
+# PROJECT_MAP.md — Πλήρης Χάρτης του Project TALOS v5.3.0
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται — χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
@@ -17,7 +17,7 @@
                            │ subprocess / direct import
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SCRIPTS (20 αρχεία)                           │
+│                    SCRIPTS (21 αρχεία)                           │
 │  daily_search.py          historic_search.py                    │
 │  knowledge_path_generator.py (CHIRON)                           │
 │  citation_analyzer.py (ORPHEUS)    recommender.py               │
@@ -30,6 +30,7 @@
 │  trend_analyzer.py      zotero_connector.py                     │
 │  interactive_dashboard.py          api_health_check.py          │
 │  migrate_database_schema.py                                     │
+│  generate_docs.py                                                │
 └──────────────────────────┬──────────────────────────────────────┘
                            │ import
                            ▼
@@ -296,7 +297,7 @@ Data Flow:
 
 ---
 
-## 4. Scripts (20 αρχεία)
+## 4. Scripts (21 αρχεία)
 
 ### 4.1 Search Scripts
 
@@ -474,6 +475,26 @@ Data Flow:
 - `__init__(config)`, `_query_api(url, source_name, headers)`, `get_author_data(orcid_id)`, `analyze_trajectory(author_name, works)`, `_is_orcid(identifier)`, `run(identifier)`
 
 ### 4.7 Utilities
+
+#### `scripts/generate_docs.py` (v2.0 — NEW in v5.3.0)
+
+**Ρόλος:** Multi-Language Interactive Documentation Builder. Πλήρως διαδραστικό (questionary) — χωρίς CLI arguments. Σαρώνει **93+ αρχεία** (όχι μόνο `.py` — και HTML, CSS, JS, JSON, Dockerfile, `.bat`, `.cff`, `.clinerules`) και στέλνει το καθένα σε τοπικό Ollama instance για παραγωγή επαγγελματικής Markdown τεκμηρίωσης σε **18 γλώσσες**. LOCAL-only — ποτέ δεν καλεί cloud APIs.
+
+| Συνάρτηση | Υπογραφή | Περιγραφή |
+|-----------|----------|-----------|
+| `check_ollama` | `(url: str) -> bool` | Health check — επαληθεύει ότι το Ollama τρέχει και απαντά. Επιστρέφει False αν offline → abort με σαφές μήνυμα. |
+| `load_configuration` | `() -> Dict[str, str]` | Φορτώνει ρυθμίσεις από .env (OLLAMA_MODEL → LOCAL_MODEL_NAME → "gemma4" fallback). |
+| `get_code_files` | `(selected_dirs: List[str]) -> List[str]` | Συλλέγει **όλα** τα code/text files από επιλεγμένους φακέλους (core, scripts, sources, templates, reference_code, root). Εξαιρεί binary, __pycache__, data, logs, models. |
+| `estimate_file_info` | `(file_paths: List[str]) -> Dict[str, int]` | Μετράει total_files, total_lines, total_bytes πριν την εκτέλεση για το summary. |
+| `generate_documentation` | `(source_code, file_path, model, ollama_url, language_keyword) -> Optional[str]` | POST στο Ollama `/api/generate` με δυναμικό prompt βασισμένο στην επιλεγμένη γλώσσα. Timeout 120s. |
+| `save_documentation` | `(file_path, content, output_dir, lang_code) -> None` | Δημιουργεί `docs/{lang_code}/` φάκελο. Ονομασία: `core_ai_manager_doc.md`, `Dockerfile_doc.md`, κλπ. |
+| `main` | `() -> None` | Πλήρως διαδραστικό: (1) Ollama health check, (2) questionary select για 18 γλώσσες, (3) questionary checkbox για επιλογή φακέλων, (4) summary με token estimate + χρόνο, (5) confirmation, (6) tqdm progress bar, (7) final report. |
+
+**18 γλώσσες:** Ελληνικά, English, 中文, हिन्दी, Español, العربية, Français, বাংলা, Русский, Português, اردو, Bahasa Indonesia, Deutsch, 日本語, Italiano, 한국어, Türkçe, فارسی.
+
+**Imports:** `requests`, `dotenv.load_dotenv`, `tqdm.tqdm`, `questionary`, `pathlib.Path`
+
+**Usage:** `python scripts/generate_docs.py` (πλήρως διαδραστικό, χωρίς arguments)
 
 #### `scripts/api_health_check.py`
 **Σκοπός:** Διαγνωστικός έλεγχος όλων των APIs.
@@ -661,6 +682,11 @@ interactive_dashboard.py
 verify_dependency_map.py (NEW in v5.0.0)
   ├── ast (Python AST for import analysis)
   └── outputs reports/audits/dependency_audit.{json,html}
+
+generate_docs.py (NEW in v5.3.0)
+  ├── requests (Ollama /api/generate)
+  ├── dotenv.load_dotenv
+  └── tqdm.tqdm
 ```
 
 ---
@@ -712,6 +738,6 @@ verify_dependency_map.py (NEW in v5.0.0)
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-07-04 (v5.2.1: Academic Conference GUI — Dual-mode, Language EN/GR, AI Search flagship, model management restored)
-> **Έκδοση Project:** v5.2.1
-> **Συνολικά αρχεία που καλύπτονται:** 58 (προστέθηκαν research_pivot.py, talos_live_agent.py, gui_theme.css, gui_strings.py)
+> **Τελευταία ενημέρωση:** 2026-07-04 (v5.3.0: Automated Documentation Builder — Greek codebase tutor via Ollama)
+> **Έκδοση Project:** v5.3.0
+> **Συνολικά αρχεία που καλύπτονται:** 59 (προστέθηκαν research_pivot.py, talos_live_agent.py, gui_theme.css, gui_strings.py, generate_docs.py)
