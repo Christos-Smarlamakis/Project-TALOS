@@ -3,6 +3,25 @@
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
 
+## [v5.1.0] - 2026-07-04 — DRL Dashboard & Αναδιοργάνωση TUI/GUI
+
+Αυτή η έκδοση φέρνει το DRL οικοσύστημα στο προσκήνιο με ένα αποκλειστικό Streamlit dashboard, διαδραστικές λειτουργίες TUI, και μια ολοκληρωμένη ενημέρωση του project roadmap.
+
+### Προσθήκες
+- **`app.py` — 🧠 DRL Agent Dashboard (νέα σελίδα):** Streamlit σελίδα που δείχνει:
+  - **GWO Optimization Results**: 4 metric cards (Learning Rate, Gamma, Epsilon Decay, Best Fitness) από το `models/gwo_best_params.json`
+  - **"Load GWO Parameters"** κουμπί αποθήκευσης παραμέτρων στο `st.session_state`
+  - **Agent Training Status**: έλεγχος για `models/dddqn_trained.pth`
+  - **Reward Progression Chart**: ανοδικό `st.line_chart` 500 επεισοδίων
+  - **Training Details**: πίνακας 2 στηλών με αρχιτεκτονική, υπερπαραμέτρους, GPU
+- **`talos.py` — DRL Agent Status (Diagnostics → Επιλογή 7):** Πάνελ με trained model status + GWO hyperparameters. Πτώση σε απλό κείμενο αν δεν υπάρχει το `rich`.
+- **`talos.py` — Compare Baselines (Analysis → Επιλογή 10):** Δημιουργεί νέο baseline report και το συγκρίνει με το προηγούμενο, δείχνοντας Δ για Total Papers, Elite Papers, και Average Score.
+
+### Αλλαγές
+- **`talos.py` — Αναδιοργάνωση TUI:** Το DRL Training μεταφέρθηκε από standalone επιλογή στο Analysis & Insights (Επιλογή 9). Το μενού επεκτάθηκε από 12→13 επιλογές.
+- **`ROADMAP.md`:** Πλήρης επανεγγραφή — v5.0.1 ως τρέχουσα σταθερή, αναλυτικό πλάνο v5.1→v5.3, v6.0+ Think Tank με 4 στρατηγικούς άξονες.
+
+
 ## [v5.0.1] - 2026-07-04 — Εξαγωγή JSON από GWO
 
 ### Προσθήκες

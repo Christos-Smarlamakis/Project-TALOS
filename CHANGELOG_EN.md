@@ -3,6 +3,25 @@
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [v5.1.0] - 2026-07-04 — DRL Dashboard & TUI/GUI Reorganization
+
+This release brings the DRL ecosystem to the forefront with a dedicated Streamlit dashboard, interactive TUI features, and a comprehensive project roadmap update.
+
+### Added
+- **`app.py` — 🧠 DRL Agent Dashboard (new page):** Streamlit page showing:
+  - **GWO Optimization Results**: 4 metric cards (Learning Rate, Gamma, Epsilon Decay, Best Fitness) read from `models/gwo_best_params.json`
+  - **"Load GWO Parameters"** button saves params to `st.session_state` for use in training
+  - **Agent Training Status**: checks for `models/dddqn_trained.pth`, shows success/warning
+  - **Reward Progression Chart**: upward-trending `st.line_chart` simulating 500 training episodes
+  - **Training Details**: 2-column table with architecture, hyperparameters, GPU info
+- **`talos.py` — DRL Agent Status (Diagnostics → Option 7):** Rich-formatted panel showing trained model status + GWO hyperparameters. Falls back to plain text if `rich` library is not installed.
+- **`talos.py` — Compare Baselines (Analysis → Option 10):** Generates a new baseline report and compares it against the previous one, displaying Δ for Total Papers, Elite Papers, and Average Score.
+
+### Changed
+- **`talos.py` — TUI reorganization:** DRL Training moved from standalone option to Analysis & Insights (Option 9). Menu expanded from 12→13 items.
+- **`ROADMAP.md`:** Complete rewrite — v5.0.1 marked as current stable, detailed v5.1→v5.3 roadmap, v6.0+ Think Tank with 4 strategic axes (Data & Intelligence, Playground, Pedagogical, Interface).
+
+
 ## [v5.0.1] - 2026-07-04 — GWO JSON Export
 
 ### Added
