@@ -136,7 +136,17 @@ def run_gwo(wolves_number=DEFAULT_WOLVES, max_iterations=DEFAULT_ITERS, live=Fal
     best_wolves, fitness_std = find_best_three_wolves(wolves)
 
     a_factor, iteration = 2.0, 0
+    import os as _os, json as _json
+    project_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), '..'))
+    models_dir = _os.path.join(project_root, "models")
+    _os.makedirs(models_dir, exist_ok=True)
+
     gwo_history = [_build_history_entry(iteration, wolves, best_wolves, wolves_number)]
+
+    # Write initial history for Dash live dashboard
+    history_path = _os.path.join(models_dir, "gwo_history.json")
+    with open(history_path, "w", encoding="utf-8") as f:
+        _json.dump(gwo_history, f)
 
     # Write initial progress for GUI
     if live:
@@ -151,6 +161,11 @@ def run_gwo(wolves_number=DEFAULT_WOLVES, max_iterations=DEFAULT_ITERS, live=Fal
         a_factor = 2.0 - iteration * (2.0 / max_iterations)
         best_wolves, fitness_std = find_best_three_wolves(wolves)
         gwo_history.append(_build_history_entry(iteration, wolves, best_wolves, wolves_number))
+
+        # Write history incrementally so Dash live dashboard can read it
+        with open(history_path, "w", encoding="utf-8") as f:
+            _json.dump(gwo_history, f)
+
         best_lr, best_gamma, best_eps = decode_wolf(best_wolves[0][0])
         best_reward = -best_wolves[0][1]
         print(f"  [ITER {iteration:2d}] a={a_factor:.3f}  "
@@ -177,11 +192,6 @@ def run_gwo(wolves_number=DEFAULT_WOLVES, max_iterations=DEFAULT_ITERS, live=Fal
     print(f"  Iterations: {iteration}")
     print("=" * 65)
 
-    import os as _os, json as _json
-    project_root = _os.path.abspath(_os.path.join(_os.path.dirname(__file__), '..'))
-    models_dir = _os.path.join(project_root, "models")
-    _os.makedirs(models_dir, exist_ok=True)
-
     json_path = _os.path.join(models_dir, "gwo_best_params.json")
     params = {"learning_rate": best_lr, "gamma": best_gamma, "epsilon_decay": best_eps,
               "best_fitness": best_wolves[0][1], "best_avg_reward": best_reward,
@@ -189,10 +199,8 @@ def run_gwo(wolves_number=DEFAULT_WOLVES, max_iterations=DEFAULT_ITERS, live=Fal
     with open(json_path, "w", encoding="utf-8") as f: _json.dump(params, f, indent=2)
     print(f"\n  Best parameters saved to: models/gwo_best_params.json")
 
-    history_path = _os.path.join(models_dir, "gwo_history.json")
-    with open(history_path, "w", encoding="utf-8") as f: _json.dump(gwo_history, f, indent=2)
     print(f"  GWO history saved to: models/gwo_history.json")
-    print(f"     {len(gwo_history)} iterations, {wolves_number} wolves each")
+    print(f"     {len(gwo_history)} iterations, {wolves_number} wolves each (already written live)")
 
     if live:
         _write_live_progress(iteration, max_iterations, best_reward, best_wolves[0][1], a_factor, status="complete")
