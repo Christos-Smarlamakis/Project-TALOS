@@ -127,7 +127,7 @@ def run_gwo(wolves_number=DEFAULT_WOLVES, max_iterations=DEFAULT_ITERS, live=Fal
     print("=" * 65)
     print(f"  Wolves (population): {wolves_number}")
     print(f"  Max iterations: {max_iterations}")
-    print(f"  Search space: lr ∈ [1e-5, 1e-3], γ ∈ [0.5, 0.99], ε_decay ∈ [0.9, 0.999]")
+    print(f"  Search space: lr in [1e-5, 1e-3], gamma in [0.5, 0.99], eps_decay in [0.9, 0.999]")
     print(f"  RL episodes per fitness eval: {DEFAULT_RL_EPISODES}")
     print()
 

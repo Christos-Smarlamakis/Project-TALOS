@@ -787,81 +787,109 @@ def advanced_drl_dashboard():
 
         col1, col2 = st.columns(2)
         with col1:
-            wolves_num = st.number_input("Wolves", 5, 30, 15, key="gwo_wolves")
+            wolves_num = st.number_input("Wolves", 5, 1000, 15, key="gwo_wolves")
         with col2:
-            iters_num = st.number_input("Iterations", 5, 100, 50, key="gwo_iters")
+            iters_num = st.number_input("Iterations", 5, 1000, 50, key="gwo_iters")
 
         progress_path = os.path.join(models_dir, "gwo_progress.json")
 
-        if st.button("♮ Start GWO Optimization", type="primary", key="btn_gwo_start"):
-            # Clear previous progress
-            if os.path.exists(progress_path):
-                os.remove(progress_path)
-
-            st.session_state._gwo_running = True
-            st.session_state._gwo_process = subprocess.Popen(
-                [sys.executable, os.path.join(os.path.dirname(__file__), "scripts", "gwo_rl_optimizer.py"),
-                 "--wolves", str(wolves_num), "--iters", str(iters_num), "--live"],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
-
-        # ── Live progress display ────────────────────────────────────────
+        # ── Auto-refresh when GWO is running ───────────────────────────
         if st.session_state.get("_gwo_running"):
-            progress_placeholder = st.empty()
-            chart_placeholder = st.empty()
-            metrics_placeholder = st.empty()
-
-            reward_history = []
             import plotly.graph_objects as go
 
-            while True:
-                if os.path.exists(progress_path):
-                    try:
-                        with open(progress_path, "r") as f:
-                            progress = json.load(f)
-                    except Exception:
-                        time.sleep(1)
-                        continue
+            # Check if process is still alive
+            process = st.session_state.get("_gwo_process")
+            if process and process.poll() is not None:
+                # Process finished externally (shouldn't happen with --live)
+                st.session_state._gwo_running = False
 
-                    status = progress.get("status", "running")
-                    iteration = progress.get("iteration", 0)
-                    max_iters = progress.get("max_iterations", 50)
-                    best_reward = progress.get("best_reward", 0)
-                    a_factor = progress.get("a_factor", 2.0)
+            if os.path.exists(progress_path):
+                try:
+                    with open(progress_path, "r") as f:
+                        progress = json.load(f)
+                except Exception:
+                    progress = {"status": "running", "iteration": 0, "max_iterations": iters_num,
+                                "best_reward": 0, "a_factor": 2.0}
 
-                    reward_history.append(best_reward)
-                    pct = min(iteration / max(max_iters, 1), 1.0)
-                    progress_placeholder.progress(pct, f"Iteration {iteration} / {max_iters}")
+                status = progress.get("status", "running")
+                iteration = progress.get("iteration", 0)
+                max_iters = progress.get("max_iterations", iters_num)
+                best_reward = progress.get("best_reward", 0)
+                a_factor = progress.get("a_factor", 2.0)
 
-                    if len(reward_history) > 1:
-                        fig = go.Figure()
-                        fig.add_trace(go.Scatter(
-                            x=list(range(len(reward_history))), y=reward_history,
-                            mode='lines+markers', line=dict(color='#4a9eff', width=2),
-                            marker=dict(size=4), name='Best Reward',
-                        ))
-                        fig.update_layout(
-                            title="Fitness Convergence (Live)", xaxis_title="Iteration",
-                            yaxis_title="Best Avg Reward", height=300,
-                            margin=dict(l=0, r=0, t=40, b=0),
-                            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
-                            font=dict(color='#e0e0e0'),
-                        )
-                        chart_placeholder.plotly_chart(fig, use_container_width=True, key=f"gwo_live_{iteration}")
+                # Append to persistent reward history across reruns
+                hist = st.session_state.get("_gwo_reward_history", [])
+                if best_reward > 0:
+                    if not hist or hist[-1] != best_reward:
+                        hist.append(best_reward)
+                    st.session_state._gwo_reward_history = hist
 
-                    metrics_placeholder.metric(
-                        "Best Fitness So Far", f"{best_reward:.1f}",
-                        delta=f"Iter {iteration}/{max_iters} | a={a_factor:.3f}"
+                reward_history = hist
+                pct = min(iteration / max(max_iters, 1), 1.0)
+                st.progress(pct, f"Iteration {iteration} / {max_iters}")
+
+                if len(reward_history) > 1:
+                    fig = go.Figure()
+                    fig.add_trace(go.Scatter(
+                        x=list(range(len(reward_history))), y=reward_history,
+                        mode='lines+markers', line=dict(color='#4a9eff', width=2),
+                        marker=dict(size=4), name='Best Reward',
+                    ))
+                    fig.update_layout(
+                        title="Fitness Convergence (Live)", xaxis_title="Iteration",
+                        yaxis_title="Best Avg Reward", height=280,
+                        margin=dict(l=0, r=0, t=40, b=0),
+                        paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                        font=dict(color='#e0e0e0'),
                     )
+                    st.plotly_chart(fig, use_container_width=True, key=f"gwo_live_{iteration}")
 
-                    if status == "complete":
-                        progress_placeholder.success(f"Optimization Complete! {iteration} iterations.")
-                        st.session_state._gwo_running = False
-                        break
+                c1, c2, c3 = st.columns(3)
+                c1.metric("Best Fitness", f"{best_reward:.1f}")
+                c2.metric("Iteration", f"{iteration}/{max_iters}")
+                c3.metric("a Factor", f"{a_factor:.3f}")
 
-                time.sleep(2)
+                if status == "complete":
+                    st.success(f"Optimization Complete! {iteration} iterations, best reward: {best_reward:.1f}")
+                    st.session_state._gwo_running = False
+                    st.session_state._gwo_reward_history = []
+                    st.balloons()
+                else:
+                    # Running: auto-refresh every 3 seconds
+                    st.caption("Auto-refreshing every 3 seconds...")
+                    time.sleep(3)
+                    st.rerun()
+            else:
+                # Progress file not created yet — GWO just started
+                st.info("GWO is starting up... (first iteration takes ~30-60 seconds)")
+                time.sleep(5)
+                st.rerun()
         else:
+            # ── Idle: show Start/Stop buttons ──────────────────────────
+            if st.button("♮ Start GWO Optimization", type="primary", key="btn_gwo_start"):
+                if os.path.exists(progress_path):
+                    os.remove(progress_path)
+                st.session_state._gwo_running = True
+                st.session_state._gwo_reward_history = []
+                st.session_state._gwo_process = subprocess.Popen(
+                    [sys.executable, os.path.join(os.path.dirname(__file__), "scripts", "gwo_rl_optimizer.py"),
+                     "--wolves", str(wolves_num), "--iters", str(iters_num), "--live"],
+                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+                st.rerun()
+
             st.info("Press 'Start GWO Optimization' to begin live hyperparameter tuning.")
+
+        # ── Stop button (always visible when running) ──────────────────
+        if st.session_state.get("_gwo_running"):
+            if st.button("Stop GWO", key="btn_gwo_stop", type="secondary"):
+                process = st.session_state.get("_gwo_process")
+                if process:
+                    process.terminate()
+                st.session_state._gwo_running = False
+                st.session_state._gwo_reward_history = []
+                st.warning("Optimization stopped by user.")
+                st.rerun()
 
 
     # ══════════════════════════════════════════════════════════════════════
