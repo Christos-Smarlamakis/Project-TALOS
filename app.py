@@ -766,35 +766,250 @@ def advanced_diagnostics():
 
 
 def advanced_drl_dashboard():
-    """DRL Dashboard — GWO params + training status."""
+    """DRL Dashboard — 4 tabs: GWO Live, Training, Status, 3D Swarm Hunt."""
     st.header("🧠 DRL Agent Dashboard")
-    gwo_path = os.path.join(os.path.dirname(__file__), "models", "gwo_best_params.json")
-    if os.path.exists(gwo_path):
-        try:
-            with open(gwo_path, "r") as f:
-                gwo = json.load(f)
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("📚 Learning Rate", f"{gwo['learning_rate']:.6e}")
-            c2.metric("🎯 Gamma", f"{gwo['gamma']:.4f}")
-            c3.metric("📉 Epsilon Decay", f"{gwo['epsilon_decay']:.6f}")
-            c4.metric("🏆 Best Fitness", f"{gwo['best_fitness']:.1f}",
-                     delta=f"Avg Reward: {gwo['best_avg_reward']:.1f}")
-        except Exception as e:
-            st.warning(f"Could not read GWO params: {e}")
-    else:
-        st.info("🐺 No GWO params found. Run the optimizer first.")
 
-    model_path = os.path.join(os.path.dirname(__file__), "models", "dddqn_trained.pth")
-    if os.path.exists(model_path):
-        size_kb = os.path.getsize(model_path) / 1024
-        st.success(f"✅ Trained model found! ({size_kb:.1f} KB)")
-        # Reward chart
-        episodes = np.arange(1, 501)
-        rewards = -1200 + episodes * 0.8 + np.random.normal(0, 80, 500)
-        rewards = np.clip(rewards, -1500, 200)
-        st.line_chart(pd.DataFrame({"Episode": episodes, "Avg Reward": rewards}).set_index("Episode"))
-    else:
-        st.warning("🤖 No trained model found yet.")
+    tab1, tab2, tab3, tab4 = st.tabs([
+        "♮ Run GWO (Live)", "♮ DRL Training", "📊 Model & Results", "♮ Swarm Hunt 3D"
+    ])
+
+    models_dir = os.path.join(os.path.dirname(__file__), "models")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # TAB 1: Run GWO — Live Optimization from GUI
+    # ══════════════════════════════════════════════════════════════════════
+    with tab1:
+        st.subheader("Grey Wolf Optimizer — Live")
+        st.caption(
+            "Run hyperparameter optimization directly from the GUI. "
+            "The chart updates in real-time as the wolf pack converges."
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            wolves_num = st.number_input("Wolves", 5, 30, 15, key="gwo_wolves")
+        with col2:
+            iters_num = st.number_input("Iterations", 5, 100, 50, key="gwo_iters")
+
+        progress_path = os.path.join(models_dir, "gwo_progress.json")
+
+        if st.button("♮ Start GWO Optimization", type="primary", key="btn_gwo_start"):
+            # Clear previous progress
+            if os.path.exists(progress_path):
+                os.remove(progress_path)
+
+            st.session_state._gwo_running = True
+            st.session_state._gwo_process = subprocess.Popen(
+                [sys.executable, os.path.join(os.path.dirname(__file__), "scripts", "gwo_rl_optimizer.py"),
+                 "--wolves", str(wolves_num), "--iters", str(iters_num), "--live"],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+
+        # ── Live progress display ────────────────────────────────────────
+        if st.session_state.get("_gwo_running"):
+            progress_placeholder = st.empty()
+            chart_placeholder = st.empty()
+            metrics_placeholder = st.empty()
+
+            reward_history = []
+            import plotly.graph_objects as go
+
+            while True:
+                if os.path.exists(progress_path):
+                    try:
+                        with open(progress_path, "r") as f:
+                            progress = json.load(f)
+                    except Exception:
+                        time.sleep(1)
+                        continue
+
+                    status = progress.get("status", "running")
+                    iteration = progress.get("iteration", 0)
+                    max_iters = progress.get("max_iterations", 50)
+                    best_reward = progress.get("best_reward", 0)
+                    a_factor = progress.get("a_factor", 2.0)
+
+                    reward_history.append(best_reward)
+                    pct = min(iteration / max(max_iters, 1), 1.0)
+                    progress_placeholder.progress(pct, f"Iteration {iteration} / {max_iters}")
+
+                    if len(reward_history) > 1:
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(
+                            x=list(range(len(reward_history))), y=reward_history,
+                            mode='lines+markers', line=dict(color='#4a9eff', width=2),
+                            marker=dict(size=4), name='Best Reward',
+                        ))
+                        fig.update_layout(
+                            title="Fitness Convergence (Live)", xaxis_title="Iteration",
+                            yaxis_title="Best Avg Reward", height=300,
+                            margin=dict(l=0, r=0, t=40, b=0),
+                            paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)',
+                            font=dict(color='#e0e0e0'),
+                        )
+                        chart_placeholder.plotly_chart(fig, use_container_width=True, key=f"gwo_live_{iteration}")
+
+                    metrics_placeholder.metric(
+                        "Best Fitness So Far", f"{best_reward:.1f}",
+                        delta=f"Iter {iteration}/{max_iters} | a={a_factor:.3f}"
+                    )
+
+                    if status == "complete":
+                        progress_placeholder.success(f"Optimization Complete! {iteration} iterations.")
+                        st.session_state._gwo_running = False
+                        break
+
+                time.sleep(2)
+        else:
+            st.info("Press 'Start GWO Optimization' to begin live hyperparameter tuning.")
+
+
+    # ══════════════════════════════════════════════════════════════════════
+    # TAB 2: DRL Training
+    # ══════════════════════════════════════════════════════════════════════
+    with tab2:
+        st.subheader("DRL Agent Training")
+        st.caption("Train the LSTM-DDDQN agent with GWO-optimized hyperparameters.")
+
+        episodes = st.slider("Training Episodes", 50, 2000, 700, 50, key="train_episodes")
+        if st.button("♮ Start Training", type="primary", key="btn_train_start"):
+            with st.spinner(f"Training for {episodes} episodes..."):
+                rc, out = run("drl_trainer.py", args=[f"--episodes", str(episodes)])
+                st.session_state.output["drl_train"] = out
+            if rc == 0:
+                st.success(f"Training Complete! {episodes} episodes.")
+            else:
+                st.warning(f"Training finished with code {rc}.")
+            show_output("drl_train", "drl_trainer.py")
+
+    # ══════════════════════════════════════════════════════════════════════
+    # TAB 3: Model & Results
+    # ══════════════════════════════════════════════════════════════════════
+    with tab3:
+        st.subheader("Model & Optimization Results")
+
+        gwo_path = os.path.join(models_dir, "gwo_best_params.json")
+        if os.path.exists(gwo_path):
+            try:
+                with open(gwo_path, "r") as f:
+                    gwo = json.load(f)
+                st.markdown("#### GWO-Optimized Hyperparameters")
+                c1, c2, c3, c4 = st.columns(4)
+                c1.metric("LR", f"{gwo['learning_rate']:.6e}")
+                c2.metric("Gamma", f"{gwo['gamma']:.4f}")
+                c3.metric("Eps Decay", f"{gwo['epsilon_decay']:.6f}")
+                c4.metric("Best Fitness", f"{gwo['best_fitness']:.1f}",
+                         delta=f"Reward: {gwo['best_avg_reward']:.1f}")
+                st.caption(f"Optimized in {gwo.get('iterations','?')} iterations, {gwo.get('gwo_time_seconds','?')}s")
+            except Exception as e:
+                st.warning(f"Could not read GWO params: {e}")
+        else:
+            st.info("No GWO results yet. Run the optimizer in Tab 1.")
+
+        st.markdown("---")
+
+        model_path = os.path.join(models_dir, "dddqn_trained.pth")
+        if os.path.exists(model_path):
+            size_kb = os.path.getsize(model_path) / 1024
+            st.success(f"Trained model: {size_kb:.1f} KB")
+            try:
+                import torch
+                d = torch.load(model_path, map_location="cpu", weights_only=True)
+                c1, c2, c3 = st.columns(3)
+                c1.metric("State Dim", d.get("state_dim", "?"))
+                c2.metric("Action Dim", d.get("action_dim", "?"))
+                c3.metric("Network", d.get("network_class", "DuelingLSTM"))
+            except Exception:
+                pass
+        else:
+            st.warning("No trained model yet. Run training in Tab 2.")
+
+
+    # ══════════════════════════════════════════════════════════════════════
+    # TAB 4: GWO Swarm Hunt — Interactive 3D Replay
+    # ══════════════════════════════════════════════════════════════════════
+    with tab4:
+        st.subheader("GWO Swarm Hunt — 3D Convergence Replay")
+        st.caption(
+            "Replay the optimization history. Alpha (★) is the best wolf. "
+            "Drag the slider to see how the pack converged."
+        )
+
+        history_path = os.path.join(models_dir, "gwo_history.json")
+        if os.path.exists(history_path):
+            try:
+                with open(history_path, "r") as f:
+                    gwo_history = json.load(f)
+            except Exception:
+                st.warning("Could not parse history file.")
+                gwo_history = []
+
+            if gwo_history:
+                import plotly.graph_objects as go
+
+                max_iter = len(gwo_history) - 1
+                iter_idx = st.slider("Iteration", 0, max_iter, 0, key="gwo_iter_slider")
+
+                entry = gwo_history[iter_idx]
+                wolves_data = entry["wolves"]
+
+                roles = {"alpha": [], "beta": [], "delta": [], "omega": []}
+                for w in wolves_data:
+                    roles[w["role"]].append(w)
+
+                fig = go.Figure()
+
+                if roles["omega"]:
+                    fig.add_trace(go.Scatter3d(
+                        x=[w["lr"] for w in roles["omega"]],
+                        y=[w["gamma"] for w in roles["omega"]],
+                        z=[w["eps_d"] for w in roles["omega"]],
+                        mode='markers',
+                        marker=dict(size=5, color=[w["fitness"] for w in roles["omega"]],
+                                   colorscale='Viridis', showscale=True,
+                                   colorbar=dict(title="Fitness", x=1.02), opacity=0.7),
+                        name=f'Omega ({len(roles["omega"])})',
+                        hovertemplate='LR: %{x:.2e}<br>Gamma: %{y:.3f}<br>Eps Decay: %{z:.4f}<extra></extra>',
+                    ))
+
+                for role, color, size, label in [
+                    ("delta", "gold", 10, "Delta"),
+                    ("beta", "darkorange", 12, "Beta"),
+                    ("alpha", "crimson", 16, "ALPHA"),
+                ]:
+                    if roles[role]:
+                        w = roles[role][0]
+                        fig.add_trace(go.Scatter3d(
+                            x=[w["lr"]], y=[w["gamma"]], z=[w["eps_d"]],
+                            mode='markers+text',
+                            marker=dict(size=size, color=color, symbol='diamond',
+                                       line=dict(color='black', width=1)),
+                            text=[label], textposition='top center',
+                            textfont=dict(size=size-2, color=color),
+                            name=f'{label} (fitness={w["fitness"]:.1f})',
+                            hovertemplate=f'{label}<br>LR: %{{x:.2e}}<br>Gamma: %{{y:.3f}}<br>Eps Decay: %{{z:.4f}}<extra></extra>',
+                        ))
+
+                fig.update_layout(
+                    title=f"GWO Swarm Hunt — Iteration {iter_idx} / {max_iter}",
+                    scene=dict(
+                        xaxis=dict(title="Learning Rate", type="log", gridcolor='rgba(128,128,128,0.2)'),
+                        yaxis=dict(title="Gamma", range=[0.48, 1.0], gridcolor='rgba(128,128,128,0.2)'),
+                        zaxis=dict(title="Epsilon Decay", range=[0.88, 1.0], gridcolor='rgba(128,128,128,0.2)'),
+                        bgcolor='rgba(0,0,0,0)',
+                    ),
+                    legend=dict(x=0.01, y=0.99, bgcolor='rgba(0,0,0,0.3)'),
+                    margin=dict(l=0, r=0, b=0, t=50), height=600,
+                    paper_bgcolor='rgba(0,0,0,0)', font=dict(color='#e0e0e0'),
+                )
+                st.plotly_chart(fig, use_container_width=True, key=f"gwo_plot_{iter_idx}")
+
+                c1, c2, c3 = st.columns(3)
+                c1.metric("Alpha Fitness", f"{entry.get('alpha_fitness', 0):.1f}")
+                c2.metric("Beta Fitness", f"{entry.get('beta_fitness', 0):.1f}")
+                c3.metric("Delta Fitness", f"{entry.get('delta_fitness', 0):.1f}")
+        else:
+            st.info("No GWO history file found. Run the optimizer first in Tab 1.")
 
 
 def advanced_settings():

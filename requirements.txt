@@ -3,7 +3,7 @@
 
 # === Core: AI, Environment & Networking ===
 google-generativeai       # Επικοινωνία με Google Gemini API
-google-genai               # Google Gemini API (new SDK - Grey Literature)
+google-genai              # Google Gemini API (new SDK - Grey Literature)
 
 openai                    # Επικοινωνία με DeepSeek/OpenAI API
 python-dotenv             # Διαχείριση Environment Variables (.env)
@@ -23,7 +23,8 @@ numpy                     # Numerical operations & Embeddings calculation
 pandas>=2.1.0             # Data Manipulation (DataFrames)
 scikit-learn              # Machine Learning (Clustering, TF-IDF)
 
-# === Visualization & Scientometrics (v4.8.0) ===
+# === Visualization & Scientometrics ===
+plotly>=5.18.0            # Interactive 3D visualizations (GWO Swarm Hunt)
 matplotlib>=3.8.0         # Basic Plotting Library
 seaborn>=0.13.0           # Advanced Statistical Data Visualization
 wordcloud>=1.9.0          # Word Cloud Generation
@@ -47,5 +48,5 @@ torch                     # Neural network framework (PyTorch - CPU or CUDA)
 # === Web GUI ===
 streamlit                 # Interactive Web GUI (replaces CLI dashboard)
 
-# === Phase 4: Daemon & Notifications ===
+# === Daemon & Notifications ===
 psutil                    # Process priority management (daemon)

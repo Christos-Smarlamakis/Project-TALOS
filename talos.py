@@ -141,10 +141,11 @@ def system_health_menu(python_exe):
     choice = safe_select("System Diagnostics:", choices=[
         "1. Code Integrity Check", "2. Documentation Audit",
         "3. Open Architecture Graph", "4. Architecture Intelligence Report",
-        questionary.Separator(), "5. Baseline Report (Standard)",
-        "6. Baseline Report (Academic — 600 DPI)", "7. DRL Agent Status",
+        "5. GWO Swarm Hunt (3D Visualization — Opens Streamlit GUI)",
+        questionary.Separator(), "6. Baseline Report (Standard)",
+        "7. Baseline Report (Academic — 600 DPI)", "8. DRL Agent Status",
         questionary.Separator(),
-        "8. Generate Codebase Docs (18 Languages, LOCAL Only)",
+        "9. Generate Codebase Docs (18 Languages, LOCAL Only)",
         questionary.Separator(), "Back"
     ])
     if choice is None or "Back" in choice: return
@@ -169,9 +170,25 @@ def system_health_menu(python_exe):
     elif choice.startswith("4."):
         if questionary.confirm("Start now? (may take 60s)", default=True).ask():
             run_script("architecture_intelligence_report.py", python_exe)
-    elif choice.startswith("5."): run_script("generate_baseline_report.py", python_exe)
-    elif choice.startswith("6."): run_script("generate_baseline_report.py", python_exe, args=["--academic"])
-    elif choice.startswith("7."):
+    elif choice.startswith("5."):
+        # GWO Swarm Hunt — opens Streamlit GUI for 3D visualization
+        import webbrowser
+        print("\n" + "=" * 65)
+        print("  GWO Swarm Hunt — 3D Interactive Visualization")
+        print("=" * 65)
+        print("\n  Opens Streamlit GUI with Plotly 3D scatter plot showing")
+        print("  Grey Wolf Optimizer convergence across iterations.")
+        print("  Use the DRL Agent Dashboard -> GWO Swarm Hunt section.")
+        if questionary.confirm("Open Streamlit GUI now?", default=True).ask():
+            print("\n  Starting Streamlit... Press Ctrl+C in this terminal when done.")
+            subprocess.Popen([python_exe, "-m", "streamlit", "run",
+                os.path.join(project_root, "app.py")],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            time.sleep(3)
+            webbrowser.open("http://localhost:8501")
+    elif choice.startswith("6."): run_script("generate_baseline_report.py", python_exe)
+    elif choice.startswith("7."): run_script("generate_baseline_report.py", python_exe, args=["--academic"])
+    elif choice.startswith("8."):
         mp = os.path.join(project_root, "models", "dddqn_trained.pth")
         gp = os.path.join(project_root, "models", "gwo_best_params.json")
         try:
@@ -198,7 +215,7 @@ def system_health_menu(python_exe):
                 import json
                 with open(gp) as f: p = json.load(f)
                 print(f"  LR={p['learning_rate']:.6e} GAMMA={p['gamma']:.4f} EPS={p['epsilon_decay']:.6f} Fitness={p['best_fitness']:.1f}")
-    elif choice.startswith("8."):
+    elif choice.startswith("9."):
         print("\n" + "=" * 65)
         print("  Codebase Documentation Generator (18 Languages)")
         print("=" * 65)
