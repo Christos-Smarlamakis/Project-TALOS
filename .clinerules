@@ -12,21 +12,24 @@
    - Data flow (User → CLI/GUI → Scripts → Core → Sources → APIs)
    - Configuration schema (config.json, .env keys, env vars, profile system)
    - Database schema (all columns, enrichment state machine)
-   - Greek code name glossary (TALOS, PYTHIA, CHIRON, ORPHEUS, APOLLO)
+   - Module descriptions and roles
    - Known gotchas and conventions
 3. **DO NOT re-read individual source files** unless you need to make changes to them.
 4. If PROJECT_MAP.md is missing or outdated → inform the user, it must be regenerated.
 
-### Updating PROJECT_MAP.md (MANDATORY — After Every Change)
+### Updating PROJECT_MAP.md & PROJECT_MAP_EN.md (MANDATORY — After Every Change)
 1. After **ANY code change** (new function, modified signature, new file, deleted file, changed import),
-   **UPDATE `PROJECT_MAP.md`** to reflect the change immediately.
-2. If a new script or source is added, document it fully:
+   **UPDATE BOTH `PROJECT_MAP.md` AND `PROJECT_MAP_EN.md`** to reflect the change immediately.
+2. The English version (`PROJECT_MAP_EN.md`) must always be kept in exact sync with the Greek master (`PROJECT_MAP.md`).
+   - Same sections (1-10), same function signatures, same descriptions.
+   - If you update one, you MUST update the other in the same commit/change session.
+3. If a new script or source is added, document it fully:
    - Purpose/role, all functions with signatures, imports used
-3. If dependencies change, update the Dependency Graph section (Section 7).
-4. If configuration keys change, update Section 6.
-5. If a known gotcha is discovered, add it to Section 10.
-6. Update the "Last Updated" date at the bottom of PROJECT_MAP.md.
-7. The map **MUST always be 100% accurate** — out-of-date information is worse than none.
+4. If dependencies change, update the Dependency Graph section (Section 7) in both files.
+5. If configuration keys change, update Section 6 in both files.
+6. If a known gotcha is discovered, add it to Section 10 in both files.
+7. Update the "Last Updated" date at the bottom of both files.
+8. The maps **MUST always be 100% accurate** — out-of-date information is worse than none.
 
 ### Token Efficiency
 - PROJECT_MAP.md is ~400-800 lines (~3K-6K tokens) vs. ~55 files (~50K+ tokens)
@@ -44,7 +47,7 @@
 - Entry points: `talos.py` (CLI menu), `app.py` (Streamlit Web GUI)
 - Core modules: `core/ai_manager.py` (multi-provider LLM), `core/database_manager.py` (SQLite + embeddings), `core/hardware.py` (GPU detection)
 - Search agents: `sources/*.py` (14 APIs, standardized output format)
-- Feature scripts: `scripts/*.py` (20 scripts: daily search, recommendation, CHIRON, ORPHEUS, PYTHIA, APOLLO, etc.)
+- Feature scripts: `scripts/*.py` (21 scripts: daily search, historic search, knowledge paths, citation analysis, query translation, metadata enrichment, etc.)
 - Configuration: `config.json` (queries, prompts)
 - Secrets: `.env` (API keys)
 - Profiles: `_profiles/<name>/` (isolated config.json + talos_research.db per research topic)
@@ -54,7 +57,7 @@
 ## Provider System (ai_manager.py)
 - Four providers: Gemini (primary), DeepSeek (fallback), HuggingFace (free cloud), Local/Ollama (offline)
 - Circuit breaker: 3+ consecutive failures → opens circuit → skips provider
-- System Prompt Override: used by PYTHIA (query_translator.py) to act as "Research Architect" instead of "PhD Advisor"
+- System Prompt Override: used by Query Translator (query_translator.py) to act as "Research Architect" instead of "PhD Advisor"
 - All providers must handle: JSON mode, text mode, embedding mode
 - Ollama uses OpenAI-compatible API at `http://localhost:11434/v1`
 - Ollama embeddings use native API at `http://localhost:11434/api/embed`
@@ -69,7 +72,7 @@
 
 ## Search Agents (sources/*.py)
 - Standardized output: {doi, url, title, authors_str, publication_year, abstract, source}
-- Each agent reads its query dynamically from config.json (PYTHIA-compatible)
+- Each agent reads its query dynamically from config.json
 - Missing API keys → print warning, set self.enabled=False, skip gracefully (NEVER raise)
 - Exponential backoff for rate-limited APIs
 
@@ -77,7 +80,7 @@
 - Greek comments in source files break the editor's text matching
 - `.env` values should NOT have quotes (load_dotenv doesn't strip them)
 - `daily_search.py` and `historic_search.py` must be kept in sync for dedup logic
-- The 4-layer framework (strategic, operational, tactical, playground) is the INVARIANT schema - PYTHIA redefines semantics, not keys
+- The 4-layer framework (strategic, operational, tactical, playground) is the INVARIANT schema - Query Translator redefines semantics, not keys
 - `recommender.py` reads from SQLite directly (not DatabaseManager) - check queries are up to date
 
 ## Testing
@@ -120,6 +123,28 @@
 - This ensures no syntax errors are ever committed to the repository.
 - This rule applies to BOTH .py and .bat changes — always test that the code is syntactically valid.
 
+## CRITICAL: Progressive Documentation Rule — ALL File Types (v5.3.3)
+- **Every time you open ANY file for ANY reason (reading, editing, checking):**
+  1. Read the ENTIRE file first
+  2. If documentation is missing, incomplete, or could be improved:
+     - Add/improve module-level/first-line description (WHAT it does, HOW it works, KEY design decisions)
+     - Add/improve docstrings/comments on all sections, functions, and logical blocks
+     - Add/improve inline comments — in simple English that a first-year CS student can understand
+  3. If you opened the file for editing: THEN make the actual bugfix/feature change
+  4. If you opened the file for reading: ADD documentation before moving on
+  **This rule is MANDATORY — do NOT skip it even if you only read a file.**
+- This applies to ALL file types: `.py`, `.css`, `.md`, `.bat`, `.json`, `.html`, `.js`, `.yml`, `.toml`, `.txt`, etc.
+- **Module docstring format** (for `.py` files):
+  ```
+  """
+  Module: filename.py (version)
+  Project: TALOS v5.3.3
+  Description: [2-3 sentence overview of WHAT this file does and HOW it works]
+  Key design decisions: [why certain choices were made]
+  ```
+- **Inline comment style:** Keep comments on their own line above the code they explain, using `# ── section ──` headers for logical sections
+- **Do NOT skip this step** even for small changes — documentation compounds across sessions
+
 ## CRITICAL: NO AUTO-GIT — User Handles Version Control (NEW in v5.2.1)
 - **NEVER run `git add`, `git commit`, `git push`, `git tag`, or any other `git` command** unless the user EXPLICITLY asks you to.
 - The user manages version control manually. Your job is to write code and documentation — NOT to push to GitHub.
@@ -142,24 +167,8 @@
 - **Do NOT write vague entries** like "Updated X for better performance." Instead write: "Replaced `for` loop with `ThreadPoolExecutor(max_workers=15)` in `pdf_downloader.py:download_batch()`, reducing download time from ~45s to ~3s for 100 papers."
 - **This rule overrides all other completion rules** — a task is NOT complete until all 4 documentation files (CHANGELOG_EN, CHANGELOG_GR, README, ROADMAP) are updated.
 
-## Progressive Documentation Rule (v5.0.0)
-- **Every time you open a `.py` file for ANY reason (reading, editing, checking):**
-  1. Read the ENTIRE file first
-  2. If documentation is missing, incomplete, or could be improved:
-     - Add/improve module-level docstring (WHAT it does, HOW it works, KEY design decisions)
-     - Add/improve Google-style docstrings on ALL functions/methods (Args, Returns, Raises)
-     - Add/improve inline comments on every logical block and every non-obvious line — in simple English that a first-year CS student can understand
-  3. If you opened the file for editing: THEN make the actual bugfix/feature change
-  4. If you opened the file for reading: ADD documentation before moving on
-  **This rule is MANDATORY — do NOT skip it even if you only read a file.**
-- **Module docstring format:**
-  ```
-  """
-  Module: filename.py (version)
-  Project: TALOS v5.0.0
-  Description: [2-3 sentence overview of WHAT this file does and HOW it works]
-  Key design decisions: [why certain choices were made]
-  """
-  ```
-- **Inline comment style:** Keep comments on their own line above the code they explain, using `# ── section ──` headers for logical sections
-- **Do NOT skip this step** even for small changes — documentation compounds across sessions
+## Progressive Documentation Rule (v5.3.3 — SUPERSEDED)
+- This rule is now covered by the **CRITICAL: Progressive Documentation Rule — ALL File Types** above.
+- The key upgrade: applies to ALL file types, not just `.py` files.
+- Kept here for historical reference.
+

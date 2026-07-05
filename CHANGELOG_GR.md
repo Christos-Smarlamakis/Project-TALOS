@@ -3,6 +3,89 @@
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
 
+## [v5.3.4] - 2026-07-05 — Η Ενημέρωση "Περιγραφικά Ονόματα Modules"
+
+Αυτή η μικρή έκδοση αφαιρεί όλα τα μυθολογικά κωδικά ονόματα (APOLLO, CHIRON, ORPHEUS, PYTHIA, NAFSIKA, HERMES, ORACLE, ARGUS, ALEXANDRIA) από το codebase του TALOS, αντικαθιστώντας τα με περιγραφικούς, ακαδημαϊκά κατάλληλους τίτλους. Το project παρουσιάζεται πλέον ως σοβαρή ακαδημαϊκή πλατφόρμα και όχι ως εργαλείο με μυθολογικό θέμα.
+
+### Άλλαξε
+- **`.clinerules`:** Προστέθηκε υποχρεωτικός κανόνας συγχρονισμού του `PROJECT_MAP_EN.md` — ο αγγλικός χάρτης πρέπει να ενημερώνεται μαζί με τον ελληνικό master στην ίδια σύνοδο αλλαγών.
+- **`PROJECT_MAP.md` & `PROJECT_MAP_EN.md`:** Η Ενότητα 8 μετονομάστηκε από "Greek Code Name Glossary" σε "Module Descriptions" με 9 περιγραφικές καταχωρήσεις (TALOS, Query Translator, Knowledge Path Generator, Citation Network Analyzer, Metadata Enricher, Grey Literature Miner, Interactive Dashboard, PDF Downloader, Autonomous Research Service).
+- **`app.py`:** Αφαιρέθηκαν τα επιθήματα "(CHIRON)", "(ORPHEUS)" από τα Analysis dropdown labels. Άλλαξε το "APOLLO Metadata Enrichment" → "Metadata Enrichment", το κλειδί MAP "APOLLO" → "Metadata", το "reconfigure PYTHIA" → "reconfigure the Query Translator".
+- **`README.md`:** Ενημερώθηκε το tagline από "Light-Only Academic Theme" σε "Descriptive Module Names & University-Ready Documentation".
+- **`ROADMAP.md`:** Η επικεφαλίδα της Ενότητας 7 "ALEXANDRIA Ecosystem" → "Distributed Ecosystem". Αναβάθμιση τρέχουσας έκδοσης.
+
+### Σκεπτικό Σχεδιασμού
+- **Γιατί αφαιρέθηκαν τα μυθολογικά ονόματα:** Το codebase είναι ένα εργαλείο διδακτορικής έρευνας που προορίζεται για ακαδημαϊκή δημοσίευση και υποστήριξη διατριβής. Ονόματα όπως "CHIRON", "ORPHEUS" και "APOLLO" υπονομεύουν την επαγγελματική αξιοπιστία της εργασίας. Οι περιγραφικοί τίτλοι (π.χ., "Knowledge Path Generator") είναι αυτο-επεξηγηματικοί και κατάλληλοι για άρθρα σε περιοδικά, παρουσιάσεις σε συνέδρια και κεφάλαια μεθοδολογίας διατριβής. Μόνο το "TALOS" διατηρείται — είναι το όνομα του project και το δικό του ακρωνύμιο (Tactical Agentic Literature Orchestration System).
+
+### Αρχεία που Άλλαξαν
+| Αρχείο | Αλλαγή |
+|--------|--------|
+| `.clinerules` | +κανόνας συγχρονισμού PROJECT_MAP_EN.md, αφαίρεση μυθολογικών ονομάτων |
+| `PROJECT_MAP.md` | Ενότητα 8 → Module Descriptions, footer v5.3.4 |
+| `PROJECT_MAP_EN.md` | Ενότητα 8 → Module Descriptions, footer v5.3.4 |
+| `app.py` | Αφαίρεση μυθολογικών επιθημάτων από όλα τα UI labels + εσωτερικά κλειδιά |
+| `README.md` | Ενημερωμένο tagline |
+| `ROADMAP.md` | ALEXANDRIA → Distributed Ecosystem, version bump |
+
+### Migration / Breaking
+- **Καμία breaking αλλαγή** — πρόκειται μόνο για ενημέρωση τεκμηρίωσης και ετικετών UI.
+- **Καμία αλλαγή στη συμπεριφορά κώδικα** — όλα τα scripts παραμένουν λειτουργικά πανομοιότυπα.
+
+---
+
+## [v5.3.3] - 2026-07-05 — Η Ενημέρωση "Light-Only Θέμα & Καθολική Τεκμηρίωση"
+
+Αυτή η μικρή έκδοση αφαιρεί το χαλασμένο dark theme από το Streamlit GUI (δεν λειτουργούσε σωστά, δεν άξιζε συντήρηση) και αναβαθμίζει τον κανόνα Progressive Documentation Rule των .clinerules από μόνο `.py` αρχεία σε ΟΛΟΥΣ τους τύπους αρχείων.
+
+### Άλλαξε
+- **`app.py` v5.3.0 → v5.3.3 (~940 γραμμές):**
+  - Αφαιρέθηκε το `dark_mode` από το session state initialization (ήταν `st.session_state.dark_mode = True`).
+  - `render_css()`: Αντικαταστάθηκε η ternary λογική `dark_mode` με hardcoded light-only CSS μεταβλητές (bg, card_bg, border, text, accent, muted, sidebar, header). Τέλος η δυναμική εναλλαγή θέματος.
+  - Sidebar: Αφαιρέθηκε το theme badge (`col2` με Dark/Light ετικέτα) και το dark toggle button (`st.toggle("🌙 Dark", ...)`). Το Advanced Mode toggle είναι πλέον standalone full-width button (`st.toggle("🔧 Advanced Mode", ...)`).
+  - Docstring: Ενημερώθηκε για να αντικατοπτρίζει τον σχεδιασμό single-theme.
+  - THEME MANAGEMENT ενότητα: Ενημερώθηκε το σχόλιο που εξηγεί το σκεπτικό αφαίρεσης του dark mode.
+- **`templates/gui_theme.css` v5.2.1 → v5.3.3:**
+  - Σχόλιο επικεφαλίδας: Από "Dark/Light dual-mode" σε "Light-only theme".
+  - Αφαιρέθηκε ο κανόνας `:root[data-theme="dark"]` CSS (12 γραμμές dark mode μεταβλητών).
+  - Αφαιρέθηκε ο κανόνας `:root[data-theme="light"]` CSS (4 γραμμές στατικών light μεταβλητών — πλέον γίνονται inject δυναμικά από το `app.py:render_css()`).
+  - Αντικαταστάθηκε με σχόλιο που εξηγεί ότι οι CSS μεταβλητές γίνονται inject στο runtime.
+- **`templates/gui_strings.py` v5.2.1 → v5.3.3:**
+  - Αφαιρέθηκε το translation string `"dark_toggle"` (EN: "Dark Theme", GR: "Σκοτεινό Θέμα").
+  - Ενημερώθηκε το string `"footer"` από v5.2.1 → v5.3.3.
+  - Docstring: Σημειώθηκε η κατάργηση του dark theme.
+- **`.clinerules` v5.0.0 → v5.3.3:**
+  - Προστέθηκε νέος CRITICAL κανόνας: "Progressive Documentation Rule — ALL File Types" (μετά το CRITICAL: Compile Check section).
+  - Ο κανόνας ισχύει πλέον για `.py`, `.css`, `.md`, `.bat`, `.json`, `.html`, `.js`, `.yml`, `.toml`, `.txt` — όχι μόνο για `.py` αρχεία.
+  - Ο παλιός "Progressive Documentation Rule (v5.0.0)" μαρκαρίστηκε ως SUPERSEDED, διατηρείται για ιστορική αναφορά.
+  - Περιλαμβάνει format για module docstring και συμβάσεις για inline σχόλια.
+- **`PROJECT_MAP.md` v5.3.2 → v5.3.3:**
+  - Ενημερώθηκε η έκδοση σε header και footer.
+  - Προστέθηκαν οι ενότητες 2.8 (`gui_theme.css`) και 2.9 (`gui_strings.py`) στα Core Modules.
+  - Ενημερώθηκε η περιγραφή της ενότητας 3.2 (`app.py`) για να σημειώνει το light-only theme.
+
+### Αφαιρέθηκε
+- **Το dark theme εξ ολοκλήρου** — η μεταβλητή session state `dark_mode`, το sidebar theme toggle button, το theme badge, η δυναμική ternary λογική CSS στο `render_css()`, και οι στατικοί dark/light CSS κανόνες `:root` στο `gui_theme.css`. Το GUI χρησιμοποιεί πλέον μία ενιαία light-only ακαδημαϊκή blue/teal παλέτα.
+
+### Σκεπτικό Σχεδιασμού
+- **Γιατί αφαιρέθηκε το dark mode:** Το Streamlit dark theme toggle δεν λειτουργούσε σωστά — το Streamlit διαβάζει το `config.toml` μόνο κατά την εκκίνηση, όχι στο runtime. Το workaround με CSS injection παρήγαγε ασυνεπή αποτελέσματα (π.χ. το sidebar δεν άλλαζε, τα input fields διατηρούσαν light φόντο). Η συντήρηση δύο μονοπατιών θέματος διπλασίαζε την πολυπλοκότητα του CSS για οριακό όφελος. Η light-only ακαδημαϊκή παλέτα είναι πιο καθαρή, πιο επαγγελματική και εξαλείφει ώρες debugging.
+- **Γιατί καθολικός κανόνας τεκμηρίωσης:** Προηγουμένως, ο Progressive Documentation Rule κάλυπτε μόνο `.py` αρχεία. Ωστόσο, CSS, Markdown, batch scripts, JSON configs και HTML templates επωφελούνται όλα από inline τεκμηρίωση. Η επέκταση του κανόνα σε ΟΛΟΥΣ τους τύπους αρχείων εξασφαλίζει σταθερή ποιότητα τεκμηρίωσης σε ολόκληρο το codebase.
+
+### Αρχεία που Άλλαξαν
+| Αρχείο | Αλλαγή |
+|--------|--------|
+| `app.py` | v5.3.0→v5.3.3 — αφαίρεση dark_mode, light-only CSS, καθαρισμός sidebar |
+| `templates/gui_theme.css` | v5.2.1→v5.3.3 — αφαίρεση dark/light :root κανόνων |
+| `templates/gui_strings.py` | v5.2.1→v5.3.3 — αφαίρεση dark_toggle string |
+| `.clinerules` | v5.0.0→v5.3.3 — καθολικός κανόνας τεκμηρίωσης για όλους τους τύπους αρχείων |
+| `PROJECT_MAP.md` | v5.3.2→v5.3.3 — νέες ενότητες 2.8, 2.9 |
+
+### Migration / Breaking
+- **⚠️ MINOR BREAKING:** Κάθε κώδικας που αναφέρεται εξωτερικά στο `st.session_state.dark_mode` θα εμφανίσει `AttributeError`. Η μεταβλητή έχει αφαιρεθεί εντελώς.
+- **Καμία αλλαγή στη βάση δεδομένων** — πρόκειται για ενημέρωση μόνο του UI.
+- **Καμία αλλαγή στο config.json** — το θέμα είναι πλέον hardcoded.
+
+---
+
 ## [v5.3.2] - 2026-07-05 — Η Ενημέρωση "Pluggable Network Architecture"
 
 Αυτή η μικρή έκδοση εξάγει το νευρωνικό δίκτυο του DRL σε αποκλειστικό pluggable module, επιτρέποντας μελλοντική εναλλαγή αρχιτεκτονικών (Transformer, xLSTM) χωρίς να πειραχτεί ο πυρήνας του agent.

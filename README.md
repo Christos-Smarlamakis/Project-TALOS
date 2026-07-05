@@ -1,8 +1,8 @@
-# Project TALOS (v5.3.2)
+# Project TALOS (v5.3.3)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Τακτικό Πρακτορικό Σύστημα Ενορχήστρωσης Βιβλιογραφίας)*
-### **Now with Pluggable DRL Network Architecture, Provider-Aware Agent & 14-Source Live Orchestration**
+### **Now with Descriptive Module Names & University-Ready Documentation**
 
 > **An Autonomous Research Intelligence Platform for the AI Era.**
 
@@ -184,7 +184,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
 Εάν χρησιμοποιήσετε το TALOS στην έρευνά σας, παρακαλούμε να το αναφέρετε ως εξής:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.3.0, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.3.3, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -193,7 +193,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.3.0},
+  version = {v5.3.3},
   year = {2026}
 }
 ```

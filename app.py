@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Module: app.py (Streamlit Web GUI v5.3.0 — Simple/Advanced Dual-Mode)
-Project: TALOS v5.3.0
+Module: app.py (Streamlit Web GUI v5.3.3 — Simple/Advanced Dual-Mode)
+Project: TALOS v5.3.3
 Description:
     Complete Multi-Page Streamlit Web GUI with TWO modes:
     - Simple Mode: 4 pages for non-technical users (students, researchers from any field)
     - Advanced Mode: 8 pages with full functionality (power users)
 
     Key design decisions:
-    - Light/Dark theme toggle via Streamlit native config
+    - Light-only theme with blue/teal academic palette (dark mode removed in v5.3.3)
     - Card-based home layout for visual clarity
     - Greek tooltips in Simple mode for accessibility
     - Wizard-style onboarding for new users
@@ -68,8 +68,6 @@ if "output" not in st.session_state:
 # UI state
 if "advanced_mode" not in st.session_state:
     st.session_state.advanced_mode = False
-if "dark_mode" not in st.session_state:
-    st.session_state.dark_mode = True
 if "lang" not in st.session_state:
     st.session_state.lang = "en"
 
@@ -80,8 +78,8 @@ from templates.gui_strings import t
 # ═══════════════════════════════════════════════════════════════════════════════
 # THEME MANAGEMENT
 # ═══════════════════════════════════════════════════════════════════════════════
-# (apply_theme removed — uses CSS injection in render_css() instead.
-#  Streamlit only reads config.toml at startup, not at runtime.)
+# Theme is applied via CSS injection in render_css() — light-only academic palette.
+# Dark mode was removed in v5.3.3 (not functioning correctly, not worth maintaining).
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # HELPER FUNCTIONS
@@ -142,7 +140,7 @@ def reload_db():
 # CSS STYLING
 # ═══════════════════════════════════════════════════════════════════════════════
 def render_css():
-    """Load the external CSS theme and inject it with dynamic theme class."""
+    """Load the external CSS theme and inject light-only CSS variables."""
     css_path = os.path.join(os.path.dirname(__file__), "templates", "gui_theme.css")
     try:
         with open(css_path, "r", encoding="utf-8") as f:
@@ -150,20 +148,20 @@ def render_css():
     except Exception:
         css_content = "/* gui_theme.css not found */"
 
-    # ── Build dynamic CSS variables based on current theme ──
+    # ── Light-only CSS variables (dark mode removed in v5.3.3) ──
     # Blue/Teal palette — scientific, eye-friendly
-    bg = "#0a1628" if st.session_state.dark_mode else "#ffffff"
-    card_bg = "#0f1f38" if st.session_state.dark_mode else "#f0f4f8"
-    border = "#1e3a5f" if st.session_state.dark_mode else "#c8d6e5"
-    text = "#d4e4f7" if st.session_state.dark_mode else "#1a2a3a"
-    accent = "#4a9eff" if st.session_state.dark_mode else "#1a73e8"
-    muted = "#7a9fc0" if st.session_state.dark_mode else "#5a6a7a"
-    sbar = "linear-gradient(180deg, #0a1628, #0f1f38)" if st.session_state.dark_mode else "linear-gradient(180deg, #f0f4f8, #ffffff)"
+    bg = "#ffffff"
+    card_bg = "#f0f4f8"
+    border = "#c8d6e5"
+    text = "#1a2a3a"
+    accent = "#1a73e8"
+    muted = "#5a6a7a"
+    sbar = "linear-gradient(180deg, #f0f4f8, #ffffff)"
     # Header variables — different from main bg for visual distinction
-    hdr_bg = "linear-gradient(135deg, #0d2137 0%, #0a3d6b 50%, #0c2d4a 100%)" if st.session_state.dark_mode else "linear-gradient(135deg, #e8f0fe 0%, #d2e3fc 50%, #c6dafb 100%)"
-    hdr_text = "#d4e4f7" if st.session_state.dark_mode else "#1a2a3a"
-    hdr_accent = "#4a9eff" if st.session_state.dark_mode else "#1a73e8"
-    hdr_sub = "rgba(255,255,255,.7)" if st.session_state.dark_mode else "rgba(0,0,0,.55)"
+    hdr_bg = "linear-gradient(135deg, #e8f0fe 0%, #d2e3fc 50%, #c6dafb 100%)"
+    hdr_text = "#1a2a3a"
+    hdr_accent = "#1a73e8"
+    hdr_sub = "rgba(0,0,0,.55)"
 
     st.markdown(f"""<style>
     :root {{
@@ -184,7 +182,7 @@ def render_sidebar():
     with st.sidebar:
         st.markdown(f"""<div style="text-align:center;padding:.5rem 0">
         <h2 style="color:#4a9eff;margin:0;font-size:1.4rem">🧠 TALOS</h2>
-        <p style="color:var(--muted);font-size:.7rem;margin:.2rem 0 0">{t('sidebar_title')} v5.3.0</p>
+        <p style="color:var(--muted);font-size:.7rem;margin:.2rem 0 0">{t('sidebar_title')} v5.3.4</p>
         </div>""", unsafe_allow_html=True)
         st.markdown("---")
 
@@ -196,16 +194,9 @@ def render_sidebar():
         elif "GR" in new_lang and st.session_state.lang != "gr":
             st.session_state.lang = "gr"; st.rerun()
 
-        # ── Mode badges ──
-        col1, col2 = st.columns(2)
-        with col1:
-            mode_label = "Advanced" if st.session_state.advanced_mode else "Simple"
-            st.markdown(f'<div class="mode-badge">{mode_label}</div>', unsafe_allow_html=True)
-        with col2:
-            theme_label = "Dark" if st.session_state.dark_mode else "Light"
-            bg_color = "#4a5568" if st.session_state.dark_mode else "#1a73e8"
-            st.markdown(f'<div class="mode-badge" style="background:{bg_color}">{theme_label}</div>',
-                       unsafe_allow_html=True)
+        # ── Mode badge ──
+        mode_label = "Advanced" if st.session_state.advanced_mode else "Simple"
+        st.markdown(f'<div class="mode-badge">{mode_label}</div>', unsafe_allow_html=True)
 
         # ── Navigation ──
         if st.session_state.advanced_mode:
@@ -222,20 +213,12 @@ def render_sidebar():
 
         st.markdown("---")
 
-        # ── Theme toggles ──
-        col1, col2 = st.columns(2)
-        with col1:
-            new_adv = st.toggle("🔧 Advanced", value=st.session_state.advanced_mode, key="tog_adv",
-                               help="Enable full feature set for power users")
-            if new_adv != st.session_state.advanced_mode:
-                st.session_state.advanced_mode = new_adv
-                st.rerun()
-        with col2:
-            new_dark = st.toggle("🌙 Dark", value=st.session_state.dark_mode, key="tog_dark",
-                                help="Toggle dark/light theme")
-            if new_dark != st.session_state.dark_mode:
-                st.session_state.dark_mode = new_dark
-                st.rerun()
+        # ── Mode toggle ──
+        new_adv = st.toggle("🔧 Advanced Mode", value=st.session_state.advanced_mode, key="tog_adv",
+                           help="Enable full feature set for power users")
+        if new_adv != st.session_state.advanced_mode:
+            st.session_state.advanced_mode = new_adv
+            st.rerun()
 
         # ── DB Stats ──
         try:
@@ -626,8 +609,8 @@ def advanced_analysis():
     """Advanced Analysis — tool dropdown."""
     st.header("📊 Analysis & Insights")
     opt = st.selectbox("Analysis Tool", [
-        "📖 Knowledge Path Generator (CHIRON)",
-        "🔗 Citation Network Analyzer (ORPHEUS)",
+        "📖 Knowledge Path Generator",
+        "🔗 Citation Network Analyzer",
         "📊 Strategic Reading Report (Recommender)",
         "👤 Author Analysis Tools",
         "🖥️ Interactive Dashboard (Legacy)",
@@ -638,14 +621,14 @@ def advanced_analysis():
         "🧠 Live DRL Agent (Real APIs)",
     ])
     st.markdown("---")
-    if "CHIRON" in opt:
+    if "Knowledge Path" in opt:
         goal = st.text_input("Research goal:", key="chiron_goal")
         if st.button("🧭 Generate", type="primary", key="bc") and goal:
             with st.spinner("..."):
                 rc, out = run("knowledge_path_generator.py", stdin_text=goal + "\n")
                 st.session_state.output["chiron"] = out
             if rc == 0: st.success("✅ Knowledge path generated!")
-    elif "ORPHEUS" in opt:
+    elif "Citation Network" in opt:
         doi = st.text_input("DOI:", key="orpheus_doi")
         if st.button("🔍 Analyze", type="primary", key="bo") and doi:
             with st.spinner("..."):
@@ -693,12 +676,12 @@ def advanced_database():
     """Advanced Database — maintenance tools."""
     st.header("🛠️ Database & Data")
     mo = st.selectbox("Task", [
-        "📊 Statistics & Health", "📝 APOLLO Metadata Enrichment", "📚 Zotero Sync",
+        "📊 Statistics & Health", "📝 Metadata Enrichment", "📚 Zotero Sync",
         "🧠 Embedding Generator", "🔄 AI Re-evaluation", "🔗 Data Enrichment (Unpaywall)",
         "📈 Scientometrics Report", "📥 PDF Downloader (Open Access)",
     ])
     MAP = {
-        "Statistics": "db_stats.py", "APOLLO": "metadata_enricher.py",
+        "Statistics": "db_stats.py", "metadata": "metadata_enricher.py",
         "Zotero": "zotero_connector.py", "Embedding": "embedding_generator.py",
         "Re-evaluation": "reevaluate_database.py", "Data Enrichment": "data_enricher.py",
         "Scientometrics": "trend_analyzer.py", "PDF": "pdf_downloader.py",
@@ -1124,7 +1107,7 @@ def advanced_settings():
     # ── Research Pivot ──────────────────────────────────────────────────────
     st.markdown("---")
     st.subheader("🔄 Research Pivot (Change Research Direction)")
-    st.caption("If your research interests have shifted, use this to reconfigure PYTHIA, "
+    st.caption("If your research interests have shifted, use this to reconfigure the Query Translator, "
               "re-evaluate the database, and re-train the DRL agent.")
     if st.button("🔄 Start Research Pivot", type="primary", key="btn_pivot"):
         with st.spinner("Running Research Pivot wizard..."):
@@ -1169,7 +1152,7 @@ def main():
     # ── Footer ──
     st.markdown("---")
     st.markdown(f"""<div style="text-align:center;color:#8b949e;font-size:.75rem;padding:0 0 1rem 0">
-    TALOS v5.3.0 · © 2026 Christos Smarlamakis · {datetime.now().strftime('%Y-%m-%d %H:%M')}
+    TALOS v5.3.4 · © 2026 Christos Smarlamakis · {datetime.now().strftime('%Y-%m-%d %H:%M')}
     </div>""", unsafe_allow_html=True)
 
 

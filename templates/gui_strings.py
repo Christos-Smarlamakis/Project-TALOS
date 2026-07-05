@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 Module: gui_strings.py
-Project: TALOS v5.2.1
+Project: TALOS v5.3.3
 Description:
     Translation strings for the Streamlit GUI. Exports the STR dict and t()
     function. All UI strings in English (default) and Greek.
+    Dark theme toggle string removed in v5.3.3 (dark mode deprecated).
 """
 
 # ── Translation dictionary ───────────────────────────────────────────────────
@@ -80,8 +81,7 @@ STR = {
     "sh_home_empty": {"en": "The database is empty. Run a search to get started!", "gr": "Η βάση δεδομένων είναι άδεια. Τρέξε μια αναζήτηση για να ξεκινήσεις!"},
     # Toggles
     "advanced_toggle": {"en": "Advanced Mode", "gr": "Προχωρημένο"},
-    "dark_toggle": {"en": "Dark Theme", "gr": "Σκοτεινό Θέμα"},
-    "footer": {"en": "TALOS v5.2.1 · Research Intelligence Platform", "gr": "TALOS v5.2.1 · Πλατφόρμα Ερευνητικής Νοημοσύνης"},
+    "footer": {"en": "TALOS v5.3.3 · Research Intelligence Platform", "gr": "TALOS v5.3.3 · Πλατφόρμα Ερευνητικής Νοημοσύνης"},
     "simple_prompt": {"en": "What would you like to do?", "gr": "Τι θα θέλατε να κάνετε;"},
     "nav_advanced": {"en": "▶ Navigation", "gr": "▶ Πλοήγηση"},
     # AI Search (flagship)

@@ -1,23 +1,23 @@
-# PROJECT_MAP.md — Πλήρης Χάρτης του Project TALOS v5.3.3
+# PROJECT_MAP_EN.md — Complete Project TALOS Map v5.3.3
 
-> **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται — χωρίς να ξαναδιαβάζει όλα τα αρχεία.
+> **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects — without re-reading all files.
 >
-> **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
+> **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 
 ---
 
-## 1. Επισκόπηση Αρχιτεκτονικής
+## 1. Architecture Overview
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        USER INTERFACES                          │
+│                        USER INTERFACES                           │
 │  talos.py (CLI menu)          app.py (Streamlit Web GUI)        │
 │  _gui_runner.py (wrapper)     templates/dashboard.html (Flask)  │
 └──────────────────────────┬──────────────────────────────────────┘
                            │ subprocess / direct import
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SCRIPTS (21 αρχεία)                           │
+│                    SCRIPTS (21 files)                            │
 │  talos_live_agent.py (thin entry, v3.1 cooldown)                │
 │  daily_search.py          historic_search.py                    │
 │  knowledge_path_generator.py (CHIRON)                           │
@@ -36,7 +36,7 @@
                            │ import
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    CORE MODULES (7 αρχεία)                       │
+│                    CORE MODULES (7 files)                        │
 │  ai_manager.py          database_manager.py        hardware.py  │
 │  drl_agent.py           talos_env.py                            │
 │  live_agent_sources.py  live_agent_orchestrator.py              │
@@ -75,36 +75,36 @@ Data Flow:
 
 ### 2.0 `core/talos_env.py` — Gymnasium Environment (v2.1, Provider-Aware)
 
-**Ρόλος:** RL environment για API source selection. **V2.1:** Fixed hour normalization `/23.0` → `/24.0`. **v3.0:** Provider-aware observation — state vector includes 4 provider ratios (gemini, deepseek, huggingface, local) για τον DRL agent.
+**Role:** RL environment for API source selection. **V2.1:** Fixed hour normalization `/23.0` → `/24.0`. **v3.0:** Provider-aware observation — state vector includes 4 provider ratios (gemini, deepseek, huggingface, local) for the DRL agent.
 
 **Module-level constants:**
 - `_PROVIDER_NAMES` = ["gemini", "deepseek", "huggingface", "local"]
 - `_PROVIDER_COUNT` = 4
 
-| Μέθοδος | Υπογραφή | Περιγραφή |
-|---------|----------|-----------|
-| `_load_source_list` | `(config=None) -> list` | Διαβάζει τη λίστα πηγών από config.json (source_names ή auto-detect από _query keys). |
-| `_try_load_config` | `() -> dict or None` | Φορτώνει config.json από το project root. |
-| `_load_source_limits` | `(source_names, config=None) -> np.ndarray` | Διαβάζει per-source API limits από config. |
-| `__init__` | `(self, source_names=None, source_limits=None, config=None)` | Dynamic init με N πηγές. Obs size = 1 + N + 2 + 4 (providers). |
-| `reset` | `(seed=None, options=None) -> (obs, info)` | Μηδενίζει όλους τους counters. |
-| `step` | `(action) -> (obs, reward, terminated, truncated, info)` | Εκτελεί action. Actions 0..N-1 = query πηγή, N = sleep. |
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `_load_source_list` | `(config=None) -> list` | Reads source list from config.json (source_names or auto-detect from _query keys). |
+| `_try_load_config` | `() -> dict or None` | Loads config.json from project root. |
+| `_load_source_limits` | `(source_names, config=None) -> np.ndarray` | Reads per-source API limits from config. |
+| `__init__` | `(self, source_names=None, source_limits=None, config=None)` | Dynamic init with N sources. Obs size = 1 + N + 2 + 4 (providers). |
+| `reset` | `(seed=None, options=None) -> (obs, info)` | Resets all counters. |
+| `step` | `(action) -> (obs, reward, terminated, truncated, info)` | Executes action. Actions 0..N-1 = query source, N = sleep. |
 | `_build_obs` | `() -> np.ndarray` | v3.0: [hour/24, usage_ratios..., low/10, err/10, 4x zeros] — provider zeros during training. |
 | `get_default_state_space` | `() -> int` | v3.0: 1 + N + 2 + 4. |
 | `get_default_action_space` | `() -> int` | N + 1 sleep. |
 
-### 2.1 `core/ai_manager.py` — Κλάση `AIManager` (v3.5, 380 γραμμές)
+### 2.1 `core/ai_manager.py` — Class `AIManager` (v3.5, 380 lines)
 
-**Ρόλος:** Multi-provider LLM interface με circuit breaker pattern. Διαχειρίζεται 4 providers: Gemini (πρωτεύων cloud), DeepSeek (fallback), HuggingFace (δωρεάν cloud), Local/Ollama (offline).
+**Role:** Multi-provider LLM interface with circuit breaker pattern. Manages 4 providers: Gemini (primary cloud), DeepSeek (fallback), HuggingFace (free cloud), Local/Ollama (offline).
 
-| Μέθοδος | Υπογραφή | Περιγραφή |
-|---------|----------|-----------|
-| `__init__` | `(self, config: Dict[str, Any])` | Αρχικοποιεί όλους τους providers από config + .env. Θέτει provider_priority, FAILURE_THRESHOLD. |
-| `_clean_json_string` | `(self, text: str) -> str` | Εξάγει καθαρό JSON από LLM response. |
-| `evaluate_paper_json` | `(self, paper_content: str, model_type: str = 'pro', system_prompt_override: str = None) -> Union[Dict, None]` | Αξιολογεί paper με AI, structured JSON. |
-| `analyze_generic_text` | `(self, full_prompt: str) -> str` | Αναλύει arbitrary text. |
-| `_execute_request` | `(self, prompt: str, model_type: str, response_format: str = 'text') -> Union[Dict, str, None]` | Multi-provider request με circuit breaker. |
-| `_handle_failure` | `(self, provider_name: str)` | Αυξάνει failure counter, ανοίγει circuit στα 3+. |
+| Method | Signature | Description |
+|--------|-----------|-------------|
+| `__init__` | `(self, config: Dict[str, Any])` | Initializes all providers from config + .env. Sets provider_priority, FAILURE_THRESHOLD. |
+| `_clean_json_string` | `(self, text: str) -> str` | Extracts clean JSON from LLM response. |
+| `evaluate_paper_json` | `(self, paper_content: str, model_type: str = 'pro', system_prompt_override: str = None) -> Union[Dict, None]` | Evaluates paper with AI, structured JSON. |
+| `analyze_generic_text` | `(self, full_prompt: str) -> str` | Analyzes arbitrary text. |
+| `_execute_request` | `(self, prompt: str, model_type: str, response_format: str = 'text') -> Union[Dict, str, None]` | Multi-provider request with circuit breaker. |
+| `_handle_failure` | `(self, provider_name: str)` | Increments failure counter, opens circuit at 3+. |
 
 **Providers:**
 - `gemini`: flash_model (pre-screening), pro_model (deep analysis)
@@ -116,22 +116,22 @@ Data Flow:
 
 ### 2.2 `core/live_agent_sources.py` — Source Discovery (v1.0, NEW in v5.3.1)
 
-**Ρόλος:** Source discovery and dynamic import for the TALOS Live DRL Agent. Scans config.json for `_query` keys, imports source classes by scanning modules for any class ending in "Source" (handles mixed naming: DBLP→DBLPSource, IEEE→IEEEXploreSource, etc.).
+**Role:** Source discovery and dynamic import for the TALOS Live DRL Agent. Scans config.json for `_query` keys, imports source classes by scanning modules for any class ending in "Source" (handles mixed naming: DBLP→DBLPSource, IEEE→IEEEXploreSource, etc.).
 
-| Συνάρτηση | Υπογραφή | Περιγραφή |
-|-----------|----------|-----------|
-| `import_source_class` | `(source_name: str) -> class or None` | Δυναμικό import με auto-detect κλάσης (ψάχνει για *Source). |
-| `build_source_map` | `(source_names: list) -> (dict, list)` | DENSE action mapping: {0: (name, cls), ...}. Επιστρέφει και τη λίστα των working source names. |
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `import_source_class` | `(source_name: str) -> class or None` | Dynamic import with auto-detect class (searches for *Source). |
+| `build_source_map` | `(source_names: list) -> (dict, list)` | DENSE action mapping: {0: (name, cls), ...}. Also returns the list of working source names. |
 
 ### 2.3 `core/live_agent_orchestrator.py` — Main Loop + Cooldown (v1.0, NEW in v5.3.1)
 
-**Ρόλος:** Core orchestration loop για το TALOS Live DRL Agent. Handles state calculation, action selection, API fetch, AI evaluation, reward, counters, and provider tracking. **v3.1 Cooldown:** `active_cooldowns` dict prevents deadlocks — actions with negative reward get 5-step lockout, overridden by random free action.
+**Role:** Core orchestration loop for the TALOS Live DRL Agent. Handles state calculation, action selection, API fetch, AI evaluation, reward, counters, and provider tracking. **v3.1 Cooldown:** `active_cooldowns` dict prevents deadlocks — actions with negative reward get 5-step lockout, overridden by random free action.
 
-| Συνάρτηση | Υπογραφή | Περιγραφή |
-|-----------|----------|-----------|
-| `_get_provider_limits` | `(config: dict) -> dict` | Διαβάζει per-provider limits με tier-based Gemini. |
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `_get_provider_limits` | `(config: dict) -> dict` | Reads per-provider limits with tier-based Gemini. |
 | `calculate_state` | `(...) -> np.ndarray` | v3.0 Provider-Aware state: 1 + N_sources + 2 + 4. |
-| `execute_live_fetch` | `(action, action_map, config) -> tuple` | Εκτελεί ΕΝΑ live API call. |
+| `execute_live_fetch` | `(action, action_map, config) -> tuple` | Executes ONE live API call. |
 | `evaluate_paper` | `(paper, ai_manager, provider_call_counts) -> float` | AI evaluation + provider tracking. |
 | `calculate_reward` | `(score: float) -> float` | Score-to-reward mapping (+20, +5, -10). |
 | `run_live_loop` | `(agent, action_map, sources, config, ai_manager, verbose) -> dict` | **Main loop.** Cooldown: epsilon=0.05, 5-step lockout, random override. |
@@ -146,25 +146,25 @@ Data Flow:
 
 ### 2.4 `core/drl_networks.py` — Neural Network Architectures (v1.0, NEW in v5.3.2)
 
-**Ρόλος:** Pluggable neural network architectures for the DRL agent. **v1.0:** Contains `DuelingLSTM` — 3-layer LSTM with dueling heads (V + A). Designed for future architectures (Transformer, xLSTM) via a common `(input_dim, output_dim)` interface.
+**Role:** Pluggable neural network architectures for the DRL agent. **v1.0:** Contains `DuelingLSTM` — 3-layer LSTM with dueling heads (V + A). Designed for future architectures (Transformer, xLSTM) via a common `(input_dim, output_dim)` interface.
 
-| Κλάση | Υπογραφή | Περιγραφή |
-|-------|----------|-----------|
-| `DuelingLSTM` | `__init__(input_dim, output_dim)` | 3-layer LSTM (128→64→32) με LayerNorm + dueling heads. `forward(state) -> Q-values`. |
+| Class | Signature | Description |
+|-------|-----------|-------------|
+| `DuelingLSTM` | `__init__(input_dim, output_dim)` | 3-layer LSTM (128→64→32) with LayerNorm + dueling heads. `forward(state) -> Q-values`. |
 
 ### 2.5 `core/drl_agent.py` — DRL Agent (v2.2, Pluggable Network)
 
-**Ρόλος:** Double Dueling DQN agent. **V2.2:** `network_class` parameter — any network from `drl_networks.py` can be injected. Save/load includes network class name for correct reconstruction.
+**Role:** Double Dueling DQN agent. **V2.2:** `network_class` parameter — any network from `drl_networks.py` can be injected. Save/load includes network class name for correct reconstruction.
 
 **Hyperparameters (GWO-optimized):** `LR=4.735e-05`, `GAMMA=0.575`.
 
-**Κλάση `TalosDRLAgent`:**
-| Μέθοδος | Υπογραφή | Περιγραφή |
-|---------|----------|-----------|
+**Class `TalosDRLAgent`:**
+| Method | Signature | Description |
+|--------|-----------|-------------|
 | `__init__` | `(state_dim=None, action_dim=None, network_class=None)` | v2.2: `network_class` param (default: DuelingLSTM). |
 | `act` | `(state, eps=0.0) -> int` | ε-greedy action selection. |
 | `learn` | `()` | DDQN learning step. |
-| `save` | `(path)` | Αποθηκεύει weights + metadata **including** `network_class` name. |
+| `save` | `(path)` | Saves weights + metadata **including** `network_class` name. |
 | `load` | `(path)` | v2.2: Resolves network class from saved metadata, uses DuelingLSTM as fallback. |
 
 **Hyperparameters (GWO-optimized):**
@@ -172,64 +172,50 @@ Data Flow:
 - `GAMMA = 0.575` (GWO-optimized discount factor)
 - `TAU = 1e-3`, `MEMORY_LEN = 10000`, `BATCH_SIZE = 200`
 
-**Κλάση `DuelingLSTM`:**
-| Μέθοδος | Υπογραφή | Περιγραφή |
-|---------|----------|-----------|
-| `__init__` | `(input_dim=STATE_SPACE, output_dim=ACTION_SPACE)` | 3-layer LSTM (128→64→32) με dueling heads. |
-| `forward` | `(state) -> Q-values` | Forward pass με CuDNN flatten_parameters(). |
+### 2.6 `core/notifier.py` — Class `TalosNotifier` (v1.0, ~202 lines)
 
-**Κλάση `TalosDRLAgent`:**
-| Μέθοδος | Υπογραφή | Περιγραφή |
-|---------|----------|-----------|
-| `__init__` | `(state_dim=None, action_dim=None)` | Δυναμική αρχικοποίηση. |
-| `act` | `(state, eps=0.0) -> int` | ε-greedy action selection. |
-| `learn` | `()` | DDQN learning step. |
-| `save` | `(path)` | Αποθηκεύει weights + metadata. |
-| `load` | `(path)` | v2.1: Pre-checks dims, recreates networks if needed, THEN load_state_dict. `weights_only=True`. |
+**Role:** Multi-channel notification system (Telegram, Discord, Email).
 
-### 2.5 `core/notifier.py` — Κλάση `TalosNotifier` (v1.0, ~202 γραμμές)
+### 2.7 `core/database_manager.py` — Class `DatabaseManager` (v4.8.5, 569 lines)
 
-**Ρόλος:** Multi-channel notification system (Telegram, Discord, Email).
+**Role:** SQLite database layer with embeddings, semantic search, profile-aware.
 
-### 2.6 `core/database_manager.py` — Κλάση `DatabaseManager` (v4.8.5, 569 γραμμές)
+### 2.8 `core/hardware.py` (v4.8.5, 429 lines)
 
-**Ρόλος:** SQLite database layer με embeddings, semantic search, profile-aware.
+**Role:** GPU VRAM detection, Ollama model recommendations.
 
-### 2.7 `core/hardware.py` (v4.8.5, 429 γραμμές)
+### 2.9 `templates/gui_theme.css` — Academic Theme CSS (v5.3.3)
 
-**Ρόλος:** Ανίχνευση GPU VRAM, προτάσεις μοντέλων Ollama.
+**Role:** Light-only CSS theme for the Streamlit Web GUI (dark mode removed in v5.3.3). **CSS variables injected by `app.py:render_css()`** — academic blue/teal palette with glassmorphism cards, custom scrollbar, and professional typography.
 
-### 2.8 `templates/gui_theme.css` — Academic Theme CSS (v5.3.3)
-**Ρόλος:** Light-only CSS theme για το Streamlit Web GUI (dark mode removed in v5.3.3).
-**CSS variables injected by `app.py:render_css()`** — academic blue/teal palette με glassmorphism cards, custom scrollbar, και professional typography.
+### 2.10 `templates/gui_strings.py` — Translation System (v5.3.3)
 
-### 2.9 `templates/gui_strings.py` — Translation System (v5.3.3)
-**Ρόλος:** Translation strings σε English + Greek για το Streamlit GUI. Εξάγει `STR` dict και `t(key, en_default="")` function. Dark theme toggle string removed in v5.3.3.
+**Role:** Translation strings in English + Greek for the Streamlit GUI. Exports `STR` dict and `t(key, en_default="")` function. Dark theme toggle string removed in v5.3.3.
 
 ---
 
 ## 3. Entry Points
 
-### 3.1 `talos.py` (v4.10.1, 653 γραμμές)
-CLI entry point με interactive menu.
+### 3.1 `talos.py` (v4.10.1, 653 lines)
+CLI entry point with interactive menu.
 
-### 3.2 `app.py` (v5.3.3, ~940 γραμμές)
+### 3.2 `app.py` (v5.3.3, ~940 lines)
 Streamlit Web GUI — light-only theme (dark mode removed in v5.3.3).
 
 ### 3.3 `_gui_runner.py`
-Wrapper για Streamlit stdin piping.
+Wrapper for Streamlit stdin piping.
 
 ### 3.4 `start_talos.bat`
-Batch script για Streamlit GUI.
+Batch script for launching Streamlit GUI.
 
 ---
 
-## 4. Scripts (21 αρχεία)
+## 4. Scripts (21 files)
 
 ### 4.1 Search Scripts
-- `daily_search.py` (v5.4) — Καθημερινή αναζήτηση σε 14 APIs
+- `daily_search.py` (v5.4) — Daily search across 14 APIs
 - `historic_search.py` (v5.5) — Deep archive search
-- `grey_literature_miner.py` — Grey literature με Gemini Search Grounding
+- `grey_literature_miner.py` — Grey literature with Gemini Search Grounding
 
 ### 4.2 Analysis & Insights
 - `knowledge_path_generator.py` (v1.8) — "CHIRON"
@@ -247,13 +233,13 @@ Batch script για Streamlit GUI.
 ### 4.5 Integration Scripts
 
 #### `scripts/drl_trainer.py` (v1.1 — GWO-Optimized)
-**Σκοπός:** Training script με GWO-optimized hyperparameters. **v1.1:** `EPS_DECAY=0.9415` (GWO), saves as `dddqn_trained.pth`.
-**Συναρτήσεις:** `main()` — 700 episodes, simulated scores, provider-aware state (dim=21).
+**Purpose:** Training script with GWO-optimized hyperparameters. **v1.1:** `EPS_DECAY=0.9415` (GWO), saves as `dddqn_trained.pth`.
+**Functions:** `main()` — 700 episodes, simulated scores, provider-aware state (dim=21).
 **Imports:** `core.talos_env.TalosEnv`, `core.drl_agent`
 
 #### `scripts/talos_live_agent.py` (v3.1 — Thin Entry, Cooldown)
-**Σκοπός:** Thin entry point (~110 γραμμές). **v3.1:** epsilon=0.05, 5-step cooldown για negative-reward actions, ASCII output. Delegates to `core.live_agent_orchestrator.run_live_loop()`.
-**Συναρτήσεις:** `main()` only — config load, source discovery, model load, run loop.
+**Purpose:** Thin entry point (~110 lines). **v3.1:** epsilon=0.05, 5-step cooldown for negative-reward actions, ASCII output. Delegates to `core.live_agent_orchestrator.run_live_loop()`.
+**Functions:** `main()` only — config load, source discovery, model load, run loop.
 **Imports:** `core.drl_agent`, `core.ai_manager`, `core.talos_env`, `core.live_agent_sources`, `core.live_agent_orchestrator`
 
 #### `scripts/talos_service_api.py` (v1.0)
@@ -277,8 +263,8 @@ Interactive Research Pivot Wizard.
 
 ## 5. Sources (14 APIs)
 
-| Source | Αρχείο | API Key | Query Key |
-|--------|--------|---------|-----------|
+| Source | File | API Key | Query Key |
+|--------|------|---------|-----------|
 | arXiv | `arxiv_source.py` | ❌ | `arxiv_query` |
 | CORE | `core_source.py` | ⚠️ | `core_query` |
 | Crossref | `crossref_source.py` | ⚠️ | `crossref_query` |
@@ -400,10 +386,10 @@ generate_docs.py → requests, dotenv, tqdm
 
 ---
 
-## 9. Βοηθητικά Αρχεία
+## 9. Auxiliary Files
 
-| Αρχείο | Ρόλος |
-|--------|-------|
+| File | Role |
+|------|------|
 | `_gui_runner.py` | Streamlit stdin piping wrapper |
 | `test_smoke.py` | System health smoke test |
 | `Dockerfile`, `docker-compose.yml` | Containerization |
@@ -415,20 +401,20 @@ generate_docs.py → requests, dotenv, tqdm
 ## 10. Known Gotchas & Conventions
 
 1. **Greek comments** break editor text matching
-2. **`.env` values χωρίς quotes** — load_dotenv δεν αφαιρεί quotes
-3. **`daily_search.py` και `historic_search.py`** πρέπει να συγχρονίζονται για dedup
-4. **4-layer framework** (strategic, operational, tactical, playground) είναι INVARIANT
-5. **`recommender.py`** διαβάζει SQLite απευθείας, όχι μέσω DatabaseManager
-6. **Circuit breaker** στα 3+ failures
-7. **Profile-aware**: DatabaseManager δέχεται `db_path`
-8. **Questionary stdin piping** μέσω `TALOS_GUI_STDIN` + `_gui_runner.py`
-9. **Subprocess env propagation**: `run_script()` προωθεί TALOS_* vars
-10. **Embeddings** ως pickled numpy arrays σε BLOB column
-11. **Source class names** έχουν mixed conventions (DBLPSource, IEEEXploreSource, OpenAlexSource) — χρήση `live_agent_sources.import_source_class()` που σκανάρει το module
-12. **Cooldown mechanism** (v3.1): negative reward → 5-step lockout → random override — αποτρέπει Deterministic Loops
+2. **`.env` values without quotes** — load_dotenv doesn't strip quotes
+3. **`daily_search.py` and `historic_search.py`** must be kept in sync for dedup logic
+4. **4-layer framework** (strategic, operational, tactical, playground) is INVARIANT
+5. **`recommender.py`** reads SQLite directly, not via DatabaseManager
+6. **Circuit breaker** at 3+ failures
+7. **Profile-aware**: DatabaseManager accepts `db_path`
+8. **Questionary stdin piping** via `TALOS_GUI_STDIN` + `_gui_runner.py`
+9. **Subprocess env propagation**: `run_script()` forwards TALOS_* vars
+10. **Embeddings** as pickled numpy arrays in BLOB column
+11. **Source class names** have mixed conventions (DBLPSource, IEEEXploreSource, OpenAlexSource) — use `live_agent_sources.import_source_class()` which scans the module
+12. **Cooldown mechanism** (v3.1): negative reward → 5-step lockout → random override — prevents Deterministic Loops
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-07-05 (v5.3.4: Mythological code names removed — modules now use descriptive titles. PROJECT_MAP_EN.md sync rule added. Section 8 → Module Descriptions.)
-> **Έκδοση Project:** v5.3.4
-> **Συνολικά αρχεία που καλύπτονται:** 61
+> **Last Updated:** 2026-07-05 (v5.3.4: Mythological code names removed — modules now use descriptive titles. PROJECT_MAP_EN.md sync rule added. Section 8 → Module Descriptions.)
+> **Project Version:** v5.3.4
+> **Total Files Covered:** 61

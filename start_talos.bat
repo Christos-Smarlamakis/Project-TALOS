@@ -1,5 +1,5 @@
 @echo off
-title Project TALOS v5.2.0 Launcher
+title Project TALOS v5.3.4 Launcher
 
 REM Activate the conda environment
 call C:\ProgramData\miniconda3\Scripts\activate.bat talosenv
@@ -14,7 +14,7 @@ IF ERRORLEVEL 1 (
 :MENU
 cls
 echo =============================================
-echo    Project TALOS v5.2.0
+echo    Project TALOS v5.3.4
 echo    Research Intelligence Platform
 echo =============================================
 echo.

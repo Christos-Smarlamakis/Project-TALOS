@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform — and maps the path forward.
 
-> **Current Version:** v5.3.1 (Provider-Aware DRL)
+> **Current Version:** v5.3.4 (Descriptive Module Names & University-Ready Documentation)
 > **Last Updated:** 2026-07-05
 
 ---
@@ -273,7 +273,7 @@ The generated documentation complements:
 
 ---
 
-## 7. v6.0.0+ — The ALEXANDRIA Ecosystem (FUTURE 🔮)
+## 7. v6.0.0+ — The Distributed Ecosystem (FUTURE 🔮)
 
 The v6.0 series represents the **third generation** of TALOS — decoupling the monolith into a distributed microservice ecosystem with a modern cross-platform UI.
 

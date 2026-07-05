@@ -3,6 +3,89 @@
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [v5.3.4] - 2026-07-05 — The "Descriptive Module Names" Update
+
+This minor release removes all mythological code names (APOLLO, CHIRON, ORPHEUS, PYTHIA, NAFSIKA, HERMES, ORACLE, ARGUS, ALEXANDRIA) from the TALOS codebase, replacing them with descriptive, university-ready module titles. The project now presents itself as a serious academic platform rather than a mythology-themed tool.
+
+### Changed
+- **`.clinerules`:** Added mandatory `PROJECT_MAP_EN.md` sync rule — English map must be updated alongside Greek master in the same change session.
+- **`PROJECT_MAP.md` & `PROJECT_MAP_EN.md`:** Section 8 renamed from "Greek Code Name Glossary" to "Module Descriptions" with 9 descriptive entries (TALOS, Query Translator, Knowledge Path Generator, Citation Network Analyzer, Metadata Enricher, Grey Literature Miner, Interactive Dashboard, PDF Downloader, Autonomous Research Service).
+- **`app.py`:** Removed "(CHIRON)", "(ORPHEUS)" suffixes from Analysis dropdown labels. Changed "APOLLO Metadata Enrichment" → "Metadata Enrichment", MAP key "APOLLO" → "Metadata", "reconfigure PYTHIA" → "reconfigure the Query Translator".
+- **`README.md`:** Updated tagline from "Light-Only Academic Theme" to "Descriptive Module Names & University-Ready Documentation".
+- **`ROADMAP.md`:** Section 7 header "ALEXANDRIA Ecosystem" → "Distributed Ecosystem". Current version bump.
+
+### Design Rationale
+- **Why remove mythological names:** The codebase is a PhD research tool intended for academic publication and defense. Names like "CHIRON", "ORPHEUS", and "APOLLO" undermine the professional credibility of the work. Descriptive titles (e.g., "Knowledge Path Generator") are self-documenting and appropriate for journal papers, conference presentations, and thesis methodology chapters. Only "TALOS" is retained — it is the project name and its own acronym (Tactical Agentic Literature Orchestration System).
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `.clinerules` | +PROJECT_MAP_EN.md sync rule, removed mythological names |
+| `PROJECT_MAP.md` | Section 8 → Module Descriptions, footer v5.3.4 |
+| `PROJECT_MAP_EN.md` | Section 8 → Module Descriptions, footer v5.3.4 |
+| `app.py` | Removed mythological suffixes from all UI labels + internal keys |
+| `README.md` | Updated tagline |
+| `ROADMAP.md` | ALEXANDRIA → Distributed Ecosystem, version bump |
+
+### Migration / Breaking
+- **No breaking changes** — this is a documentation and UI label update only.
+- **No code behavior changes** — all scripts remain functionally identical.
+
+---
+
+## [v5.3.3] - 2026-07-05 — The "Light-Only Theme & Universal Documentation" Update
+
+This minor release removes the broken dark theme from the Streamlit GUI (not functioning correctly, not worth maintaining) and upgrades the .clinerules Progressive Documentation Rule from `.py`-only to ALL file types.
+
+### Changed
+- **`app.py` v5.3.0 → v5.3.3 (~940 lines):**
+  - Removed `dark_mode` from session state initialization (was `st.session_state.dark_mode = True`).
+  - `render_css()`: Replaced ternary `dark_mode` logic with hardcoded light-only CSS variables (bg, card_bg, border, text, accent, muted, sidebar, header). No more dynamic theme switching.
+  - Sidebar: Removed theme badge (`col2` with Dark/Light label) and dark toggle button (`st.toggle("🌙 Dark", ...)`). Advanced Mode toggle is now a standalone full-width button (`st.toggle("🔧 Advanced Mode", ...)`).
+  - Docstring: Updated description to reflect single-theme design.
+  - THEME MANAGEMENT section: Updated comment explaining dark mode removal rationale.
+- **`templates/gui_theme.css` v5.2.1 → v5.3.3:**
+  - Header comment: Changed from "Dark/Light dual-mode" to "Light-only theme".
+  - Removed `:root[data-theme="dark"]` CSS rule (12 lines of dark mode variables).
+  - Removed `:root[data-theme="light"]` CSS rule (4 lines of static light variables — now injected dynamically by `app.py:render_css()`).
+  - Replaced with a comment explaining CSS variables are injected at runtime.
+- **`templates/gui_strings.py` v5.2.1 → v5.3.3:**
+  - Removed `"dark_toggle"` translation string (EN: "Dark Theme", GR: "Σκοτεινό Θέμα").
+  - Updated `"footer"` string version from v5.2.1 → v5.3.3.
+  - Docstring: Noted dark theme deprecation.
+- **`.clinerules` v5.0.0 → v5.3.3:**
+  - Added new CRITICAL rule: "Progressive Documentation Rule — ALL File Types" (after CRITICAL: Compile Check section).
+  - Rule now applies to `.py`, `.css`, `.md`, `.bat`, `.json`, `.html`, `.js`, `.yml`, `.toml`, `.txt` — not just `.py` files.
+  - Old "Progressive Documentation Rule (v5.0.0)" section marked as SUPERSEDED, kept for historical reference.
+  - Includes module docstring format and inline comment style conventions.
+- **`PROJECT_MAP.md` v5.3.2 → v5.3.3:**
+  - Updated version in header and footer.
+  - Added sections 2.8 (`gui_theme.css`) and 2.9 (`gui_strings.py`) under Core Modules.
+  - Updated section 3.2 (`app.py`) description to note light-only theme.
+
+### Removed
+- **Dark theme entirely** — the `dark_mode` session state variable, the sidebar theme toggle button, the theme badge, the dynamic CSS ternary logic in `render_css()`, and the static dark/light CSS `:root` rules in `gui_theme.css`. The GUI now uses a single light-only academic blue/teal palette.
+
+### Design Rationale
+- **Why remove dark mode:** The Streamlit dark theme toggle was not functioning correctly — Streamlit reads `config.toml` only at startup, not at runtime. The CSS-injection workaround produced inconsistent results (e.g., sidebar not switching, input fields retaining light background). Maintaining two theme paths doubled CSS complexity for marginal benefit. The light-only academic palette is cleaner, more professional, and eliminates hours of debugging.
+- **Why universal documentation rule:** Previously, the Progressive Documentation Rule only covered `.py` files. However, CSS, Markdown, batch scripts, JSON configs, and HTML templates all benefit from inline documentation. Extending the rule to ALL file types ensures consistent documentation quality across the entire codebase.
+
+### Files Changed
+| File | Change |
+|------|--------|
+| `app.py` | v5.3.0→v5.3.3 — dark_mode removal, light-only CSS, sidebar cleanup |
+| `templates/gui_theme.css` | v5.2.1→v5.3.3 — removed dark/light :root rules |
+| `templates/gui_strings.py` | v5.2.1→v5.3.3 — removed dark_toggle string |
+| `.clinerules` | v5.0.0→v5.3.3 — universal documentation rule for all file types |
+| `PROJECT_MAP.md` | v5.3.2→v5.3.3 — new sections 2.8, 2.9 |
+
+### Migration / Breaking
+- **⚠️ MINOR BREAKING:** Any code referencing `st.session_state.dark_mode` externally will raise `AttributeError`. This variable has been completely removed.
+- **No database changes** — this is a UI-only update.
+- **No config.json changes** — theme is now hardcoded.
+
+---
+
 ## [v5.3.2] - 2026-07-05 — The "Pluggable Network Architecture" Update
 
 This minor release extracts the DRL neural network into a dedicated pluggable module, enabling future architecture swapping (Transformer, xLSTM) without touching the agent core.

@@ -1,8 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   TALOS v5.2.1 — Academic Theme (Blue/Teal Palette)
-   Dark/Light dual-mode with glassmorphism, smooth animations,
+   TALOS v5.3.3 — Academic Theme (Blue/Teal Palette)
+   Light-only theme with glassmorphism, smooth animations,
    custom scrollbar, and professional typography.
    Primary accent: #1a73e8 (Google Blue — scientific, eye-friendly)
+   Dark mode removed in v5.3.3 (not functioning correctly).
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Base Typography ── */
@@ -137,16 +138,6 @@
 h1, h2, h3, h4, h5, h6 { color: var(--text) !important; }
 p, li, span, label { color: var(--text) !important; }
 
-/* ── Dark Mode Variables ── */
-:root[data-theme="dark"], .dark-theme {
-    --bg: #0a1628; --card-bg: #0f1f38; --border: #1e3a5f;
-    --text: #d4e4f7; --accent: #4a9eff; --muted: #7a9fc0;
-    --sidebar-bg: linear-gradient(180deg, #0a1628, #0f1f38);
-}
-
-/* ── Light Mode Variables ── */
-:root[data-theme="light"], .light-theme {
-    --bg: #ffffff; --card-bg: #f0f4f8; --border: #c8d6e5;
-    --text: #1a2a3a; --accent: #1a73e8; --muted: #5a6a7a;
-    --sidebar-bg: linear-gradient(180deg, #f0f4f8, #ffffff);
-}
+/* ── CSS variables are injected dynamically by app.py:render_css() ──
+   The :root block is populated at runtime with the light academic palette.
+   No static dark/light mode rules needed — single-theme only as of v5.3.3. */
