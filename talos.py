@@ -141,7 +141,8 @@ def system_health_menu(python_exe):
     choice = safe_select("System Diagnostics:", choices=[
         "1. Code Integrity Check", "2. Documentation Audit",
         "3. Open Architecture Graph", "4. Architecture Intelligence Report",
-        "5. GWO Swarm Hunt (3D Visualization — Opens Streamlit GUI)",
+        "5. GWO Live Dashboard (Dash — Real-Time 3D Swarm)",
+        "6. GWO Swarm Hunt Replay (Streamlit — 3D History)",
         questionary.Separator(), "6. Baseline Report (Standard)",
         "7. Baseline Report (Academic — 600 DPI)", "8. DRL Agent Status",
         questionary.Separator(),
@@ -171,16 +172,40 @@ def system_health_menu(python_exe):
         if questionary.confirm("Start now? (may take 60s)", default=True).ask():
             run_script("architecture_intelligence_report.py", python_exe)
     elif choice.startswith("5."):
-        # GWO Swarm Hunt — opens Streamlit GUI for 3D visualization
-        import webbrowser
+        # GWO Live Dashboard — starts Dash server for live 3D visualization
+        import webbrowser, socket
         print("\n" + "=" * 65)
-        print("  GWO Swarm Hunt — 3D Interactive Visualization")
+        print("  GWO Live Dashboard — Real-Time 3D Swarm Hunt")
         print("=" * 65)
-        print("\n  Opens Streamlit GUI with Plotly 3D scatter plot showing")
-        print("  Grey Wolf Optimizer convergence across iterations.")
-        print("  Use the DRL Agent Dashboard -> GWO Swarm Hunt section.")
+        print("\n  Starts a Dash server at http://localhost:8050")
+        print("  Shows live 3D scatter plot of GWO wolf pack convergence.")
+        print("  Auto-refreshes every 3 seconds.")
+        # Check if dash is already running
+        dash_running = False
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(0.5)
+            if s.connect_ex(('127.0.0.1', 8050)) == 0:
+                dash_running = True
+            s.close()
+        except:
+            pass
+        if not dash_running:
+            print("\n  Starting Dash server...")
+            subprocess.Popen(
+                [python_exe, os.path.join(project_root, "scripts", "gwo_live_dashboard.py")],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+            )
+            time.sleep(2)
+        webbrowser.open("http://localhost:8050")
+        print("\n  Dashboard opened in browser.")
+        print("  NOTE: Run GWO first from another terminal with --live flag.")
+        print("  python scripts/gwo_rl_optimizer.py --live")
+    elif choice.startswith("6."):
+        # GWO Swarm Hunt Replay — opens Streamlit GUI
+        import webbrowser
+        print("\n  Opens Streamlit -> DRL Dashboard -> Swarm Hunt 3D for replay.")
         if questionary.confirm("Open Streamlit GUI now?", default=True).ask():
-            print("\n  Starting Streamlit... Press Ctrl+C in this terminal when done.")
             subprocess.Popen([python_exe, "-m", "streamlit", "run",
                 os.path.join(project_root, "app.py")],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

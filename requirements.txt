@@ -25,6 +25,7 @@ scikit-learn              # Machine Learning (Clustering, TF-IDF)
 
 # === Visualization & Scientometrics ===
 plotly>=5.18.0            # Interactive 3D visualizations (GWO Swarm Hunt)
+dash>=4.0.0               # Live real-time GWO dashboard (Dash)
 matplotlib>=3.8.0         # Basic Plotting Library
 seaborn>=0.13.0           # Advanced Statistical Data Visualization
 wordcloud>=1.9.0          # Word Cloud Generation
