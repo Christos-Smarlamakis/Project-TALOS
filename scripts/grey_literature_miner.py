@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: grey_literature_miner.py
-Project: TALOS v4.8.5
+Module: grey_literature_miner.py (v2.1 — Batch 3 hotfix)
+Project: TALOS v5.3.6
 
 Description:
     Autonomous web research agent focusing on "Grey Literature" — open source
@@ -21,6 +21,13 @@ Description:
     query is optimized by an LLM before searching, and results are saved as
     Markdown reports. Falls back to the AIManager multi-provider chain if
     Gemini is unavailable.
+
+    v2.1 (Batch 3 hotfix):
+    - DuckDuckGo import updated: tries the renamed `ddgs` package first,
+      falls back to legacy `duckduckgo_search` (silences RuntimeWarning).
+    - Missing GEMINI_API_KEY no longer hard-exits — the miner can run
+      purely on the AIManager fallback chain (e.g. local Ollama) using
+      DuckDuckGo web results as grounding.
 """
 import os
 import sys
@@ -82,10 +89,12 @@ def run_miner():
     load_dotenv()
     config = load_config()
 
+    # v2.1: missing key is no longer fatal — Gemini Search Grounding is
+    # simply skipped and the AIManager fallback chain (e.g. local Ollama)
+    # handles the report generation using DuckDuckGo results.
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
-        print("ERROR: GEMINI_API_KEY not found.")
-        return
+        print("  [WARN] GEMINI_API_KEY not found — Search Grounding disabled, using fallback providers.")
 
     research_topic = questionary.text(
         "What technical topic would you like to investigate (GitHub, Tech Reports)?",
@@ -110,7 +119,12 @@ def run_miner():
     print("  >> Searching the web...")
     web_results = ""
     try:
-        from duckduckgo_search import DDGS
+        # v2.1: the package was renamed `duckduckgo_search` -> `ddgs`.
+        # Try the new name first, fall back to the legacy one.
+        try:
+            from ddgs import DDGS
+        except ImportError:
+            from duckduckgo_search import DDGS
         ddgs = DDGS()
         hits = list(ddgs.text(search_query, max_results=10))
         if hits:
@@ -150,6 +164,9 @@ def run_miner():
     result_text = None
 
     try:
+        # v2.1: skip Gemini entirely when no API key is available.
+        if not api_key:
+            raise RuntimeError("No GEMINI_API_KEY — skipping Search Grounding.")
         client = genai.Client(api_key=api_key)
         print("  >> Gemini Search Grounding enabled")
 

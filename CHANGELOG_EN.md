@@ -3,6 +3,73 @@
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [v5.3.6 hotfix] - 2026-07-06 — Grey Literature Miner Crash Fix (Batch 3)
+
+### Fixed
+- **`core/ai_manager.py` v3.8 — Missing `analyze_generic_text()` (CRITICAL).**
+  - The method was documented in PROJECT_MAP.md and called in TWO places by `grey_literature_miner.py` (query optimization + AIManager fallback), but was **never implemented** — both paths crashed with `AttributeError: 'AIManager' object has no attribute 'analyze_generic_text'`, so when Gemini failed (e.g. 429 credit depletion) the miner produced no report at all.
+  - Implemented as a thin wrapper: `return self._execute_request(full_prompt, model_type='pro', response_format='text')` — inherits circuit breaker, full provider fallback chain (local → HF → Gemini → DeepSeek), and `last_provider_used` tracking.
+- **`scripts/grey_literature_miner.py` v2.1:**
+  - DuckDuckGo import: tries the renamed `ddgs` package first, falls back to legacy `duckduckgo_search` (silences the rename RuntimeWarning).
+  - Missing `GEMINI_API_KEY` no longer hard-exits — Search Grounding is skipped with a [WARN], and the report is generated via the AIManager fallback chain (e.g. local Ollama) grounded on DuckDuckGo results.
+
+### Not-a-bug (informational)
+- The Gemini `429 RESOURCE_EXHAUSTED: prepayment credits depleted` seen in the logs is a billing state, not a code defect — recharge at ai.studio to restore Search Grounding; the miner now degrades gracefully without it.
+
+
+## [v5.3.6] - 2026-07-06 — The "TUI/CLI Hardening" Update (Batch 2 Audit Fixes)
+
+This release implements **Batch 2** of the code audit: interface-layer-only fixes to the TUI/CLI. **No changes to DRL logic, state representations, rewards, environment steps, or GWO math** — `core/drl_agent.py`, `core/talos_env.py`, and `scripts/gwo_rl_optimizer.py` are untouched.
+
+### Fixed
+- **`talos.py` v5.3.6 — Dead menu option + Ctrl+C robustness.**
+  - System Diagnostics had **two options labeled "6."** ("GWO Swarm Hunt Replay" and "Baseline Report (Standard)"); `choice.startswith("6.")` always matched the first branch, making "Baseline Report (Standard)" unreachable dead code. Menu renumbered 1-10; dispatch branches updated (7=Standard, 8=Academic, 9=DRL Status, 10=Docs Generator).
+  - New `safe_pause(msg)` helper: `input()` wrapped in try/except — Ctrl+C at any "Press Enter" prompt returns quietly to the menu instead of aborting the app. Replaces all 5 bare `input()` calls.
+  - `safe_select()` now catches `KeyboardInterrupt` in both the primary and fallback (`unsafe_ask`) paths and returns `None` (all menus treat None as "Back").
+  - 4 bare `except:` clauses → `except Exception:` — Ctrl+C is no longer silently swallowed during header DB stats / port probing / model verification.
+  - `check_first_run()`: `confirm().ask()` returning `None` (Ctrl+C) no longer falls through to a misleading "setup complete" message.
+  - Version string centralized in new `TALOS_VERSION = "v5.3.6"` constant (header previously hardcoded stale "v5.3.0" twice).
+  - Top-level guard exits with `sys.exit(0)` on Ctrl+C.
+- **`scripts/drl_trainer.py` v1.3 — Graceful interrupt with partial save.**
+  - Ctrl+C mid-training previously dumped a traceback and **lost all trained weights**. The episode loop is now wrapped in `try/except KeyboardInterrupt`: the partial model is saved to **`models/dddqn_partial.pth`** (deliberately NOT `dddqn_trained.pth`, to never clobber a good fully-trained model), a clean summary is printed, and the process exits with code 0. The loop BODY is byte-identical — zero training-math changes.
+  - New single-line `\r`-based progress ticker between the every-50-episode summaries (no external deps, ≤40 chars, resize-safe).
+  - Ctrl+C guards added at the interactive questionary prompt and at top level (`__main__`).
+- **`scripts/talos_live_agent.py` v3.2 — argparse + startup guard.**
+  - `argparse` replaces ad-hoc `"--verbose" in sys.argv` scanning — `--verbose` and `--help` now work properly.
+  - New formatted key:value startup summary table (Device, sources, tier, actions, mode, verbose).
+  - Top-level `KeyboardInterrupt` guard: Ctrl+C during startup (config load, `AIManager` init, model load) exits cleanly with code 0 instead of dumping a traceback. (In-loop Ctrl+C was already handled by `run_live_loop`.)
+
+### Audit notes (no action required)
+- Logger/print isolation: entry points are print-only (no `logging` handlers) — no TUI/log corruption path exists.
+- Console layout: 65-char rules and the Rich status table are safe at the 80-column minimum.
+
+
+## [v5.3.5] - 2026-07-06 — The "DRL/GWO Scientific Integrity" Update (Batch 1 Audit Fixes)
+
+This release implements **Batch 1** of the pre-ICBE code audit: five TIER 1 (critical) fixes to the DRL and GWO subsystems. These bugs silently invalidated the reported "GWO-optimized" hyperparameters and biased training. **⚠️ BREAKING (results-level):** GWO must be re-run and the DDDQN retrained — the previous `models/gwo_best_params.json` and `models/dddqn_trained.pth` were produced by an optimizer that never trained the agent.
+
+### Fixed
+- **`scripts/gwo_rl_optimizer.py` v2.0 — GWO fitness was pure noise (CRITICAL).**
+  - `calculate_fitness()` previously hardcoded `agent.act(obs, eps=1.0)` (100% random actions), never called `agent.memory.store()` or `agent.learn()`, and decayed `epsilon` into a variable that was never used. Result: `lr`, `gamma`, `eps_decay` had zero causal effect on fitness — GWO was optimizing random-walk variance.
+  - v2.0 rewrites the function into two phases: **Phase 1 (training)** — per-step `memory.store(Transition(...))` + `agent.learn()`, with `act(obs, eps=epsilon)` where epsilon decays by the candidate `eps_decay` per episode; **Phase 2 (greedy evaluation)** — new constant `EVAL_EPISODES=5` rollouts at `eps=0.0` with no learning; fitness = −(avg eval reward).
+  - `update_wolf_position()` now implements **canonical GWO** (Mirjalili 2014, Eq. 3.5–3.7): fresh `r1, r2` (hence fresh `A`, `C`) drawn independently for each of the alpha/beta/delta encircling terms. Previously one shared `A, C` correlated all three attraction terms, reducing exploration diversity.
+  - `find_best_three_wolves()` now returns the cached `fitness_values` array; `_build_history_entry(..., fitness_values)` uses it instead of re-calling `calculate_fitness()` per wolf — eliminating a 2× runtime cost and a logging inconsistency (stochastic fitness re-evaluations logged values different from those used for ranking).
+- **`core/talos_env.py` v3.1 — Time-limit termination bug (CRITICAL).**
+  - `step()` returned `terminated=True` at the 200-step cutoff. Per Gymnasium semantics a time limit is a **truncation**, not a terminal state; storing `done=True` zeroes the bootstrap term `(1−done)·γ·Q'`, biasing Q-values near episode end. Now returns `terminated=False, truncated=(current_step >= 200)`.
+- **`scripts/drl_trainer.py` v1.2 — Fatal `NameError` in interactive mode (CRITICAL).**
+  - Four references to `args.episodes` crashed whenever the script ran without `--episodes` (questionary mode), because `args` was only defined in the CLI branch. All replaced with the local `episodes` variable. Replay storage comment documents that `done=terminated` (not `truncated`) is stored so bootstrapping continues across the time-limit cutoff.
+- **`core/live_agent_orchestrator.py` v1.1 — Train/inference state distribution mismatch (CRITICAL).**
+  - `LOW_SCORE_MAX` changed 20 → 10: the training env normalizes streak features by /10, but live inference divided by 20, silently compressing those state features 2× versus what the network was trained on (domain shift; inference-side fix, no retraining needed for this item).
+- **`core/ai_manager.py` v3.7 + `core/live_agent_orchestrator.py` v1.1 — Provider attribution bug (CRITICAL).**
+  - `evaluate_paper()` always incremented `provider_call_counts["gemini"]` regardless of which provider actually served the request (DeepSeek/HF/Ollama fallback), corrupting the provider-usage portion of the DRL state vector. `AIManager` now exposes `last_provider_used` (set on every successful `_execute_request()`), and the orchestrator credits that provider.
+
+### Migration
+1. Re-run GWO: `python scripts/gwo_rl_optimizer.py --wolves 15 --iters 50`
+2. Update `LR`/`GAMMA` in `core/drl_agent.py` and `EPS_DECAY` in `scripts/drl_trainer.py` from the new `models/gwo_best_params.json`.
+3. Retrain: `python scripts/drl_trainer.py --episodes 700`
+4. Archive old model artifacts (`dddqn_trained.pth`, `gwo_best_params.json`, `gwo_progress.json`) — do not reuse them for published results.
+
+
 ## [v5.3.4] - 2026-07-05 — The "Descriptive Module Names" Update
 
 This minor release removes all mythological code names (APOLLO, CHIRON, ORPHEUS, PYTHIA, NAFSIKA, HERMES, ORACLE, ARGUS, ALEXANDRIA) from the TALOS codebase, replacing them with descriptive, university-ready module titles. The project now presents itself as a serious academic platform rather than a mythology-themed tool.

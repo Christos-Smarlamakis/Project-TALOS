@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: talos_live_agent.py (v3.1 — Cooldown + Academic Output)
-Project: TALOS v5.3.1
+Module: talos_live_agent.py (v3.2 — Batch 2 TUI hardening)
+Project: TALOS v5.3.6
 Description:
     Thin entry point for the TALOS Live DRL Agent. All heavy logic is
     now in core/ modules:
@@ -11,6 +11,14 @@ Description:
     - core/ai_manager.py             -> AI evaluation
     - core/talos_env.py              -> environment (for training)
 
+    v3.2 (Batch 2 TUI audit — presentation layer only):
+    - argparse replaces ad-hoc sys.argv scanning (--verbose, --help).
+    - Formatted startup summary table for configuration values.
+    - Top-level KeyboardInterrupt guard: Ctrl+C during startup (config
+      load, AIManager init, model load) exits cleanly with code 0 instead
+      of dumping a traceback. (Ctrl+C inside the loop was already handled
+      by run_live_loop.)
+
     Usage:
         python scripts/talos_live_agent.py
         python scripts/talos_live_agent.py --verbose
@@ -18,6 +26,7 @@ Description:
 import os
 import sys
 import json
+import argparse
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
@@ -32,8 +41,18 @@ from core.live_agent_orchestrator import run_live_loop
 from datetime import datetime
 
 
+def _parse_args():
+    """Parse CLI arguments (v3.2 — replaces ad-hoc sys.argv scanning)."""
+    parser = argparse.ArgumentParser(
+        description="TALOS Live DRL Agent — real-time academic API orchestration.")
+    parser.add_argument("--verbose", action="store_true",
+                        help="Print detailed per-step state and provider info.")
+    return parser.parse_args()
+
+
 def main():
     """Load config, discover sources, load model, run live loop."""
+    args = _parse_args()
     config = _try_load_config()
     if config is None:
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -50,21 +69,27 @@ def main():
     num_working = len(working_source_names)
     num_configured = len(all_source_names)
 
+    # ── Formatted startup summary (v3.2) ─────────────────────────────────
     print("=" * 65)
-    print("  TALOS Live DRL Agent v5.3.1 -- Provider-Aware")
+    print("  TALOS Live DRL Agent v5.3.6 -- Provider-Aware")
     print("  Real-Time API Orchestration with LSTM-DDDQN")
     print("=" * 65)
-    print(f"  Device: {DEVICE}")
-    print(f"  Configured sources: {num_configured}")
-    print(f"  Working sources: {num_working} ({', '.join(working_source_names)})")
-    print(f"  Gemini tier: {config.get('gemini_tier', 'free')}")
-    print(f"  Actions: 0..{num_working - 1} = sources, {num_working} = Sleep(1h)")
-    print(f"  Mode: epsilon=0.05 exploration + 5-step cooldown")
-    print(f"  Press Ctrl+C to stop")
+    summary = [
+        ("Device", str(DEVICE)),
+        ("Configured sources", str(num_configured)),
+        ("Working sources", f"{num_working} ({', '.join(working_source_names)})"),
+        ("Gemini tier", config.get('gemini_tier', 'free')),
+        ("Actions", f"0..{num_working - 1} = sources, {num_working} = Sleep(1h)"),
+        ("Mode", "epsilon=0.05 exploration + 5-step cooldown"),
+        ("Verbose", "ON" if args.verbose else "OFF"),
+        ("Stop", "Press Ctrl+C"),
+    ]
+    for key, val in summary:
+        print(f"  {key:<20} : {val}")
     print("=" * 65)
     print()
 
-    verbose = "--verbose" in sys.argv
+    verbose = args.verbose
 
     for name in all_source_names:
         if name not in working_source_names:
@@ -123,4 +148,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Top-level guard (v3.2): Ctrl+C during startup exits cleanly with
+    # code 0 — no traceback dumped to the user.
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n  [STOP] Interrupted during startup. Exiting cleanly.")
+        sys.exit(0)

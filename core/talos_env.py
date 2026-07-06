@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: talos_env.py (v2.0 — Dynamic 14-Source Environment)
-Project: TALOS v5.2.0
+Module: talos_env.py (v3.1 — Time-limit truncation fix)
+Project: TALOS v5.3.5
 Description:
     Gymnasium reinforcement learning environment for TALOS API source selection.
     Supports ALL 14 academic sources dynamically (not just the original 3).
@@ -347,8 +347,13 @@ class TalosEnv(gym.Env):
         self.consecutive_errors = min(self.consecutive_errors, 10)
 
         # ── Episode termination ─────────────────────────────────────────────
-        terminated = self.current_step >= 200
-        truncated = False
+        # v3.1 FIX (time-limit bug): the 200-step cutoff is a TIME LIMIT, not
+        # a true terminal state. Per Gymnasium semantics it must be reported
+        # as `truncated`, so training code bootstraps the Bellman target
+        # across the cutoff (done=False in replay memory). Reporting it as
+        # `terminated` biased Q-values near episode end.
+        terminated = False
+        truncated = self.current_step >= 200
 
         # ── Build next observation ──────────────────────────────────────────
         obs = self._build_obs()

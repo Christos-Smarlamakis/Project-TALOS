@@ -1,8 +1,8 @@
-# Project TALOS (v5.3.3)
+# Project TALOS (v5.3.6)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Τακτικό Πρακτορικό Σύστημα Ενορχήστρωσης Βιβλιογραφίας)*
-### **Now with Descriptive Module Names & University-Ready Documentation**
+### **Now with Hardened TUI/CLI (Graceful Ctrl+C, Partial-Save Training) & a Scientifically-Verified DRL/GWO Pipeline**
 
 > **An Autonomous Research Intelligence Platform for the AI Era.**
 

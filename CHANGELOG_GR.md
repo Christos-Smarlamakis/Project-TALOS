@@ -3,6 +3,73 @@
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
 
+## [v5.3.6 hotfix] - 2026-07-06 — Διόρθωση Crash στο Grey Literature Miner (Batch 3)
+
+### Διορθώθηκε
+- **`core/ai_manager.py` v3.8 — Απούσα `analyze_generic_text()` (ΚΡΙΣΙΜΟ).**
+  - Η μέθοδος ήταν τεκμηριωμένη στο PROJECT_MAP.md και καλούνταν σε ΔΥΟ σημεία από το `grey_literature_miner.py` (query optimization + AIManager fallback), αλλά **δεν είχε υλοποιηθεί ποτέ** — και τα δύο paths κατέρρεαν με `AttributeError`, οπότε όταν το Gemini αποτύγχανε (π.χ. 429 εξάντληση credits) ο miner δεν παρήγαγε καμία αναφορά.
+  - Υλοποιήθηκε ως thin wrapper: `return self._execute_request(full_prompt, model_type='pro', response_format='text')` — κληρονομεί circuit breaker, πλήρη αλυσίδα fallback (local → HF → Gemini → DeepSeek) και `last_provider_used` tracking.
+- **`scripts/grey_literature_miner.py` v2.1:**
+  - DuckDuckGo import: δοκιμάζει πρώτα το μετονομασμένο πακέτο `ddgs`, με fallback στο legacy `duckduckgo_search`.
+  - Το ελλείπον `GEMINI_API_KEY` δεν είναι πλέον fatal — το Search Grounding παρακάμπτεται με [WARN] και η αναφορά παράγεται μέσω της αλυσίδας AIManager (π.χ. τοπικό Ollama) με grounding από τα αποτελέσματα DuckDuckGo.
+
+### Δεν είναι bug (ενημερωτικό)
+- Το `429 RESOURCE_EXHAUSTED: prepayment credits depleted` του Gemini στα logs είναι κατάσταση χρέωσης, όχι σφάλμα κώδικα — αναπλήρωση credits στο ai.studio επαναφέρει το Search Grounding· ο miner πλέον υποβαθμίζεται ομαλά χωρίς αυτό.
+
+
+## [v5.3.6] - 2026-07-06 — Η Ενημέρωση "TUI/CLI Hardening" (Batch 2 Audit Fixes)
+
+Αυτή η έκδοση υλοποιεί το **Batch 2** του code audit: διορθώσεις ΜΟΝΟ στο interface layer του TUI/CLI. **Καμία αλλαγή σε DRL λογική, state representations, rewards, environment steps ή GWO μαθηματικά** — τα `core/drl_agent.py`, `core/talos_env.py` και `scripts/gwo_rl_optimizer.py` δεν αγγίχτηκαν.
+
+### Διορθώθηκε
+- **`talos.py` v5.3.6 — Νεκρή επιλογή μενού + Ctrl+C robustness.**
+  - Το System Diagnostics είχε **δύο επιλογές με αρίθμηση "6."** — το `choice.startswith("6.")` ταίριαζε πάντα την πρώτη, καθιστώντας το "Baseline Report (Standard)" απρόσιτο dead code. Το μενού αναριθμήθηκε 1-10 (7=Standard, 8=Academic, 9=DRL Status, 10=Docs Generator).
+  - Νέα helper `safe_pause(msg)`: Ctrl+C σε οποιοδήποτε "Press Enter" prompt επιστρέφει ήσυχα στο μενού αντί να τερματίζει την εφαρμογή. Αντικαθιστά και τα 5 γυμνά `input()`.
+  - Η `safe_select()` πιάνει πλέον `KeyboardInterrupt` (και στο fallback `unsafe_ask`) και επιστρέφει `None` (όλα τα μενού το χειρίζονται ως "Back").
+  - 4 γυμνά `except:` → `except Exception:` — το Ctrl+C δεν "καταπίνεται" πλέον σιωπηλά.
+  - `check_first_run()`: `None` από το confirm (Ctrl+C) δεν εμφανίζει πια παραπλανητικό "setup complete".
+  - Version string κεντρικά στη σταθερά `TALOS_VERSION = "v5.3.6"` (το header είχε hardcoded stale "v5.3.0").
+  - Top-level guard με `sys.exit(0)` στο Ctrl+C.
+- **`scripts/drl_trainer.py` v1.3 — Graceful interrupt με partial save.**
+  - Ctrl+C στη μέση της εκπαίδευσης πετούσε traceback και **έχανε όλα τα βάρη**. Ο βρόχος επεισοδίων τυλίγεται πλέον σε `try/except KeyboardInterrupt`: το μερικό μοντέλο αποθηκεύεται στο **`models/dddqn_partial.pth`** (σκόπιμα ΟΧΙ στο `dddqn_trained.pth`, ώστε να μην καταστραφεί ποτέ πλήρως εκπαιδευμένο μοντέλο), τυπώνεται καθαρή σύνοψη και exit code 0. Το σώμα του βρόχου είναι byte-identical — μηδενικές αλλαγές στα μαθηματικά.
+  - Νέος single-line `\r` progress ticker ανάμεσα στα 50-episode summaries (χωρίς εξωτερικά deps, ≤40 chars).
+  - Ctrl+C guards στο interactive prompt και σε top level.
+- **`scripts/talos_live_agent.py` v3.2 — argparse + startup guard.**
+  - Το `argparse` αντικαθιστά το ad-hoc `"--verbose" in sys.argv` — τα `--verbose` και `--help` δουλεύουν σωστά.
+  - Νέος formatted key:value startup summary πίνακας.
+  - Top-level `KeyboardInterrupt` guard: Ctrl+C κατά το startup (config load, `AIManager` init, model load) τερματίζει καθαρά με exit code 0.
+
+### Σημειώσεις audit (χωρίς ενέργεια)
+- Logger/print isolation: τα entry points είναι print-only — δεν υπάρχει διαδρομή αλλοίωσης TUI/log.
+- Console layout: οι 65-char γραμμές και το Rich table είναι ασφαλή στο ελάχιστο 80 στηλών.
+
+
+## [v5.3.5] - 2026-07-06 — Η Ενημέρωση "Επιστημονική Ακεραιότητα DRL/GWO" (Batch 1 Audit Fixes)
+
+Αυτή η έκδοση υλοποιεί το **Batch 1** του pre-ICBE code audit: πέντε ΚΡΙΣΙΜΕΣ (TIER 1) διορθώσεις στα υποσυστήματα DRL και GWO. Τα bugs αυτά ακύρωναν σιωπηλά τις αναφερόμενες "GWO-optimized" υπερπαραμέτρους. **⚠️ BREAKING (σε επίπεδο αποτελεσμάτων):** Το GWO πρέπει να ξανατρέξει και το DDDQN να επανεκπαιδευτεί — τα προηγούμενα `models/gwo_best_params.json` και `models/dddqn_trained.pth` προέκυψαν από optimizer που δεν εκπαίδευε ποτέ τον agent.
+
+### Διορθώθηκε
+- **`scripts/gwo_rl_optimizer.py` v2.0 — Το GWO fitness ήταν καθαρός θόρυβος (ΚΡΙΣΙΜΟ).**
+  - Η `calculate_fitness()` είχε hardcoded `agent.act(obs, eps=1.0)` (100% τυχαίες ενέργειες), δεν καλούσε ποτέ `agent.memory.store()` ή `agent.learn()`, και το decayed `epsilon` δεν χρησιμοποιούνταν ποτέ. Αποτέλεσμα: τα `lr`, `gamma`, `eps_decay` δεν είχαν καμία αιτιώδη επίδραση στο fitness — το GWO βελτιστοποιούσε τη διακύμανση ενός random walk.
+  - v2.0: δύο φάσεις — **Φάση 1 (εκπαίδευση):** `memory.store(Transition(...))` + `agent.learn()` ανά βήμα, `act(obs, eps=epsilon)` με decay ανά επεισόδιο κατά το υποψήφιο `eps_decay`· **Φάση 2 (greedy αξιολόγηση):** νέα σταθερά `EVAL_EPISODES=5`, rollouts με `eps=0.0` χωρίς μάθηση· fitness = −(μέσο eval reward).
+  - `update_wolf_position()`: πλέον canonical GWO (Mirjalili 2014, Εξ. 3.5–3.7) — fresh `r1, r2` (άρα fresh `A`, `C`) ανεξάρτητα για κάθε alpha/beta/delta όρο. Πριν, κοινά `A, C` συσχέτιζαν τους τρεις όρους έλξης, μειώνοντας την ποικιλομορφία εξερεύνησης.
+  - `find_best_three_wolves()` επιστρέφει πλέον και το cached `fitness_values` array· η `_build_history_entry(..., fitness_values)` το χρησιμοποιεί αντί να ξανα-καλεί `calculate_fitness()` ανά λύκο — εξάλειψη 2× runtime κόστους και ασυνέπειας στο logging (τα στοχαστικά re-evaluations κατέγραφαν τιμές διαφορετικές από αυτές της κατάταξης).
+- **`core/talos_env.py` v3.1 — Time-limit termination bug (ΚΡΙΣΙΜΟ).**
+  - Το `step()` επέστρεφε `terminated=True` στο cutoff των 200 βημάτων. Κατά τη σημασιολογία του Gymnasium, το time limit είναι **truncation**, όχι terminal state· η αποθήκευση `done=True` μηδένιζε το bootstrap `(1−done)·γ·Q'`, μεροληπτώντας τα Q-values κοντά στο τέλος επεισοδίου. Τώρα: `terminated=False, truncated=(current_step >= 200)`.
+- **`scripts/drl_trainer.py` v1.2 — Fatal `NameError` σε interactive mode (ΚΡΙΣΙΜΟ).**
+  - Τέσσερις αναφορές `args.episodes` κατέρρεαν όποτε το script έτρεχε χωρίς `--episodes` (questionary mode), γιατί το `args` οριζόταν μόνο στο CLI branch. Όλες αντικαταστάθηκαν με τη τοπική μεταβλητή `episodes`. Σχόλιο στο replay storage τεκμηριώνει ότι αποθηκεύεται `done=terminated` (όχι `truncated`).
+- **`core/live_agent_orchestrator.py` v1.1 — Train/inference distribution mismatch (ΚΡΙΣΙΜΟ).**
+  - `LOW_SCORE_MAX` 20 → 10: το training env κανονικοποιεί τα streaks με /10, ενώ το live inference διαιρούσε με 20 — σιωπηλή συμπίεση 2× των χαρακτηριστικών κατάστασης (domain shift). Fix στην πλευρά inference, χωρίς retraining για αυτό το item.
+- **`core/ai_manager.py` v3.7 + `core/live_agent_orchestrator.py` v1.1 — Provider attribution bug (ΚΡΙΣΙΜΟ).**
+  - Η `evaluate_paper()` πίστωνε πάντα το `provider_call_counts["gemini"]` ανεξάρτητα από τον provider που εξυπηρέτησε το request (fallback σε DeepSeek/HF/Ollama), αλλοιώνοντας το provider-aware τμήμα του state vector του DRL agent. Ο `AIManager` εκθέτει πλέον `last_provider_used` (ορίζεται σε κάθε επιτυχημένο `_execute_request()`) και ο orchestrator πιστώνει τον σωστό provider.
+
+### Migration
+1. Ξανατρέξτε GWO: `python scripts/gwo_rl_optimizer.py --wolves 15 --iters 50`
+2. Ενημερώστε τα `LR`/`GAMMA` στο `core/drl_agent.py` και το `EPS_DECAY` στο `scripts/drl_trainer.py` από το νέο `models/gwo_best_params.json`.
+3. Επανεκπαίδευση: `python scripts/drl_trainer.py --episodes 700`
+4. Αρχειοθετήστε τα παλιά model artifacts — μην τα επαναχρησιμοποιήσετε σε δημοσιευμένα αποτελέσματα.
+
+
 ## [v5.3.4] - 2026-07-05 — Η Ενημέρωση "Περιγραφικά Ονόματα Modules"
 
 Αυτή η μικρή έκδοση αφαιρεί όλα τα μυθολογικά κωδικά ονόματα (APOLLO, CHIRON, ORPHEUS, PYTHIA, NAFSIKA, HERMES, ORACLE, ARGUS, ALEXANDRIA) από το codebase του TALOS, αντικαθιστώντας τα με περιγραφικούς, ακαδημαϊκά κατάλληλους τίτλους. Το project παρουσιάζεται πλέον ως σοβαρή ακαδημαϊκή πλατφόρμα και όχι ως εργαλείο με μυθολογικό θέμα.

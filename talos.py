@@ -9,11 +9,21 @@
 #
 #  For commercial licensing, please contact the author.
 """
-Module: talos.py (v5.2.1)
-Project: TALOS v5.2.1
+Module: talos.py (v5.3.6 — TUI Hardening)
+Project: TALOS v5.3.6
 Description:
     Central CLI entry point with hierarchical menu system.
     v5.2.1 adds: Live DRL Agent, Autonomous Process (24/7), Research Pivot.
+    v5.3.6 (Batch 2 TUI audit):
+    - Fixed duplicate "6." options in System Diagnostics (dead Baseline
+      Report branch was unreachable) — menu renumbered 1-10.
+    - New safe_pause() helper: Ctrl+C at any "Press Enter" prompt returns
+      quietly to the menu instead of aborting the whole app.
+    - safe_select() fallback now catches KeyboardInterrupt -> returns None
+      (all menus already treat None as "Back").
+    - Bare `except:` clauses replaced with `except Exception:` so Ctrl+C
+      is never silently swallowed.
+    - Version string centralized in TALOS_VERSION constant.
 """
 import questionary
 import os
@@ -34,11 +44,30 @@ from scripts.profile_manager import (
 
 USE_LOCAL_MODEL = False
 
+# ── Single source of truth for the version shown in the TUI header ──────────
+TALOS_VERSION = "v5.3.6"
+
 def safe_select(message, choices):
+    """Questionary select with graceful fallback.
+    Returns None on Ctrl+C (all menus treat None as 'Back')."""
     try:
         return questionary.select(message, choices=choices, use_indicator=True, pointer="»").ask()
+    except KeyboardInterrupt:
+        return None
     except Exception:
-        return questionary.select(message, choices=choices).unsafe_ask()
+        # Fancy select failed (e.g. limited console) — plain fallback.
+        try:
+            return questionary.select(message, choices=choices).unsafe_ask()
+        except KeyboardInterrupt:
+            return None
+
+def safe_pause(msg="Press Enter to return..."):
+    """input() that swallows Ctrl+C so a stray interrupt at a pause prompt
+    returns to the menu instead of killing the whole TUI."""
+    try:
+        input(msg)
+    except (KeyboardInterrupt, EOFError):
+        print()
 
 def run_script(script_name, python_exe, args=None, capture=False):
     project_root = os.path.dirname(os.path.abspath(__file__))
@@ -87,11 +116,15 @@ def check_first_run(python_exe):
             print("ERROR: 'config.template.json' not found.")
             return
         if not os.path.exists("_profiles"): os.makedirs("_profiles")
-        if questionary.confirm("Start configuration now?", default=True).ask():
+        # .ask() returns None on Ctrl+C — treat as "no" (skip config).
+        answer = questionary.confirm("Start configuration now?", default=True).ask()
+        if answer:
             run_script("query_translator.py", python_exe)
             set_active_profile_name("default")
             save_current_state_to_profile("default")
-        print("\n--- Initial setup complete! ---\n")
+            print("\n--- Initial setup complete! ---\n")
+        else:
+            print("\n--- Setup skipped. You can configure later via Profile & Settings. ---\n")
         time.sleep(2)
 
 def author_tools_menu(python_exe):
@@ -138,15 +171,18 @@ def database_data_menu(python_exe):
 def system_health_menu(python_exe):
     os.system('cls' if os.name == 'nt' else 'clear')
     project_root = os.path.dirname(os.path.abspath(__file__))
+    # v5.3.6 FIX: options renumbered 1-10 — previously there were TWO "6."
+    # entries and choice.startswith("6.") always matched the first one,
+    # making "Baseline Report (Standard)" unreachable dead code.
     choice = safe_select("System Diagnostics:", choices=[
         "1. Code Integrity Check", "2. Documentation Audit",
         "3. Open Architecture Graph", "4. Architecture Intelligence Report",
         "5. GWO Live Dashboard (Dash — Real-Time 3D Swarm)",
         "6. GWO Swarm Hunt Replay (Streamlit — 3D History)",
-        questionary.Separator(), "6. Baseline Report (Standard)",
-        "7. Baseline Report (Academic — 600 DPI)", "8. DRL Agent Status",
+        questionary.Separator(), "7. Baseline Report (Standard)",
+        "8. Baseline Report (Academic — 600 DPI)", "9. DRL Agent Status",
         questionary.Separator(),
-        "9. Generate Codebase Docs (18 Languages, LOCAL Only)",
+        "10. Generate Codebase Docs (18 Languages, LOCAL Only)",
         questionary.Separator(), "Back"
     ])
     if choice is None or "Back" in choice: return
@@ -166,7 +202,7 @@ def system_health_menu(python_exe):
                 sd = os.path.join(project_root, "templates")
                 subprocess.Popen([python_exe, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", sd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             s.close()
-        except: pass
+        except Exception: pass
         webbrowser.open(f"http://localhost:{port}/architecture_graph.html")
     elif choice.startswith("4."):
         if questionary.confirm("Start now? (may take 60s)", default=True).ask():
@@ -188,7 +224,7 @@ def system_health_menu(python_exe):
             if s.connect_ex(('127.0.0.1', 8050)) == 0:
                 dash_running = True
             s.close()
-        except:
+        except Exception:
             pass
         if not dash_running:
             print("\n  Starting Dash server...")
@@ -211,9 +247,9 @@ def system_health_menu(python_exe):
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             time.sleep(3)
             webbrowser.open("http://localhost:8501")
-    elif choice.startswith("6."): run_script("generate_baseline_report.py", python_exe)
-    elif choice.startswith("7."): run_script("generate_baseline_report.py", python_exe, args=["--academic"])
-    elif choice.startswith("8."):
+    elif choice.startswith("7."): run_script("generate_baseline_report.py", python_exe)
+    elif choice.startswith("8."): run_script("generate_baseline_report.py", python_exe, args=["--academic"])
+    elif choice.startswith("9."):
         mp = os.path.join(project_root, "models", "dddqn_trained.pth")
         gp = os.path.join(project_root, "models", "gwo_best_params.json")
         try:
@@ -240,7 +276,7 @@ def system_health_menu(python_exe):
                 import json
                 with open(gp) as f: p = json.load(f)
                 print(f"  LR={p['learning_rate']:.6e} GAMMA={p['gamma']:.4f} EPS={p['epsilon_decay']:.6f} Fitness={p['best_fitness']:.1f}")
-    elif choice.startswith("9."):
+    elif choice.startswith("10."):
         print("\n" + "=" * 65)
         print("  Codebase Documentation Generator (18 Languages)")
         print("=" * 65)
@@ -248,7 +284,7 @@ def system_health_menu(python_exe):
         print("  Produces detailed Markdown docs for every code file you select.")
         if questionary.confirm("Launch documentation generator?", default=True).ask():
             run_script("generate_docs.py", python_exe)
-    print(); input("Press Enter...")
+    print(); safe_pause("Press Enter...")
 
 def api_keys_menu(python_exe):
     from dotenv import dotenv_values
@@ -303,7 +339,7 @@ def api_keys_menu(python_exe):
         elif c.startswith("2"):
             tp = os.path.join(project_root, 'scripts', 'api_health_check.py')
             if os.path.exists(tp): subprocess.run([python_exe, tp], check=False)
-        input("\nPress Enter...")
+        safe_pause("\nPress Enter...")
 
 def profile_settings_menu(python_exe):
     while True:
@@ -322,7 +358,7 @@ def profile_settings_menu(python_exe):
             tp = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts', 'api_health_check.py')
             if os.path.exists(tp): subprocess.run([python_exe, tp], check=False)
         elif c.startswith("6."): run_script("research_pivot.py", python_exe)
-        input("\nPress Enter...")
+        safe_pause("\nPress Enter...")
 
 def _verify_local_models():
     import requests
@@ -337,7 +373,7 @@ def _verify_local_models():
                 subprocess.run(["ollama", "pull", m], check=True)
             else: print(f"  >> {m} installed.")
         os.environ["TALOS_MODELS_VERIFIED"] = "1"
-    except: pass
+    except Exception: pass
 
 def main_menu():
     python_exe = sys.executable or "python"
@@ -363,7 +399,7 @@ def main_menu():
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
         ap = get_active_profile_name()
-        header = f"TALOS v5.3.0 | Profile: [{ap}]"
+        header = f"TALOS {TALOS_VERSION} | Profile: [{ap}]"
         try:
             from core.database_manager import DatabaseManager
             db = DatabaseManager(); s = db.get_database_statistics()
@@ -373,9 +409,9 @@ def main_menu():
                 from core.hardware import detect_vram_gb
                 v = detect_vram_gb()
                 if v: vr = f" | VRAM: {v:.0f}GB"
-            except: pass
-            header = f"TALOS v5.3.0 | Profile: [{ap}] | {s['total_papers']} papers | {s['elite_papers']} elite | {prov}{vr}"
-        except: pass
+            except Exception: pass
+            header = f"TALOS {TALOS_VERSION} | Profile: [{ap}] | {s['total_papers']} papers | {s['elite_papers']} elite | {prov}{vr}"
+        except Exception: pass
 
         choice = safe_select(header, choices=[
             questionary.Separator("  SEARCH & DISCOVERY"),
@@ -442,9 +478,14 @@ def main_menu():
         elif choice.startswith("13."): database_data_menu(python_exe)
         elif choice.startswith("14."): system_health_menu(python_exe)
         elif choice.startswith("15."): profile_settings_menu(python_exe)
-        if choice != "Exit": input(fm)
+        if choice != "Exit": safe_pause(fm)
     print("\nTalos Command Center Closing...\n")
 
 if __name__ == "__main__":
-    try: main_menu()
-    except KeyboardInterrupt: print("\n\nTalos Closing...\n")
+    # Top-level guard: any stray Ctrl+C exits cleanly with code 0
+    # (no traceback dumped to the user).
+    try:
+        main_menu()
+    except KeyboardInterrupt:
+        print("\n\nTalos Closing...\n")
+        sys.exit(0)

@@ -73,7 +73,9 @@ Data Flow:
 
 ## 2. Core Modules
 
-### 2.0 `core/talos_env.py` — Gymnasium Environment (v2.1, Provider-Aware)
+### 2.0 `core/talos_env.py` — Gymnasium Environment (v3.1, Time-limit Truncation Fix)
+
+**v3.1 (Batch 1 audit):** The 200-step cutoff is now reported as `truncated=True` (not `terminated`) per Gymnasium time-limit semantics, so Bellman targets bootstrap across the artificial cutoff.
 
 **Role:** RL environment for API source selection. **V2.1:** Fixed hour normalization `/23.0` → `/24.0`. **v3.0:** Provider-aware observation — state vector includes 4 provider ratios (gemini, deepseek, huggingface, local) for the DRL agent.
 
@@ -93,7 +95,10 @@ Data Flow:
 | `get_default_state_space` | `() -> int` | v3.0: 1 + N + 2 + 4. |
 | `get_default_action_space` | `() -> int` | N + 1 sleep. |
 
-### 2.1 `core/ai_manager.py` — Class `AIManager` (v3.5, 380 lines)
+### 2.1 `core/ai_manager.py` — Class `AIManager` (v3.8)
+
+**v3.7 (Batch 1 audit):** New attribute `last_provider_used` — set on every successful `_execute_request()` with the name of the provider that actually served the request. Consumed by the live orchestrator for correct provider attribution.
+**v3.8 (Batch 3 hotfix):** Implemented `analyze_generic_text(full_prompt) -> str|None` — it was documented in this map and called by grey_literature_miner.py, but did NOT exist in the code (AttributeError). Thin wrapper around `_execute_request(model_type='pro', response_format='text')`.
 
 **Role:** Multi-provider LLM interface with circuit breaker pattern. Manages 4 providers: Gemini (primary cloud), DeepSeek (fallback), HuggingFace (free cloud), Local/Ollama (offline).
 
@@ -123,7 +128,9 @@ Data Flow:
 | `import_source_class` | `(source_name: str) -> class or None` | Dynamic import with auto-detect class (searches for *Source). |
 | `build_source_map` | `(source_names: list) -> (dict, list)` | DENSE action mapping: {0: (name, cls), ...}. Also returns the list of working source names. |
 
-### 2.3 `core/live_agent_orchestrator.py` — Main Loop + Cooldown (v1.0, NEW in v5.3.1)
+### 2.3 `core/live_agent_orchestrator.py` — Main Loop + Cooldown (v1.1, Batch 1 audit)
+
+**v1.1 fixes:** (1) `LOW_SCORE_MAX` 20 → 10 so streak normalization matches the training env (/10) — eliminates train/inference distribution mismatch. (2) `evaluate_paper()` now credits the provider that ACTUALLY answered (`ai_manager.last_provider_used`), not always "gemini".
 
 **Role:** Core orchestration loop for the TALOS Live DRL Agent. Handles state calculation, action selection, API fetch, AI evaluation, reward, counters, and provider tracking. **v3.1 Cooldown:** `active_cooldowns` dict prevents deadlocks — actions with negative reward get 5-step lockout, overridden by random free action.
 
@@ -196,8 +203,8 @@ Data Flow:
 
 ## 3. Entry Points
 
-### 3.1 `talos.py` (v4.10.1, 653 lines)
-CLI entry point with interactive menu.
+### 3.1 `talos.py` (v5.3.6 — TUI Hardening)
+CLI entry point with interactive menu. **v5.3.6 (Batch 2 TUI audit):** New `safe_pause()` (Ctrl+C at "Press Enter" prompts returns to menu); `safe_select()` catches KeyboardInterrupt → None; fixed duplicate "6." in System Diagnostics (dead "Baseline Report (Standard)" branch — menu renumbered 1-10); bare `except:` → `except Exception:`; `TALOS_VERSION` constant in header; top-level guard with `sys.exit(0)`.
 
 ### 3.2 `app.py` (v5.3.3, ~940 lines)
 Streamlit Web GUI — light-only theme (dark mode removed in v5.3.3).
@@ -215,7 +222,7 @@ Batch script for launching Streamlit GUI.
 ### 4.1 Search Scripts
 - `daily_search.py` (v5.4) — Daily search across 14 APIs
 - `historic_search.py` (v5.5) — Deep archive search
-- `grey_literature_miner.py` — Grey literature with Gemini Search Grounding
+- `grey_literature_miner.py` (v2.1) — Grey literature with Gemini Search Grounding. **v2.1 (Batch 3):** `ddgs` import with fallback to legacy `duckduckgo_search`; missing GEMINI_API_KEY is no longer fatal (runs on AIManager fallback + DuckDuckGo grounding).
 
 ### 4.2 Analysis & Insights
 - `knowledge_path_generator.py` (v1.8) — "CHIRON"
@@ -232,14 +239,17 @@ Batch script for launching Streamlit GUI.
 
 ### 4.5 Integration Scripts
 
-#### `scripts/drl_trainer.py` (v1.1 — GWO-Optimized)
-**Purpose:** Training script with GWO-optimized hyperparameters. **v1.1:** `EPS_DECAY=0.9415` (GWO), saves as `dddqn_trained.pth`.
+#### `scripts/drl_trainer.py` (v1.3 — Batch 2 TUI hardening)
+**Purpose:** Training script with GWO-optimized hyperparameters. **v1.1:** `EPS_DECAY=0.9415` (GWO), saves as `dddqn_trained.pth`. **v1.2:** Fixed fatal `NameError` (`args.episodes` → `episodes` in interactive mode); stores `done=terminated` only (truncation still bootstraps). **v1.3 (Batch 2, presentation only):** Ctrl+C mid-training → saves partial model to `models/dddqn_partial.pth` + clean exit(0); single-line `\r` progress ticker between 50-episode summaries; Ctrl+C guards at prompt and top level.
+
+#### `scripts/gwo_rl_optimizer.py` (v2.0 — Real Fitness + Canonical GWO)
+**Purpose:** GWO hyperparameter tuning. **v2.0 (Batch 1 audit):** (1) `calculate_fitness()` now ACTUALLY trains the agent (store + learn + decayed epsilon) and measures fitness in a separate greedy evaluation phase (`EVAL_EPISODES=5`) — previously fitness was pure noise (eps=1.0, no learn()). (2) `update_wolf_position()` follows canonical GWO (Mirjalili 2014): fresh r1/r2/A/C per alpha/beta/delta term. (3) Fitness values cached per iteration — `_build_history_entry()` receives `fitness_values` instead of re-evaluating.
 **Functions:** `main()` — 700 episodes, simulated scores, provider-aware state (dim=21).
 **Imports:** `core.talos_env.TalosEnv`, `core.drl_agent`
 
-#### `scripts/talos_live_agent.py` (v3.1 — Thin Entry, Cooldown)
-**Purpose:** Thin entry point (~110 lines). **v3.1:** epsilon=0.05, 5-step cooldown for negative-reward actions, ASCII output. Delegates to `core.live_agent_orchestrator.run_live_loop()`.
-**Functions:** `main()` only — config load, source discovery, model load, run loop.
+#### `scripts/talos_live_agent.py` (v3.2 — Batch 2 TUI hardening)
+**Purpose:** Thin entry point. **v3.1:** epsilon=0.05, 5-step cooldown for negative-reward actions, ASCII output. Delegates to `core.live_agent_orchestrator.run_live_loop()`. **v3.2:** argparse (`--verbose`, `--help`) replaces ad-hoc sys.argv scanning; formatted startup summary table; top-level KeyboardInterrupt guard (clean exit(0) on Ctrl+C during startup).
+**Functions:** `_parse_args()`, `main()` — config load, source discovery, model load, run loop.
 **Imports:** `core.drl_agent`, `core.ai_manager`, `core.talos_env`, `core.live_agent_sources`, `core.live_agent_orchestrator`
 
 #### `scripts/talos_service_api.py` (v1.0)
@@ -415,6 +425,6 @@ generate_docs.py → requests, dotenv, tqdm
 
 ---
 
-> **Last Updated:** 2026-07-05 (v5.3.4: Mythological code names removed — modules now use descriptive titles. PROJECT_MAP_EN.md sync rule added. Section 8 → Module Descriptions.)
-> **Project Version:** v5.3.4
+> **Last Updated:** 2026-07-06 (v5.3.6 — Batch 2 TUI hardening + Batch 3 hotfix: implemented the missing AIManager.analyze_generic_text(), ddgs import fix in grey_literature_miner.)
+> **Project Version:** v5.3.6
 > **Total Files Covered:** 61

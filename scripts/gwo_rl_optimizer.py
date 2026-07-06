@@ -1,11 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-Module: gwo_rl_optimizer.py (v1.1 — Live Progress)
-Project: TALOS v5.3.3
+Module: gwo_rl_optimizer.py (v2.0 — Real Fitness + Canonical GWO)
+Project: TALOS v5.3.5
 Description:
     Grey Wolf Optimizer (GWO) for TALOS DRL hyperparameter tuning.
     v1.1 adds: --live flag for real-time GUI progress, _write_live_progress(),
     gwo_progress.json output for Streamlit dashboard.
+    v2.0 (BATCH 1 audit fixes):
+    - calculate_fitness() now ACTUALLY trains the agent: transitions are
+      stored in replay memory, agent.learn() is called each step, and the
+      decayed epsilon is passed to act(). Fitness is measured in a separate
+      GREEDY evaluation phase (eps=0.0), so lr/gamma/eps_decay are causally
+      connected to the fitness value. (Previously fitness was pure random-walk
+      noise: eps=1.0 was hardcoded and learn() was never called.)
+    - update_wolf_position() now follows canonical GWO (Mirjalili 2014):
+      fresh r1/r2 (hence fresh A and C) are drawn INDEPENDENTLY for each of
+      the alpha, beta and delta encircling terms (Eq. 3.5–3.7).
+    - Fitness values are computed ONCE per iteration and cached — they are
+      passed into _build_history_entry() instead of being re-evaluated
+      (mandatory now that each fitness eval trains a full agent).
 
     Usage:
         python scripts/gwo_rl_optimizer.py              # default: 15 wolves, 50 iters
@@ -28,19 +41,26 @@ DEFAULT_ITERS = 50
 DEFAULT_STD_THRESH = 0.01
 DEFAULT_RL_EPISODES = 30
 DEFAULT_RL_STEPS = 200
+# Number of greedy (eps=0.0) evaluation episodes run AFTER training to
+# measure fitness. Kept small — evaluation is deterministic-policy rollout.
+EVAL_EPISODES = 5
 
 LOWER_BOUND = np.array([-5.0, 0.5, 0.9])
 UPPER_BOUND = np.array([-3.0, 0.99, 0.999])
 
 
-def _build_history_entry(iteration, wolves, best_wolves, wolves_number):
+def _build_history_entry(iteration, wolves, best_wolves, wolves_number, fitness_values):
+    """Build one history record. Uses CACHED fitness_values (v2.0) —
+    re-evaluating fitness here would retrain an agent per wolf (2x runtime)
+    and, because fitness is stochastic, would log values inconsistent with
+    the ranking used to pick alpha/beta/delta."""
     alpha_pos = best_wolves[0][0]
     beta_pos = best_wolves[1][0]
     delta_pos = best_wolves[2][0]
     wolves_list = []
     for w in range(wolves_number):
         lr, gamma, eps_d = decode_wolf(wolves[w])
-        fitness = -calculate_fitness(wolves[w])
+        fitness = -float(fitness_values[w])
         if np.array_equal(wolves[w], alpha_pos): role = "alpha"
         elif np.array_equal(wolves[w], beta_pos): role = "beta"
         elif np.array_equal(wolves[w], delta_pos): role = "delta"
@@ -60,31 +80,58 @@ def decode_wolf(wolf_position):
 
 
 def calculate_fitness(wolf_position):
+    """Train a fresh DDQN agent with the candidate hyperparameters, then
+    measure average greedy-policy reward. Returns NEGATIVE reward (GWO
+    minimizes). v2.0: the agent is actually trained (store + learn + decayed
+    epsilon), so the hyperparameters causally affect fitness."""
     lr, gamma, eps_decay = decode_wolf(wolf_position)
     env = TalosEnv()
-    agent = TalosDRLAgent()
     import core.drl_agent as da
     old_lr, old_gamma = da.LR, da.GAMMA
+    # Monkey-patch module globals — learn() reads GAMMA at call time.
     da.LR, da.GAMMA = lr, gamma
-    agent.actor_optimizer = agent.actor_optimizer.__class__(agent.actor_online.parameters(), lr=lr)
     try:
-        total_reward, epsilon = 0.0, 1.0
+        agent = TalosDRLAgent()
+        # Rebuild optimizer with the candidate learning rate.
+        agent.actor_optimizer = agent.actor_optimizer.__class__(
+            agent.actor_online.parameters(), lr=lr)
+
+        # ── Phase 1: TRAINING (epsilon-greedy with candidate eps_decay) ──
+        epsilon = 1.0
         for _ in range(DEFAULT_RL_EPISODES):
             obs, _ = env.reset()
             agent.reset_hidden_states()
             for _ in range(DEFAULT_RL_STEPS):
-                action = agent.act(obs, eps=1.0)
+                action = agent.act(obs, eps=epsilon)
+                next_obs, reward, terminated, truncated, _ = env.step(action)
+                # Store DONE=terminated only (truncation must still bootstrap).
+                agent.memory.store(Transition(obs, action, reward, next_obs, terminated))
+                agent.learn()
+                obs = next_obs
+                if terminated or truncated:
+                    break
+            epsilon = max(0.01, epsilon * eps_decay)
+
+        # ── Phase 2: GREEDY EVALUATION (eps=0.0, no learning) ──
+        total_reward = 0.0
+        for _ in range(EVAL_EPISODES):
+            obs, _ = env.reset()
+            agent.reset_hidden_states()
+            for _ in range(DEFAULT_RL_STEPS):
+                action = agent.act(obs, eps=0.0)
                 next_obs, reward, terminated, truncated, _ = env.step(action)
                 total_reward += reward
                 obs = next_obs
-                if terminated or truncated: break
-            epsilon = max(0.01, epsilon * eps_decay)
-        return -(total_reward / DEFAULT_RL_EPISODES)
+                if terminated or truncated:
+                    break
+        return -(total_reward / EVAL_EPISODES)
     finally:
         da.LR, da.GAMMA = old_lr, old_gamma
 
 
 def find_best_three_wolves(wolves_positions):
+    """Evaluate all wolves ONCE and return (best_three, std, all_fitness).
+    v2.0: also returns the cached fitness array for history logging."""
     fitness_values = np.array([calculate_fitness(w) for w in wolves_positions])
     sorted_indices = np.argsort(fitness_values)
     best_wolves = {
@@ -92,18 +139,28 @@ def find_best_three_wolves(wolves_positions):
         1: [wolves_positions[sorted_indices[1]].copy(), fitness_values[sorted_indices[1]]],
         2: [wolves_positions[sorted_indices[2]].copy(), fitness_values[sorted_indices[2]]],
     }
-    return best_wolves, np.std(fitness_values)
+    return best_wolves, np.std(fitness_values), fitness_values
 
 
 def update_wolf_position(wolf_pos, dim, best_wolves, a_factor):
+    """Canonical GWO position update (Mirjalili 2014, Eq. 3.5–3.7).
+    v2.0: fresh r1/r2 (hence fresh A and C) are drawn INDEPENDENTLY for
+    each of the alpha, beta and delta encircling terms."""
+    # ── Alpha term ──
     r1, r2 = np.random.random(2)
-    A, C = 2.0 * a_factor * r1 - a_factor, 2.0 * r2
-    D_alpha = abs(C * best_wolves[0][0][dim] - wolf_pos)
-    D_beta = abs(C * best_wolves[1][0][dim] - wolf_pos)
-    D_delta = abs(C * best_wolves[2][0][dim] - wolf_pos)
-    X1 = best_wolves[0][0][dim] - A * D_alpha
-    X2 = best_wolves[1][0][dim] - A * D_beta
-    X3 = best_wolves[2][0][dim] - A * D_delta
+    A1, C1 = 2.0 * a_factor * r1 - a_factor, 2.0 * r2
+    D_alpha = abs(C1 * best_wolves[0][0][dim] - wolf_pos)
+    X1 = best_wolves[0][0][dim] - A1 * D_alpha
+    # ── Beta term ──
+    r1, r2 = np.random.random(2)
+    A2, C2 = 2.0 * a_factor * r1 - a_factor, 2.0 * r2
+    D_beta = abs(C2 * best_wolves[1][0][dim] - wolf_pos)
+    X2 = best_wolves[1][0][dim] - A2 * D_beta
+    # ── Delta term ──
+    r1, r2 = np.random.random(2)
+    A3, C3 = 2.0 * a_factor * r1 - a_factor, 2.0 * r2
+    D_delta = abs(C3 * best_wolves[2][0][dim] - wolf_pos)
+    X3 = best_wolves[2][0][dim] - A3 * D_delta
     return (X1 + X2 + X3) / 3.0
 
 
@@ -133,7 +190,7 @@ def run_gwo(wolves_number=DEFAULT_WOLVES, max_iterations=DEFAULT_ITERS, live=Fal
 
     wolves = np.random.uniform(low=LOWER_BOUND, high=UPPER_BOUND, size=(wolves_number, 3))
     print("  [ITER 0] Initialising population and finding leaders...")
-    best_wolves, fitness_std = find_best_three_wolves(wolves)
+    best_wolves, fitness_std, fitness_values = find_best_three_wolves(wolves)
 
     a_factor, iteration = 2.0, 0
     import os as _os, json as _json
@@ -141,7 +198,7 @@ def run_gwo(wolves_number=DEFAULT_WOLVES, max_iterations=DEFAULT_ITERS, live=Fal
     models_dir = _os.path.join(project_root, "models")
     _os.makedirs(models_dir, exist_ok=True)
 
-    gwo_history = [_build_history_entry(iteration, wolves, best_wolves, wolves_number)]
+    gwo_history = [_build_history_entry(iteration, wolves, best_wolves, wolves_number, fitness_values)]
 
     # Write initial history for Dash live dashboard
     history_path = _os.path.join(models_dir, "gwo_history.json")
@@ -159,8 +216,8 @@ def run_gwo(wolves_number=DEFAULT_WOLVES, max_iterations=DEFAULT_ITERS, live=Fal
                 wolves[w, d] = np.clip(update_wolf_position(wolves[w, d], d, best_wolves, a_factor),
                                        LOWER_BOUND[d], UPPER_BOUND[d])
         a_factor = 2.0 - iteration * (2.0 / max_iterations)
-        best_wolves, fitness_std = find_best_three_wolves(wolves)
-        gwo_history.append(_build_history_entry(iteration, wolves, best_wolves, wolves_number))
+        best_wolves, fitness_std, fitness_values = find_best_three_wolves(wolves)
+        gwo_history.append(_build_history_entry(iteration, wolves, best_wolves, wolves_number, fitness_values))
 
         # Write history incrementally so Dash live dashboard can read it
         with open(history_path, "w", encoding="utf-8") as f:

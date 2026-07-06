@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: live_agent_orchestrator.py (v1.0)
-Project: TALOS v5.3.1
+Module: live_agent_orchestrator.py (v1.1 — Batch 1 audit fixes)
+Project: TALOS v5.3.5
 Description:
     Main orchestration loop for the TALOS Live DRL Agent. Handles the
     full cycle: state calculation → action selection → API fetch →
@@ -39,7 +39,11 @@ REWARD_LOW = -10                 # -10 for low-scoring papers
 REWARD_ERROR = -50               # -50 for API errors (429, 402, etc.)
 SLEEP_SECONDS = 3600             # 1 hour sleep for the sleep action
 THROTTLE_SECONDS = 5             # Mandatory cooldown between API calls
-LOW_SCORE_MAX = 20               # Max consecutive low scores before normalizing
+# v1.1 FIX (train/inference distribution mismatch): the training env
+# (talos_env._build_obs) normalizes streaks by /10. Inference MUST use the
+# same divisor, otherwise the agent sees streak features compressed 2x
+# relative to what it was trained on (silent domain shift).
+LOW_SCORE_MAX = 10               # Streak normalization divisor — MUST match talos_env (=10)
 PROVIDER_MAX_CALLS_FREE = 100    # Default daily provider calls (free tier)
 
 # ── Provider names for state tracking ────────────────────────────────────────
@@ -195,9 +199,12 @@ def evaluate_paper(paper, ai_manager, provider_call_counts):
     try:
         evaluation = ai_manager.evaluate_paper_json(content, model_type='flash')
         if evaluation:
-            # Track which provider was used (inferred from active provider)
-            # The ai_manager logs provider usage; we track it here for the DRL state.
-            provider_call_counts["gemini"] = provider_call_counts.get("gemini", 0) + 1
+            # v1.1 FIX (provider attribution): credit the provider that ACTUALLY
+            # served the request (exposed by AIManager v3.7 as last_provider_used),
+            # instead of always crediting "gemini". This keeps the provider-usage
+            # portion of the DRL state vector correct when fallback occurs.
+            used = getattr(ai_manager, "last_provider_used", None) or "gemini"
+            provider_call_counts[used] = provider_call_counts.get(used, 0) + 1
             return float(evaluation.get('overall_score', 0))
     except Exception as e:
         print(f"    [WARN] AI evaluation failed: {e}")

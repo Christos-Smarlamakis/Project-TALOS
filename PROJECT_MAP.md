@@ -73,9 +73,9 @@ Data Flow:
 
 ## 2. Core Modules
 
-### 2.0 `core/talos_env.py` — Gymnasium Environment (v2.1, Provider-Aware)
+### 2.0 `core/talos_env.py` — Gymnasium Environment (v3.1, Time-limit Truncation Fix)
 
-**Ρόλος:** RL environment για API source selection. **V2.1:** Fixed hour normalization `/23.0` → `/24.0`. **v3.0:** Provider-aware observation — state vector includes 4 provider ratios (gemini, deepseek, huggingface, local) για τον DRL agent.
+**Ρόλος:** RL environment για API source selection. **V2.1:** Fixed hour normalization `/23.0` → `/24.0`. **v3.0:** Provider-aware observation — state vector includes 4 provider ratios (gemini, deepseek, huggingface, local) για τον DRL agent. **v3.1 (Batch 1 audit):** Το 200-step cutoff επιστρέφεται πλέον ως `truncated=True` (όχι `terminated`) — Gymnasium time-limit semantics, ώστε το Bellman target να κάνει bootstrap πέρα από το τεχνητό όριο.
 
 **Module-level constants:**
 - `_PROVIDER_NAMES` = ["gemini", "deepseek", "huggingface", "local"]
@@ -93,7 +93,10 @@ Data Flow:
 | `get_default_state_space` | `() -> int` | v3.0: 1 + N + 2 + 4. |
 | `get_default_action_space` | `() -> int` | N + 1 sleep. |
 
-### 2.1 `core/ai_manager.py` — Κλάση `AIManager` (v3.5, 380 γραμμές)
+### 2.1 `core/ai_manager.py` — Κλάση `AIManager` (v3.8)
+
+**v3.7 (Batch 1 audit):** Νέο attribute `last_provider_used` — ενημερώνεται σε κάθε επιτυχημένο `_execute_request()` με το όνομα του provider που εξυπηρέτησε το request. Χρησιμοποιείται από τον live orchestrator για σωστό provider attribution.
+**v3.8 (Batch 3 hotfix):** Υλοποιήθηκε η `analyze_generic_text(full_prompt) -> str|None` — ήταν τεκμηριωμένη στον χάρτη και καλούνταν από το grey_literature_miner.py, αλλά ΔΕΝ υπήρχε στον κώδικα (AttributeError). Thin wrapper γύρω από `_execute_request(model_type='pro', response_format='text')`.
 
 **Ρόλος:** Multi-provider LLM interface με circuit breaker pattern. Διαχειρίζεται 4 providers: Gemini (πρωτεύων cloud), DeepSeek (fallback), HuggingFace (δωρεάν cloud), Local/Ollama (offline).
 
@@ -123,7 +126,9 @@ Data Flow:
 | `import_source_class` | `(source_name: str) -> class or None` | Δυναμικό import με auto-detect κλάσης (ψάχνει για *Source). |
 | `build_source_map` | `(source_names: list) -> (dict, list)` | DENSE action mapping: {0: (name, cls), ...}. Επιστρέφει και τη λίστα των working source names. |
 
-### 2.3 `core/live_agent_orchestrator.py` — Main Loop + Cooldown (v1.0, NEW in v5.3.1)
+### 2.3 `core/live_agent_orchestrator.py` — Main Loop + Cooldown (v1.1, Batch 1 audit)
+
+**v1.1 fixes:** (1) `LOW_SCORE_MAX` 20 → 10 ώστε το streak normalization να ταιριάζει με το training env (/10) — εξάλειψη train/inference distribution mismatch. (2) `evaluate_paper()` πλέον πιστώνει τον provider που ΠΡΑΓΜΑΤΙΚΑ απάντησε (`ai_manager.last_provider_used`), όχι πάντα "gemini".
 
 **Ρόλος:** Core orchestration loop για το TALOS Live DRL Agent. Handles state calculation, action selection, API fetch, AI evaluation, reward, counters, and provider tracking. **v3.1 Cooldown:** `active_cooldowns` dict prevents deadlocks — actions with negative reward get 5-step lockout, overridden by random free action.
 
@@ -210,8 +215,8 @@ Data Flow:
 
 ## 3. Entry Points
 
-### 3.1 `talos.py` (v4.10.1, 653 γραμμές)
-CLI entry point με interactive menu.
+### 3.1 `talos.py` (v5.3.6 — TUI Hardening)
+CLI entry point με interactive menu. **v5.3.6 (Batch 2 TUI audit):** Νέα `safe_pause()` (Ctrl+C σε "Press Enter" prompts επιστρέφει στο μενού)· `safe_select()` πιάνει KeyboardInterrupt → None· διόρθωση διπλού "6." στο System Diagnostics (το "Baseline Report (Standard)" ήταν dead code — μενού αναριθμήθηκε 1-10)· bare `except:` → `except Exception:`· `TALOS_VERSION` constant στο header· top-level guard με `sys.exit(0)`.
 
 ### 3.2 `app.py` (v5.3.3, ~940 γραμμές)
 Streamlit Web GUI — light-only theme (dark mode removed in v5.3.3).
@@ -229,7 +234,7 @@ Batch script για Streamlit GUI.
 ### 4.1 Search Scripts
 - `daily_search.py` (v5.4) — Καθημερινή αναζήτηση σε 14 APIs
 - `historic_search.py` (v5.5) — Deep archive search
-- `grey_literature_miner.py` — Grey literature με Gemini Search Grounding
+- `grey_literature_miner.py` (v2.1) — Grey literature με Gemini Search Grounding. **v2.1 (Batch 3):** `ddgs` import με fallback στο legacy `duckduckgo_search`· το missing GEMINI_API_KEY δεν είναι πλέον fatal (τρέχει με AIManager fallback + DuckDuckGo grounding).
 
 ### 4.2 Analysis & Insights
 - `knowledge_path_generator.py` (v1.8) — "CHIRON"
@@ -246,14 +251,17 @@ Batch script για Streamlit GUI.
 
 ### 4.5 Integration Scripts
 
-#### `scripts/drl_trainer.py` (v1.1 — GWO-Optimized)
-**Σκοπός:** Training script με GWO-optimized hyperparameters. **v1.1:** `EPS_DECAY=0.9415` (GWO), saves as `dddqn_trained.pth`.
+#### `scripts/drl_trainer.py` (v1.3 — Batch 2 TUI hardening)
+**Σκοπός:** Training script με GWO-optimized hyperparameters. **v1.1:** `EPS_DECAY=0.9415` (GWO), saves as `dddqn_trained.pth`. **v1.2:** Fix fatal `NameError` (`args.episodes` → `episodes` σε interactive mode)· αποθηκεύει `done=terminated` μόνο (truncation bootstrap). **v1.3 (Batch 2, μόνο presentation):** Ctrl+C μεσα στην εκπαίδευση → αποθήκευση partial model σε `models/dddqn_partial.pth` + clean exit(0)· single-line progress ticker (`\r`) ανάμεσα στα 50-episode summaries· Ctrl+C guards σε prompt και top-level.
+
+#### `scripts/gwo_rl_optimizer.py` (v2.0 — Real Fitness + Canonical GWO)
+**Σκοπός:** GWO hyperparameter tuning. **v2.0 (Batch 1 audit):** (1) `calculate_fitness()` εκπαιδεύει ΠΡΑΓΜΑΤΙΚΑ τον agent (store + learn + decayed epsilon) και μετρά fitness σε ξεχωριστή greedy evaluation phase (`EVAL_EPISODES=5`) — πριν, το fitness ήταν καθαρός θόρυβος (eps=1.0, χωρίς learn()). (2) `update_wolf_position()` = canonical GWO (Mirjalili 2014): fresh r1/r2/A/C ανά alpha/beta/delta term. (3) Fitness values cached ανά iteration — το `_build_history_entry()` δέχεται `fitness_values` αντί να επανα-υπολογίζει.
 **Συναρτήσεις:** `main()` — 700 episodes, simulated scores, provider-aware state (dim=21).
 **Imports:** `core.talos_env.TalosEnv`, `core.drl_agent`
 
-#### `scripts/talos_live_agent.py` (v3.1 — Thin Entry, Cooldown)
-**Σκοπός:** Thin entry point (~110 γραμμές). **v3.1:** epsilon=0.05, 5-step cooldown για negative-reward actions, ASCII output. Delegates to `core.live_agent_orchestrator.run_live_loop()`.
-**Συναρτήσεις:** `main()` only — config load, source discovery, model load, run loop.
+#### `scripts/talos_live_agent.py` (v3.2 — Batch 2 TUI hardening)
+**Σκοπός:** Thin entry point. **v3.1:** epsilon=0.05, 5-step cooldown για negative-reward actions, ASCII output. Delegates to `core.live_agent_orchestrator.run_live_loop()`. **v3.2:** argparse (`--verbose`, `--help`) αντί για ad-hoc sys.argv· formatted startup summary table· top-level KeyboardInterrupt guard (clean exit(0) σε Ctrl+C κατά το startup).
+**Συναρτήσεις:** `_parse_args()`, `main()` — config load, source discovery, model load, run loop.
 **Imports:** `core.drl_agent`, `core.ai_manager`, `core.talos_env`, `core.live_agent_sources`, `core.live_agent_orchestrator`
 
 #### `scripts/talos_service_api.py` (v1.0)
@@ -429,6 +437,6 @@ generate_docs.py → requests, dotenv, tqdm
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-07-05 (v5.3.4: Mythological code names removed — modules now use descriptive titles. PROJECT_MAP_EN.md sync rule added. Section 8 → Module Descriptions.)
-> **Έκδοση Project:** v5.3.4
+> **Τελευταία ενημέρωση:** 2026-07-06 (v5.3.6 — Batch 2 TUI hardening + Batch 3 hotfix: υλοποίηση της απούσας AIManager.analyze_generic_text(), ddgs import fix στο grey_literature_miner.)
+> **Έκδοση Project:** v5.3.6
 > **Συνολικά αρχεία που καλύπτονται:** 61

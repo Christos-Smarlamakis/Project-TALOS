@@ -64,6 +64,11 @@ class AIManager:
         self.providers = {}
         self.provider_priority = config.get("ai_provider_priority", ["gemini", "deepseek"])
         self.active_embedding_model = None  # set after first successful embedding generation
+        # v3.7 (Batch 1 audit fix): name of the provider that served the LAST
+        # successful text/JSON request. Consumers (e.g. the live DRL agent's
+        # provider-usage counters) read this to attribute calls correctly
+        # instead of blindly assuming "gemini".
+        self.last_provider_used = None
 
         # --- Gemini Provider ---
         gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -164,6 +169,23 @@ class AIManager:
             prompt = prompt + "\n\n" + abstract
 
         return self._execute_request(prompt, model_type, response_format='json')
+
+    def analyze_generic_text(self, full_prompt: str) -> Union[str, None]:
+        """Run an arbitrary text prompt through the multi-provider chain.
+
+        v3.8 (Batch 3 hotfix): This method was documented in PROJECT_MAP.md
+        and called by grey_literature_miner.py, but was never implemented —
+        causing AttributeError crashes. It is a thin wrapper around
+        _execute_request() so it inherits the circuit breaker, provider
+        fallback chain, and last_provider_used tracking.
+
+        Args:
+            full_prompt (str): Complete prompt text to send to the LLM.
+
+        Returns:
+            str or None: Model response text, or None if all providers fail.
+        """
+        return self._execute_request(full_prompt, model_type='pro', response_format='text')
 
     # ── Embeddings ─────────────────────────────────────────────────────────
 
@@ -362,6 +384,8 @@ class AIManager:
                     result = self._execute_openai_compatible(prompt, response_format, 'local')
                 if result is not None:
                     self.providers[provider_name]['consecutive_failures'] = 0
+                    # v3.7: record which provider actually served this request
+                    self.last_provider_used = provider_name
                     return result
                 else:
                     print(f"  >!> Provider {provider_name.upper()} failed. Trying next provider...")

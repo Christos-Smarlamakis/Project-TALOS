@@ -1,12 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-Module: drl_trainer.py (v1.0)
-Project: TALOS v5.0.0
+Module: drl_trainer.py (v1.3 — Batch 2 TUI hardening)
+Project: TALOS v5.3.6
 Description:
     Training script for the TALOS Deep Reinforcement Learning agent. Runs
     multiple episodes where the agent interacts with the TalosEnv gymnasium
     environment, learns to select the optimal academic API source using a
     Double Dueling DQN with LSTM network. Saves the trained model to disk.
+
+    v1.3 (Batch 2 TUI audit — presentation layer only, training math untouched):
+    - Ctrl+C mid-training no longer dumps a traceback and loses progress:
+      the partial model is saved to models/dddqn_partial.pth, a clean
+      summary is printed, and the process exits with code 0.
+    - Ctrl+C at the interactive episode prompt exits cleanly.
+    - Lightweight single-line progress ticker (carriage-return based,
+      no external deps) between the every-50-episode summaries.
 
     Usage:
         python scripts/drl_trainer.py                     # 500 episodes (default)
@@ -56,15 +64,20 @@ def main():
         # Interactive mode: ask the user
         try:
             import questionary
-            choice = questionary.select(
-                "How many training episodes?",
-                choices=[
-                    "1. Quick test (50 episodes) ~ 30 sec",
-                    "2. Short training (100 episodes) ~ 1 min",
-                    "3. Standard training (500 episodes) ~ 5 min",
-                    "4. Deep training (1000 episodes) ~ 10 min",
-                ]
-            ).ask()
+            # v1.3: .ask() returns None on Ctrl+C, but some questionary
+            # versions re-raise — guard explicitly for a clean exit.
+            try:
+                choice = questionary.select(
+                    "How many training episodes?",
+                    choices=[
+                        "1. Quick test (50 episodes) ~ 30 sec",
+                        "2. Short training (100 episodes) ~ 1 min",
+                        "3. Standard training (500 episodes) ~ 5 min",
+                        "4. Deep training (1000 episodes) ~ 10 min",
+                    ]
+                ).ask()
+            except KeyboardInterrupt:
+                choice = None
             if choice is None:
                 print("  Cancelled.")
                 return
@@ -81,7 +94,7 @@ def main():
     print("  TALOS DRL Training — API Orchestrator Agent")
     print("=" * 60)
     print(f"  Device: {DEVICE}")
-    print(f"  Episodes: {args.episodes}")
+    print(f"  Episodes: {episodes}")
     print(f"  Max steps/episode: {MAX_STEPS}")
     print()
 
@@ -95,55 +108,84 @@ def main():
     # Track total reward across all episodes for progress reporting
     episode_rewards = []
 
-    # ── Main training loop ─────────────────────────────────────────────────
-    for episode in range(1, args.episodes + 1):
-        # Start a fresh episode (new day)
-        obs, _ = env.reset()
-
-        # Reset the agent's LSTM hidden states for the new episode
-        agent.reset_hidden_states()
-
-        total_reward = 0.0
-
-        for step in range(MAX_STEPS):
-            # ── Agent picks an action ──────────────────────────────────────
-            action = agent.act(obs, epsilon)
-
-            # ── Environment executes the action ────────────────────────────
-            next_obs, reward, terminated, truncated, info = env.step(action)
-
-            # ── Store the experience in replay memory ─────────────────────
-            # The agent will learn from this later when it samples batches
-            agent.memory.store(Transition(obs, action, reward, next_obs, terminated))
-
-            # ── Agent learns from past experiences ────────────────────────
-            agent.learn()
-
-            # ── Move to the next state ────────────────────────────────────
-            obs = next_obs
-            total_reward += reward
-
-            if terminated or truncated:
-                break
-
-        # ── Track and print progress ──────────────────────────────────────
-        episode_rewards.append(total_reward)
-        epsilon = max(EPS_END, epsilon * EPS_DECAY)
-
-        # Print every 50 episodes or on the last one
-        if episode % 50 == 0 or episode == args.episodes:
-            # Average reward over the last 50 episodes
-            avg_reward = np.mean(episode_rewards[-50:])
-            print(f"  Episode {episode:4d}/{args.episodes}  "
-                  f"Avg Reward: {avg_reward:7.1f}  "
-                  f"Epsilon: {epsilon:.3f}")
-
-    # ── Save the trained model ─────────────────────────────────────────────
-    # Create the models directory if it doesn't exist
+    # ── Models directory (needed for both normal + interrupted saves) ──────
     models_dir = os.path.join(os.path.dirname(__file__), '..', 'models')
     os.makedirs(models_dir, exist_ok=True)
-    model_path = os.path.join(models_dir, 'dddqn_trained.pth')
 
+    # ── Main training loop ─────────────────────────────────────────────────
+    # v1.3: wrapped in try/except KeyboardInterrupt — a Ctrl+C mid-training
+    # saves the PARTIAL model to dddqn_partial.pth (never clobbering a good
+    # dddqn_trained.pth) and exits cleanly with code 0. The loop BODY is
+    # byte-identical to v1.2 — no training-math changes.
+    interrupted = False
+    try:
+        for episode in range(1, episodes + 1):
+            # Start a fresh episode (new day)
+            obs, _ = env.reset()
+
+            # Reset the agent's LSTM hidden states for the new episode
+            agent.reset_hidden_states()
+
+            total_reward = 0.0
+
+            for step in range(MAX_STEPS):
+                # ── Agent picks an action ──────────────────────────────────
+                action = agent.act(obs, epsilon)
+
+                # ── Environment executes the action ────────────────────────
+                next_obs, reward, terminated, truncated, info = env.step(action)
+
+                # ── Store the experience in replay memory ─────────────────
+                # The agent will learn from this later when it samples batches.
+                # v1.2 FIX (time-limit bug): the env now signals episode-end via
+                # `truncated` (time limit), NOT `terminated`. We store done=terminated
+                # only, so the Bellman target still bootstraps across the artificial
+                # 200-step cutoff (avoids biased Q-values near episode end).
+                agent.memory.store(Transition(obs, action, reward, next_obs, terminated))
+
+                # ── Agent learns from past experiences ────────────────────
+                agent.learn()
+
+                # ── Move to the next state ────────────────────────────────
+                obs = next_obs
+                total_reward += reward
+
+                if terminated or truncated:
+                    break
+
+            # ── Track and print progress ──────────────────────────────────
+            episode_rewards.append(total_reward)
+            epsilon = max(EPS_END, epsilon * EPS_DECAY)
+
+            # Print every 50 episodes or on the last one
+            if episode % 50 == 0 or episode == episodes:
+                # Average reward over the last 50 episodes
+                avg_reward = np.mean(episode_rewards[-50:])
+                # Clear the progress ticker line first, then print summary.
+                print(f"\r  Episode {episode:4d}/{episodes}  "
+                      f"Avg Reward: {avg_reward:7.1f}  "
+                      f"Epsilon: {epsilon:.3f}          ")
+            else:
+                # v1.3: lightweight single-line ticker (no external deps,
+                # resize-safe — never exceeds ~40 chars).
+                print(f"\r  Training... episode {episode}/{episodes}",
+                      end="", flush=True)
+    except KeyboardInterrupt:
+        interrupted = True
+        completed = len(episode_rewards)
+        print(f"\n\n  [STOP] Interrupted at episode {completed}/{episodes}.")
+        if completed > 0:
+            partial_path = os.path.join(models_dir, 'dddqn_partial.pth')
+            agent.save(partial_path)
+            print(f"  [SAVE] Partial model saved: {partial_path}")
+            print(f"  Avg reward (last 50): {np.mean(episode_rewards[-50:]):.1f}")
+        else:
+            print("  No episodes completed — nothing to save.")
+        print("  Exiting cleanly.")
+        sys.exit(0)
+
+    # ── Save the trained model (normal completion) ─────────────────────────
+    model_path = os.path.join(models_dir, 'dddqn_trained.pth')
     agent.save(model_path)
     print(f"\n  Model saved: {model_path}")
 
@@ -156,4 +198,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Top-level guard: interrupts outside the training loop (e.g. during
+    # env/agent construction) also exit cleanly with code 0.
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n  [STOP] Interrupted. Exiting cleanly.")
+        sys.exit(0)

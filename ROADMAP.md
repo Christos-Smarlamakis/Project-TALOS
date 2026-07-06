@@ -2,8 +2,8 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform — and maps the path forward.
 
-> **Current Version:** v5.3.4 (Descriptive Module Names & University-Ready Documentation)
-> **Last Updated:** 2026-07-05
+> **Current Version:** v5.3.6 (TUI/CLI Hardening — Batch 2 Audit Fixes: graceful Ctrl+C everywhere, partial-save training interrupts to dddqn_partial.pth, dead menu option fix, argparse in live agent)
+> **Last Updated:** 2026-07-06
 
 ---
 
