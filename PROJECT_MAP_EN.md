@@ -10,33 +10,33 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        USER INTERFACES                           │
+│                        USER INTERFACES                          │
 │  talos.py (CLI menu)          app.py (Streamlit Web GUI)        │
 │  _gui_runner.py (wrapper)     templates/dashboard.html (Flask)  │
 └──────────────────────────┬──────────────────────────────────────┘
                            │ subprocess / direct import
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SCRIPTS (21 files)                            │
+│                    SCRIPTS (21 files)                           │
 │  talos_live_agent.py (thin entry, v3.1 cooldown)                │
 │  daily_search.py          historic_search.py                    │
-│  knowledge_path_generator.py (CHIRON)                           │
-│  citation_analyzer.py (ORPHEUS)    recommender.py               │
-│  grey_literature_miner.py          query_translator.py (PYTHIA) │
+│  knowledge_path_generator.py                                    │
+│  citation_analyzer.py              recommender.py               │
+│  grey_literature_miner.py          query_translator.py          │
 │  author_profiler.py      author_trajectory_analyzer.py          │
 │  db_stats.py    data_enricher.py    embedding_generator.py      │
-│  metadata_enricher.py (APOLLO)      model_manager.py            │
+│  metadata_enricher.py               model_manager.py            │
 │  pdf_downloader.py      profile_manager.py                      │
 │  recalculate_scores.py  reevaluate_database.py                  │
 │  trend_analyzer.py      zotero_connector.py                     │
 │  interactive_dashboard.py          api_health_check.py          │
 │  migrate_database_schema.py                                     │
-│  generate_docs.py                                                │
+│  generate_docs.py                                               │
 └──────────────────────────┬──────────────────────────────────────┘
                            │ import
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    CORE MODULES (7 files)                        │
+│                    CORE MODULES (7 files)                       │
 │  ai_manager.py          database_manager.py        hardware.py  │
 │  drl_agent.py           talos_env.py                            │
 │  live_agent_sources.py  live_agent_orchestrator.py              │
@@ -46,17 +46,17 @@
                            │ import
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SOURCES (14 APIs)                             │
+│                    SOURCES (14 APIs)                            │
 │  arxiv  elsevier  semantic_scholar  ieee  springer  openalex    │
 │  dblp  core  crossref  openarchives  pubmed  scigov  osti  plos │
-│                                                                  │
+│                                                                 │
 │  Standardized output: {doi, url, title, authors_str,            │
-│                        publication_year, abstract, source}       │
+│                        publication_year, abstract, source}      │
 └──────────────────────────┬──────────────────────────────────────┘
                            │ HTTP requests
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    EXTERNAL APIs & SERVICES                      │
+│                    EXTERNAL APIs & SERVICES                     │
 │  Gemini API  DeepSeek API  HuggingFace  Ollama  Discord  Zotero │
 │  Unpaywall  ORCID  Semantic Scholar  IEEE  Elsevier  Springer   │
 └─────────────────────────────────────────────────────────────────┘
@@ -163,7 +163,7 @@ Data Flow:
 
 **Role:** Double Dueling DQN agent. **V2.2:** `network_class` parameter — any network from `drl_networks.py` can be injected. Save/load includes network class name for correct reconstruction.
 
-**Hyperparameters (GWO-optimized):** `LR=4.735e-05`, `GAMMA=0.575`.
+**Hyperparameters (GWO-optimized v2.0):** `LR=3.361e-05`, `GAMMA=0.6983`, `EPS_DECAY=0.9202` (80 iters, 9.5h, fitness -2353.0).
 
 **Class `TalosDRLAgent`:**
 | Method | Signature | Description |
@@ -174,9 +174,10 @@ Data Flow:
 | `save` | `(path)` | Saves weights + metadata **including** `network_class` name. |
 | `load` | `(path)` | v2.2: Resolves network class from saved metadata, uses DuelingLSTM as fallback. |
 
-**Hyperparameters (GWO-optimized):**
-- `LR = 4.735e-05` (GWO-optimized learning rate)
-- `GAMMA = 0.575` (GWO-optimized discount factor)
+**Hyperparameters (GWO-optimized v2.0):**
+- `LR = 3.361e-05` (GWO-optimized learning rate)
+- `GAMMA = 0.6983` (GWO-optimized discount factor)
+- `EPS_DECAY = 0.9202` (GWO-optimized epsilon decay, in drl_trainer.py)
 - `TAU = 1e-3`, `MEMORY_LEN = 10000`, `BATCH_SIZE = 200`
 
 ### 2.6 `core/notifier.py` — Class `TalosNotifier` (v1.0, ~202 lines)
@@ -425,6 +426,6 @@ generate_docs.py → requests, dotenv, tqdm
 
 ---
 
-> **Last Updated:** 2026-07-06 (v5.3.6 — Batch 2 TUI hardening + Batch 3 hotfix: implemented the missing AIManager.analyze_generic_text(), ddgs import fix in grey_literature_miner.)
-> **Project Version:** v5.3.6
+> **Last Updated:** 2026-07-07 (v5.3.7 — GWO v2.0 re-optimization: LR=3.361e-05, GAMMA=0.6983, EPS_DECAY=0.9202. 80 iters, 9.5h, fitness −2353.0.)
+> **Project Version:** v5.3.7
 > **Total Files Covered:** 61

@@ -3,6 +3,22 @@
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
 
+## [v5.3.7] - 2026-07-07 — GWO v2.0 Επανάληψη Βελτιστοποίησης Υπερπαραμέτρων
+
+### Άλλαξε
+- **`core/drl_agent.py` v2.3 — Ενημερωμένες GWO-optimized υπερπαράμετροι:**
+  - `LR`: `4.735e-05` → `3.361e-05` (29% χαμηλότερο — πιο σταθερά βήματα gradient).
+  - `GAMMA`: `0.575` → `0.6983` (21% υψηλότερο — ο agent κοιτάζει πιο μακριά στο μέλλον).
+- **`scripts/drl_trainer.py` v1.4 — Ενημερωμένο GWO-optimized epsilon decay:**
+  - `EPS_DECAY`: `0.9415` → `0.9202` (πιο αργή μείωση — ο agent εξερευνά περισσότερο).
+- **Στατιστικά GWO run:** 80 επαναλήψεις, ~9.5 ώρες, καλύτερο fitness −2353.0 (μέσο reward 2353.0). Αποθηκεύτηκαν στα `models/gwo_best_params.json` και `models/gwo_history.json`.
+- **`models/dddqn_trained.pth`** επανεκπαιδεύτηκε με τις νέες υπερπαραμέτρους (554.6 KB).
+- **Live agent δοκιμάστηκε** — το μοντέλο φορτώνεται σωστά και με τις 14 πηγές και CUDA inference.
+
+### Ενημερωμένη Τεκμηρίωση
+- `PROJECT_MAP.md` + `PROJECT_MAP_EN.md` — Ενότητα 2.5 ενημερώθηκε με νέες τιμές, footer ημερομηνία/έκδοση v5.3.7.
+
+
 ## [v5.3.6 hotfix] - 2026-07-06 — Διόρθωση Crash στο Grey Literature Miner (Batch 3)
 
 ### Διορθώθηκε

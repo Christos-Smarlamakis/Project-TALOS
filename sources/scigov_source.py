@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: scigov_source.py (v2.0 - Genesis Update)
-Project: TALOS v3.2
+Module: scigov_source.py
+Project: TALOS v5.3.7
 
 Description:
 Η πλήρως αναβαθμισμένη έκδοση του "Πράκτορα" για το Science.gov, εναρμονισμένη
@@ -34,7 +34,7 @@ class ScienceGovSource:
         self.query = config.get("scigov_query", "unmanned systems")
         self.max_results = config.get("max_results_config", {}).get("scigov", 100)
         self.base_url = "https://api.science.gov/search/v2/records"
-        print("INFO: ScienceGovSource (v2.0 - Genesis) αρχικοποιήθηκε.")
+        print("INFO: ScienceGovSource initialized.")
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
         """

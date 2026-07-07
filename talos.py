@@ -9,21 +9,14 @@
 #
 #  For commercial licensing, please contact the author.
 """
-Module: talos.py (v5.3.6 — TUI Hardening)
-Project: TALOS v5.3.6
+Module: talos.py
+Project: TALOS v5.3.7
 Description:
-    Central CLI entry point with hierarchical menu system.
-    v5.2.1 adds: Live DRL Agent, Autonomous Process (24/7), Research Pivot.
-    v5.3.6 (Batch 2 TUI audit):
-    - Fixed duplicate "6." options in System Diagnostics (dead Baseline
-      Report branch was unreachable) — menu renumbered 1-10.
-    - New safe_pause() helper: Ctrl+C at any "Press Enter" prompt returns
-      quietly to the menu instead of aborting the whole app.
-    - safe_select() fallback now catches KeyboardInterrupt -> returns None
-      (all menus already treat None as "Back").
-    - Bare `except:` clauses replaced with `except Exception:` so Ctrl+C
-      is never silently swallowed.
-    - Version string centralized in TALOS_VERSION constant.
+    Main entry point for the TALOS TUI (Text User Interface). Provides a
+    menu-driven interface for accessing various research tools, including
+    author analysis, database management, system diagnostics, and API key
+    configuration. Supports graceful handling of missing dependencies and
+    limited console environments.    
 """
 import questionary
 import os
@@ -45,7 +38,7 @@ from scripts.profile_manager import (
 USE_LOCAL_MODEL = False
 
 # ── Single source of truth for the version shown in the TUI header ──────────
-TALOS_VERSION = "v5.3.6"
+TALOS_VERSION = "v5.3.7"
 
 def safe_select(message, choices):
     """Questionary select with graceful fallback.
@@ -170,10 +163,7 @@ def database_data_menu(python_exe):
 
 def system_health_menu(python_exe):
     os.system('cls' if os.name == 'nt' else 'clear')
-    project_root = os.path.dirname(os.path.abspath(__file__))
-    # v5.3.6 FIX: options renumbered 1-10 — previously there were TWO "6."
-    # entries and choice.startswith("6.") always matched the first one,
-    # making "Baseline Report (Standard)" unreachable dead code.
+    project_root = os.path.dirname(os.path.abspath(__file__))    
     choice = safe_select("System Diagnostics:", choices=[
         "1. Code Integrity Check", "2. Documentation Audit",
         "3. Open Architecture Graph", "4. Architecture Intelligence Report",
@@ -422,8 +412,8 @@ def main_menu():
             "4. Live DRL Agent (Real API Orchestration)",
             "5. Autonomous Research Process (24/7)",
             questionary.Separator("  ANALYSIS & INSIGHTS"),
-            "6. Knowledge Path Generator (CHIRON)",
-            "7. Citation Network Analyzer (ORPHEUS)",
+            "6. Knowledge Path Generator",
+            "7. Citation Network Analyzer",
             "8. Strategic Reading Report",
             "9. Author Analysis Tools",
             "10. Interactive Dashboard",

@@ -35,7 +35,7 @@ from core.drl_agent import TalosDRLAgent, Transition, DEVICE
 # ── Training hyperparameters ─────────────────────────────────────────────────
 EPS_START = 1.0        # Initial exploration rate (100% random)
 EPS_END = 0.01         # Minimum exploration rate (1% random)
-EPS_DECAY = 0.9415     # GWO-optimized epsilon decay
+EPS_DECAY = 0.9202     # GWO-optimized epsilon decay
 MAX_STEPS = 200        # Max steps per episode (= one simulated day)
 
 

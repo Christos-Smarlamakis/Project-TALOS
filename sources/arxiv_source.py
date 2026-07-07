@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: arxiv_source.py (v3.8 - Config Driven Multi-Query)
-Project: TALOS v4.8.5
+Module: arxiv_source.py
+Project: TALOS v5.3.7
 
 Description:
     Search agent for the arXiv API (export.arxiv.org). Reads the search query
@@ -58,7 +58,7 @@ class ArxivSource:
         total_max = config.get("max_results_config", {}).get("arxiv", 1000)
         self.max_results_per_term = max(10, total_max // len(self.search_terms))
         self.base_url = "http://export.arxiv.org/api/query"
-        print(f"INFO: ArxivSource (v3.8 - Config Driven) initialized with {len(self.search_terms)} terms.")
+        print(f"INFO: ArxivSource initialized with {len(self.search_terms)} terms.")
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
         """Fetch recent papers from arXiv using the multi-query strategy.

@@ -9,8 +9,8 @@
 #
 #  For commercial licensing, please contact the author.
 """
-Module: osti_source.py (v2.0 - Genesis Update)
-Project: TALOS v4.8.5
+Module: osti_source.py
+Project: TALOS v5.3.7
 
 Description:
     Search agent for the OSTI.gov API (U.S. Department of Energy Office of
@@ -29,7 +29,7 @@ class OSTISource:
         self.days_to_search = config.get("days_to_search_daily", 1)
         self.max_results = config.get("max_results_config", {}).get("osti", 100)
         self.base_url = "https://www.osti.gov/api/v1/records"
-        print("INFO: OSTISource (v2.0 - Genesis) initialized.")
+        print("INFO: OSTISource initialized.")
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
         print(f"-> Searching OSTI.gov...")

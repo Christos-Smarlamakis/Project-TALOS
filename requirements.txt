@@ -1,5 +1,5 @@
 # Project TALOS - Dependencies
-# Εγκατάσταση: pip install -r requirements.txt
+# Install: pip install -r requirements.txt
 
 # === Core: AI, Environment & Networking ===
 google-generativeai       # Επικοινωνία με Google Gemini API

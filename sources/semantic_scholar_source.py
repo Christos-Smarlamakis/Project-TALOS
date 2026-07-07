@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: semantic_scholar_source.py (v3.4 - Resilient Init)
-Project: TALOS v4.8.5
+Module: semantic_scholar_source.py
+Project: TALOS v5.3.7
 
 Description:
     Search agent for the Semantic Scholar Academic Graph API (api.semanticscholar.org).
@@ -51,7 +51,7 @@ class SemanticScholarSource:
         self.api_key = os.getenv("SEMANTIC_SCHOLAR_API_KEY")
         self.base_url = "https://api.semanticscholar.org/graph/v1"
         self.headers = {'x-api-key': self.api_key} if self.api_key else {}
-        print("INFO: SemanticScholarSource initialized (v3.4 - Resilient Init).")
+        print("INFO: SemanticScholarSource initialized.")
 
     def _make_request(self, endpoint, params, max_retries=4, initial_backoff=2):
         """Make an API request with exponential backoff on rate limits.

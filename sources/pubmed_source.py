@@ -9,8 +9,8 @@
 #
 #  For commercial licensing, please contact the author.
 """
-Module: pubmed_source.py (v2.0 - Genesis Update)
-Project: TALOS v4.8.5
+Module: pubmed_source.py 
+Project: TALOS v5.3.7
 
 Description:
     Search agent for the PubMed biomedical literature database via the pymed
@@ -31,7 +31,7 @@ class PubMedSource:
         if self.mailto == "a@b.com":
             print("WARNING: Using default email for PubMed. Please set 'mailto' in config.json.")
         self.pubmed = PubMed(tool="ProjectTALOS", email=self.mailto)
-        print("INFO: PubMedSource (v2.0 - Genesis) initialized.")
+        print("INFO: PubMedSource initialized.")
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
         print(f"-> Searching PubMed...")

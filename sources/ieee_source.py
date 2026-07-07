@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: ieee_source.py (v2.2 - Robust Date Search)
-Project: TALOS v4.8.5
+Module: ieee_source.py
+Project: TALOS v5.3.7
 
 Description:
     Search agent for the IEEE Xplore API. Fetches papers matching the configured
@@ -56,7 +56,7 @@ class IEEEXploreSource:
         self.days_to_search = config.get("days_to_search_daily", 1)
         self.total_max_results = config.get("max_results_config", {}).get("ieee", 100)
         self.base_url = "https://ieeexploreapi.ieee.org/api/v1/search/articles"
-        print("INFO: IEEEXploreSource (v2.2 - Robust Date Search) initialized.")
+        print("INFO: IEEEXploreSource initialized.")
 
     def _make_request(self, params, max_retries=4, initial_backoff=5):
         """Make an API request with exponential backoff.

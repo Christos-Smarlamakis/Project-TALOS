@@ -1,8 +1,7 @@
-# Project TALOS (v5.3.6)
+# Project TALOS (v5.3.7)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Τακτικό Πρακτορικό Σύστημα Ενορχήστρωσης Βιβλιογραφίας)*
-### **Now with Hardened TUI/CLI (Graceful Ctrl+C, Partial-Save Training) & a Scientifically-Verified DRL/GWO Pipeline**
 
 > **An Autonomous Research Intelligence Platform for the AI Era.**
 
@@ -55,7 +54,7 @@ TALOS λειτουργεί ως αυτόνομος "Research Architect," φιλ�
 *   **Operation "Genesis" (Native Agents):** Orchestrates simultaneous searches across 14+ sources (ArXiv, Scopus, IEEE, PubMed, etc.) using custom-built Python agents with **Exponential Backoff** logic.
 *   **Project "HERMES" (Data Enricher):** Automatically retrieves legal **Open Access (OA)** PDF links via the Unpaywall API and augments metadata (ISSN, Publisher) to create a cohesive knowledge web.
 
-### **C. NEW in v5.3.0: 18-Language Codebase Documentation Builder**
+### **C. 18-Language Codebase Documentation Builder**
 *   **`scripts/generate_docs.py` v2.0:** A fully interactive tool that documents the **entire TALOS codebase (93+ files)** in any of **18 languages** (Greek, English, Chinese, Hindi, Spanish, Arabic, French, Bengali, Russian, Portuguese, Urdu, Indonesian, German, Japanese, Italian, Korean, Turkish, Persian).
 *   **100% LOCAL:** Uses your local Ollama instance exclusively — **zero cloud cost, full privacy**. Never touches Gemini, DeepSeek, or any cloud API.
 *   **Interactive:** No CLI arguments needed — select language and folders via `questionary` prompts, see token estimates before starting, track progress with `tqdm`.
@@ -83,7 +82,7 @@ TALOS λειτουργεί ως αυτόνομος "Research Architect," φιλ�
 *   **Operation "Genesis" (Native Agents):** Ενορχηστρώνει ταυτόχρονες αναζητήσεις σε 14+ πηγές (ArXiv, Scopus, IEEE, PubMed, κ.λπ.) χρησιμοποιώντας custom-built Python agents με λογική **Exponential Backoff**.
 *   **Project "HERMES" (Data Enricher):** Ανακτά αυτόματα νόμιμους **Open Access (OA)** συνδέσμους PDF μέσω του Unpaywall API και εμπλουτίζει τα μεταδεδομένα (ISSN, Publisher).
 
-### **C. ΝΕΟ στην v5.3.0: 18-Γλωσσος Documentation Builder**
+### **C. Αυτόματη Δημιουργία Τεκμηρίωσης (Documentation Builder) σε 18 γλώσσες**
 *   **`scripts/generate_docs.py` v2.0:** Ένα πλήρως διαδραστικό εργαλείο που τεκμηριώνει **ολόκληρο τον κώδικα του TALOS (93+ αρχεία)** σε οποιαδήποτε από **18 γλώσσες** (Ελληνικά, English, 中文, हिन्दी, Español, العربية, Français, বাংলা, Русский, Português, اردو, Bahasa Indonesia, Deutsch, 日本語, Italiano, 한국어, Türkçe, فارسی).
 *   **100% ΤΟΠΙΚΟ:** Χρησιμοποιεί αποκλειστικά το τοπικό σου Ollama instance — **μηδενικό κόστος cloud, πλήρης ιδιωτικότητα**. Ποτέ δεν καλεί Gemini, DeepSeek, ή άλλο cloud API.
 *   **Διαδραστικό:** Κανένα CLI argument — επιλογή γλώσσας και φακέλων μέσω `questionary` prompts, token estimate πριν την έναρξη, tqdm progress bar.
@@ -120,12 +119,12 @@ pip install -r requirements.txt
 python talos.py
 ```
 
-### 🧠 Documentation Builder (NEW in v5.3.0)
+### 🧠 Documentation Builder
 To generate professional Markdown documentation for the entire codebase in any of 18 languages:
 ```bash
 python scripts/generate_docs.py
 ```
-No arguments needed — the script will guide you interactively. Requires **Ollama** running locally with the `gemma4` model.
+Requires **Ollama** for running locally the `gemma4` model.
 
 ### 3.1 Εγκατάσταση & Χρήση (Zero-Friction)
 
@@ -150,12 +149,12 @@ pip install -r requirements.txt
 python talos.py
 ```
 
-### 🧠 Documentation Builder (ΝΕΟ στην v5.3.0)
+### 🧠 Documentation Builder
 Για να παράγεις επαγγελματική Markdown τεκμηρίωση για ολόκληρο τον κώδικα σε οποιαδήποτε από 18 γλώσσες:
 ```bash
 python scripts/generate_docs.py
 ```
-Κανένα argument — το script σε καθοδηγεί διαδραστικά. Απαιτεί **Ollama** να τρέχει τοπικά με το μοντέλο `gemma4`.
+Απαιτείται **Ollama** για να δύναται να τρέχει τοπικά το μοντέλο `gemma4`.
 
 ---
 
@@ -164,7 +163,7 @@ python scripts/generate_docs.py
 This software is part of ongoing PhD research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.3.0, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.3.7, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -173,7 +172,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.3.0},
+  version = {v5.3.7},
   year = {2026}
 }
 ```
@@ -184,7 +183,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
 Εάν χρησιμοποιήσετε το TALOS στην έρευνά σας, παρακαλούμε να το αναφέρετε ως εξής:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.3.3, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.3.7, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -193,7 +192,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.3.3},
+  version = {v5.3.7},
   year = {2026}
 }
 ```

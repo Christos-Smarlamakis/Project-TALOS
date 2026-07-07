@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: daily_search.py (v5.4 - Quad-Layer & Rate Limit Safe)
-Project: TALOS v4.8.5
+Module: daily_search.py (Quad-Layer & Rate Limit Safe)
+Project: TALOS v5.3.7
 
 Description:
     The daily search orchestrator. Fetches new papers from all 14 configured
@@ -131,7 +131,7 @@ def load_configuration():
 
 def main():
     """Run the daily search pipeline: fetch, filter, evaluate, report."""
-    print("--- DAILY SEARCH (v5.4 - Quad-Layer & Safe) ---")
+    print("--- DAILY SEARCH (Quad-Layer & Rate Limit Safe) ---")
     config = load_configuration()
     print("SUCCESS: Configuration loaded.\n")
     ai_manager = AIManager(config)

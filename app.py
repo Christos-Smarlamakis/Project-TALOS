@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: app.py (Streamlit Web GUI v5.3.3 — Simple/Advanced Dual-Mode)
-Project: TALOS v5.3.3
+Project: TALOS v5.3.7
 Description:
     Complete Multi-Page Streamlit Web GUI with TWO modes:
     - Simple Mode: 4 pages for non-technical users (students, researchers from any field)

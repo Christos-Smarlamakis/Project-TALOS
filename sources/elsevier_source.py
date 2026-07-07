@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: elsevier_source.py (v2.1 - Abstract Retrieval Fix)
-Project: TALOS v4.8.5
+Module: elsevier_source.py
+Project: TALOS v5.3.7
 
 Description:
     Search agent for the Elsevier Scopus API via the elsapy library.
@@ -59,7 +59,7 @@ class ElsevierSource:
         self.query = config.get("elsevier_query", "TITLE-ABS-KEY(robotics)")
         self.days_to_search = config.get("days_to_search_daily", 1)
         self.total_max_results = config.get("max_results_config", {}).get("elsevier", 200)
-        print("INFO: ElsevierSource (v2.1 - Abstract Fix) initialized.")
+        print("INFO: ElsevierSource initialized.")
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
         """Fetch recent papers from Elsevier Scopus.

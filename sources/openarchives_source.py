@@ -9,8 +9,8 @@
 #
 #  For commercial licensing, please contact the author.
 """
-Module: openarchives_source.py (v2.0 - Genesis Update)
-Project: TALOS v4.8.5
+Module: openarchives_source.py
+Project: TALOS v5.3.7
 
 Description:
     Search agent for the OpenArchives.gr API, the Greek national aggregator
@@ -37,6 +37,7 @@ class OpenArchivesSource:
         self.total_max_results = config.get("max_results_config", {}).get("openarchives", 100)
         self.base_url = "https://www.openarchives.gr/aggregator-openarchives/api/search.json"
         self.headers = {'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json'}
+        print("INFO: OpenArchivesSource initialized.")
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
         if not getattr(self, "enabled", True): return []

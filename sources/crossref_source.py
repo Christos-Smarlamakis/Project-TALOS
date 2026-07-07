@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: crossref_source.py (v2.1 - Genesis + Search)
-Project: TALOS v4.8.5
+Module: crossref_source.py
+Project: TALOS v5.3.7
 
 Description:
     Search agent for the Crossref API (https://api.crossref.org), a central
@@ -53,7 +53,7 @@ class CrossrefSource:
         self.total_max_results = config.get("max_results_config", {}).get("crossref", 100)
         self.mailto = config.get("mailto", "user@example.com")
         self.base_url = "https://api.crossref.org/works"
-        print("INFO: CrossrefSource (v2.1 - Genesis + Search) initialized.")
+        print("INFO: CrossrefSource initialized.")
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
         """Fetch recent papers from Crossref matching the configured query.

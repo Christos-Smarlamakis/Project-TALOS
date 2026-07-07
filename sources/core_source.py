@@ -9,8 +9,8 @@
 #
 #  For commercial licensing, please contact the author.
 """
-Module: core_source.py (v2.1 - Robust Date Search)
-Project: TALOS v4.8.5
+Module: core_source.py
+Project: TALOS v5.3.7
 
 Description:
     Search agent for the CORE API (core.ac.uk), a large aggregator of open-access
@@ -48,7 +48,7 @@ class CORESource:
         self.headers = {'User-Agent': 'Mozilla/5.0'}
         if self.api_key:
             self.headers["Authorization"] = f"Bearer {self.api_key}"
-        print("INFO: CORESource (v2.1 - Robust Date Search) initialized.")
+        print("INFO: CORESource initialized.")
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
         """Fetch recent papers from CORE.

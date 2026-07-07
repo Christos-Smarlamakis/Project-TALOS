@@ -49,10 +49,10 @@
 <body>
     <div class="top-bar">
         <h1>TALOS Dashboard v4.0</h1>
-        <button id="shutdown-btn">🔴 Έξοδος & Επιστροφή στο Μενού</button>
+        <button id="shutdown-btn">🔴 Shutdown & Return to Menu</button>
     </div>
     
-    <p>Κάντε κλικ στις επικεφαλίδες για ταξινόμηση. Χρησιμοποιήστε τα πεδία φίλτρων κάτω από τις επικεφαλίδες για αναζήτηση.</p>
+    <p>Click on the column headers to sort. Use the filter fields below the headers to search.</p>
 
     <div class="controls-container">
         <div class="filter-buttons">
@@ -64,8 +64,8 @@
             <button id="filter-clear">Clear All</button>
         </div>
         <div class="semantic-search-container">
-            <input type="text" id="semantic-search-box" placeholder="Σημασιολογική Αναζήτηση...">
-            <button id="semantic-search-button">Αναζήτηση</button>
+            <input type="text" id="semantic-search-box" placeholder="Semantic Search...">
+            <button id="semantic-search-button">Search</button>
         </div>
     </div>
 
@@ -92,7 +92,7 @@
     <script>
         // --- SHUTDOWN LOGIC ---
         document.getElementById('shutdown-btn').addEventListener('click', async () => {
-            if(confirm("Είστε σίγουροι ότι θέλετε να κλείσετε το Dashboard και να επιστρέψετε στο μενού;")) {
+            if(confirm("Are you sure you want to close the Dashboard and return to the menu?")) {
                 try {
                     await fetch('/api/shutdown', { method: 'POST' });
                     document.body.innerHTML = "<div style='display:flex;justify-content:center;align-items:center;height:100vh;flex-direction:column;font-family:sans-serif;color:#2c3e50;'><h1>Το Dashboard τερματίστηκε.</h1><h2>Μπορείτε να κλείσετε αυτή την καρτέλα και να επιστρέψετε στο τερματικό.</h2></div>";

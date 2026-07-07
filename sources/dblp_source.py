@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: dblp_source.py (v2.1 - Genesis + Search)
-Project: TALOS v4.8.5
+Module: dblp_source.py
+Project: TALOS v5.3.7
 
 Description:
     Search agent for the DBLP Computer Science Bibliography API
@@ -52,7 +52,7 @@ class DBLPSource:
         self.days_to_search = config.get("days_to_search_daily", 1)
         self.total_max_results = config.get("max_results_config", {}).get("dblp", 100)
         self.base_url = "https://dblp.org/search/publ/api"
-        print("INFO: DBLPSource (v2.1 - Genesis + Search) initialized.")
+        print("INFO: DBLPSource initialized.")
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
         """Fetch recent papers from DBLP matching the configured query.

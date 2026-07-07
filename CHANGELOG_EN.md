@@ -3,6 +3,22 @@
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
 
+## [v5.3.7] - 2026-07-07 — GWO v2.0 Hyperparameter Re-optimization
+
+### Changed
+- **`core/drl_agent.py` v2.3 — Updated GWO-optimized hyperparameters:**
+  - `LR`: `4.735e-05` → `3.361e-05` (29% lower — more stable gradient steps).
+  - `GAMMA`: `0.575` → `0.6983` (21% higher — agent looks further into the future).
+- **`scripts/drl_trainer.py` v1.4 — Updated GWO-optimized epsilon decay:**
+  - `EPS_DECAY`: `0.9415` → `0.9202` (slower decay — agent explores longer before exploiting).
+- **GWO run stats:** 80 iterations, ~9.5 hours, best fitness −2353.0 (avg reward 2353.0). Results stored in `models/gwo_best_params.json` and `models/gwo_history.json`.
+- **`models/dddqn_trained.pth`** re-trained with the new hyperparameters (554.6 KB).
+- **Live agent tested** — model loads correctly with all 14 sources and CUDA inference.
+
+### Updated Documentation
+- `PROJECT_MAP.md` + `PROJECT_MAP_EN.md` — Sections 2.5 updated with new hyperparameter values and footer date/version bumped to v5.3.7.
+
+
 ## [v5.3.6 hotfix] - 2026-07-06 — Grey Literature Miner Crash Fix (Batch 3)
 
 ### Fixed

@@ -1,1 +1,1 @@
-{"iteration": 11, "max_iterations": 50, "best_reward": 2096.5, "best_fitness": -2096.5, "a_factor": 1.56, "status": "running"}
+{"iteration": 80, "max_iterations": 80, "best_reward": 2353.0, "best_fitness": -2353.0, "a_factor": 0.0, "status": "complete"}

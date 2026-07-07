@@ -35,9 +35,9 @@ from collections import deque, namedtuple
 from core.drl_networks import DuelingLSTM
 
 # ── Hyperparameters (tuned for TALOS, works for any source count) ─────────────
-LR = 4.735e-05         # Learning rate — GWO-optimized for stable LSTM training
+LR = 3.361e-05         # Learning rate — GWO-optimized for stable LSTM training
 DEVICE = T.device('cuda' if T.cuda.is_available() else 'cpu')
-GAMMA = 0.575          # Discount factor — GWO-optimized for short-term reward
+GAMMA = 0.6983          # Discount factor — GWO-optimized for short-term reward
 TAU = 1e-3             # Soft-update parameter for target network
 MEMORY_LEN = 10000     # Max experiences stored in replay buffer
 MEMORY_THRESH = 500    # Minimum experiences before learning starts

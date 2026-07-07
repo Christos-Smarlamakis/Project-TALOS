@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: plos_source.py (v1.0)
-Project: TALOS v4.8.5
+Module: plos_source.py
+Project: TALOS v5.3.7
 
 Description:
     Search agent for the PLOS (Public Library of Science) API. All PLOS content

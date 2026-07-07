@@ -117,7 +117,7 @@ def recalculate_database_scores():
     except sqlite3.Error as e:
         print(f"ERROR: Αποτυχία μαζικής ενημέρωσης. Αιτία: {e}")
     
-    print("\nΗ διαδικασία επανα-βαθμονόμησης ολοκληρώθηκε.")
+    print("\nΗ διαδικασία επαναβαθμολόγησης ολοκληρώθηκε.")
 
 if __name__ == "__main__":
     recalculate_database_scores()

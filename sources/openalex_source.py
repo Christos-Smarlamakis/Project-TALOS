@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: openalex_source.py (v2.1 - Genesis + Search)
-Project: TALOS v4.8.5
+Module: openalex_source.py
+Project: TALOS v5.3.7
 
 Description:
     Search agent for the OpenAlex API (https://openalex.org), a free and open
@@ -54,7 +54,7 @@ class OpenAlexSource:
         self.total_max_results = config.get("max_results_config", {}).get("openalex", 100)
         self.mailto = config.get("mailto", "user@example.com")
         self.base_url = "https://api.openalex.org/works"
-        print("INFO: OpenAlexSource (v2.1 - Genesis + Search) initialized.")
+        print("INFO: OpenAlexSource initialized.")
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
         """Fetch recent papers from OpenAlex matching the configured query.
