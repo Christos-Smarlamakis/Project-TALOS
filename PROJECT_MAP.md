@@ -1,4 +1,4 @@
-# PROJECT_MAP.md — Πλήρης Χάρτης του Project TALOS v5.3.3
+# PROJECT_MAP.md — Πλήρης Χάρτης του Project TALOS v5.3.8
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται — χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
@@ -11,50 +11,46 @@
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        USER INTERFACES                          │
-│  talos.py (CLI menu)          app.py (Streamlit Web GUI)        │
+│  talos.py (CLI menu)                app.py (Streamlit Web GUI)  │
 │  _gui_runner.py (wrapper)     templates/dashboard.html (Flask)  │
 └──────────────────────────┬──────────────────────────────────────┘
-                           │ subprocess / direct import
-                           ▼
+│                            │ subprocess / direct import
+│                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SCRIPTS (21 αρχεία)                          │
-│  talos_live_agent.py (thin entry, v3.1 cooldown)                │
-│  daily_search.py          historic_search.py                    │
-│  knowledge_path_generator.py                                    │
-│  citation_analyzer.py              recommender.py               │
-│  grey_literature_miner.py          query_translator.py          │
-│  author_profiler.py      author_trajectory_analyzer.py          │
-│  db_stats.py    data_enricher.py    embedding_generator.py      │
-│  metadata_enricher.py               model_manager.py            │
-│  pdf_downloader.py      profile_manager.py                      │
-│  recalculate_scores.py  reevaluate_database.py                  │
-│  trend_analyzer.py      zotero_connector.py                     │
-│  interactive_dashboard.py          api_health_check.py          │
-│  migrate_database_schema.py                                     │
-│  generate_docs.py                                               │
+│                    src/ SRV PACKAGES (55 αρχεία)                 │
+│  src/ai/drl/   (9 files) — DRL agent, networks, env, trainer,   │
+│                            live agent, service                   │
+│  src/ai/optimizers/ (2)  — GWO optimizer + live dashboard       │
+│  src/ai/embeddings/  (2) — embedding_generator, db upgrade      │
+│  src/ai/llm/         (3) — PYTHIA, model_manager, research_pivot│
+│  src/analysis/       (9) — citation_analyzer, author_profiler,  │
+│                            knowledge_path, recommender, etc.    │
+│  src/utils/          (8) — db_stats, api_health_check, docs,    │
+│                            verify_dep_map, dashboard, etc.      │
+│  src/api/            (1) — talos_service_api (+ FastAPI future)  │
 └──────────────────────────┬──────────────────────────────────────┘
-                           │ import
-                           ▼
+│                            │ import
+│                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    CORE MODULES (7 αρχεία)                      │
+│                    src/core/ (5 αρχεία — Global Handlers)       │
 │  ai_manager.py          database_manager.py        hardware.py  │
-│  drl_agent.py           talos_env.py                            │
-│  live_agent_sources.py  live_agent_orchestrator.py              │
+│  notifier.py            profile_manager.py                      │
 │  (Multi-provider LLM)   (SQLite + Embeddings)     (GPU detect)  │
-│  (DDQN Agent)           (Gym Env)  (Source Disc) (Live Loop)    │
 └──────────────────────────┬──────────────────────────────────────┘
-                           │ import
-                           ▼
+│                            │ import
+│                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SOURCES (14 APIs)                            │
-│  arxiv  elsevier  semantic_scholar  ieee  springer  openalex    │
-│  dblp  core  crossref  openarchives  pubmed  scigov  osti  plos │
-│                                                                 │
+│                    src/ingestion/ (21 αρχεία)                    │
+│  14 APIs: arxiv  elsevier  semantic_scholar  ieee  springer     │
+│           openalex  dblp  core  crossref  openarchives  pubmed  │
+│           scigov  osti  plos                                    │
+│  7 pipelines: daily_search  historic_search  grey_lit  pdf      │
+│               zotero  metadata_enricher  data_enricher          │
 │  Standardized output: {doi, url, title, authors_str,            │
 │                        publication_year, abstract, source}      │
 └──────────────────────────┬──────────────────────────────────────┘
-                           │ HTTP requests
-                           ▼
+│                            │ HTTP requests
+│                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    EXTERNAL APIs & SERVICES                     │
 │  Gemini API  DeepSeek API  HuggingFace  Ollama  Discord  Zotero │
@@ -62,11 +58,12 @@
 └─────────────────────────────────────────────────────────────────┘
 
 Data Flow:
-  User → talos.py → run_script() → scripts/*.py → core/*.py → sources/*.py → External APIs
-                                                      ↕
-                                              talos_research.db (SQLite)
-                                                      ↕
-                                              config.json + .env
+  User → talos.py → run_script() → src/*/*.py → src/core/*.py
+                                              → src/ingestion/*.py → External APIs
+                                                       ↕
+                                               data/talos_research.db (SQLite)
+                                                       ↕
+                                               config.json + .env
 ```
 
 ---
@@ -438,6 +435,6 @@ generate_docs.py → requests, dotenv, tqdm
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-07-07 (v5.3.7 — GWO v2.0 re-optimization: LR=3.361e-05, GAMMA=0.6983, EPS_DECAY=0.9202. 80 iters, 9.5h, fitness −2353.0.)
-> **Έκδοση Project:** v5.3.7
-> **Συνολικά αρχεία που καλύπτονται:** 61
+> **Τελευταία ενημέρωση:** 2026-07-22 (v5.3.8 — src/ DDD migration: 55 files reorganized into 10 packages, 150+ imports rewritten, all sys.path hacks removed.)
+> **Έκδοση Project:** v5.3.8
+> **Συνολικά αρχεία που καλύπτονται:** 61 (55 src/ + 6 root entry/config)

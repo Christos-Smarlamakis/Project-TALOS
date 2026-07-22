@@ -2,6 +2,71 @@
 
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
+## [v5.3.8] - 2026-07-22 — `src/` Αναδιάρθρωση Πακέτων (DDD Migration)
+
+### ⚠️ BREAKING — Πλήρης αναδιοργάνωση δομής καταλόγων
+Όλα τα Python αρχεία (~55) μεταφέρθηκαν από την παλιά χαλαρή δομή `core/`, `scripts/`, `sources/` σε μια οργανωμένη δομή πακέτων `src/` Domain-Driven Design. **Κάθε δήλωση import σε κάθε αρχείο έχει ξαναγραφεί.**
+
+### Νέα Δομή Καταλόγων
+```
+src/
+├── core/          (5 αρχεία) — ai_manager, database_manager, hardware, notifier, profile_manager
+├── ingestion/     (21 αρχεία) — 14 API sources + 7 ingestion pipelines
+├── ai/
+│   ├── drl/       (9 αρχεία) — DRL agent, networks, env, trainer, live agent, service
+│   ├── optimizers/(2 αρχεία) — GWO optimizer + live dashboard
+│   ├── embeddings/ (2 αρχεία) — embedding_generator, db_embedding_upgrade
+│   └── llm/       (3 αρχεία) — query_translator (PYTHIA), model_manager, research_pivot
+├── analysis/      (9 αρχεία) — citation_analyzer, author_profiler, knowledge_path_generator, κλπ.
+├── utils/         (8 αρχεία) — db_stats, api_health_check, verify_dependency_map, κλπ.
+└── api/           (1 αρχείο) — talos_service_api + άδειο __init__.py (FastAPI placeholder)
+data/
+├── talos_research.db
+├── dump.json
+└── pdfs/
+```
+
+### Άλλαξε
+- **`talos.py` v5.3.8 — `run_script()` ανακατασκευάστηκε με `_SCRIPT_MAP` dict + `_resolve_script_path()`.**
+  - Παλιές διαδρομές `os.path.join(project_root, 'scripts', name)` → `os.path.join(project_root, 'src', subdir, name)`.
+  - Όλα τα `from core.*` → `from src.core.*`, `from scripts.profile_manager` → `from src.core.profile_manager`.
+  - Έκδοση `v5.3.8`.
+  - Hardcoded `scripts/` διαδρομές στο `system_health_menu()` (GWO dashboard, API diagnostics) → `_resolve_script_path()`.
+  - Διαδρομή βάσης δεδομένων: `talos_research.db` → `data/talos_research.db`.
+- **`app.py` v5.3.8 — `run()` ανακατασκευάστηκε με `_SCRIPT_DIRS` dict + `_resolve_script()`.**
+  - `from core.database_manager` → `from src.core.database_manager`, `from core.ai_manager` → `from src.core.ai_manager`.
+  - `from core.hardware` → `from src.core.hardware` (στο `advanced_settings()`).
+  - GWO Live Dashboard: `os.path.join(..., "scripts", ...)` → `_resolve_script()`.
+  - `sys.path.insert(0, ...)` αφαιρέθηκε.
+  - Simple mode: εντολή εκπαίδευσης `python src/ai/drl/train_agent.py`.
+- **`core/` → `src/core/` (+ `profile_manager.py` από `scripts/`):**
+  - `scripts/profile_manager.py` → `src/core/profile_manager.py` — οι διαδρομές subprocess προς `query_translator.py` ενημερώθηκαν σε `src/ai/llm/query_translator.py`.
+- **`core/` (DRL) → `src/ai/drl/`:**
+  - `core/live_agent_sources.py` — **διόρθωση δυναμικού import:** `f"sources.{source_name}_source"` → `f"src.ingestion.{source_name}_source"`.
+- **`sources/` (14 αρχεία) → `src/ingestion/`** + 7 ingestion scripts.
+- **`scripts/` → διάφοροι υποκατάλογοι `src/`:**
+  - `drl_trainer.py`, `train_agent.py`, `talos_live_agent.py`, `talos_service.py` → `src/ai/drl/`
+  - `gwo_rl_optimizer.py`, `gwo_live_dashboard.py` → `src/ai/optimizers/`
+  - `embedding_generator.py`, `db_embedding_upgrade.py` → `src/ai/embeddings/`
+  - `query_translator.py`, `model_manager.py`, `research_pivot.py` → `src/ai/llm/`
+  - `citation_analyzer.py`, `author_profiler.py`, κλπ. (9 αρχεία) → `src/analysis/`
+  - `db_stats.py`, `api_health_check.py`, κλπ. (8 αρχεία) → `src/utils/`
+  - `talos_service_api.py` → `src/api/`
+- **`test_smoke.py` v5.3.8 — διαδρομές ενημερωμένες:** `core.database_manager` → `src.core.database_manager`, σάρωση `scripts/` → 9 υποκατάλογοι `src/`.
+- **10 αρχεία `__init__.py`** δημιουργήθηκαν (ένα ανά πακέτο).
+- **Παλιοί κατάλογοι διαγράφηκαν:** `core/`, `scripts/`, `sources/` (αναδρομικά).
+- **Bulk migration script** (`_migrate_imports.py`, μίας χρήσης, διαγράφηκε μετά την εκτέλεση): 32 αρχεία μεταφέρθηκαν με regex import rewrites. Όλα τα `sys.path` hacks (~30 εμφανίσεις) αφαιρέθηκαν.
+
+### Επαλήθευση
+- **`python -m py_compile talos.py`** → ✅ ΠΕΡΑΣΕ
+- **`python -m py_compile app.py`** → ✅ ΠΕΡΑΣΕ
+- **Όλα τα 60+ αρχεία src/ ελέγχθηκαν** → ✅ ΠΕΡΑΣΑΝ
+- **`python test_smoke.py`** → ✅ 79 αρχεία syntax-check, core imports OK, DB συνδεδεμένη, AIManager αρχικοποιημένος
+- **Όλα τα `sys.path` hacks αφαιρέθηκαν** — το project χρησιμοποιεί πλέον αποκλειστικά proper package imports
+
+### Ενημερωμένη Τεκμηρίωση
+- `PROJECT_MAP.md` + `PROJECT_MAP_EN.md` — Ενότητες 2, 3, 7 ενημερώθηκαν με νέες διαδρομές και δομή.
+- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — εγγραφή v5.3.8 ξαναγράφτηκε (src/ migration).
 
 ## [v5.3.7] - 2026-07-07 — GWO v2.0 Επανάληψη Βελτιστοποίησης Υπερπαραμέτρων
 

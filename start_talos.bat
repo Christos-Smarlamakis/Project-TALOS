@@ -1,5 +1,5 @@
 @echo off
-title Project TALOS v5.3.7 Launcher
+title Project TALOS v5.3.8 Launcher
 
 REM Activate the conda environment
 call C:\ProgramData\miniconda3\Scripts\activate.bat talosenv
@@ -94,4 +94,10 @@ python scripts\talos_live_agent.py --verbose
 goto MENU
 
 :END
-exit
+echo.
+echo =============================================
+echo    Closing Project TALOS...
+echo =============================================
+REM Deactivate the conda environment gracefully
+call conda deactivate 2>nul
+exit /b

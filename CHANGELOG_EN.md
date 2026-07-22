@@ -2,6 +2,81 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.3.8] - 2026-07-22 — `src/` Package Layout (DDD Migration)
+
+### ⚠️ BREAKING — Project directory structure completely reorganized
+All Python source files (~55) have been moved from the old loose `core/`, `scripts/`, `sources/` layout into a proper `src/` Domain-Driven Design package structure. **Every import statement in every file has been rewritten.**
+
+### New Directory Structure
+```
+src/
+├── core/          (5 files) — ai_manager, database_manager, hardware, notifier, profile_manager
+├── ingestion/     (21 files) — 14 API sources + 7 ingestion pipelines
+├── ai/
+│   ├── drl/       (9 files) — DRL agent, networks, env, trainer, live agent, service
+│   ├── optimizers/(2 files) — GWO optimizer + live dashboard
+│   ├── embeddings/ (2 files) — embedding_generator, db_embedding_upgrade
+│   └── llm/       (3 files) — query_translator (PYTHIA), model_manager, research_pivot
+├── analysis/      (9 files) — citation_analyzer, author_profiler, knowledge_path_generator, etc.
+├── utils/         (8 files) — db_stats, api_health_check, verify_dependency_map, etc.
+└── api/           (1 file)  — talos_service_api + empty __init__.py (FastAPI placeholder)
+data/
+├── talos_research.db
+├── dump.json
+└── pdfs/
+```
+
+### Changed
+- **`talos.py` v5.3.8 — `run_script()` refactored with `_SCRIPT_MAP` dict + `_resolve_script_path()`.**
+  - Old paths `os.path.join(project_root, 'scripts', name)` → `os.path.join(project_root, 'src', subdir, name)`.
+  - All `from core.*` → `from src.core.*`, `from scripts.profile_manager` → `from src.core.profile_manager`.
+  - Version bumped to `v5.3.8`.
+  - Hardcoded `scripts/` paths in `system_health_menu()` (GWO dashboard, API diagnostics) → `_resolve_script_path()`.
+- **`app.py` v5.3.8 — `run()` refactored with `_SCRIPT_DIRS` dict + `_resolve_script()`.**
+  - `from core.database_manager` → `from src.core.database_manager`, `from core.ai_manager` → `from src.core.ai_manager`.
+  - `from core.hardware` → `from src.core.hardware` (in `advanced_settings()`).
+  - GWO Live Dashboard: `os.path.join(..., "scripts", "gwo_live_dashboard.py")` → `_resolve_script("gwo_live_dashboard.py")`.
+  - GWO Start: `os.path.join(..., "scripts", "gwo_rl_optimizer.py")` → `_resolve_script("gwo_rl_optimizer.py")`.
+  - `sys.path.insert(0, ...)` removed — no longer needed with proper package imports.
+  - Simple mode: training command updated from `python scripts/train_agent.py` to `python src/ai/drl/train_agent.py`.
+- **`core/` → `src/core/` (+ `profile_manager.py` from `scripts/`):**
+  - `core/ai_manager.py`, `core/database_manager.py`, `core/hardware.py`, `core/notifier.py` moved unchanged.
+  - `scripts/profile_manager.py` → `src/core/profile_manager.py` — subprocess paths to `query_translator.py` updated to `src/ai/llm/query_translator.py`.
+- **`core/` (DRL) → `src/ai/drl/`:**
+  - `core/drl_agent.py`, `core/drl_networks.py`, `core/talos_env.py`, `core/live_agent_orchestrator.py`, `core/live_agent_sources.py` moved.
+  - `core/live_agent_sources.py` — **dynamic import path fixed:** `f"sources.{source_name}_source"` → `f"src.ingestion.{source_name}_source"`.
+- **`sources/` (14 files) → `src/ingestion/`** + 7 ingestion scripts (`daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `pdf_downloader.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py`).
+- **`scripts/` → various `src/` subdirectories:**
+  - `drl_trainer.py`, `train_agent.py`, `talos_live_agent.py`, `talos_service.py` → `src/ai/drl/`
+  - `gwo_rl_optimizer.py`, `gwo_live_dashboard.py` → `src/ai/optimizers/`
+  - `embedding_generator.py`, `db_embedding_upgrade.py` → `src/ai/embeddings/`
+  - `query_translator.py`, `model_manager.py`, `research_pivot.py` → `src/ai/llm/`
+  - `citation_analyzer.py`, `author_profiler.py`, `author_trajectory_analyzer.py`, `trend_analyzer.py`, `architecture_intelligence_report.py`, `knowledge_path_generator.py`, `recommender.py`, `generate_baseline_report.py`, `generate_architecture_graph.py` → `src/analysis/`
+  - `db_stats.py`, `recalculate_scores.py`, `reevaluate_database.py`, `migrate_database_schema.py`, `api_health_check.py`, `generate_docs.py`, `verify_dependency_map.py`, `interactive_dashboard.py` → `src/utils/`
+  - `talos_service_api.py` → `src/api/`
+- **`test_smoke.py` v5.3.8 — paths updated for new layout:**
+  - Core imports: `core.database_manager` → `src.core.database_manager`.
+  - Script scanning: old `os.listdir("scripts")` → scans 9 subdirectories under `src/`.
+  - Source scanning: `os.listdir("sources")` → `os.listdir("src/ingestion")`.
+- **Data files relocated:** `talos_research.db` → `data/talos_research.db`, `dump.json` → `data/dump.json`.
+  - `talos.py:database_data_menu()` default DB path updated from `talos_research.db` → `data/talos_research.db`.
+- **Bulk migration script** (`_migrate_imports.py`, one-time use, deleted after execution):
+  - 32 source files migrated with regex-based import rewrites (`from core.X` → `from src.core.X`, `from sources.X` → `from src.ingestion.X`).
+  - All `sys.path` hacks (~30 instances) removed from migrated files.
+  - Path bootstrap inserted into each file: `sys.path.insert(0, <project_root>)`.
+- **10 `__init__.py` files created** (one per package): `src/`, `src/core/`, `src/ingestion/`, `src/ai/`, `src/ai/drl/`, `src/ai/optimizers/`, `src/ai/embeddings/`, `src/ai/llm/`, `src/analysis/`, `src/utils/`, `src/api/`.
+- **Old directories deleted:** `core/`, `scripts/`, `sources/` (recursively).
+
+### Verification
+- **`python -m py_compile talos.py`** → ✅ PASS
+- **`python -m py_compile app.py`** → ✅ PASS
+- **All 60+ src/ files compile-checked** → ✅ PASS
+- **`python test_smoke.py`** → ✅ 79 files syntax-checked, core imports pass, DB connected, AIManager initialized
+- **All `sys.path` hacks removed** — project now uses proper package imports exclusively
+
+### Updated Documentation
+- `PROJECT_MAP.md` + `PROJECT_MAP_EN.md` — Sections 2, 3, 7 updated with new file paths and structure.
+- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — v5.3.8 entry rewritten (source map migration).
 
 ## [v5.3.7] - 2026-07-07 — GWO v2.0 Hyperparameter Re-optimization
 

@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Module: app.py (Streamlit Web GUI v5.3.3 — Simple/Advanced Dual-Mode)
-Project: TALOS v5.3.7
+Module: app.py (Streamlit Web GUI v5.3.8 — src/ Migrated)
+Project: TALOS v5.3.8
 Description:
     Complete Multi-Page Streamlit Web GUI with TWO modes:
     - Simple Mode: 4 pages for non-technical users (students, researchers from any field)
     - Advanced Mode: 8 pages with full functionality (power users)
 
+    v5.3.8: All imports and script paths migrated to src/ package layout.
     Key design decisions:
     - Light-only theme with blue/teal academic palette (dark mode removed in v5.3.3)
     - Card-based home layout for visual clarity
@@ -26,11 +27,8 @@ import shutil
 import pandas as pd
 import numpy as np
 
-# ── Add project root to Python's import path ────────────────────────────────
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
-from core.database_manager import DatabaseManager
-from core.ai_manager import AIManager
+from src.core.database_manager import DatabaseManager
+from src.core.ai_manager import AIManager
 from dotenv import load_dotenv, set_key as _set_key
 
 load_dotenv()
@@ -94,11 +92,44 @@ def system_info():
     return {"sys": platform.system(), "py": platform.python_version(),
             "prov": st.session_state.config.get("ai_provider_priority", ["gemini"])[0]}
 
+# ── Script-name → src-subdir map (mirrors talos.py's _SCRIPT_MAP) ──
+_SCRIPT_DIRS = {
+    "daily_search.py": "ingestion", "historic_search.py": "ingestion",
+    "grey_literature_miner.py": "ingestion", "pdf_downloader.py": "ingestion",
+    "zotero_connector.py": "ingestion", "metadata_enricher.py": "ingestion",
+    "data_enricher.py": "ingestion",
+    "drl_trainer.py": "ai/drl", "train_agent.py": "ai/drl",
+    "talos_live_agent.py": "ai/drl", "talos_service.py": "ai/drl",
+    "gwo_rl_optimizer.py": "ai/optimizers", "gwo_live_dashboard.py": "ai/optimizers",
+    "embedding_generator.py": "ai/embeddings", "db_embedding_upgrade.py": "ai/embeddings",
+    "query_translator.py": "ai/llm", "model_manager.py": "ai/llm",
+    "research_pivot.py": "ai/llm",
+    "citation_analyzer.py": "analysis", "author_profiler.py": "analysis",
+    "author_trajectory_analyzer.py": "analysis", "trend_analyzer.py": "analysis",
+    "architecture_intelligence_report.py": "analysis",
+    "knowledge_path_generator.py": "analysis", "recommender.py": "analysis",
+    "generate_baseline_report.py": "analysis", "generate_architecture_graph.py": "analysis",
+    "db_stats.py": "utils", "recalculate_scores.py": "utils",
+    "reevaluate_database.py": "utils", "migrate_database_schema.py": "utils",
+    "api_health_check.py": "utils", "generate_docs.py": "utils",
+    "verify_dependency_map.py": "utils", "interactive_dashboard.py": "utils",
+    "profile_manager.py": "core", "talos_service_api.py": "api",
+}
+
+def _resolve_script(name):
+    """Resolve a script filename to its full path under src/<subdir>/."""
+    root = os.path.dirname(os.path.abspath(__file__))
+    subdir = _SCRIPT_DIRS.get(name, "")
+    if subdir:
+        return os.path.join(root, "src", subdir, name)
+    return os.path.join(root, "scripts", name)
+
 def run(name, args=None, stdin_text="", confirm="y"):
-    """Execute a TALOS script via _gui_runner.py wrapper."""
+    """Execute a TALOS script via _gui_runner.py wrapper.
+    Resolves scripts from the src/ package layout."""
     exe = sys.executable
     root = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(root, "scripts", name)
+    path = _resolve_script(name)
     if not os.path.exists(path):
         return -1, f"Script not found: {path}"
     wrapper = os.path.join(root, "_gui_runner.py")
@@ -133,8 +164,6 @@ def reload_config():
 
 def reload_db():
     st.session_state.db = DatabaseManager()
-
-# (old t() function removed — using STR dict above)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # CSS STYLING
@@ -182,7 +211,7 @@ def render_sidebar():
     with st.sidebar:
         st.markdown(f"""<div style="text-align:center;padding:.5rem 0">
         <h2 style="color:#4a9eff;margin:0;font-size:1.4rem">🧠 TALOS</h2>
-        <p style="color:var(--muted);font-size:.7rem;margin:.2rem 0 0">{t('sidebar_title')} v5.3.4</p>
+        <p style="color:var(--muted);font-size:.7rem;margin:.2rem 0 0">{t('sidebar_title')} v5.3.8</p>
         </div>""", unsafe_allow_html=True)
         st.markdown("---")
 
@@ -356,7 +385,7 @@ def simple_agent():
             show_output("simple_agent", "Live DRL Agent")
     else:
         st.warning(t("sh_agent_untrained"))
-        st.code("python scripts/train_agent.py --episodes 500", language="bash")
+        st.code("python src/ai/drl/train_agent.py --episodes 500", language="bash")
 
 
 def simple_evaluate():
@@ -472,10 +501,8 @@ def advanced_home():
         papers = st.session_state.db.get_all_papers_for_dashboard()
         if papers:
             df = pd.DataFrame(papers)
-            # Apply semantic filter
             if "_sem_ids" in st.session_state and st.session_state._sem_ids:
                 df = df[df["id"].isin(st.session_state._sem_ids)]
-            # Apply numeric filter
             if active_thresh is not None:
                 if active_filter == "Core ≥7":
                     df = df[df["overall_score"] >= 7.0]
@@ -552,11 +579,7 @@ def advanced_search():
         st.subheader(t("ai_process_title"))
         st.caption(t("ai_process_desc"))
         st.warning(t("process_stop"))
-        report_mode = st.radio(t("process_reporting"), [
-            t("process_silent"), t("process_normal"), t("process_verbose"),
-        ], index=0, horizontal=True)
         if st.button("🤖 " + t("process_start"), type="primary", key="btn_process"):
-            mode_flag = "1" if t("process_silent") in report_mode else ("2" if t("process_normal") in report_mode else "3")
             with st.spinner("Process starting..."):
                 rc, out = run("talos_service.py")
                 st.session_state.output["process"] = out
@@ -784,8 +807,9 @@ def advanced_drl_dashboard():
                 if os.path.exists(progress_path):
                     os.remove(progress_path)
                 st.session_state._gwo_running = True
+                gwo_path = _resolve_script("gwo_rl_optimizer.py")
                 st.session_state._gwo_process = subprocess.Popen(
-                    [sys.executable, os.path.join(os.path.dirname(__file__), "scripts", "gwo_rl_optimizer.py"),
+                    [sys.executable, gwo_path,
                      "--wolves", str(wolves_num), "--iters", str(iters_num), "--live"],
                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
                 )
@@ -805,7 +829,6 @@ def advanced_drl_dashboard():
             if st.button("Open Live Dashboard", key="btn_gwo_dash", use_container_width=True,
                         help="Opens the Dash live 3D visualization in a new browser tab"):
                 import webbrowser
-                # Check if dash is already running by trying to connect
                 dash_running = False
                 try:
                     import socket
@@ -818,9 +841,9 @@ def advanced_drl_dashboard():
                     pass
 
                 if not dash_running:
-                    # Start Dash server
+                    dash_path = _resolve_script("gwo_live_dashboard.py")
                     subprocess.Popen(
-                        [sys.executable, os.path.join(os.path.dirname(__file__), "scripts", "gwo_live_dashboard.py")],
+                        [sys.executable, dash_path],
                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
                     )
                     time.sleep(2)
@@ -1007,7 +1030,7 @@ def advanced_drl_dashboard():
 def advanced_settings():
     """Advanced Settings — API keys + models + profiles + VRAM-aware model management."""
     st.header("⊙ Profile & Settings")
-    from core.hardware import detect_vram_gb, estimate_size_for_quant, get_all_chat_models_sorted, get_embedding_models, pull_model
+    from src.core.hardware import detect_vram_gb, estimate_size_for_quant, get_all_chat_models_sorted, get_embedding_models, pull_model
 
     # ── Provider Selection ────────────────────────────────────────────────
     provider = st.radio(t("model_provider"), [t("model_local"), t("model_cloud")], horizontal=True,
@@ -1025,13 +1048,11 @@ def advanced_settings():
             st.caption(f"{usable:.1f} GB usable (70% headroom)")
 
     if is_local:
-        # ═══ LOCAL MODE ═══════════════════════════════════════════════════
         all_models = get_all_chat_models_sorted(vram_gb) if vram_gb else []
         installed = [m for m in all_models if m.get("installed")][:10]
         library = [m for m in all_models if not m.get("installed") and not m.get("bitnet")][:15]
         bitnet = [m for m in all_models if m.get("bitnet")]
 
-        # ── Chat Model ────────────────────────────────────────────────────
         st.subheader(t("model_chat"))
         section = st.selectbox(t("model_select"), [
             t("model_installed"), t("model_library"), t("model_bitnet"),
@@ -1057,9 +1078,7 @@ def advanced_settings():
                     st.error(str(e))
         else:
             st.info("No models available. Check Ollama connection.")
-
     else:
-        # ═══ CLOUD MODE ═══════════════════════════════════════════════════
         st.subheader("Cloud AI Models")
         flash_opts = ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-1.5-flash"]
         pro_opts = ["gemini-2.5-pro", "gemini-2.0-pro", "gemini-1.5-pro"]
@@ -1087,7 +1106,6 @@ def advanced_settings():
             except Exception as e:
                 st.error(str(e))
 
-    # ── Embedding Model ────────────────────────────────────────────────────
     st.markdown("---")
     st.subheader(t("model_embed"))
     emb_models = get_embedding_models() if is_local else [
@@ -1104,7 +1122,6 @@ def advanced_settings():
         except Exception as e:
             st.error(str(e))
 
-    # ── Research Pivot ──────────────────────────────────────────────────────
     st.markdown("---")
     st.subheader("🔄 Research Pivot (Change Research Direction)")
     st.caption("If your research interests have shifted, use this to reconfigure the Query Translator, "
@@ -1129,7 +1146,6 @@ def main():
     if page is None:
         return
 
-    # ── Simple Mode Routing ──
     if not st.session_state.advanced_mode:
         if t("simple_home_label") in page:
             simple_home()
@@ -1142,17 +1158,16 @@ def main():
         elif t("simple_agent_label") in page:
             simple_agent()
     else:
-        # ── Advanced Mode Routing ──
         st.markdown("""<div style="text-align:center;padding:1rem 0">
         <h2 style="color:#4a9eff;margin:0;font-size:1.5rem">🧠 Project TALOS</h2>
-        <p style="color:var(--muted);font-size:.85rem">Research Intelligence Platform v5.3.0</p>
+        <p style="color:var(--muted);font-size:.85rem">Research Intelligence Platform v5.3.8</p>
         </div>""", unsafe_allow_html=True)
         handle_advanced_page(page)
 
     # ── Footer ──
     st.markdown("---")
     st.markdown(f"""<div style="text-align:center;color:#8b949e;font-size:.75rem;padding:0 0 1rem 0">
-    TALOS v5.3.4 · © 2026 Christos Smarlamakis · {datetime.now().strftime('%Y-%m-%d %H:%M')}
+    TALOS v5.3.8 · © 2026 Christos Smarlamakis · {datetime.now().strftime('%Y-%m-%d %H:%M')}
     </div>""", unsafe_allow_html=True)
 
 

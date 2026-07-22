@@ -16,7 +16,11 @@ Description:
     menu-driven interface for accessing various research tools, including
     author analysis, database management, system diagnostics, and API key
     configuration. Supports graceful handling of missing dependencies and
-    limited console environments.    
+    limited console environments.
+
+    v5.3.8 (src/ migration): run_script() now resolves scripts from the
+    src/ package layout. All sys.path hacks removed — imports use proper
+    package paths (src.core.*, etc.).
 """
 import questionary
 import os
@@ -30,15 +34,65 @@ load_dotenv()
 
 import shutil
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), 'scripts')))
-from scripts.profile_manager import (
+from src.core.profile_manager import (
     get_active_profile_name, save_current_state_to_profile, set_active_profile_name,
 )
 
 USE_LOCAL_MODEL = False
 
+# ── Script-name → relative-path map (for run_script) ─────────────────────────
+# Maps the script filename to its package subdirectory under src/.
+_SCRIPT_MAP = {
+    # ── Ingestion ──
+    "daily_search.py":            "ingestion",
+    "historic_search.py":         "ingestion",
+    "grey_literature_miner.py":   "ingestion",
+    "pdf_downloader.py":          "ingestion",
+    "zotero_connector.py":        "ingestion",
+    "metadata_enricher.py":       "ingestion",
+    "data_enricher.py":           "ingestion",
+    # ── DRL ──
+    "drl_trainer.py":             "ai/drl",
+    "train_agent.py":             "ai/drl",
+    "talos_live_agent.py":        "ai/drl",
+    "talos_service.py":           "ai/drl",
+    # ── Optimizers ──
+    "gwo_rl_optimizer.py":        "ai/optimizers",
+    "gwo_live_dashboard.py":      "ai/optimizers",
+    # ── Embeddings ──
+    "embedding_generator.py":     "ai/embeddings",
+    "db_embedding_upgrade.py":    "ai/embeddings",
+    # ── LLM ──
+    "query_translator.py":        "ai/llm",
+    "model_manager.py":           "ai/llm",
+    "research_pivot.py":          "ai/llm",
+    # ── Analysis ──
+    "citation_analyzer.py":       "analysis",
+    "author_profiler.py":         "analysis",
+    "author_trajectory_analyzer.py": "analysis",
+    "trend_analyzer.py":          "analysis",
+    "architecture_intelligence_report.py": "analysis",
+    "knowledge_path_generator.py": "analysis",
+    "recommender.py":             "analysis",
+    "generate_baseline_report.py": "analysis",
+    "generate_architecture_graph.py": "analysis",
+    # ── Utils ──
+    "db_stats.py":                "utils",
+    "recalculate_scores.py":      "utils",
+    "reevaluate_database.py":     "utils",
+    "migrate_database_schema.py": "utils",
+    "api_health_check.py":        "utils",
+    "generate_docs.py":           "utils",
+    "verify_dependency_map.py":   "utils",
+    "interactive_dashboard.py":   "utils",
+    # ── Core (profile manager is imported directly, but can also be run) ──
+    "profile_manager.py":         "core",
+    # ── API ──
+    "talos_service_api.py":       "api",
+}
+
 # ── Single source of truth for the version shown in the TUI header ──────────
-TALOS_VERSION = "v5.3.7"
+TALOS_VERSION = "v5.3.8"
 
 def safe_select(message, choices):
     """Questionary select with graceful fallback.
@@ -62,9 +116,23 @@ def safe_pause(msg="Press Enter to return..."):
     except (KeyboardInterrupt, EOFError):
         print()
 
-def run_script(script_name, python_exe, args=None, capture=False):
+def _resolve_script_path(script_name):
+    """Resolve a script filename to its full path inside src/<subdir>/.
+    Falls back to literal scripts/<name> if not in the map."""
     project_root = os.path.dirname(os.path.abspath(__file__))
-    script_path = os.path.join(project_root, 'scripts', script_name)
+    subdir = _SCRIPT_MAP.get(script_name)
+    if subdir:
+        return os.path.join(project_root, 'src', subdir, script_name)
+    # Fallback: old-style (should not happen post-migration)
+    return os.path.join(project_root, 'scripts', script_name)
+
+def run_script(script_name, python_exe, args=None, capture=False):
+    """Launch a TALOS script as a subprocess.
+    
+    The script is resolved from the _SCRIPT_MAP (src/<subdir>/<name>).
+    All TALOS_* environment variables are forwarded to the child process.
+    """
+    script_path = _resolve_script_path(script_name)
     command = [python_exe, script_path] + (args or [])
     print(f"\n--- Launching '{script_name}'... ---\n")
     env = os.environ.copy()
@@ -144,7 +212,7 @@ def database_data_menu(python_exe):
     project_root = os.path.dirname(os.path.abspath(__file__))
     ap = get_active_profile_name()
     pdb = os.path.join(project_root, '_profiles', ap, 'talos_research.db')
-    rdb = os.path.join(project_root, 'talos_research.db')
+    rdb = os.path.join(project_root, 'data', 'talos_research.db')   # moved to data/
     tdb = pdb if os.path.exists(pdb) else rdb
     choice = safe_select("Database & Data:", choices=[
         "1. Statistics & Health", "2. Metadata Enrichment (APOLLO)", "3. Zotero Sync",
@@ -218,15 +286,16 @@ def system_health_menu(python_exe):
             pass
         if not dash_running:
             print("\n  Starting Dash server...")
+            script_path = _resolve_script_path("gwo_live_dashboard.py")
             subprocess.Popen(
-                [python_exe, os.path.join(project_root, "scripts", "gwo_live_dashboard.py")],
+                [python_exe, script_path],
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
             )
             time.sleep(2)
         webbrowser.open("http://localhost:8050")
         print("\n  Dashboard opened in browser.")
         print("  NOTE: Run GWO first from another terminal with --live flag.")
-        print("  python scripts/gwo_rl_optimizer.py --live")
+        print("  python src/ai/optimizers/gwo_rl_optimizer.py --live")
     elif choice.startswith("6."):
         # GWO Swarm Hunt Replay — opens Streamlit GUI
         import webbrowser
@@ -327,7 +396,7 @@ def api_keys_menu(python_exe):
                     except Exception as e:
                         print(f"\n  Error: {e}")
         elif c.startswith("2"):
-            tp = os.path.join(project_root, 'scripts', 'api_health_check.py')
+            tp = _resolve_script_path("api_health_check.py")
             if os.path.exists(tp): subprocess.run([python_exe, tp], check=False)
         safe_pause("\nPress Enter...")
 
@@ -345,7 +414,7 @@ def profile_settings_menu(python_exe):
         elif c.startswith("3."): run_script("model_manager.py", python_exe)
         elif c.startswith("4."): api_keys_menu(python_exe)
         elif c.startswith("5."):
-            tp = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'scripts', 'api_health_check.py')
+            tp = _resolve_script_path("api_health_check.py")
             if os.path.exists(tp): subprocess.run([python_exe, tp], check=False)
         elif c.startswith("6."): run_script("research_pivot.py", python_exe)
         safe_pause("\nPress Enter...")
@@ -391,12 +460,12 @@ def main_menu():
         ap = get_active_profile_name()
         header = f"TALOS {TALOS_VERSION} | Profile: [{ap}]"
         try:
-            from core.database_manager import DatabaseManager
+            from src.core.database_manager import DatabaseManager
             db = DatabaseManager(); s = db.get_database_statistics()
             prov = f"LOCAL ({os.getenv('LOCAL_MODEL_NAME','local')})" if USE_LOCAL_MODEL else "CLOUD (Gemini+DeepSeek)"
             vr = ""
             try:
-                from core.hardware import detect_vram_gb
+                from src.core.hardware import detect_vram_gb
                 v = detect_vram_gb()
                 if v: vr = f" | VRAM: {v:.0f}GB"
             except Exception: pass

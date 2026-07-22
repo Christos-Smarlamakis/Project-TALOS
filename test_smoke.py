@@ -61,9 +61,9 @@ print("\n" + "=" * 60)
 print("  2. CORE MODULE IMPORTS")
 print("=" * 60)
 
-check("core.database_manager", lambda: __import__("core.database_manager"))
-check("core.ai_manager", lambda: __import__("core.ai_manager"))
-check("core.hardware", lambda: __import__("core.hardware"))
+check("src.core.database_manager", lambda: __import__("src.core.database_manager"))
+check("src.core.ai_manager", lambda: __import__("src.core.ai_manager"))
+check("src.core.hardware", lambda: __import__("src.core.hardware"))
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 3. DATABASE CONNECTIVITY & STATISTICS
@@ -72,7 +72,7 @@ print("\n" + "=" * 60)
 print("  3. DATABASE CONNECTIVITY")
 print("=" * 60)
 
-from core.database_manager import DatabaseManager
+from src.core.database_manager import DatabaseManager
 
 check("DatabaseManager() init", lambda: DatabaseManager())
 
@@ -103,7 +103,7 @@ if not os.path.exists(config_path):
 with open(config_path, "r", encoding="utf-8") as f:
     config = json.load(f)
 
-from core.ai_manager import AIManager
+from src.core.ai_manager import AIManager
 
 check("AIManager(config) init", lambda: AIManager(config))
 
@@ -147,12 +147,30 @@ SCRIPTS_TO_SKIP = {
     "zotero_connector.py": "requires pyzotero + Zotero keys",
 }
 
-script_files = sorted(f for f in os.listdir("scripts") if f.endswith(".py") and f != "__init__.py")
-for sf in script_files:
-    if sf in SCRIPTS_TO_SKIP:
-        skip(f"scripts/{sf}", SCRIPTS_TO_SKIP[sf])
+# ── Scripts now live in src/ — scan subdirectories ──────────────────────
+# Use explicit dot notation to avoid Windows path separator issues
+_script_modules = {
+    "src/ingestion": "src.ingestion",
+    "src/ai/drl": "src.ai.drl",
+    "src/ai/optimizers": "src.ai.optimizers",
+    "src/ai/embeddings": "src.ai.embeddings",
+    "src/ai/llm": "src.ai.llm",
+    "src/analysis": "src.analysis",
+    "src/utils": "src.utils",
+    "src/core": "src.core",
+    "src/api": "src.api",
+}
+script_entries = []
+for sd, pkg in _script_modules.items():
+    if os.path.isdir(sd):
+        for f in sorted(os.listdir(sd)):
+            if f.endswith(".py") and f != "__init__.py":
+                script_entries.append((f"{sd}/{f}", pkg, f))
+for sf, pkg, fname in script_entries:
+    if fname in SCRIPTS_TO_SKIP:
+        skip(sf, SCRIPTS_TO_SKIP[fname])
     else:
-        module_name = f"scripts.{sf[:-3]}"
+        module_name = f"{pkg}.{fname[:-3]}"
         check(f"Import {module_name}", lambda mn=module_name: __import__(mn))
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -169,12 +187,14 @@ SOURCES_TO_SKIP = {
     "openarchives_source.py": "requires API key",
 }
 
-source_files = sorted(f for f in os.listdir("sources") if f.endswith(".py") and f != "__init__.py")
+# ── Source agents now live in src/ingestion/ ────────────────────────────
+source_files = sorted(f for f in os.listdir("src/ingestion") 
+                      if f.endswith("_source.py") and f != "__init__.py")
 for sf in source_files:
     if sf in SOURCES_TO_SKIP:
-        skip(f"sources/{sf}", SOURCES_TO_SKIP[sf])
+        skip(f"src/ingestion/{sf}", SOURCES_TO_SKIP[sf])
     else:
-        module_name = f"sources.{sf[:-3]}"
+        module_name = f"src.ingestion.{sf[:-3]}"
         check(f"Import {module_name}", lambda mn=module_name: __import__(mn))
 
 # ─────────────────────────────────────────────────────────────────────────────
