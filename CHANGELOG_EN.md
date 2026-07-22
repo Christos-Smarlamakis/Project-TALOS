@@ -2,6 +2,61 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.5.0] - 2026-07-22 — FastAPI REST API Façade & Database Path Fix
+
+### Added
+- **`src/api/main_api.py` v1.0 (NEW, ~470 lines) — FastAPI Façade Layer**
+  - **8 REST endpoints** wrapping existing core functions with zero logic duplication:
+    - `GET  /api/v1/health` — system health, DB stats, embedding model coverage
+    - `GET  /api/v1/papers` — paginated paper list (page + page_size params)
+    - `GET  /api/v1/papers/{id}` — full paper detail by database ID
+    - `POST /api/v1/search/semantic` — natural-language semantic search (3-step pipeline: embed query → cosine similarity → fetch papers)
+    - `POST /api/v1/scrape/trigger` — trigger full 14-source daily search pipeline (BackgroundTasks)
+    - `POST /api/v1/optimize/gwo` — trigger GWO hyperparameter optimization (BackgroundTasks)
+    - `GET  /api/v1/tasks/{id}` — poll background task status
+    - `GET  /api/v1/tasks` — list all background tasks (newest first)
+  - **Key design decisions:**
+    - Port 8000 — no conflict with Flask dashboard (5000), Flask service (5002), Streamlit (8501)
+    - All synchronous endpoints — no async def needed (core functions are blocking)
+    - `BackgroundTasks` for long-running scrape and GWO (not Celery)
+    - Lazy singleton pattern for `DatabaseManager` and `AIManager`
+    - `sys.exit()` monkey-patching prevents `daily_search.main()` from killing the server
+    - Pydantic v2 models with `extra="ignore"` for forward compatibility
+    - GWO progress monitor via daemon thread polling `gwo_history.json` every 2 seconds
+    - Comprehensive logging via `logging` module (not print)
+  - **Pydantic models (10):** `PaperSummary`, `PaperDetail`, `PaginatedPapers`, `SemanticSearchRequest`, `SemanticSearchResponse`, `ScrapeRequest`, `GWORunRequest`, `GWOResult`, `TaskStatus`, `SystemHealth`
+  - **Start command:** `python -m uvicorn src.api.main_api:app --host 0.0.0.0 --port 8000`
+  - **API docs auto-generated** at `http://localhost:8000/docs`
+
+### Changed
+- **`src/core/database_manager.py` v5.0 → v5.4.2 — Database path resolution fix (CRITICAL)**
+  - **Bug:** `__init__` line 24 resolved `project_root` as `os.path.join(os.path.dirname(__file__), '..')` = `src/` (one level up from `src/core/`), creating an empty `src/talos_research.db` instead of connecting to the populated `data/talos_research.db`.
+  - **Fix:** Replaced with `talos.py` walking loop (same pattern as every other `src/*.py` script) → correctly resolves to project root `f:\Project_TALOS\Project_Talos_v5.4.2_GitHub\`.
+  - **Priority order changed:**
+    1. Explicit `db_path` argument (unchanged)
+    2. `data/talos_research.db` if exists (**new canonical location** — takes priority)
+    3. Active profile DB (`_profiles/<name>/talos_research.db`) if configured (fallback)
+    4. Create `data/talos_research.db` if nothing exists (was `src/talos_research.db`)
+  - **Result:** `DatabaseManager()` now connects to the 40 MB populated database with 5,366 papers.
+
+- **`src/api/talos_service_api.py`** — remains as separate Flask micro-service on port 5002 (unchanged).
+
+### Dependencies Added
+- `fastapi`, `uvicorn[standard]`, `pydantic` (already present, pinned to latest)
+
+### Verification
+- `python -m py_compile src/api/main_api.py` ✅
+- `python -m py_compile src/core/database_manager.py` ✅
+- Module import test: 12 routes registered ✅
+- `GET /api/v1/papers?page=1&page_size=50` → 200 OK ✅
+- `DatabaseManager()` resolves to `data/talos_research.db` (40 MB, 5,366 papers) ✅
+
+### Documentation Updated
+- `docs/PROJECT_MAP.md` + `docs/PROJECT_MAP_EN.md` — version bumped to v5.5.0, footer updated
+- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — this entry
+- `README.md` — version bumped to v5.5.0
+- `ROADMAP.md` — v5.5.0 milestone completed
+
 ## [v5.4.1] - 2026-07-22 — Root Directory Cleanup
 
 ### Changed

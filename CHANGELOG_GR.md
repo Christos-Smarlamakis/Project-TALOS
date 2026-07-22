@@ -2,6 +2,61 @@
 
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
+## [v5.5.0] - 2026-07-22 — FastAPI REST API Façade & Διόρθωση Διαδρομής Βάσης
+
+### Προστέθηκε
+- **`src/api/main_api.py` v1.0 (ΝΕΟ, ~470 γραμμές) — FastAPI Façade Layer**
+  - **8 REST endpoints** που τυλίγουν τις υπάρχουσες core συναρτήσεις χωρίς καμία επανάληψη λογικής:
+    - `GET  /api/v1/health` — health check, στατιστικά βάσης, embedding model coverage
+    - `GET  /api/v1/papers` — σελιδοποιημένη λίστα papers (page + page_size params)
+    - `GET  /api/v1/papers/{id}` — πλήρεις λεπτομέρειες paper μέσω database ID
+    - `POST /api/v1/search/semantic` — semantic search φυσικής γλώσσας (3-βήμα pipeline: embed query → cosine similarity → fetch papers)
+    - `POST /api/v1/scrape/trigger` — έναρξη daily search και στις 14 πηγές (BackgroundTasks)
+    - `POST /api/v1/optimize/gwo` — έναρξη GWO βελτιστοποίησης υπερπαραμέτρων (BackgroundTasks)
+    - `GET  /api/v1/tasks/{id}` — έλεγχος κατάστασης background task
+    - `GET  /api/v1/tasks` — λίστα όλων των background tasks (τα νεότερα πρώτα)
+  - **Βασικές σχεδιαστικές αποφάσεις:**
+    - Port 8000 — καμία σύγκρουση με Flask dashboard (5000), Flask service (5002), Streamlit (8501)
+    - Όλα τα endpoints είναι synchronous — δεν χρειάζεται async def (οι core συναρτήσεις είναι blocking)
+    - `BackgroundTasks` για χρονοβόρα scrape και GWO (όχι Celery)
+    - Lazy singleton pattern για `DatabaseManager` και `AIManager`
+    - `sys.exit()` monkey-patching για να μην σκοτώνεται ο server από το `daily_search.main()`
+    - Pydantic v2 models με `extra="ignore"` για forward compatibility
+    - GWO progress monitor μέσω daemon thread που διαβάζει `gwo_history.json` κάθε 2 δευτερόλεπτα
+    - Πλήρες logging μέσω του `logging` module (όχι print)
+  - **Pydantic models (10):** `PaperSummary`, `PaperDetail`, `PaginatedPapers`, `SemanticSearchRequest`, `SemanticSearchResponse`, `ScrapeRequest`, `GWORunRequest`, `GWOResult`, `TaskStatus`, `SystemHealth`
+  - **Εντολή εκκίνησης:** `python -m uvicorn src.api.main_api:app --host 0.0.0.0 --port 8000`
+  - **API docs** αυτόματα στο `http://localhost:8000/docs`
+
+### Άλλαξε
+- **`src/core/database_manager.py` v5.0 → v5.4.2 — Διόρθωση ανάλυσης διαδρομής βάσης (ΚΡΙΣΙΜΟ)**
+  - **Bug:** Το `__init__` line 24 υπολόγιζε το `project_root` ως `os.path.join(os.path.dirname(__file__), '..')` = `src/` (ένα επίπεδο πάνω από `src/core/`), δημιουργώντας ένα άδειο `src/talos_research.db` αντί να συνδέεται στο γεμάτο `data/talos_research.db` με 5,366 papers.
+  - **Fix:** Αντικαταστάθηκε με βρόχο αναζήτησης του `talos.py` (ίδιο pattern που χρησιμοποιεί κάθε άλλο `src/*.py` script) → επιλύει σωστά στο project root `f:\Project_TALOS\Project_Talos_v5.4.2_GitHub\`.
+  - **Προτεραιότητα διαδρομών:**
+    1. Ρητό `db_path` argument (αμετάβλητο)
+    2. `data/talos_research.db` αν υπάρχει (**νέα κανονική τοποθεσία** — έχει προτεραιότητα)
+    3. Ενεργό profile DB (`_profiles/<name>/talos_research.db`) αν έχει ρυθμιστεί (fallback)
+    4. Δημιουργία `data/talos_research.db` αν δεν υπάρχει τίποτα (ήταν `src/talos_research.db`)
+  - **Αποτέλεσμα:** Το `DatabaseManager()` πλέον συνδέεται στη γεμάτη βάση των 40 MB με 5,366 papers.
+
+- **`src/api/talos_service_api.py`** — παραμένει ως ξεχωριστό Flask micro-service στην πόρτα 5002 (αμετάβλητο).
+
+### Dependencies
+- `fastapi`, `uvicorn[standard]`, `pydantic` (εγκατεστημένα, pinned στις τελευταίες εκδόσεις)
+
+### Επαλήθευση
+- `python -m py_compile src/api/main_api.py` ✅
+- `python -m py_compile src/core/database_manager.py` ✅
+- Module import test: 12 routes registered ✅
+- `GET /api/v1/papers?page=1&page_size=50` → 200 OK ✅
+- `DatabaseManager()` επιλύει σε `data/talos_research.db` (40 MB, 5,366 papers) ✅
+
+### Ενημερωμένη Τεκμηρίωση
+- `docs/PROJECT_MAP.md` + `docs/PROJECT_MAP_EN.md` — έκδοση v5.5.0, footer ενημερώθηκε
+- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — αυτή η καταχώρηση
+- `README.md` — έκδοση v5.5.0
+- `ROADMAP.md` — v5.5.0 milestone completed
+
 ## [v5.4.1] - 2026-07-22 — Root Directory Cleanup
 
 ### ⚠️ BREAKING — Καθαρισμός ριζικού καταλόγου

@@ -21,12 +21,28 @@ class DatabaseManager:
         if db_path:
             self.db_path = db_path
         else:
-            project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-            profile_db = self._resolve_profile_db(project_root)
-            if profile_db:
-                self.db_path = profile_db
+            # Resolve actual project root by walking up from this file until talos.py is found
+            # (same pattern used by every src/*.py script in the project)
+            project_root = os.path.abspath(os.path.dirname(__file__))
+            while project_root and not os.path.exists(os.path.join(project_root, 'talos.py')):
+                parent = os.path.dirname(project_root)
+                if parent == project_root:  # reached filesystem root
+                    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+                    break
+                project_root = parent
+            # Canonical location: data/talos_research.db (takes priority over profiles)
+            data_dir = os.path.join(project_root, "data")
+            canonical_path = os.path.join(data_dir, db_name)
+            if os.path.exists(canonical_path):
+                self.db_path = canonical_path
             else:
-                self.db_path = os.path.join(project_root, db_name)
+                # Fallback to active profile DB; if neither exists, create in data/
+                profile_db = self._resolve_profile_db(project_root)
+                if profile_db:
+                    self.db_path = profile_db
+                else:
+                    os.makedirs(data_dir, exist_ok=True)
+                    self.db_path = canonical_path
 
         self.create_table()
         self._embedding_ids: List[int] = []
