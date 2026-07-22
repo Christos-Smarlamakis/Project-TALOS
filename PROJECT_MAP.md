@@ -1,4 +1,4 @@
-# PROJECT_MAP.md — Πλήρης Χάρτης του Project TALOS v5.3.8
+# PROJECT_MAP.md — Πλήρης Χάρτης του Project TALOS v5.4.0
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται — χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
@@ -435,6 +435,6 @@ generate_docs.py → requests, dotenv, tqdm
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-07-22 (v5.3.8 — src/ DDD migration: 55 files reorganized into 10 packages, 150+ imports rewritten, all sys.path hacks removed.)
-> **Έκδοση Project:** v5.3.8
+> **Τελευταία ενημέρωση:** 2026-07-22 (v5.4.0 — src/ DDD migration: 55 files reorganized into 10 packages, 150+ imports rewritten, all sys.path hacks removed.)
+> **Έκδοση Project:** v5.4.0
 > **Συνολικά αρχεία που καλύπτονται:** 61 (55 src/ + 6 root entry/config)

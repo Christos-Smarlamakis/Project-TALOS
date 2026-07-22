@@ -2,7 +2,7 @@
 
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
-## [v5.3.8] - 2026-07-22 — `src/` Αναδιάρθρωση Πακέτων (DDD Migration)
+## [v5.4.0] - 2026-07-22 — `src/` Αναδιάρθρωση Πακέτων (DDD Migration)
 
 ### ⚠️ BREAKING — Πλήρης αναδιοργάνωση δομής καταλόγων
 Όλα τα Python αρχεία (~55) μεταφέρθηκαν από την παλιά χαλαρή δομή `core/`, `scripts/`, `sources/` σε μια οργανωμένη δομή πακέτων `src/` Domain-Driven Design. **Κάθε δήλωση import σε κάθε αρχείο έχει ξαναγραφεί.**
@@ -27,13 +27,13 @@ data/
 ```
 
 ### Άλλαξε
-- **`talos.py` v5.3.8 — `run_script()` ανακατασκευάστηκε με `_SCRIPT_MAP` dict + `_resolve_script_path()`.**
+- **`talos.py` v5.4.0 — `run_script()` ανακατασκευάστηκε με `_SCRIPT_MAP` dict + `_resolve_script_path()`.**
   - Παλιές διαδρομές `os.path.join(project_root, 'scripts', name)` → `os.path.join(project_root, 'src', subdir, name)`.
   - Όλα τα `from core.*` → `from src.core.*`, `from scripts.profile_manager` → `from src.core.profile_manager`.
-  - Έκδοση `v5.3.8`.
+  - Έκδοση `v5.4.0`.
   - Hardcoded `scripts/` διαδρομές στο `system_health_menu()` (GWO dashboard, API diagnostics) → `_resolve_script_path()`.
   - Διαδρομή βάσης δεδομένων: `talos_research.db` → `data/talos_research.db`.
-- **`app.py` v5.3.8 — `run()` ανακατασκευάστηκε με `_SCRIPT_DIRS` dict + `_resolve_script()`.**
+- **`app.py` v5.4.0 — `run()` ανακατασκευάστηκε με `_SCRIPT_DIRS` dict + `_resolve_script()`.**
   - `from core.database_manager` → `from src.core.database_manager`, `from core.ai_manager` → `from src.core.ai_manager`.
   - `from core.hardware` → `from src.core.hardware` (στο `advanced_settings()`).
   - GWO Live Dashboard: `os.path.join(..., "scripts", ...)` → `_resolve_script()`.
@@ -52,7 +52,7 @@ data/
   - `citation_analyzer.py`, `author_profiler.py`, κλπ. (9 αρχεία) → `src/analysis/`
   - `db_stats.py`, `api_health_check.py`, κλπ. (8 αρχεία) → `src/utils/`
   - `talos_service_api.py` → `src/api/`
-- **`test_smoke.py` v5.3.8 — διαδρομές ενημερωμένες:** `core.database_manager` → `src.core.database_manager`, σάρωση `scripts/` → 9 υποκατάλογοι `src/`.
+- **`test_smoke.py` v5.4.0 — διαδρομές ενημερωμένες:** `core.database_manager` → `src.core.database_manager`, σάρωση `scripts/` → 9 υποκατάλογοι `src/`.
 - **10 αρχεία `__init__.py`** δημιουργήθηκαν (ένα ανά πακέτο).
 - **Παλιοί κατάλογοι διαγράφηκαν:** `core/`, `scripts/`, `sources/` (αναδρομικά).
 - **Bulk migration script** (`_migrate_imports.py`, μίας χρήσης, διαγράφηκε μετά την εκτέλεση): 32 αρχεία μεταφέρθηκαν με regex import rewrites. Όλα τα `sys.path` hacks (~30 εμφανίσεις) αφαιρέθηκαν.
@@ -66,7 +66,7 @@ data/
 
 ### Ενημερωμένη Τεκμηρίωση
 - `PROJECT_MAP.md` + `PROJECT_MAP_EN.md` — Ενότητες 2, 3, 7 ενημερώθηκαν με νέες διαδρομές και δομή.
-- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — εγγραφή v5.3.8 ξαναγράφτηκε (src/ migration).
+- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — εγγραφή v5.4.0 ξαναγράφτηκε (src/ migration).
 
 ## [v5.3.7] - 2026-07-07 — GWO v2.0 Επανάληψη Βελτιστοποίησης Υπερπαραμέτρων
 

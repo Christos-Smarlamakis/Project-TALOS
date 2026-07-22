@@ -2,7 +2,7 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
-## [v5.3.8] - 2026-07-22 — `src/` Package Layout (DDD Migration)
+## [v5.4.0] - 2026-07-22 — `src/` Package Layout (DDD Migration)
 
 ### ⚠️ BREAKING — Project directory structure completely reorganized
 All Python source files (~55) have been moved from the old loose `core/`, `scripts/`, `sources/` layout into a proper `src/` Domain-Driven Design package structure. **Every import statement in every file has been rewritten.**
@@ -27,12 +27,12 @@ data/
 ```
 
 ### Changed
-- **`talos.py` v5.3.8 — `run_script()` refactored with `_SCRIPT_MAP` dict + `_resolve_script_path()`.**
+- **`talos.py` v5.4.0 — `run_script()` refactored with `_SCRIPT_MAP` dict + `_resolve_script_path()`.**
   - Old paths `os.path.join(project_root, 'scripts', name)` → `os.path.join(project_root, 'src', subdir, name)`.
   - All `from core.*` → `from src.core.*`, `from scripts.profile_manager` → `from src.core.profile_manager`.
-  - Version bumped to `v5.3.8`.
+  - Version bumped to `v5.4.0`.
   - Hardcoded `scripts/` paths in `system_health_menu()` (GWO dashboard, API diagnostics) → `_resolve_script_path()`.
-- **`app.py` v5.3.8 — `run()` refactored with `_SCRIPT_DIRS` dict + `_resolve_script()`.**
+- **`app.py` v5.4.0 — `run()` refactored with `_SCRIPT_DIRS` dict + `_resolve_script()`.**
   - `from core.database_manager` → `from src.core.database_manager`, `from core.ai_manager` → `from src.core.ai_manager`.
   - `from core.hardware` → `from src.core.hardware` (in `advanced_settings()`).
   - GWO Live Dashboard: `os.path.join(..., "scripts", "gwo_live_dashboard.py")` → `_resolve_script("gwo_live_dashboard.py")`.
@@ -54,7 +54,7 @@ data/
   - `citation_analyzer.py`, `author_profiler.py`, `author_trajectory_analyzer.py`, `trend_analyzer.py`, `architecture_intelligence_report.py`, `knowledge_path_generator.py`, `recommender.py`, `generate_baseline_report.py`, `generate_architecture_graph.py` → `src/analysis/`
   - `db_stats.py`, `recalculate_scores.py`, `reevaluate_database.py`, `migrate_database_schema.py`, `api_health_check.py`, `generate_docs.py`, `verify_dependency_map.py`, `interactive_dashboard.py` → `src/utils/`
   - `talos_service_api.py` → `src/api/`
-- **`test_smoke.py` v5.3.8 — paths updated for new layout:**
+- **`test_smoke.py` v5.4.0 — paths updated for new layout:**
   - Core imports: `core.database_manager` → `src.core.database_manager`.
   - Script scanning: old `os.listdir("scripts")` → scans 9 subdirectories under `src/`.
   - Source scanning: `os.listdir("sources")` → `os.listdir("src/ingestion")`.
@@ -76,7 +76,7 @@ data/
 
 ### Updated Documentation
 - `PROJECT_MAP.md` + `PROJECT_MAP_EN.md` — Sections 2, 3, 7 updated with new file paths and structure.
-- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — v5.3.8 entry rewritten (source map migration).
+- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — v5.4.0 entry rewritten (source map migration).
 
 ## [v5.3.7] - 2026-07-07 — GWO v2.0 Hyperparameter Re-optimization
 

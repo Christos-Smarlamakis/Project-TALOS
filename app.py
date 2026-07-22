@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Module: app.py (Streamlit Web GUI v5.3.8 — src/ Migrated)
-Project: TALOS v5.3.8
+Module: app.py (Streamlit Web GUI v5.4.0 — src/ Migrated)
+Project: TALOS v5.4.0
 Description:
     Complete Multi-Page Streamlit Web GUI with TWO modes:
     - Simple Mode: 4 pages for non-technical users (students, researchers from any field)
     - Advanced Mode: 8 pages with full functionality (power users)
 
-    v5.3.8: All imports and script paths migrated to src/ package layout.
+    v5.4.0: All imports and script paths migrated to src/ package layout.
     Key design decisions:
     - Light-only theme with blue/teal academic palette (dark mode removed in v5.3.3)
     - Card-based home layout for visual clarity
@@ -211,7 +211,7 @@ def render_sidebar():
     with st.sidebar:
         st.markdown(f"""<div style="text-align:center;padding:.5rem 0">
         <h2 style="color:#4a9eff;margin:0;font-size:1.4rem">🧠 TALOS</h2>
-        <p style="color:var(--muted);font-size:.7rem;margin:.2rem 0 0">{t('sidebar_title')} v5.3.8</p>
+        <p style="color:var(--muted);font-size:.7rem;margin:.2rem 0 0">{t('sidebar_title')} v5.4.0</p>
         </div>""", unsafe_allow_html=True)
         st.markdown("---")
 
@@ -1160,14 +1160,14 @@ def main():
     else:
         st.markdown("""<div style="text-align:center;padding:1rem 0">
         <h2 style="color:#4a9eff;margin:0;font-size:1.5rem">🧠 Project TALOS</h2>
-        <p style="color:var(--muted);font-size:.85rem">Research Intelligence Platform v5.3.8</p>
+        <p style="color:var(--muted);font-size:.85rem">Research Intelligence Platform v5.4.0</p>
         </div>""", unsafe_allow_html=True)
         handle_advanced_page(page)
 
     # ── Footer ──
     st.markdown("---")
     st.markdown(f"""<div style="text-align:center;color:#8b949e;font-size:.75rem;padding:0 0 1rem 0">
-    TALOS v5.3.8 · © 2026 Christos Smarlamakis · {datetime.now().strftime('%Y-%m-%d %H:%M')}
+    TALOS v5.4.0 · © 2026 Christos Smarlamakis · {datetime.now().strftime('%Y-%m-%d %H:%M')}
     </div>""", unsafe_allow_html=True)
 
 

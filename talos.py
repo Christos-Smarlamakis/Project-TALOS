@@ -18,7 +18,7 @@ Description:
     configuration. Supports graceful handling of missing dependencies and
     limited console environments.
 
-    v5.3.8 (src/ migration): run_script() now resolves scripts from the
+    v5.4.0 (src/ migration): run_script() now resolves scripts from the
     src/ package layout. All sys.path hacks removed — imports use proper
     package paths (src.core.*, etc.).
 """
@@ -92,7 +92,7 @@ _SCRIPT_MAP = {
 }
 
 # ── Single source of truth for the version shown in the TUI header ──────────
-TALOS_VERSION = "v5.3.8"
+TALOS_VERSION = "v5.4.0"
 
 def safe_select(message, choices):
     """Questionary select with graceful fallback.
