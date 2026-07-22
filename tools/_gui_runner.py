@@ -99,8 +99,15 @@ target_args = sys.argv[2:]
 
 sys.argv = [target] + target_args
 
-# CRITICAL: cd to project root (where config.json lives)
-project_root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(target)), '..'))
+# ── CRITICAL: walk up until we find talos.py (project root) ─────────────
+# Scripts live at different depths (src/ingestion/, src/ai/drl/, etc.)
+# so we can't just go up 1 or 2 levels — we find the project root.
+project_root = os.path.abspath(os.path.dirname(target))
+while project_root and not os.path.exists(os.path.join(project_root, 'talos.py')):
+    parent = os.path.dirname(project_root)
+    if parent == project_root:  # reached filesystem root without finding
+        break
+    project_root = parent
 os.chdir(project_root)
 
 with open(target, encoding='utf-8') as f:

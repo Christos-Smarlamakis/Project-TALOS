@@ -1,5 +1,5 @@
 @echo off
-title Project TALOS v5.3.8 Launcher
+title Project TALOS v5.4.0 Launcher
 
 REM Activate the conda environment
 call C:\ProgramData\miniconda3\Scripts\activate.bat talosenv
@@ -14,7 +14,7 @@ IF ERRORLEVEL 1 (
 :MENU
 cls
 echo =============================================
-echo    Project TALOS v5.3.7
+echo    Project TALOS v5.4.0
 echo    Research Intelligence Platform
 echo =============================================
 echo.
@@ -39,7 +39,7 @@ goto MENU
 
 :CLI
 cls
-python talos.py
+python ..\talos.py
 goto MENU
 
 :GUI
@@ -50,7 +50,7 @@ echo    Open: http://localhost:8501
 echo    Press Ctrl+C to stop
 echo =============================================
 echo.
-python -m streamlit run app.py --server.port 8501
+python -m streamlit run ..\app.py --server.port 8501
 goto MENU
 
 :DASHBOARD
@@ -59,7 +59,7 @@ echo =============================================
 echo    Starting Legacy Dashboard...
 echo    Open: http://localhost:5000
 echo =============================================
-python scripts\interactive_dashboard.py
+python ..\src\utils\interactive_dashboard.py
 goto MENU
 
 :REPORT
@@ -67,7 +67,7 @@ cls
 echo =============================================
 echo    Generating Baseline Report...
 echo =============================================
-python scripts\generate_baseline_report.py --academic
+python ..\src\analysis\generate_baseline_report.py --academic
 echo.
 echo    Report saved to reports\general_status_report\
 echo.
@@ -80,7 +80,7 @@ echo =============================================
 echo    Starting Autonomous Research Service...
 echo    Press Ctrl+C to stop
 echo =============================================
-python scripts\talos_service.py
+python ..\src\ai\drl\talos_service.py
 goto MENU
 
 :LIVEAGENT
@@ -90,7 +90,7 @@ echo    Starting Live DRL Agent (Real APIs)...
 echo    ⚠️  This makes REAL API calls.
 echo    Press Ctrl+C to stop
 echo =============================================
-python scripts\talos_live_agent.py --verbose
+python ..\src\ai\drl\talos_live_agent.py --verbose
 goto MENU
 
 :END

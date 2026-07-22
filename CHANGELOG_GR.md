@@ -2,6 +2,41 @@
 
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
+## [v5.4.1] - 2026-07-22 — Root Directory Cleanup
+
+### ⚠️ BREAKING — Καθαρισμός ριζικού καταλόγου
+Η τεκμηρίωση και τα dev scripts μεταφέρθηκαν από το root σε `docs/` και `tools/`. Ο ριζικός κατάλογος περιέχει πλέον μόνο standard GitHub/Enterprise αρχεία.
+
+### Άλλαξε
+- **`docs/` κατάλογος** για μόνιμη τεκμηρίωση: `PROJECT_MAP.md`, `PROJECT_MAP_EN.md`, `TECH_RADAR.md`.
+- **`tools/` κατάλογος** για dev/utility scripts: `_bump.py`, `_git_status.ps1`, `_gui_runner.py`, `test_smoke.py`, `start_talos.bat`.
+- **Όλες οι εσωτερικές διαδρομές διορθώθηκαν:**
+  - `tools/test_smoke.py` — `os.chdir()` πηγαίνει ένα επίπεδο πάνω (στο root).
+  - `tools/_gui_runner.py` — δυναμική εύρεση project root (βρίσκει το `talos.py`).
+  - `tools/_bump.py` — δυναμικό root αντί για hardcoded `c:\Users\...`; `core/ai_manager.py` → `src/core/ai_manager.py`.
+  - `tools/_git_status.ps1` — δυναμικό root.
+  - `tools/start_talos.bat` — όλες οι διαδρομές με `..\` πρόθεμα; `scripts\` → `..\src\...`.
+- **`.gitignore` v5.4.1** — κρίσιμη διόρθωση: `!docs/PROJECT_MAP*.md` negate patterns (το blanket `docs/` αγνοούσε τα project maps). Προστέθηκαν: `dump.json`, `logs/`, `data/`, `tools/_git_out.txt`.
+- **`README.md`** — έκδοση v5.4.1, ενημερωμένες διαδρομές, citation IEEE/BibTeX.
+
+### Επαλήθευση
+- **`python -m py_compile tools/*.py`** → ✅ ΟΛΑ ΠΕΡΑΣΑΝ
+- **`python tools/test_smoke.py`** → ✅ 78 αρχεία syntax-check, core imports OK, DB/AIManager OK
+
+### Αρχεία που Άλλαξαν
+| Αρχείο | Αλλαγή |
+|------|--------|
+| `docs/PROJECT_MAP.md` | Μεταφέρθηκε από root (no changes) |
+| `docs/PROJECT_MAP_EN.md` | Μεταφέρθηκε από root (no changes) |
+| `docs/TECH_RADAR.md` | Μεταφέρθηκε από root (no changes) |
+| `tools/_bump.py` | Δυναμικό root path + src/ path fix |
+| `tools/_git_status.ps1` | Δυναμικό root path |
+| `tools/_gui_runner.py` | Δυναμική εύρεση project root |
+| `tools/test_smoke.py` | `os.chdir(..)` + config path fix |
+| `tools/start_talos.bat` | `..\` prefix + `scripts\` → `..\src\...` |
+| `.gitignore` | `!docs/PROJECT_MAP*.md` negate patterns |
+| `README.md` | v5.4.1, ενημερωμένες διαδρομές |
+
 ## [v5.4.0] - 2026-07-22 — `src/` Αναδιάρθρωση Πακέτων (DDD Migration)
 
 ### ⚠️ BREAKING — Πλήρης αναδιοργάνωση δομής καταλόγων
@@ -27,13 +62,13 @@ data/
 ```
 
 ### Άλλαξε
-- **`talos.py` v5.4.0 — `run_script()` ανακατασκευάστηκε με `_SCRIPT_MAP` dict + `_resolve_script_path()`.**
+- **`talos.py` v5.4.1 — `run_script()` ανακατασκευάστηκε με `_SCRIPT_MAP` dict + `_resolve_script_path()`.**
   - Παλιές διαδρομές `os.path.join(project_root, 'scripts', name)` → `os.path.join(project_root, 'src', subdir, name)`.
   - Όλα τα `from core.*` → `from src.core.*`, `from scripts.profile_manager` → `from src.core.profile_manager`.
-  - Έκδοση `v5.4.0`.
+  - Έκδοση `v5.4.1`.
   - Hardcoded `scripts/` διαδρομές στο `system_health_menu()` (GWO dashboard, API diagnostics) → `_resolve_script_path()`.
   - Διαδρομή βάσης δεδομένων: `talos_research.db` → `data/talos_research.db`.
-- **`app.py` v5.4.0 — `run()` ανακατασκευάστηκε με `_SCRIPT_DIRS` dict + `_resolve_script()`.**
+- **`app.py` v5.4.1 — `run()` ανακατασκευάστηκε με `_SCRIPT_DIRS` dict + `_resolve_script()`.**
   - `from core.database_manager` → `from src.core.database_manager`, `from core.ai_manager` → `from src.core.ai_manager`.
   - `from core.hardware` → `from src.core.hardware` (στο `advanced_settings()`).
   - GWO Live Dashboard: `os.path.join(..., "scripts", ...)` → `_resolve_script()`.
@@ -52,7 +87,7 @@ data/
   - `citation_analyzer.py`, `author_profiler.py`, κλπ. (9 αρχεία) → `src/analysis/`
   - `db_stats.py`, `api_health_check.py`, κλπ. (8 αρχεία) → `src/utils/`
   - `talos_service_api.py` → `src/api/`
-- **`test_smoke.py` v5.4.0 — διαδρομές ενημερωμένες:** `core.database_manager` → `src.core.database_manager`, σάρωση `scripts/` → 9 υποκατάλογοι `src/`.
+- **`test_smoke.py` v5.4.1 — διαδρομές ενημερωμένες:** `core.database_manager` → `src.core.database_manager`, σάρωση `scripts/` → 9 υποκατάλογοι `src/`.
 - **10 αρχεία `__init__.py`** δημιουργήθηκαν (ένα ανά πακέτο).
 - **Παλιοί κατάλογοι διαγράφηκαν:** `core/`, `scripts/`, `sources/` (αναδρομικά).
 - **Bulk migration script** (`_migrate_imports.py`, μίας χρήσης, διαγράφηκε μετά την εκτέλεση): 32 αρχεία μεταφέρθηκαν με regex import rewrites. Όλα τα `sys.path` hacks (~30 εμφανίσεις) αφαιρέθηκαν.
@@ -66,7 +101,7 @@ data/
 
 ### Ενημερωμένη Τεκμηρίωση
 - `PROJECT_MAP.md` + `PROJECT_MAP_EN.md` — Ενότητες 2, 3, 7 ενημερώθηκαν με νέες διαδρομές και δομή.
-- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — εγγραφή v5.4.0 ξαναγράφτηκε (src/ migration).
+- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — εγγραφή v5.4.1 ξαναγράφτηκε (src/ migration).
 
 ## [v5.3.7] - 2026-07-07 — GWO v2.0 Επανάληψη Βελτιστοποίησης Υπερπαραμέτρων
 

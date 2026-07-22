@@ -1,18 +1,20 @@
 # -*- coding: utf-8 -*-
 """
 TALOS Smoke Test Suite
-Usage: python test_smoke.py
+Usage: python tools/test_smoke.py
 Checks syntax, imports, database, and AI manager — all without API calls.
 Outputs a clean summary of what passed/failed.
+
+Now lives in tools/ — chdir's to project root before running.
 """
 import sys
 import os
 import py_compile
 import traceback
 
-# Ensure we're in the project root
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Ensure we're in the project root (tools/test_smoke.py → up one level)
+os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 PASS = 0
 FAIL = 0
@@ -96,9 +98,11 @@ print("  4. AI MANAGER INITIALIZATION")
 print("=" * 60)
 
 import json
-config_path = os.path.join(os.path.dirname(__file__), "config.json")
+# ── config.json is at project root (one level up from tools/) ────
+_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
+config_path = os.path.join(_ROOT, "config.json")
 if not os.path.exists(config_path):
-    config_path = os.path.join(os.path.dirname(__file__), "config.template.json")
+    config_path = os.path.join(_ROOT, "config.template.json")
 
 with open(config_path, "r", encoding="utf-8") as f:
     config = json.load(f)
