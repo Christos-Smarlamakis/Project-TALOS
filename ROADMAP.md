@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform — and maps the path forward.
 
-> **Current Version:** v5.5.0 (FastAPI REST Façade with 8 endpoints + Database path fix → data/talos_research.db)
+> **Current Version:** v5.5.2 (FastAPI REST API with 14 endpoints, 100% ecosystem coverage)
 > **Last Updated:** 2026-07-22
 
 ---
@@ -99,14 +99,20 @@ This version transforms TALOS into a **fully guided research platform** with a 4
 
 ---
 
-## 7. v5.5.0 — FastAPI REST Façade & DB Path Fix ⚡ CURRENT
+## 7. v5.5.x — FastAPI REST Façade & Ecosystem Coverage ⚡ CURRENT
+
+| Version | Codename | Focus |
+|---------|----------|-------|
+| **v5.5.0** | FastAPI + DB Fix | 8 REST endpoints (health, papers, semantic search, scrape/GWO triggers, task status) + Database path fix → `data/talos_research.db` |
+| **v5.5.1** | Frontend DX | +2 endpoints: GWO history for Recharts, architecture graph HTML via FileResponse |
+| **v5.5.2** | 100% Coverage | +4 endpoints: single-paper AI evaluation, query translation, top authors, bulk score recalculation — **14 total endpoints (16 Pydantic models)** |
 
 | Feature | Description |
 |---------|-------------|
-| **`src/api/main_api.py`** | New FastAPI server with 8 REST endpoints (health, papers, semantic search, scrape trigger, GWO trigger, task status) |
-| **BackgroundTasks** | Long-running scrape and GWO run asynchronously with task ID polling |
-| **Database path fix** | `DatabaseManager` now resolves project root by walking up to `talos.py`, canonical path: `data/talos_research.db` |
-| **Verification** | `py_compile` passed, `GET /api/v1/papers` returns 200 OK with 5,366 papers |
+| **Full REST API** | 14 endpoints covering health, papers, semantic search, scrape, GWO, tasks, paper evaluation, query translation, authors, scores |
+| **BackgroundTasks** | 5 async operations (scrape, GWO, paper eval, recalculate scores) with task ID polling |
+| **Pydantic Models** | 16 models for type-safe request/response validation |
+| **Auto-generated Docs** | Swagger UI at `http://localhost:8000/docs` |
 
 ---
 
@@ -144,7 +150,9 @@ The v6.0 series represents the **third generation** of TALOS — decoupling the 
 | **v5.3.7** | GWO Re-optimize | LR=3.36e-05, GAMMA=0.698, 9.5h | ✅ Complete |
 | **v5.4.0** | DDD Migration | `src/` package layout, 55 files moved | ✅ Complete |
 | **v5.4.1** | Root Cleanup | `docs/` + `tools/` dirs, .gitignore | ✅ Complete |
-| **v5.5.0** | FastAPI + DB Fix | REST API (8 endpoints) + db path | ⚡ Current |
+| **v5.5.0** | FastAPI + DB Fix | REST API (8 endpoints) + db path | ✅ Complete |
+| **v5.5.1** | Frontend DX | +2 endpoints: GWO history + graph HTML | ✅ Complete |
+| **v5.5.2** | 100% Coverage | +4 endpoints: eval + translate + authors + recalc | ⚡ Current |
 | **v6.0.0+** | Distributed Eco. | Flutter + RAG + 3D Viz + PyInstaller | 📅 Future |
 
 ---

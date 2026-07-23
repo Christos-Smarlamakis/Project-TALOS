@@ -1,9 +1,9 @@
-﻿# Project TALOS (v5.5.0)
+﻿# Project TALOS (v5.5.2)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Τακτικό Πρακτορικό Σύστημα Ενορχήστρωσης Βιβλιογραφίας)*
 
-> **An Autonomous Research Intelligence Platform — Now with FastAPI REST Façade for React Frontend Integration.**
+> **An Autonomous Research Intelligence Platform — Now with 14 FastAPI REST Endpoints Achieving 100% Ecosystem Coverage.**
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/License-AGPLv3-red)
@@ -41,8 +41,11 @@ TALOS λειτουργεί ως αυτόνομος "Research Architect," φιλ�
   - **Grey Wolf Optimizer** (`src/ai/optimizers/gwo_rl_optimizer.py`) for hyperparameter tuning
   - **24/7 Autonomous Service** (`src/ai/drl/talos_service.py`) — background research agent with Telegram/Discord/Email notifications
 - **Flask API server** (`src/api/talos_service_api.py`) — real-time service status at `localhost:5002/api/status`
-- **FastAPI REST API** (`src/api/main_api.py`) — full REST façade with 8 endpoints at `localhost:8000`
-  - Semanic search, paginated papers, scrape/GWO triggers with BackgroundTasks
+- **FastAPI REST API** (`src/api/main_api.py`) — full REST façade with 14 endpoints at `localhost:8000` (100% ecosystem coverage)
+  - Semantic search, paginated papers, scrape/GWO triggers with BackgroundTasks
+  - Single-paper AI evaluation, natural-language → boolean query translation
+  - GWO history for Recharts, architecture graph HTML, top authors for BarChart
+  - Bulk score recalculation, DB health stats
   - Auto-generated interactive docs at `http://localhost:8000/docs`
   - Models saved at `models/dddqn_trained.pth` and `models/talos_drl.pth`
 *   **Database Manager (The Knowledge Hub):** A SQLite3-powered hub using **B-Tree indexing**. It serves as a bridge between ecosystems by storing multiple identifiers (`DOI`, `OpenAlex ID`, `PMID`, `PMCID`).

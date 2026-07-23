@@ -2,6 +2,73 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.5.2] - 2026-07-22 — 100% Ecosystem API Coverage (4 New Endpoints)
+
+### Added
+- **`src/api/main_api.py` v1.2 — Four new "Deep Integration" endpoints for full ecosystem coverage:**
+  - **`POST /api/v1/papers/{paper_id}/evaluate`** — Triggers single-paper AI evaluation via BackgroundTasks.
+    - Fetches paper title+abstract from DB, passes to `_get_ai().evaluate_paper_json()` with the configured system prompt.
+    - Persists scores (strategic, operational, tactical, playground), reasoning, contribution, utilization, tags, folder, and discord channel via `db.update_paper_evaluation()`.
+    - Returns `TaskStatus` immediately; poll `GET /api/v1/tasks/{task_id}` for result.
+  - **`POST /api/v1/ai/translate-query`** — Synchronous natural-language → boolean query translation.
+    - Inlines the core logic from `query_translator.py` (avoids the interactive `questionary` prompt): builds a meta-prompt from `config.json`, calls `AIManager.evaluate_paper_json()` with `system_prompt_override="Research Architect"`, and recursively flattens the JSON response.
+    - Pydantic models: `TranslateQueryRequest` (min_length=10) and `TranslateQueryResponse` (original_query + boolean_query dict).
+  - **`GET /api/v1/analysis/authors`** — Returns top authors from the local database via SQL aggregation.
+    - Direct `SELECT authors, COUNT(*) ... GROUP BY authors ORDER BY cnt DESC LIMIT ?` query.
+    - Returns `List[AuthorSummary]` with `author: str` and `count: int` — ideal for Recharts `<BarChart>`.
+    - Query parameter `limit` (default 100, max 500). No external API calls needed.
+  - **`POST /api/v1/db/recalculate-scores`** — Bulk overall_score recalculation via BackgroundTasks.
+    - Replicates the core logic of `recalculate_scores.py` without the interactive `questionary.confirm()` prompt.
+    - Reads all papers' four sub-scores, applies `db._calculate_overall_score()`, bulk-updates via `executemany`.
+    - Progress updates every 500 rows. Returns `TaskStatus`.
+- **New Pydantic models (4):** `TranslateQueryRequest`, `TranslateQueryResponse`, `AuthorSummary`, `EvaluatePaperRequest`
+- **New helper:** `_flatten_json_for_translation()` — inline duplicate of `query_translator.flatten_json()` to avoid import of the interactive `main()`.
+- **Total endpoints now: 14** (10 from v5.5.0/v5.5.1 + 4 new) — **100% TALOS ecosystem coverage**.
+- **Total Pydantic models now: 16** (12 from v5.5.0 + 4 new).
+- **~200 new lines of code** (3 background functions + 1 synchronous handler + 1 inline helper + 4 models + updated docstring).
+
+### Design Rationale
+- **Why inline `query_translator` logic instead of importing `main()`?** The `query_translator.py` `main()` function is fully interactive (uses `questionary` prompts). Importing and calling it from a REST API would block indefinitely. Instead, `main_api.py` replicates the core AI call (build prompt → `evaluate_paper_json` with `system_prompt_override` → `flatten_json`), preserving the exact same prompt engineering while making it REST-callable.
+- **Why `GET /api/v1/analysis/authors` uses DB aggregation instead of the `author_profiler.py` external API?** The `UnifiedProfiler.run()` makes 5+ external API calls per author (ORCID, OpenAlex, Semantic Scholar), taking 5-10 seconds per author. A "list top authors" endpoint needs to return in milliseconds. The SQL `GROUP BY` aggregation on the papers table is instant and serves the Recharts use case perfectly.
+- **Why `POST /api/v1/db/recalculate-scores` uses BackgroundTasks?** The bulk recalculation loops over 5,000+ rows. While each iteration is fast (a weighted average), the cumulative time can be several seconds. Returning a `TaskStatus` immediately keeps the API responsive.
+
+### Verification
+- `python -m py_compile src/api/main_api.py` ✅
+- Total endpoints: **14** (100% ecosystem coverage)
+- Total Pydantic models: **16**
+
+### Documentation Updated
+- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — this entry
+- `README.md` — version bumped to v5.5.2
+
+## [v5.5.1] - 2026-07-22 — Frontend DX Endpoints (GWO History + Architecture Graph)
+
+### Added
+- **`src/api/main_api.py` v1.1 — Two new "Frontend DX" endpoints for React development:**
+  - **`GET /api/v1/optimize/gwo/history`** — Returns GWO optimization history as `List[dict]` for direct Recharts `<LineChart>` consumption.
+    - Reads `models/gwo_history.json` first, falls back to `models/gwo_progress.json`.
+    - Returns `[]` if neither file exists (graceful degradation).
+    - No Pydantic model needed — raw JSON array for maximum frontend flexibility.
+  - **`GET /api/v1/graph/view`** — Serves the Alexandria Architecture Dependency Graph as an HTML page via `FileResponse`.
+    - Resolves `templates/architecture_graph.html` from the project root.
+    - Returns 404 with helpful message if the file does not exist.
+    - The HTML's relative CSS/JS references (`architecture_graph.css`, `architecture_graph.js`) resolve correctly because the `FileResponse` serves the file from the `templates/` directory.
+  - **StaticFiles mount** (`/static/templates`) added via `app.mount()` so the graph page can also load its assets via absolute `/static/templates/architecture_graph.css` paths.
+  - **New imports added:** `HTMLResponse`, `FileResponse` from `fastapi.responses`, `StaticFiles` from `fastapi.staticfiles`.
+- **Total new code:** ~45 lines (2 endpoints + 1 mount + 2 import lines).
+
+### Design Rationale
+- **Why `FileResponse` for the graph?** The HTML page uses relative paths for CSS/JS. Serving it via `FileResponse` from the `templates/` directory preserves these paths — the browser resolves them relative to the page's origin. The `StaticFiles` mount at `/static/templates` provides an alternative absolute-path access method.
+- **Why raw `List[dict]` for GWO history?** Recharts natively consumes arrays of objects. Wrapping the GWO data in a Pydantic model would add an unnecessary serialization layer. The raw JSON pass-through allows the React developer to pipe the response directly into `<LineChart data={response} />`.
+
+### Verification
+- `python -m py_compile src/api/main_api.py` ✅
+- Total endpoints now: **10** (8 original + 2 new)
+
+### Documentation Updated
+- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — this entry
+- `README.md` — version bumped to v5.5.1
+
 ## [v5.5.0] - 2026-07-22 — FastAPI REST API Façade & Database Path Fix
 
 ### Added

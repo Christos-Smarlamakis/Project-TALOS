@@ -2,6 +2,68 @@
 
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).
 
+## [v5.5.2] - 2026-07-22 — 100% Κάλυψη Οικοσυστήματος API (4 Νέα Endpoints)
+
+### Προστέθηκε
+- **`src/api/main_api.py` v1.2 — Τέσσερα νέα "Deep Integration" endpoints για πλήρη κάλυψη του οικοσυστήματος:**
+  - **`POST /api/v1/papers/{paper_id}/evaluate`** — Ενεργοποιεί αξιολόγηση AI για ένα paper μέσω BackgroundTasks.
+    - Ανακτά τίτλο+abstract από τη βάση, τα στέλνει στο `_get_ai().evaluate_paper_json()` με το configured system prompt.
+    - Αποθηκεύει scores (strategic, operational, tactical, playground), reasoning, contribution, utilization, tags, folder, και discord channel μέσω `db.update_paper_evaluation()`.
+    - Επιστρέφει `TaskStatus` άμεσα.
+  - **`POST /api/v1/ai/translate-query`** — Σύγχρονη μετάφραση φυσικής γλώσσας → boolean queries.
+    - Ενσωματώνει τη βασική λογική του `query_translator.py` (αποφεύγει το διαδραστικό `questionary` prompt).
+    - Pydantic models: `TranslateQueryRequest` (min_length=10) και `TranslateQueryResponse` (original_query + boolean_query dict).
+  - **`GET /api/v1/analysis/authors`** — Επιστρέφει κορυφαίους συγγραφείς από την τοπική βάση μέσω SQL aggregation.
+    - Απευθείας `SELECT authors, COUNT(*) ... GROUP BY authors ORDER BY cnt DESC LIMIT ?`.
+    - Επιστρέφει `List[AuthorSummary]` με `author: str` και `count: int` — ιδανικό για Recharts `<BarChart>`.
+  - **`POST /api/v1/db/recalculate-scores`** — Μαζικός επαναϋπολογισμός overall_score μέσω BackgroundTasks.
+    - Αναπαράγει τη βασική λογική του `recalculate_scores.py` χωρίς το διαδραστικό `questionary.confirm()`.
+    - Ενημερώσεις προόδου κάθε 500 εγγραφές. Επιστρέφει `TaskStatus`.
+- **Νέα Pydantic models (4):** `TranslateQueryRequest`, `TranslateQueryResponse`, `AuthorSummary`, `EvaluatePaperRequest`
+- **Συνολικά endpoints: 14** (10 από v5.5.0/v5.5.1 + 4 νέα) — **100% κάλυψη οικοσυστήματος TALOS**.
+- **~200 νέες γραμμές κώδικα**.
+
+### Σκεπτικό Σχεδιασμού
+- **Γιατί inline λογική του `query_translator` αντί για import του `main()`;** Η `main()` του `query_translator.py` είναι πλήρως διαδραστική (χρησιμοποιεί `questionary` prompts). Το import θα μπλόκαρε επ' αόριστον. Το `main_api.py` αναπαράγει την κεντρική κλήση AI διατηρώντας το ίδιο prompt engineering.
+- **Γιατί το `/api/v1/analysis/authors` χρησιμοποιεί DB aggregation αντί για το `author_profiler.py`;** Το `UnifiedProfiler.run()` κάνει 5+ εξωτερικές κλήσεις API ανά συγγραφέα (5-10 δευτερόλεπτα). Το SQL `GROUP BY` είναι άμεσο και εξυπηρετεί τέλεια το Recharts use case.
+- **Γιατί το `/api/v1/db/recalculate-scores` χρησιμοποιεί BackgroundTasks;** Ο μαζικός επαναϋπολογισμός για 5,000+ εγγραφές μπορεί να πάρει αρκετά δευτερόλεπτα. Το `TaskStatus` κρατά το API responsive.
+
+### Επαλήθευση
+- `python -m py_compile src/api/main_api.py` ✅
+- Συνολικά endpoints: **14** (100% κάλυψη)
+
+### Ενημερωμένη Τεκμηρίωση
+- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — αυτή η καταχώρηση
+- `README.md` — έκδοση v5.5.2
+
+## [v5.5.1] - 2026-07-22 — Frontend DX Endpoints (GWO History + Architecture Graph)
+
+### Προστέθηκε
+- **`src/api/main_api.py` v1.1 — Δύο νέα "Frontend DX" endpoints για React development:**
+  - **`GET /api/v1/optimize/gwo/history`** — Επιστρέφει το ιστορικό βελτιστοποίησης GWO ως `List[dict]` για άμεση κατανάλωση από Recharts `<LineChart>`.
+    - Διαβάζει πρώτα το `models/gwo_history.json`, με fallback στο `models/gwo_progress.json`.
+    - Επιστρέφει `[]` αν δεν υπάρχει κανένα από τα δύο αρχεία (graceful degradation).
+    - Χωρίς Pydantic model — raw JSON array για μέγιστη ευελιξία στο frontend.
+  - **`GET /api/v1/graph/view`** — Σερβίρει το Alexandria Architecture Dependency Graph ως HTML σελίδα μέσω `FileResponse`.
+    - Επιλύει το `templates/architecture_graph.html` από το project root.
+    - Επιστρέφει 404 με χρήσιμο μήνυμα αν το αρχείο δεν υπάρχει.
+    - Οι σχετικές αναφορές CSS/JS του HTML (`architecture_graph.css`, `architecture_graph.js`) επιλύονται σωστά επειδή το `FileResponse` σερβίρει το αρχείο από τον φάκελο `templates/`.
+  - **StaticFiles mount** (`/static/templates`) προστέθηκε μέσω `app.mount()` ώστε η σελίδα του γράφου να μπορεί να φορτώνει τα assets της και μέσω απόλυτων διαδρομών `/static/templates/architecture_graph.css`.
+  - **Νέα imports:** `HTMLResponse`, `FileResponse` από `fastapi.responses`, `StaticFiles` από `fastapi.staticfiles`.
+- **Συνολικός νέος κώδικας:** ~45 γραμμές (2 endpoints + 1 mount + 2 γραμμές import).
+
+### Σκεπτικό Σχεδιασμού
+- **Γιατί `FileResponse` για τον γράφο;** Η σελίδα HTML χρησιμοποιεί σχετικές διαδρομές για CSS/JS. Το σερβίρισμα μέσω `FileResponse` από τον φάκελο `templates/` διατηρεί αυτές τις διαδρομές — ο browser τις επιλύει σχετικά με την προέλευση της σελίδας. Το `StaticFiles` mount στο `/static/templates` παρέχει εναλλακτική πρόσβαση μέσω απόλυτων διαδρομών.
+- **Γιατί raw `List[dict]` για το ιστορικό GWO;** Το Recharts καταναλώνει εγγενώς arrays από objects. Το τύλιγμα των δεδομένων GWO σε Pydantic model θα προσέθετε ένα περιττό επίπεδο σειριοποίησης. Η απευθείας μεταβίβαση του JSON επιτρέπει στον React developer να τροφοδοτήσει την απόκριση κατευθείαν στο `<LineChart data={response} />`.
+
+### Επαλήθευση
+- `python -m py_compile src/api/main_api.py` ✅
+- Συνολικά endpoints πλέον: **10** (8 αρχικά + 2 νέα)
+
+### Ενημερωμένη Τεκμηρίωση
+- `CHANGELOG_EN.md` + `CHANGELOG_GR.md` — αυτή η καταχώρηση
+- `README.md` — έκδοση v5.5.1
+
 ## [v5.5.0] - 2026-07-22 — FastAPI REST API Façade & Διόρθωση Διαδρομής Βάσης
 
 ### Προστέθηκε
