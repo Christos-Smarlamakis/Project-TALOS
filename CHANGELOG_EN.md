@@ -2,6 +2,31 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.6.0] - 2026-07-29 -- Streamlit Deprecation, Capabilities Docs, 12-File Sync Rule
+
+### BREAKING -- Streamlit Fully Deprecated
+- app.py (1,175 lines) deleted. .streamlit/ directory deleted. tools/_gui_runner.py deleted.
+- streamlit removed from requirements.txt. Sole frontend: React 18 + Tailwind CSS + Shadcn UI.
+- All markdown documentation purged of Streamlit references.
+
+### Added
+- docs/SYSTEM_CAPABILITIES_MASTER.md + .html: 9-section master capabilities reference (formal academic tone, no emojis)
+- GET /api/v1/capabilities endpoint in src/api/main_api.py (15 endpoints total)
+- docs/API_HANDOVER_FOTIS.md, docs/UX_UI_BLUEPRINT_FOTIS.md, docs/IP_PROTECTION_STRATEGY.md
+- 12-File Documentation Sync Rule and Master Capabilities Rule in .clinerules
+
+### Modified
+- src/api/main_api.py v1.2 -> v1.3: version 5.5.2 -> 5.6.0, added from pathlib import Path, 14 -> 15 endpoints
+- .clinerules v5.0.0 -> v5.6.0: Streamlit deprecated, React 18 sole frontend, 3 new CRITICAL rules
+- README.md v5.5.2 -> v5.6.0: tagline updated, Streamlit purged, citation versions bumped
+- ROADMAP.md v5.5.2 -> v5.6.0: new Section 8, summary table updated
+- CHANGELOG_GR.md: v5.6.0 entry added in Greek
+
+### Code Health Verified
+- Database pathing: data/talos_research.db at project root -- confirmed correct
+- API non-blocking: translate-query and recalculate-scores use inline helpers -- confirmed
+- sys.exit monkey-patching: raises _ScrapeExit(RuntimeError) in main_api.py -- confirmed
+
 ## [v5.5.2] - 2026-07-22 — 100% Ecosystem API Coverage (4 New Endpoints)
 
 ### Added
