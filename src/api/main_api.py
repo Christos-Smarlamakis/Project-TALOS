@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-Module: main_api.py (v1.2)
-Project: TALOS v5.5.2
+Module: main_api.py (v1.3)
+Project: TALOS v5.6.0
 Description:
     FastAPI Façade Layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization) as REST endpoints
     for a future React frontend. All endpoints wrap existing synchronous
     core functions — no logic is rewritten.
 
-    Endpoints (14 total — 100% ecosystem coverage):
+    Endpoints (15 total — 100% ecosystem coverage + capabilities doc):
     - GET  /api/v1/health              → system health, DB stats, embedding coverage
     - GET  /api/v1/papers              → paginated paper list
     - GET  /api/v1/papers/{paper_id}   → full paper detail
@@ -23,14 +23,16 @@ Description:
     - POST /api/v1/db/recalculate-scores → bulk overall_score recalculation (BgTasks)
     - GET  /api/v1/tasks/{task_id}     → background task status
     - GET  /api/v1/tasks               → list all background tasks
+    - GET  /api/v1/capabilities        → serve System Capabilities Master Reference HTML
 
     Key design decisions:
-    - Port 8000 (does not conflict with Flask dashboard:5000, Flask service:5002, Streamlit:8501)
+    - Port 8000 (does not conflict with Flask dashboard:5000, Flask service:5002)
     - Synchronous endpoints (no async def) — all core functions are blocking
     - BackgroundTasks (not Celery) for long-running scrape and GWO
     - Lazy singleton pattern for DatabaseManager and AIManager
     - sys.exit() monkey-patching to prevent scrape from killing the server
     - Pydantic v2 models with extra="ignore" for forward compatibility
+    - Streamlit fully deprecated in v5.6.0; React 18 + Tailwind CSS + Shadcn UI is the sole frontend
 
     Usage:
         python -m uvicorn src.api.main_api:app --host 0.0.0.0 --port 8000
@@ -51,6 +53,7 @@ import logging
 import threading
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Optional, List, Dict, Any
 
 import numpy as np
@@ -73,8 +76,8 @@ logger = logging.getLogger("talos_api")
 # ── FastAPI App & CORS ───────────────────────────────────────────────────────
 app = FastAPI(
     title="TALOS Research API",
-    description="Façade REST API for the TALOS autonomous research platform",
-    version="5.5.2",
+    description="Façade REST API for the TALOS autonomous research platform (v5.6.0 — Streamlit deprecated, React frontend)",
+    version="5.6.0",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -324,10 +327,11 @@ class EvaluatePaperRequest(BaseModel):
 @app.on_event("startup")
 def on_startup():
     """Pre-warm singletons and log readiness."""
-    logger.info("TALOS FastAPI starting up...")
+    logger.info("TALOS FastAPI v5.6.0 starting up (Streamlit deprecated, React frontend active)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://0.0.0.0:8000")
     logger.info("API docs: http://localhost:8000/docs")
+    logger.info("Capabilities reference: http://localhost:8000/api/v1/capabilities")
 
 
 # ── GET /api/v1/health ───────────────────────────────────────────────────────
@@ -976,6 +980,24 @@ def view_architecture_graph():
                    "Please generate it first using the dependency graph tool.",
         )
     return FileResponse(graph_path, media_type="text/html")
+
+
+# ── GET /api/v1/capabilities ─────────────────────────────────────────────────
+
+@app.get("/api/v1/capabilities", response_class=HTMLResponse, tags=["System"])
+async def get_capabilities():
+    """Serve the System Capabilities Master Reference as a standalone HTML page.
+
+    Reads docs/SYSTEM_CAPABILITIES_MASTER.html from the project root.
+    The document covers all 9 sections of the TALOS/ALEXANDRIA/ATHENA architecture
+    and the complete 14-endpoint REST API reference.
+
+    Returns 404 if the document has not been generated yet.
+    """
+    capabilities_path = Path("docs/SYSTEM_CAPABILITIES_MASTER.html")
+    if capabilities_path.exists():
+        return HTMLResponse(content=capabilities_path.read_text(encoding="utf-8"))
+    raise HTTPException(status_code=404, detail="Capabilities document not found.")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

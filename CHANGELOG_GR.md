@@ -1,3 +1,18 @@
+
+## [v5.6.0] - 2026-07-29 -- Κατάργηση Streamlit, Docs Δυνατοτήτων, Κανόνας 12-Αρχείων
+
+### BREAKING -- Πλήρης Κατάργηση Streamlit
+- Το app.py (1,175 γραμμές) διαγράφηκε. Ο φάκελος .streamlit/ διαγράφηκε. Το tools/_gui_runner.py διαγράφηκε.
+- Το streamlit αφαιρέθηκε από το requirements.txt. Μοναδικό frontend: React 18 + Tailwind CSS + Shadcn UI.
+### Προστέθηκαν
+- docs/SYSTEM_CAPABILITIES_MASTER.md + .html (αναφορά δυνατοτήτων 9 ενοτήτων).
+- GET /api/v1/capabilities endpoint. docs/API_HANDOVER_FOTIS.md, docs/UX_UI_BLUEPRINT_FOTIS.md, docs/IP_PROTECTION_STRATEGY.md.
+- Κανόνας Συγχρονισμού 12 Αρχείων και Κανόνας Master Capabilities στο .clinerules.
+### Τροποποιήθηκαν
+- src/api/main_api.py v1.3: έκδοση 5.6.0, 15 endpoints. .clinerules, README.md, ROADMAP.md.
+### Έλεγχος Υγείας Κώδικα
+- Database path: data/talos_research.db επιβεβαιώθηκε. Τα API endpoints δεν μπλοκάρουν. sys.exit monkey-patched.
+
 # Ημερολόγιο Αλλαγών (Changelog) - Project TALOS
 
 Αυτό το αρχείο καταγράφει όλες τις σημαντικές αλλαγές στο Project TALOS. Το project ακολουθεί τις αρχές του [Semantic Versioning](https://semver.org/).

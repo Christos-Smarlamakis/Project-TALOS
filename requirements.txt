@@ -47,7 +47,6 @@ gymnasium                 # RL environment standard (Gymnasium API)
 torch                     # Neural network framework (PyTorch - CPU or CUDA)
 
 # === Web GUI & API ===
-streamlit                 # Interactive Web GUI (replaces CLI dashboard)
 fastapi                   # REST API framework (TALOS Façade — main_api.py)
 uvicorn[standard]         # ASGI server for FastAPI (port 8000)
 pydantic                  # Data validation & serialization (API models)

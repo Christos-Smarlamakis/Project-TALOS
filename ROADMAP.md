@@ -2,8 +2,8 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform — and maps the path forward.
 
-> **Current Version:** v5.5.2 (FastAPI REST API with 14 endpoints, 100% ecosystem coverage)
-> **Last Updated:** 2026-07-22
+> **Current Version:** v5.6.0 (Headless FastAPI with 15 endpoints, Streamlit deprecated, React 18 + Tailwind CSS + Shadcn UI)
+> **Last Updated:** 2026-07-29
 
 ---
 
@@ -44,7 +44,7 @@ The v5.0 series represents a **paradigm shift** — TALOS ceased being a passive
 | Component | File | Description |
 |-----------|------|-------------|
 | **Gymnasium Environment** | `core/talos_env.py` | Observation Space (6-dim): normalized hour, 3 API usage ratios, error/low-score streaks. Action Space (4): ArXiv, OpenAlex, Semantic Scholar, Sleep. |
-| **DRL Agent** | `core/drl_agent.py` | 3-layer LSTM (128→64→32) with LayerNorm + Dueling heads (V + A). Online + Target networks, soft updates (τ=1e-3), experience replay (deque, 10K capacity). |
+| **DRL Agent** | `core/drl_agent.py` | 3-layer LSTM (128-64-32) with LayerNorm + Dueling heads (V + A). Online + Target networks, soft updates (t=1e-3), experience replay (deque, 10K capacity). |
 | **Training Loop** | `scripts/train_agent.py` | Interactive episode selection (50/100/500/1000), profile-aware DB, real-time timing with ETA. |
 | **GPU Acceleration** | RTX 4070, CUDA 12.1 | CuDNN optimization: `flatten_parameters()` before every LSTM forward pass, networks permanently in `.train()` mode to avoid mode-lock errors. **10x speedup** over CPU. |
 
@@ -69,10 +69,10 @@ This version transforms TALOS into a **fully guided research platform** with a 4
 
 | Feature | Description | Status |
 |---------|-------------|--------|
-| **Onboarding Wizard** | 4-step guided wizard: Profile → Research Domain → PYTHIA → Launch | ✅ Complete |
-| **First-Run Detection** | Auto-detects new installations, wizard replaces dashboard | ✅ Complete |
-| **Research Pivot** | Interactive wizard for users whose research interests shifted | ✅ Complete |
-| **Dynamic DRL Stack** | Dynamic N-source environment (was hardcoded 3), 14-source agent | ✅ Complete |
+| **Onboarding Wizard** | 4-step guided wizard: Profile - Research Domain - PYTHIA - Launch | Complete |
+| **First-Run Detection** | Auto-detects new installations, wizard replaces dashboard | Complete |
+| **Research Pivot** | Interactive wizard for users whose research interests shifted | Complete |
+| **Dynamic DRL Stack** | Dynamic N-source environment (was hardcoded 3), 14-source agent | Complete |
 
 ---
 
@@ -99,24 +99,32 @@ This version transforms TALOS into a **fully guided research platform** with a 4
 
 ---
 
-## 7. v5.5.x — FastAPI REST Façade & Ecosystem Coverage ⚡ CURRENT
+## 7. v5.5.x — FastAPI REST Facade & Ecosystem Coverage (COMPLETED)
 
 | Version | Codename | Focus |
 |---------|----------|-------|
-| **v5.5.0** | FastAPI + DB Fix | 8 REST endpoints (health, papers, semantic search, scrape/GWO triggers, task status) + Database path fix → `data/talos_research.db` |
+| **v5.5.0** | FastAPI + DB Fix | 8 REST endpoints (health, papers, semantic search, scrape/GWO triggers, task status) + Database path fix to `data/talos_research.db` |
 | **v5.5.1** | Frontend DX | +2 endpoints: GWO history for Recharts, architecture graph HTML via FileResponse |
 | **v5.5.2** | 100% Coverage | +4 endpoints: single-paper AI evaluation, query translation, top authors, bulk score recalculation — **14 total endpoints (16 Pydantic models)** |
 
+---
+
+## 8. v5.6.x — Streamlit Deprecation & Documentation Enforcement (CURRENT)
+
+| Version | Codename | Focus |
+|---------|----------|-------|
+| **v5.6.0** | Headless API + Docs | **BREAKING: Streamlit fully deprecated.** Deleted `app.py`, `.streamlit/`, `tools/_gui_runner.py`. Removed `streamlit` from `requirements.txt`. Sole frontend is React 18 + Tailwind CSS + Shadcn UI. FastAPI upgraded to 15 endpoints (+`/api/v1/capabilities`). Created `docs/SYSTEM_CAPABILITIES_MASTER.md` and `.html` (9-section structured reference). Enforced 12-file documentation sync rule in `.clinerules`. Created `docs/API_HANDOVER_FOTIS.md`, `docs/UX_UI_BLUEPRINT_FOTIS.md`, `docs/IP_PROTECTION_STRATEGY.md`. Version bumped to `5.6.0` across all 12 canonical files. |
+
 | Feature | Description |
 |---------|-------------|
-| **Full REST API** | 14 endpoints covering health, papers, semantic search, scrape, GWO, tasks, paper evaluation, query translation, authors, scores |
-| **BackgroundTasks** | 5 async operations (scrape, GWO, paper eval, recalculate scores) with task ID polling |
-| **Pydantic Models** | 16 models for type-safe request/response validation |
-| **Auto-generated Docs** | Swagger UI at `http://localhost:8000/docs` |
+| **Streamlit Eradicated** | `app.py` (1,175 lines), `.streamlit/` directory, and `_gui_runner.py` deleted; `streamlit` removed from `requirements.txt` |
+| **Capabilities Endpoint** | `GET /api/v1/capabilities` serves `docs/SYSTEM_CAPABILITIES_MASTER.html` as HTMLResponse |
+| **12-File Sync Rule** | `.clinerules` now mandates 12-file synchronization on every version bump |
+| **Master Capabilities Docs** | `SYSTEM_CAPABILITIES_MASTER.md` and `.html` in 9-section structured format |
 
 ---
 
-## 8. v6.0.0+ — The Distributed Ecosystem (FUTURE)
+## 9. v6.0.0+ — The Distributed Ecosystem (FUTURE)
 
 The v6.0 series represents the **third generation** of TALOS — decoupling the monolith into a distributed microservice ecosystem with a modern cross-platform UI.
 
@@ -131,32 +139,33 @@ The v6.0 series represents the **third generation** of TALOS — decoupling the 
 
 ---
 
-## 9. Summary Version Table
+## 10. Summary Version Table
 
 | Version | Codename | Focus | Status |
 |:--------|:---------|:------|:-------|
-| **v1.0 – v4.11** | The Aggregator | Search, Evaluate, Store | ✅ Complete |
-| **v5.0.0** | The AI Core | Hybrid Embeddings + DRL Agent + GWO | ✅ Complete |
-| **v5.1.0** | The Insights UI | DRL Dashboard + TUI Reorganization | ✅ Complete |
-| **v5.2.0** | The Live Agent | Live API Routing + PDF Downloader | ✅ Complete |
-| **v5.2.1** | Academic Conf. | GUI Redesign, Bilingual (EN/GR), CSS Theme | ✅ Complete |
-| **v5.3.0** | Auto-Docs | 18-language documentation generator | ✅ Complete |
-| **v5.3.1** | DRL Live Agent | Provider-Aware Orchestration | ✅ Complete |
-| **v5.3.2** | Pluggable Nets | DRL network architecture extraction | ✅ Complete |
-| **v5.3.3** | Light-Only Theme | Dark mode removal, universal docs rule | ✅ Complete |
-| **v5.3.4** | Descriptive Names | Mythological → academic module titles | ✅ Complete |
-| **v5.3.5** | DRL Sci. Integrity | GWO v2.0, Canonical GWO, Batch 1 | ✅ Complete |
-| **v5.3.6** | TUI/CLI Hardening | Ctrl+C robustness, Batch 2 | ✅ Complete |
-| **v5.3.7** | GWO Re-optimize | LR=3.36e-05, GAMMA=0.698, 9.5h | ✅ Complete |
-| **v5.4.0** | DDD Migration | `src/` package layout, 55 files moved | ✅ Complete |
-| **v5.4.1** | Root Cleanup | `docs/` + `tools/` dirs, .gitignore | ✅ Complete |
-| **v5.5.0** | FastAPI + DB Fix | REST API (8 endpoints) + db path | ✅ Complete |
-| **v5.5.1** | Frontend DX | +2 endpoints: GWO history + graph HTML | ✅ Complete |
-| **v5.5.2** | 100% Coverage | +4 endpoints: eval + translate + authors + recalc | ⚡ Current |
-| **v6.0.0+** | Distributed Eco. | Flutter + RAG + 3D Viz + PyInstaller | 📅 Future |
+| **v1.0 – v4.11** | The Aggregator | Search, Evaluate, Store | Complete |
+| **v5.0.0** | The AI Core | Hybrid Embeddings + DRL Agent + GWO | Complete |
+| **v5.1.0** | The Insights UI | DRL Dashboard + TUI Reorganization | Complete |
+| **v5.2.0** | The Live Agent | Live API Routing + PDF Downloader | Complete |
+| **v5.2.1** | Academic Conf. | GUI Redesign, Bilingual (EN/GR), CSS Theme | Complete |
+| **v5.3.0** | Auto-Docs | 18-language documentation generator | Complete |
+| **v5.3.1** | DRL Live Agent | Provider-Aware Orchestration | Complete |
+| **v5.3.2** | Pluggable Nets | DRL network architecture extraction | Complete |
+| **v5.3.3** | Light-Only Theme | Dark mode removal, universal docs rule | Complete |
+| **v5.3.4** | Descriptive Names | Mythological to academic module titles | Complete |
+| **v5.3.5** | DRL Sci. Integrity | GWO v2.0, Canonical GWO, Batch 1 | Complete |
+| **v5.3.6** | TUI/CLI Hardening | Ctrl+C robustness, Batch 2 | Complete |
+| **v5.3.7** | GWO Re-optimize | LR=3.36e-05, GAMMA=0.698, 9.5h | Complete |
+| **v5.4.0** | DDD Migration | `src/` package layout, 55 files moved | Complete |
+| **v5.4.1** | Root Cleanup | `docs/` + `tools/` dirs, .gitignore | Complete |
+| **v5.5.0** | FastAPI + DB Fix | REST API (8 endpoints) + db path | Complete |
+| **v5.5.1** | Frontend DX | +2 endpoints: GWO history + graph HTML | Complete |
+| **v5.5.2** | 100% Coverage | +4 endpoints: eval + translate + authors + recalc | Complete |
+| **v5.6.0** | Headless API + Docs | Streamlit deprecated, 15 endpoints, 12-file sync | Current |
+| **v6.0.0+** | Distributed Eco. | Flutter + RAG + 3D Viz + PyInstaller | Future |
 
 ---
 
 > **Project TALOS** — From Aggregator to Autonomous Research Architect.
-> Built with ❤️ in Kalamata, Greece.
-> © 2026 Christos Smarlamakis
+> Built in Kalamata, Greece.
+> (C) 2026 Christos Smarlamakis

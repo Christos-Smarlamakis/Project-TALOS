@@ -1,5 +1,5 @@
 # TALOS Project Instructions for AI Coding Agents
-# Version: v5.0.0
+# Version: v5.6.0
 
 ## PROJECT_MAP.md — Mandatory Knowledge Base (NEW in v5.0.0)
 
@@ -7,9 +7,9 @@
 1. **READ `PROJECT_MAP.md` FIRST** — before reading any other file.
 2. This file is the SINGLE SOURCE OF TRUTH containing:
    - Complete architecture overview with ASCII diagram
-   - All functions/methods with full signatures and descriptions (for all 55 files)
+   - All functions/methods with full signatures and descriptions (for all files)
    - Dependency graph (which script imports which module)
-   - Data flow (User → CLI/GUI → Scripts → Core → Sources → APIs)
+   - Data flow (User → CLI/API → Scripts → Core → Sources → APIs)
    - Configuration schema (config.json, .env keys, env vars, profile system)
    - Database schema (all columns, enrichment state machine)
    - Module descriptions and roles
@@ -19,8 +19,8 @@
 
 ### Updating PROJECT_MAP.md & PROJECT_MAP_EN.md (MANDATORY — After Every Change)
 1. After **ANY code change** (new function, modified signature, new file, deleted file, changed import),
-   **UPDATE BOTH `PROJECT_MAP.md` AND `PROJECT_MAP_EN.md`** to reflect the change immediately.
-2. The English version (`PROJECT_MAP_EN.md`) must always be kept in exact sync with the Greek master (`PROJECT_MAP.md`).
+   **UPDATE BOTH `docs/PROJECT_MAP.md` AND `docs/PROJECT_MAP_EN.md`** to reflect the change immediately.
+2. The English version (`docs/PROJECT_MAP_EN.md`) must always be kept in exact sync with the Greek master (`docs/PROJECT_MAP.md`).
    - Same sections (1-10), same function signatures, same descriptions.
    - If you update one, you MUST update the other in the same commit/change session.
 3. If a new script or source is added, document it fully:
@@ -32,7 +32,7 @@
 8. The maps **MUST always be 100% accurate** — out-of-date information is worse than none.
 
 ### Token Efficiency
-- PROJECT_MAP.md is ~400-800 lines (~3K-6K tokens) vs. ~55 files (~50K+ tokens)
+- PROJECT_MAP.md is ~400-800 lines (~3K-6K tokens) vs. all source files (~50K+ tokens)
 - This saves ~90% of context window per chat session
 - Enables precise, targeted edits without re-exploring the entire codebase
 
@@ -44,15 +44,15 @@
 - NEVER use `python -c "..."` inline commands via PowerShell - use a .py script file instead.
 
 ## Architecture
-- Entry points: `talos.py` (CLI menu), `app.py` (Streamlit Web GUI)
-- Core modules: `core/ai_manager.py` (multi-provider LLM), `core/database_manager.py` (SQLite + embeddings), `core/hardware.py` (GPU detection)
-- Search agents: `sources/*.py` (14 APIs, standardized output format)
-- Feature scripts: `scripts/*.py` (21 scripts: daily search, historic search, knowledge paths, citation analysis, query translation, metadata enrichment, etc.)
+- Entry points: `talos.py` (CLI menu), `src/api/main_api.py` (Headless FastAPI — 15 endpoints)
+- **Streamlit has been fully deprecated in v5.6.0.** The sole frontend is React 18 + Tailwind CSS + Shadcn UI.
+- Core modules: `src/core/ai_manager.py` (multi-provider LLM), `src/core/database_manager.py` (SQLite + embeddings), `src/core/hardware.py` (GPU detection)
+- Ingestion agents: `src/ingestion/*.py` (14 APIs, standardized output format)
+- Feature scripts: `src/ai/*.py`, `src/analysis/*.py`, `src/utils/*.py`
 - Configuration: `config.json` (queries, prompts)
 - Secrets: `.env` (API keys)
 - Profiles: `_profiles/<name>/` (isolated config.json + talos_research.db per research topic)
-- GUI wrapper: `_gui_runner.py` (pipes stdin to subprocesses for Streamlit)
-- Templates: `templates/dashboard.html` (Flask/Tabulator.js)
+- Templates: `templates/dashboard.html` (Flask/Tabulator.js legacy), `templates/architecture_graph.html` (D3.js)
 
 ## Provider System (ai_manager.py)
 - Four providers: Gemini (primary), DeepSeek (fallback), HuggingFace (free cloud), Local/Ollama (offline)
@@ -65,12 +65,13 @@
 ## Database (database_manager.py)
 - SQLite with 20+ columns including 4-layer scores (strategic, operational, tactical, playground)
 - Overall score weights: Strategic 30% + Operational 30% + Tactical 30% + Playground 10%
-- Embeddings stored as pickled numpy arrays in BLOB column
-- Semantic search via cosine similarity
+- Embeddings stored in dedicated `embeddings` table with model label column
+- Semantic search via cosine similarity with model filtering
 - Enrichment status: 0=Pending, 1=Enriched, 2=Failed (state machine)
 - Profile-aware: accepts optional db_path for multi-profile support
+- **Database path explicitly resolves to `data/talos_research.db` at project root** — no ghost DBs in `src/`
 
-## Search Agents (sources/*.py)
+## Search Agents (src/ingestion/*.py)
 - Standardized output: {doi, url, title, authors_str, publication_year, abstract, source}
 - Each agent reads its query dynamically from config.json
 - Missing API keys → print warning, set self.enabled=False, skip gracefully (NEVER raise)
@@ -82,12 +83,14 @@
 - `daily_search.py` and `historic_search.py` must be kept in sync for dedup logic
 - The 4-layer framework (strategic, operational, tactical, playground) is the INVARIANT schema - Query Translator redefines semantics, not keys
 - `recommender.py` reads from SQLite directly (not DatabaseManager) - check queries are up to date
+- API endpoints calling `translate-query` or `recalculate-scores` must NEVER trigger interactive `questionary.confirm()` prompts — they use inline helpers instead
+- `sys.exit()` in background scrape tasks is monkey-patched in `main_api.py` to raise `_ScrapeExit(RuntimeError)` instead of killing the Uvicorn server
 
 ## Testing
 - `python -m py_compile <file>` for syntax validation
 - `python talos.py` for full integration test
 - `python scripts/db_stats.py` for database health check
-- `python test_smoke.py` for system health check
+- `python tools/test_smoke.py` for system health check
 - `python scripts/verify_dependency_map.py` for dependency map audit (AST vs PROJECT_MAP.md)
 - `python scripts/verify_dependency_map.py --ci` for CI/CD exit-code-only check
 - Local mode: `ollama pull gemma3:12b && ollama pull nomic-embed-text` then set TALOS_USE_LOCAL=1
@@ -103,23 +106,57 @@
 - **Provider chain:** Ollama (nomic-embed-text, local/free) → Gemini (gemini-embedding-001, cloud/paid) — HuggingFace removed due to DNS block
 - **Generator flags:** `python scripts/embedding_generator.py` (single) or `--all` (both models)
 - **Rate limiting:** BATCH_SIZE=10, sleep=3s, retry up to 10 times with parsed `retryDelay` from 429 errors
-- **Semantic search:** model_filter dropdown in GUI + Flask dashboard — only compares vectors from same model
-- **Migration script:** `python scripts/db_embedding_upgrade.py` — creates `embeddings` table, migrates 3,849 legacy `embedding` column records
+- **Semantic search:** model_filter in API — only compares vectors from same model
+- **Migration script:** `python scripts/db_embedding_upgrade.py` — creates `embeddings` table, migrates legacy `embedding` column records
 - **Backward compatibility:** All `get_all_embeddings()` and `get_papers_needing_embedding()` methods fall back to legacy `papers.embedding` column if `embeddings` table doesn't exist
 - **`_fix_embedding_labels.py`** renamed legacy "gemini" → "gemini:gemini-embedding-001" (one-time fix)
 - **Gemini SDK:** Uses new `google.genai` GA SDK (NOT deprecated `google.generativeai`) with `gemini-embedding-001` model, `RETRIEVAL_DOCUMENT` task type, and 768-dim output dimensionality
 
-## CRITICAL: Project Version & PROJECT_MAP.md Synchronization (NEW in v5.2.0)
-- Every time you modify ANY .py file, you MUST update the "Last Updated" date and version in PROJECT_MAP.md BEFORE completing the task.
-- If the version number in PROJECT_MAP.md footer doesn't match the version string in the code (e.g., app.py sidebar "TALOS vX.Y.Z"), the MAP IS STALE — fix it immediately.
-- The first thing to check when opening a project: does PROJECT_MAP.md version match the actual code version?
-- If you find a mismatch, FIX PROJECT_MAP.md FIRST before any other work.
+## CRITICAL: Project Version & PROJECT_MAP.md Synchronization (NEW in v5.2.0, UPDATED v5.6.0)
+- Every time you modify ANY .py file, you MUST update the "Last Updated" date and version in `docs/PROJECT_MAP.md` BEFORE completing the task.
+- If the version number in `docs/PROJECT_MAP.md` footer doesn't match the version string in the code (e.g., `main_api.py` `version="X.Y.Z"`), THE MAP IS STALE — fix it immediately.
+- The first thing to check when opening a project: does `docs/PROJECT_MAP.md` version match the actual code version?
+- If you find a mismatch, FIX `docs/PROJECT_MAP.md` FIRST before any other work.
 - **This rule overrides all others** — an out-of-date PROJECT_MAP.md is worse than no map at all.
+
+## CRITICAL: 12-File Documentation Sync Rule (NEW in v5.6.0)
+- **Every version bump MUST synchronize EXACTLY these 12 files:**
+  1. `README.md`
+  2. `ROADMAP.md`
+  3. `CHANGELOG_EN.md`
+  4. `CHANGELOG_GR.md`
+  5. `docs/PROJECT_MAP.md`
+  6. `docs/PROJECT_MAP_EN.md`
+  7. `docs/API_HANDOVER_FOTIS.md`
+  8. `docs/UX_UI_BLUEPRINT_FOTIS.md`
+  9. `docs/IP_PROTECTION_STRATEGY.md`
+  10. `docs/SYSTEM_CAPABILITIES_MASTER.md`
+  11. `docs/SYSTEM_CAPABILITIES_MASTER.html`
+  12. `.clinerules`
+- If any of these 12 files references a stale version, the entire documentation set is considered OUT OF DATE.
+- After any version bump, verify all 12 files reflect the new version string before marking the task complete.
+- This rule is NON-NEGOTIABLE — the 12-file set is the canonical documentation surface of the project.
+
+## CRITICAL: Master Capabilities Rule (NEW in v5.6.0)
+- The Master Capabilities Reference Documents (`docs/SYSTEM_CAPABILITIES_MASTER.md` and `docs/SYSTEM_CAPABILITIES_MASTER.html`) MUST be maintained in their structured 9-section format:
+  1. System Vision & Core Architecture
+  2. Multi-Source Ingestion Engine
+  3. Deep Reinforcement Learning & Optimization (DDDQN + GWO)
+  4. Advanced Semantic & Graph Intelligence (ST-GAT)
+  5. Multi-Agent & Autonomous Swarms (PYTHIA, Swarm Commander, HMADRL)
+  6. Automated Literature Review & XAI (Quad-Layer Scoring, NATO CDE Procedural Hooks)
+  7. Edge-Cloud & Deployment Ecosystem
+  8. Dashboards & User Interfaces (React 18 + Tailwind CSS + Shadcn UI)
+  9. Complete REST API Reference (15 Endpoints)
+- The HTML version is served at `GET /api/v1/capabilities` via the FastAPI backend.
+- Any architectural change that adds/removes a capability MUST update both documents.
+- **No emojis** in these documents — formal, academic, and technical tone only.
+- **No mention of Streamlit** anywhere — Streamlit was fully deprecated in v5.6.0.
 
 ## CRITICAL: Compile Check — All Changed Files (NEW in v5.2.1)
 - After ANY code change, run `python -m py_compile <file>` for EVERY changed .py file.
 - If ANY file fails compilation, fix it BEFORE marking the task complete.
-- Command: `python -m py_compile app.py talos.py core/*.py templates/gui_strings.py`
+- Command: `python -m py_compile src/api/main_api.py talos.py src/core/*.py`
 - This ensures no syntax errors are ever committed to the repository.
 - This rule applies to BOTH .py and .bat changes — always test that the code is syntactically valid.
 
@@ -138,7 +175,7 @@
   ```
   """
   Module: filename.py (version)
-  Project: TALOS v5.3.3
+  Project: TALOS v5.6.0
   Description: [2-3 sentence overview of WHAT this file does and HOW it works]
   Key design decisions: [why certain choices were made]
   ```
@@ -165,10 +202,9 @@
   - If an existing file was modified: before/after comparison where relevant
 - **Changelog entries must be written at the level of detail that a new developer could understand the entire change without reading the source code.**
 - **Do NOT write vague entries** like "Updated X for better performance." Instead write: "Replaced `for` loop with `ThreadPoolExecutor(max_workers=15)` in `pdf_downloader.py:download_batch()`, reducing download time from ~45s to ~3s for 100 papers."
-- **This rule overrides all other completion rules** — a task is NOT complete until all 4 documentation files (CHANGELOG_EN, CHANGELOG_GR, README, ROADMAP) are updated.
+- **This rule overrides all other completion rules** — a task is NOT complete until all documentation files are updated.
 
 ## Progressive Documentation Rule (v5.3.3 — SUPERSEDED)
 - This rule is now covered by the **CRITICAL: Progressive Documentation Rule — ALL File Types** above.
 - The key upgrade: applies to ALL file types, not just `.py` files.
 - Kept here for historical reference.
-

@@ -1,10 +1,11 @@
-﻿# Project TALOS (v5.5.2)
+﻿# Project TALOS (v5.6.0)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Τακτικό Πρακτορικό Σύστημα Ενορχήστρωσης Βιβλιογραφίας)*
 
-> **An Autonomous Research Intelligence Platform — Now with 14 FastAPI REST Endpoints Achieving 100% Ecosystem Coverage.**
+> **An Autonomous Research Intelligence Platform — Headless FastAPI Backend with 15 REST Endpoints, React 18 + Tailwind CSS + Shadcn UI Frontend.**
 
+[![IEEE Computer Society](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/License-AGPLv3-red)
 [![DOI](https://zenodo.org/badge/1191928488.svg)](https://doi.org/10.5281/zenodo.19224912)
@@ -41,11 +42,11 @@ TALOS λειτουργεί ως αυτόνομος "Research Architect," φιλ�
   - **Grey Wolf Optimizer** (`src/ai/optimizers/gwo_rl_optimizer.py`) for hyperparameter tuning
   - **24/7 Autonomous Service** (`src/ai/drl/talos_service.py`) — background research agent with Telegram/Discord/Email notifications
 - **Flask API server** (`src/api/talos_service_api.py`) — real-time service status at `localhost:5002/api/status`
-- **FastAPI REST API** (`src/api/main_api.py`) — full REST façade with 14 endpoints at `localhost:8000` (100% ecosystem coverage)
+- **FastAPI REST API** (`src/api/main_api.py`) — full REST facade with 15 endpoints at `localhost:8000`
   - Semantic search, paginated papers, scrape/GWO triggers with BackgroundTasks
-  - Single-paper AI evaluation, natural-language → boolean query translation
+  - Single-paper AI evaluation, natural-language to boolean query translation
   - GWO history for Recharts, architecture graph HTML, top authors for BarChart
-  - Bulk score recalculation, DB health stats
+  - Bulk score recalculation, DB health stats, System Capabilities Master Reference
   - Auto-generated interactive docs at `http://localhost:8000/docs`
   - Models saved at `models/dddqn_trained.pth` and `models/talos_drl.pth`
 *   **Database Manager (The Knowledge Hub):** A SQLite3-powered hub using **B-Tree indexing**. It serves as a bridge between ecosystems by storing multiple identifiers (`DOI`, `OpenAlex ID`, `PMID`, `PMCID`).
@@ -65,7 +66,7 @@ TALOS λειτουργεί ως αυτόνομος "Research Architect," φιλ�
 *   **100% LOCAL:** Uses your local Ollama instance exclusively — **zero cloud cost, full privacy**. Never touches Gemini, DeepSeek, or any cloud API.
 *   **Interactive:** No CLI arguments needed — select language and folders via `questionary` prompts, see token estimates before starting, track progress with `tqdm`.
 *   **Output:** Professional Markdown documentation in `docs/{lang_code}/` — ready for thesis methodology chapters, PhD defense preparation, and developer onboarding.
-*   **Accessible from both GUI (Streamlit)** and **TUI (talos.py)** under System Diagnostics.
+*   **Accessible from TUI (talos.py)** under System Diagnostics.
 
 ### 2.1 Τεχνική Αρχιτεκτονική & Οικοσύστημα
 
@@ -93,7 +94,7 @@ TALOS λειτουργεί ως αυτόνομος "Research Architect," φιλ�
 *   **100% ΤΟΠΙΚΟ:** Χρησιμοποιεί αποκλειστικά το τοπικό σου Ollama instance — **μηδενικό κόστος cloud, πλήρης ιδιωτικότητα**. Ποτέ δεν καλεί Gemini, DeepSeek, ή άλλο cloud API.
 *   **Διαδραστικό:** Κανένα CLI argument — επιλογή γλώσσας και φακέλων μέσω `questionary` prompts, token estimate πριν την έναρξη, tqdm progress bar.
 *   **Έξοδος:** Επαγγελματική Markdown τεκμηρίωση στο `docs/{lang_code}/` — έτοιμη για κεφάλαια μεθοδολογίας διατριβής, προετοιμασία υπεράσπισης PhD, και onboarding developers.
-*   **Προσβάσιμο από GUI (Streamlit)** και **TUI (talos.py)** στο System Diagnostics.
+*   **Προσβάσιμο από TUI (talos.py)** στο System Diagnostics.
 
 ---
 
@@ -101,7 +102,7 @@ TALOS λειτουργεί ως αυτόνομος "Research Architect," φιλ�
 
 Project TALOS is designed to run seamlessly across all operating systems. Choose your preferred method:
 
-### 🐳 Method A: Docker (Recommended)
+### Method A: Docker (Recommended)
 Run TALOS in a completely isolated environment without installing Python or dependencies.
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 2. Create your `.env` file (see `example.env`).
@@ -111,12 +112,12 @@ Run TALOS in a completely isolated environment without installing Python or depe
    ```
 *(If you launch the interactive dashboard via this menu, it will be available at `http://localhost:5000`)*
 
-### 🖱️ Method B: 1-Click Launcher (Windows)
+### Method B: 1-Click Launcher (Windows)
 For users without Docker.
 1. Set up your `.env` file.
 2. Double-click **`start_talos.bat`**. The script will automatically create a virtual environment, install dependencies, and launch the platform.
 
-### 💻 Method C: Traditional Python Environment (Linux/Mac)
+### Method C: Traditional Python Environment (Linux/Mac)
 ```bash
 git clone https://github.com/Christos-Smarlamakis/Project-TALOS.git
 python -m venv venv
@@ -125,7 +126,7 @@ pip install -r requirements.txt
 python talos.py
 ```
 
-### 🧠 Documentation Builder
+### Documentation Builder
 To generate professional Markdown documentation for the entire codebase in any of 18 languages:
 ```bash
 python src/utils/generate_docs.py
@@ -136,7 +137,7 @@ Requires **Ollama** for running locally the `gemma4` model.
 
 Επιλέξτε τη μέθοδο που σας εξυπηρετεί καλύτερα:
 
-### 🐳 Μέθοδος Α: Εκτέλεση με Docker (Προτεινόμενο)
+### Μέθοδος Α: Εκτέλεση με Docker (Προτεινόμενο)
 Χωρίς ανάγκη εγκατάστασης Python ή βιβλιοθηκών στο σύστημά σας.
 1. Εγκαταστήστε το [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 2. Συμπληρώστε το αρχείο `.env` με τα API Keys σας.
@@ -145,17 +146,17 @@ Requires **Ollama** for running locally the `gemma4` model.
    docker-compose run --rm talos
    ```
 
-### 🖱️ Μέθοδος Β: 1-Click Launcher (Για Windows)
+### Μέθοδος Β: 1-Click Launcher (Για Windows)
 1. Συμπληρώστε το αρχείο `.env`.
 2. Κάντε διπλό κλικ στο αρχείο **`start_talos.bat`**. Θα δημιουργήσει αυτόματα το εικονικό περιβάλλον και θα ξεκινήσει το μενού.
 
-### 💻 Μέθοδος Γ: Παραδοσιακό Περιβάλλον Python
+### Μέθοδος Γ: Παραδοσιακό Περιβάλλον Python
 ```bash
 pip install -r requirements.txt
 python talos.py
 ```
 
-### 🧠 Documentation Builder
+### Documentation Builder
 Για να παράγεις επαγγελματική Markdown τεκμηρίωση για ολόκληρο τον κώδικα σε οποιαδήποτε από 18 γλώσσες:
 ```bash
 python src/utils/generate_docs.py
@@ -164,12 +165,12 @@ python src/utils/generate_docs.py
 
 ---
 
-## 📄 Citation & Academic Use
+## Citation & Academic Use
 
 This software is part of ongoing PhD research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.4.1, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.6.0, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -178,18 +179,18 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.4.1},
+  version = {v5.6.0},
   year = {2026}
 }
 ```
 
-**⚠️ A formal paper presenting the methodology and agentic framework of TALOS is currently in preparation.**
+**A formal paper presenting the methodology and agentic framework of TALOS is currently in preparation.**
 
-### 📄 Ακαδημαϊκή Αναφορά (Citation)
+### Ακαδημαϊκή Αναφορά (Citation)
 Εάν χρησιμοποιήσετε το TALOS στην έρευνά σας, παρακαλούμε να το αναφέρετε ως εξής:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.4.1, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.6.0, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -198,24 +199,33 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.4.1},
+  version = {v5.6.0},
   year = {2026}
 }
 ```
 
 ---
 
-## ⚖️ License & Commercial Use
+## License & Commercial Use
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**.
 *   **Academic/Research Use:** Free to use and modify, provided changes are open-sourced under AGPLv3.
 *   **Commercial/Proprietary Use:** Requires a **Commercial License**.
 *   **Contact:** [christossmarlamakis@gmail.com](mailto:christossmarlamakis@gmail.com)
 
-### ⚖️ Άδεια Χρήσης & Εμπορική Εκμετάλλευση
+### Άδεια Χρήσης & Εμπορική Εκμετάλλευση
 Το λογισμικό διατίθεται υπό την άδεια **GNU Affero General Public License v3.0 (AGPLv3)**.
 *   **Ακαδημαϊκή Χρήση:** Ελεύθερη, με την προϋπόθεση ότι τυχόν τροποποιήσεις θα παραμείνουν ανοιχτού κώδικα υπό την ίδια άδεια.
 *   **Εμπορική Χρήση:** Απαιτείται η αγορά **Εμπορικής Άδειας (Commercial License)**.
 *   **Επικοινωνία:** [christossmarlamakis@gmail.com](mailto:christossmarlamakis@gmail.com)
 
 ---
+
+## 🎖️ Acknowledgements & Support
+
+Project TALOS is developed as part of ongoing Ph.D. research at the **University of Peloponnese** (Business Intelligence & Analytics Laboratory).
+
+The Lead Architect and Author, **Christos Smarlamakis**, is an officially selected recipient of the **IEEE Computer Society WEIGD Student Support Fund (2026)**. 
+We gratefully acknowledge the support and resources provided by the IEEE Computer Society and the enduring legacy of Dr. Grace C. N. Wei in empowering open-source, 
+democratized research tools for the global scientific community.
+
 *Designed & AI-Augmented Developed by Christos Smarlamakis.*
