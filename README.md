@@ -1,9 +1,9 @@
-﻿# Project TALOS (v5.6.0)
+﻿# Project TALOS (v5.7.0)
 
 ### **Tactical Agentic Literature Orchestration System**
-*(Τακτικό Πρακτορικό Σύστημα Ενορχήστρωσης Βιβλιογραφίας)*
+*(Takriko Praktoriko Systima Enorchistrosis Vivliografias)*
 
-> **An Autonomous Research Intelligence Platform — Headless FastAPI Backend with 15 REST Endpoints, React 18 + Tailwind CSS + Shadcn UI Frontend.**
+> **An Autonomous Research Intelligence Platform -- Headless FastAPI Backend with 16 REST Endpoints, SYNAPSE Event-Driven Protocol, React 18 + Tailwind CSS + Shadcn UI Frontend.**
 
 [![IEEE Computer Society](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund)
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
@@ -24,13 +24,13 @@ The exponential growth of scientific publications, especially in fields like *Dr
 ### **The Solution**
 TALOS acts as an autonomous "Research Architect," filtering noise and highlighting strategic knowledge through a "Human-in-the-loop" agentic workflow.
 
-### 1.1 Εισαγωγή: Το Όραμα
-Στην ελληνική μυθολογία, ο **Τάλως** ήταν ο χάλκινος γίγαντας-αυτόματο που προστάτευε την Κρήτη. Το **Project TALOS** ενσαρκώνει αυτό το πνεύμα στον 21ο αιώνα. Δεν είναι ένας απλός συσσωρευτής βιβλιογραφίας, αλλά μια **Πλατφόρμα Ερευνητικής Νοημοσύνης (Research Intelligence Platform)** που χρησιμοποιεί **AI Agents** για να εντοπίζει, αξιολογεί, συνθέτει και οπτικοποιεί την επιστημονική γνώση, επιταχύνοντας τη διαδικασία **Συστηματικής Βιβλιογραφικής Ανασκόπησης (SLR)**.
+### 1.1 Eisagogi: To Orama
+Stin elliniki mythologia, o **Talos** itan o chalkinos gigantas-aftomato pou prostateve tin Kriti. To **Project TALOS** ensarkonei afto to pnevma ston 21o aiona. Den einai enas aplos syssoreftis vivliografias, alla mia **Platforma Erevnitikis Noimosynis (Research Intelligence Platform)** pou chrisimopoiei **AI Agents** gia na entopizei, axiologei, synthetei kai optikopoiei tin epistimoniki gnosi, epitachynontas ti diadikasia **Systimatikis Vivliografikis Anaskopisis (SLR)**.
 
-### **Το Πρόβλημα**
-Η εκθετική ανάπτυξη των επιστημονικών δημοσιεύσεων, ειδικά σε πεδία όπως τα *Drone Swarm Intelligence* και *AI*, καθιστά αδύνατη τη χειροκίνητη παρακολούθηση.
-### **Η Λύση**
-TALOS λειτουργεί ως αυτόνομος "Research Architect," φιλτράροντας τον θόρυβο και τονίζοντας τη στρατηγική γνώση μέσω ενός "Human-in-the-loop" agentic workflow.
+### **To Provlima**
+I ekthetiki anaptyxi ton epistimonikon dimosiefseon, eidika se pedia opos ta *Drone Swarm Intelligence* kai *AI*, kathista adynati ti cheirokiniti parakolouthisi.
+### **I Lysi**
+TALOS leitourgei os aftonomos "Research Architect," filtrarontas ton thoryvo kai tonizontas ti stratigiki gnosi meso enos "Human-in-the-loop" agentic workflow.
 
 ---
 
@@ -38,17 +38,23 @@ TALOS λειτουργεί ως αυτόνομος "Research Architect," φιλ�
 
 ### **A. Core Intelligence Layer (now DRL-powered)**
 - **DRL Agent (The Autonomous Orchestrator):** A **Double Dueling DQN with 3-layer LSTM** that learns to select the optimal academic API source in real-time. Trained on 3,849 real paper scores from the database with **RTX 4070 CUDA 12.1** acceleration. Features include:
-  - **Gymnasium RL environment** (`src/ai/drl/talos_env.py`) — Dynamic N-source Observation Space, Action Space (N + 1)
+  - **Gymnasium RL environment** (`src/ai/drl/talos_env.py`) -- Dynamic N-source Observation Space, Action Space (N + 1)
   - **Grey Wolf Optimizer** (`src/ai/optimizers/gwo_rl_optimizer.py`) for hyperparameter tuning
-  - **24/7 Autonomous Service** (`src/ai/drl/talos_service.py`) — background research agent with Telegram/Discord/Email notifications
-- **Flask API server** (`src/api/talos_service_api.py`) — real-time service status at `localhost:5002/api/status`
-- **FastAPI REST API** (`src/api/main_api.py`) — full REST facade with 15 endpoints at `localhost:8000`
+  - **24/7 Autonomous Service** (`src/ai/drl/talos_service.py`) -- background research agent with Telegram/Discord/Email notifications
+- **Flask API server** (`src/api/talos_service_api.py`) -- real-time service status at `localhost:5002/api/status`
+- **FastAPI REST API** (`src/api/main_api.py`) -- full REST facade with 16 endpoints at `localhost:8001`
   - Semantic search, paginated papers, scrape/GWO triggers with BackgroundTasks
   - Single-paper AI evaluation, natural-language to boolean query translation
   - GWO history for Recharts, architecture graph HTML, top authors for BarChart
   - Bulk score recalculation, DB health stats, System Capabilities Master Reference
-  - Auto-generated interactive docs at `http://localhost:8000/docs`
+  - **SYNAPSE webhook receiver** (`POST /api/v1/synapse/webhook`) for ALEXANDRIA ecosystem interoperability
+  - **Port 8001** (port 8000 reserved for SYNAPSE event bus)
+  - Auto-generated interactive docs at `http://localhost:8001/docs`
   - Models saved at `models/dddqn_trained.pth` and `models/talos_drl.pth`
+- **SYNAPSE Event-Driven Protocol** (`src/integration/synapse_client.py`, `src/api/synapse_routes.py`) -- NEW in v5.7.0
+  - Thread-safe EventEmitter pushes JSON events (paper_discovered, paper_evaluated, etc.) to the SYNAPSE bus
+  - APIRouter receives inbound commands (trigger_search, trigger_evaluation, get_status, shutdown) via webhook
+  - Designed for distributed ALEXANDRIA ecosystem microservice interoperability
 *   **Database Manager (The Knowledge Hub):** A SQLite3-powered hub using **B-Tree indexing**. It serves as a bridge between ecosystems by storing multiple identifiers (`DOI`, `OpenAlex ID`, `PMID`, `PMCID`).
 *   **AI Manager (The Cognitive Engine):** A model-agnostic engine (Gemini, DeepSeek, Ollama) using the **Adapter Design Pattern**. It features **Circuit Breakers** for resilience and **Surgical JSON Extraction** via regex to ensure data integrity.
 *   **Quad-Layer Evaluation Framework:** A proprietary scoring methodology that evaluates papers across four dimensions:
@@ -63,38 +69,40 @@ TALOS λειτουργεί ως αυτόνομος "Research Architect," φιλ�
 
 ### **C. 18-Language Codebase Documentation Builder**
 *   **`src/utils/generate_docs.py` v2.0:** A fully interactive tool that documents the **entire TALOS codebase (93+ files)** in any of **18 languages** (Greek, English, Chinese, Hindi, Spanish, Arabic, French, Bengali, Russian, Portuguese, Urdu, Indonesian, German, Japanese, Italian, Korean, Turkish, Persian).
-*   **100% LOCAL:** Uses your local Ollama instance exclusively — **zero cloud cost, full privacy**. Never touches Gemini, DeepSeek, or any cloud API.
-*   **Interactive:** No CLI arguments needed — select language and folders via `questionary` prompts, see token estimates before starting, track progress with `tqdm`.
-*   **Output:** Professional Markdown documentation in `docs/{lang_code}/` — ready for thesis methodology chapters, PhD defense preparation, and developer onboarding.
+*   **100% LOCAL:** Uses your local Ollama instance exclusively -- **zero cloud cost, full privacy**. Never touches Gemini, DeepSeek, or any cloud API.
+*   **Interactive:** No CLI arguments needed -- select language and folders via `questionary` prompts, see token estimates before starting, track progress with `tqdm`.
+*   **Output:** Professional Markdown documentation in `docs/{lang_code}/` -- ready for thesis methodology chapters, PhD defense preparation, and developer onboarding.
 *   **Accessible from TUI (talos.py)** under System Diagnostics.
 
-### 2.1 Τεχνική Αρχιτεκτονική & Οικοσύστημα
+### 2.1 Techniki Architektoniki & Oikosystima
 
-### **A. Core Intelligence Layer (πλέον με DRL)**
-* **DRL Agent (Ο Αυτόνομος Ενορχηστρωτής):** Ένα **Double Dueling DQN με 3-layer LSTM** που μαθαίνει να επιλέγει τη βέλτιστη ακαδημαϊκή πηγή API σε πραγματικό χρόνο. Εκπαιδευμένο σε 3.849 πραγματικές βαθμολογίες paper από τη βάση δεδομένων με επιτάχυνση **RTX 4070 CUDA 12.1**. Περιλαμβάνει:
-  - **Gymnasium RL περιβάλλον** (`src/ai/drl/talos_env.py`) — Δυναμικό Observation Space N πηγών, Action Space (N + 1)
-  - **Grey Wolf Optimizer** (`src/ai/optimizers/gwo_rl_optimizer.py`) για βελτιστοποίηση υπερπαραμέτρων
-  - **24/7 Αυτόνομη Υπηρεσία** (`src/ai/drl/talos_service.py`) — πράκτορας φόντου με ειδοποιήσεις Telegram/Discord/Email
-  - **API server** (`src/api/talos_service_api.py`) — real-time status στο `localhost:5002/api/status`
-  - Μοντέλα αποθηκευμένα σε `models/dddqn_trained.pth` και `models/talos_drl.pth`
-*   **Database Manager (The Knowledge Hub):** Μια SQLite3 βάση με **B-Tree indexing** που λειτουργεί ως γέφυρα μεταξύ οικοσυστημάτων αποθηκεύοντας πολλαπλά αναγνωριστικά (`DOI`, `OpenAlex ID`, `PMID`, `PMCID`).
-*   **AI Manager (The Cognitive Engine):** Μια model-agnostic μηχανή (Gemini, DeepSeek, Ollama) που χρησιμοποιεί το **Adapter Design Pattern** με **Circuit Breakers** για ανθεκτικότητα και **Surgical JSON Extraction** για ακεραιότητα δεδομένων.
-*   **Quad-Layer Evaluation Framework:** Μια ιδιόκτητη μεθοδολογία βαθμολόγησης που αξιολογεί papers σε τέσσερις διαστάσεις:
-    1.  **Strategic:** Θεωρητικό πλαίσιο και υψηλού επιπέδου λήψη αποφάσεων.
-    2.  **Operational:** Κατανομή πόρων, δημοπρασίες, μηχανισμοί consensus.
-    3.  **Tactical:** Αλγοριθμική υλοποίηση και DRL/Neural policies.
-    4.  **Playground:** Περιβάλλοντα προσομοίωσης, datasets, benchmarks.
+### **A. Core Intelligence Layer (pleon me DRL)**
+* **DRL Agent (O Aftonomos Enorchistrotis):** Ena **Double Dueling DQN me 3-layer LSTM** pou mathainei na epilegei ti veltisti akadimaiki pigi API se pragmatiko chrono. Ekpaidevmeno se 3.849 pragmatikes vathmologies paper apo ti vasi dedomenon me epitachynsi **RTX 4070 CUDA 12.1**. Perilamvanei:
+  - **Gymnasium RL perivallon** (`src/ai/drl/talos_env.py`) -- Dynamiko Observation Space N pigon, Action Space (N + 1)
+  - **Grey Wolf Optimizer** (`src/ai/optimizers/gwo_rl_optimizer.py`) gia veltistopoiisi yperparametron
+  - **24/7 Aftonomi Ypiresia** (`src/ai/drl/talos_service.py`) -- praktoras fontou me eidopoiiseis Telegram/Discord/Email
+  - **API server** (`src/api/talos_service_api.py`) -- real-time status sto `localhost:5002/api/status`
+  - Montela apothikevmena se `models/dddqn_trained.pth` kai `models/talos_drl.pth`
+- **FastAPI REST API** (`src/api/main_api.py`) -- 16 endpoints sto `localhost:8001` (port 8000 gia SYNAPSE bus)
+  - **SYNAPSE webhook** (`POST /api/v1/synapse/webhook`) gia dialeitourgikotita oikosystimatos ALEXANDRIA -- NEO stin v5.7.0
+*   **Database Manager (The Knowledge Hub):** Mia SQLite3 vasi me **B-Tree indexing** pou leitourgei os gefyra metaxy oikosystimaton apothikevontas pollapla anagnoristika (`DOI`, `OpenAlex ID`, `PMID`, `PMCID`).
+*   **AI Manager (The Cognitive Engine):** Mia model-agnostic michani (Gemini, DeepSeek, Ollama) pou chrisimopoiei to **Adapter Design Pattern** me **Circuit Breakers** gia anthektikotita kai **Surgical JSON Extraction** gia akeraiotita dedomenon.
+*   **Quad-Layer Evaluation Framework:** Mia idioktiti methodologia vathmologisis pou axiologei papers se tesseris diastaseis:
+    1.  **Strategic:** Theoritiko plaisio kai ypsilou epipedou lipsi apofaseon.
+    2.  **Operational:** Katanomi poron, dimoprasies, michanismoi consensus.
+    3.  **Tactical:** Algorithmiki ylopoiisi kai DRL/Neural policies.
+    4.  **Playground:** Perivallonta prosomoisis, datasets, benchmarks.
 
 ### **B. Data Acquisition & Enrichment Layer**
-*   **Operation "Genesis" (Native Agents):** Ενορχηστρώνει ταυτόχρονες αναζητήσεις σε 14+ πηγές (ArXiv, Scopus, IEEE, PubMed, κ.λπ.) χρησιμοποιώντας custom-built Python agents με λογική **Exponential Backoff**.
-*   **Project "HERMES" (Data Enricher):** Ανακτά αυτόματα νόμιμους **Open Access (OA)** συνδέσμους PDF μέσω του Unpaywall API και εμπλουτίζει τα μεταδεδομένα (ISSN, Publisher).
+*   **Operation "Genesis" (Native Agents):** Enorchistronei taftochrones anazitiseis se 14+ piges (ArXiv, Scopus, IEEE, PubMed, k.lp.) chrisimopoiontas custom-built Python agents me logiki **Exponential Backoff**.
+*   **Project "HERMES" (Data Enricher):** Anakta aftomata nomimous **Open Access (OA)** syndesmous PDF meso tou Unpaywall API kai emploutizei ta metadedomena (ISSN, Publisher).
 
-### **C. Αυτόματη Δημιουργία Τεκμηρίωσης (Documentation Builder) σε 18 γλώσσες**
-*   **`src/utils/generate_docs.py` v2.0:** Ένα πλήρως διαδραστικό εργαλείο που τεκμηριώνει **ολόκληρο τον κώδικα του TALOS (93+ αρχεία)** σε οποιαδήποτε από **18 γλώσσες** (Ελληνικά, English, 中文, हिन्दी, Español, العربية, Français, বাংলা, Русский, Português, اردو, Bahasa Indonesia, Deutsch, 日本語, Italiano, 한국어, Türkçe, فارسی).
-*   **100% ΤΟΠΙΚΟ:** Χρησιμοποιεί αποκλειστικά το τοπικό σου Ollama instance — **μηδενικό κόστος cloud, πλήρης ιδιωτικότητα**. Ποτέ δεν καλεί Gemini, DeepSeek, ή άλλο cloud API.
-*   **Διαδραστικό:** Κανένα CLI argument — επιλογή γλώσσας και φακέλων μέσω `questionary` prompts, token estimate πριν την έναρξη, tqdm progress bar.
-*   **Έξοδος:** Επαγγελματική Markdown τεκμηρίωση στο `docs/{lang_code}/` — έτοιμη για κεφάλαια μεθοδολογίας διατριβής, προετοιμασία υπεράσπισης PhD, και onboarding developers.
-*   **Προσβάσιμο από TUI (talos.py)** στο System Diagnostics.
+### **C. Aftomati Dimiourgia Tekmiriosis (Documentation Builder) se 18 glosses**
+*   **`src/utils/generate_docs.py` v2.0:** Ena pliros diadrastiko ergaleio pou tekmirionei **olokliro ton kodika tou TALOS (93+ archeia)** se opoiadipote apo **18 glosses** (Ellinika, English, Zhongwen, Hindi, Espanol, Arabiya, Francais, Bangla, Russkii, Portugues, Urdu, Bahasa Indonesia, Deutsch, Nihongo, Italiano, Hangugeo, Turkce, Farsi).
+*   **100% TOPIKO:** Chrisimopoiei apokleistika to topiko sou Ollama instance -- **mideniko kostos cloud, pliris idiotikotita**. Pote den kalei Gemini, DeepSeek, i allo cloud API.
+*   **Diadrastiko:** Kanena CLI argument -- epilogi glossas kai fakelon meso `questionary` prompts, token estimate prin tin enarxi, tqdm progress bar.
+*   **Exodos:** Epangelmatiki Markdown tekmiriosi sto `docs/{lang_code}/` -- etoimi gia kefalaia methodologias diatrivis, proetoimasia yperaspisis PhD, kai onboarding developers.
+*   **Prosvasimo apo TUI (talos.py)** sto System Diagnostics.
 
 ---
 
@@ -115,7 +123,7 @@ Run TALOS in a completely isolated environment without installing Python or depe
 ### Method B: 1-Click Launcher (Windows)
 For users without Docker.
 1. Set up your `.env` file.
-2. Double-click **`start_talos.bat`**. The script will automatically create a virtual environment, install dependencies, and launch the platform.
+2. Double-click **`run_talos.bat`**. The script provides a 3-option menu: Full Setup (Conda env + pip install), Start FastAPI Server (port 8001), or Run Test Suite (pytest -v).
 
 ### Method C: Traditional Python Environment (Linux/Mac)
 ```bash
@@ -133,35 +141,35 @@ python src/utils/generate_docs.py
 ```
 Requires **Ollama** for running locally the `gemma4` model.
 
-### 3.1 Εγκατάσταση & Χρήση (Zero-Friction)
+### 3.1 Egkatastasi & Chrisi (Zero-Friction)
 
-Επιλέξτε τη μέθοδο που σας εξυπηρετεί καλύτερα:
+Epilexte ti methodo pou sas exypiretei kalytera:
 
-### Μέθοδος Α: Εκτέλεση με Docker (Προτεινόμενο)
-Χωρίς ανάγκη εγκατάστασης Python ή βιβλιοθηκών στο σύστημά σας.
-1. Εγκαταστήστε το [Docker Desktop](https://www.docker.com/products/docker-desktop/).
-2. Συμπληρώστε το αρχείο `.env` με τα API Keys σας.
-3. Ανοίξτε το τερματικό σας στον φάκελο του project και τρέξτε:
+### Methodos A: Ektelesi me Docker (Proteinomeno)
+Choris anagki egkatastasis Python i vivliothikon sto systima sas.
+1. Egkatastiste to [Docker Desktop](https://www.docker.com/products/docker-desktop/).
+2. Symplirote to archeio `.env` me ta API Keys sas.
+3. Anoixte to termatiko sas ston fakelo tou project kai trexte:
    ```bash
    docker-compose run --rm talos
    ```
 
-### Μέθοδος Β: 1-Click Launcher (Για Windows)
-1. Συμπληρώστε το αρχείο `.env`.
-2. Κάντε διπλό κλικ στο αρχείο **`start_talos.bat`**. Θα δημιουργήσει αυτόματα το εικονικό περιβάλλον και θα ξεκινήσει το μενού.
+### Methodos B: 1-Click Launcher (Gia Windows)
+1. Symplirote to archeio `.env`.
+2. Kante diplo klik sto archeio **`run_talos.bat`**. Prosferei menou 3 epilogon: Pliris Egkatastasi (Conda env + pip install), Ekkinisi FastAPI Server (thyra 8001), i Ektelesi Test Suite (pytest -v).
 
-### Μέθοδος Γ: Παραδοσιακό Περιβάλλον Python
+### Methodos G: Paradosiako Perivallon Python
 ```bash
 pip install -r requirements.txt
 python talos.py
 ```
 
 ### Documentation Builder
-Για να παράγεις επαγγελματική Markdown τεκμηρίωση για ολόκληρο τον κώδικα σε οποιαδήποτε από 18 γλώσσες:
+Gia na parageis epangelmatiki Markdown tekmiriosi gia olokliro ton kodika se opoiadipote apo 18 glosses:
 ```bash
 python src/utils/generate_docs.py
 ```
-Απαιτείται **Ollama** για να δύναται να τρέχει τοπικά το μοντέλο `gemma4`.
+Apaiteitai **Ollama** gia na dynatai na trechei topika to montelo `gemma4`.
 
 ---
 
@@ -170,7 +178,7 @@ python src/utils/generate_docs.py
 This software is part of ongoing PhD research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.6.0, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.7.0, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -179,18 +187,18 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.6.0},
+  version = {v5.7.0},
   year = {2026}
 }
 ```
 
 **A formal paper presenting the methodology and agentic framework of TALOS is currently in preparation.**
 
-### Ακαδημαϊκή Αναφορά (Citation)
-Εάν χρησιμοποιήσετε το TALOS στην έρευνά σας, παρακαλούμε να το αναφέρετε ως εξής:
+### Akadimaiki Anafora (Citation)
+Ean chrisimopoiisete to TALOS stin erevna sas, parakaloume na to anaferete os exis:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.6.0, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.7.0, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -199,7 +207,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.6.0},
+  version = {v5.7.0},
   year = {2026}
 }
 ```
@@ -212,15 +220,15 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 *   **Commercial/Proprietary Use:** Requires a **Commercial License**.
 *   **Contact:** [christossmarlamakis@gmail.com](mailto:christossmarlamakis@gmail.com)
 
-### Άδεια Χρήσης & Εμπορική Εκμετάλλευση
-Το λογισμικό διατίθεται υπό την άδεια **GNU Affero General Public License v3.0 (AGPLv3)**.
-*   **Ακαδημαϊκή Χρήση:** Ελεύθερη, με την προϋπόθεση ότι τυχόν τροποποιήσεις θα παραμείνουν ανοιχτού κώδικα υπό την ίδια άδεια.
-*   **Εμπορική Χρήση:** Απαιτείται η αγορά **Εμπορικής Άδειας (Commercial License)**.
-*   **Επικοινωνία:** [christossmarlamakis@gmail.com](mailto:christossmarlamakis@gmail.com)
+### Adeia Chrisis & Emporiki Ekmetallefsi
+To logismiko diatithetai ypo tin adeia **GNU Affero General Public License v3.0 (AGPLv3)**.
+*   **Akadimaiki Chrisi:** Eleftheri, me tin proypothesi oti tyxon tropopoiiseis tha parameinoun anoichtou kodika ypo tin idia adeia.
+*   **Emporiki Chrisi:** Apaiteitai i agora **Emporikis Adeias (Commercial License)**.
+*   **Epikoinonia:** [christossmarlamakis@gmail.com](mailto:christossmarlamakis@gmail.com)
 
 ---
 
-## 🎖️ Acknowledgements & Support
+## Acknowledgements & Support
 
 Project TALOS is developed as part of ongoing Ph.D. research at the **University of Peloponnese** (Business Intelligence & Analytics Laboratory).
 

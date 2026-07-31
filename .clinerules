@@ -1,7 +1,125 @@
 # TALOS Project Instructions for AI Coding Agents
-# Version: v5.6.0
+# Version: v5.7.0
 
-## PROJECT_MAP.md — Mandatory Knowledge Base (NEW in v5.0.0)
+## CONSTITUTION v2.0 — The 8-Point Master Initialization Standard
+
+### I. ZERO EMOJIS PROTOCOL
+- ALL AI-generated outputs, documentation, changelog entries, docstrings, inline comments,
+  variable names, and function names MUST use formal, academic, professional tone ONLY.
+- Emojis, kaomoji, emoticons, and decorative Unicode symbols are STRICTLY FORBIDDEN in all
+  new text produced by the AI agent.
+- Existing emojis in legacy changelogs, READMEs, and historical documentation may remain
+  as-is (do not retroactively strip them), but NO new emojis shall be introduced.
+- Markdown formatting (headers, tables, code blocks, bold, italic) is the only permitted
+  decorative mechanism. No Unicode symbols except standard punctuation.
+- This supersedes any prior informal tone conventions.
+
+### II. 100% AIR-GAPPED & LOCAL-FIRST
+- TALOS MUST remain fully functional in a completely offline (air-gapped) environment.
+- Ollama (local) is the DEFAULT and PRIMARY inference provider. Cloud providers (Gemini,
+  DeepSeek) are OPTIONAL fallbacks, enabled only when API keys are present.
+- All core functionality (database, embeddings, DRL agent, search, scoring) MUST work
+  without any internet connection when TALOS_USE_LOCAL=1 is set.
+- No telemetry, no analytics, no phoning home. The .env file and config.json are the
+  only external configuration surfaces.
+- Docker build must produce a self-contained image with no runtime network dependencies
+  beyond what the user explicitly configures.
+
+### III. HARDWARE-AWARE VRAM CONTAINMENT & PERFORMANCE
+- `core/hardware.py` is the SINGLE SOURCE OF TRUTH for GPU detection and VRAM queries.
+- All GPU-accelerated components (DRL agent training, embeddings, LLM inference) MUST
+  query hardware.py BEFORE allocating tensors or loading models.
+- VRAM budgeting: training workloads must not exceed 80% of available VRAM. Inference
+  workloads must leave 2GB headroom minimum.
+- CPU fallback with graceful degradation is mandatory — if CUDA/ROCm is unavailable,
+  the system MUST continue operating with clear warnings, not crashes.
+- Batch sizes, embedding dimensions, and model parallelism must scale dynamically based
+  on detected hardware capabilities.
+
+### IV. STRICT LINEAR EXECUTION & TIMELINE TRACKING (Agentic Rails)
+- ALL multi-step operations MUST follow a linear, deterministic execution pipeline.
+  No branching based on probabilistic heuristics unless explicitly in DRL agent training.
+- Every background task (scrape, GWO, evaluation, recalculation) MUST report progress
+  at discrete checkpoints via the task store (`_task_store` in main_api.py).
+- Task status machine: `queued -> running -> completed|failed`. No ambiguous states.
+- The Timeline documents (`docs/TIMELINE_EN.md` and `docs/TIMELINE_GR.md`) are the
+  AUTHORITATIVE historical record. Every version bump MUST append to both timelines.
+- Agentic Rails: the AI agent MUST NOT deviate from the linear execution plan unless
+  the user explicitly requests a replan. No speculative branching.
+
+### V. VERIFICATION-FIRST WORKFLOW
+- After ANY code change, run `python -m py_compile <file>` for EVERY changed .py file.
+- After ANY architectural change, run `python scripts/verify_dependency_map.py` to audit
+  the dependency graph against PROJECT_MAP.md Section 7.
+- After ANY database schema change, run `python scripts/db_stats.py` to verify integrity.
+- After ANY documentation change, run `python tools/test_smoke.py` for system health.
+- No change is "complete" until ALL four verification gates pass:
+  1. `py_compile` (syntax)
+  2. `verify_dependency_map.py` (imports)
+  3. `db_stats.py` (database, if schema changed)
+  4. `test_smoke.py` (runtime health)
+- If ANY gate fails, fix the issue BEFORE proceeding.
+
+### VI. THE MANDATORY 15-FILE DOCUMENTATION SYNCHRONICITY RULE
+- Every version bump (e.g., v5.6.0 to v5.7.0) MUST synchronize EXACTLY these 15 files:
+  1. `.clinerules` — The Constitution (this file)
+  2. `README.md` — Project overview and quickstart
+  3. `ROADMAP.md` — Strategic roadmap and version history
+  4. `CHANGELOG_EN.md` — Detailed changelog (English)
+  5. `CHANGELOG_GR.md` — Detailed changelog (Greek)
+  6. `docs/PROJECT_MAP.md` — Complete project map (Greek master)
+  7. `docs/PROJECT_MAP_EN.md` — Complete project map (English)
+  8. `docs/TIMELINE_EN.md` — Historical timeline (English)
+  9. `docs/TIMELINE_GR.md` — Historical timeline (Greek)
+  10. `docs/API_HANDOVER_FOTIS.md` — API handover reference
+  11. `docs/UX_UI_BLUEPRINT_FOTIS.md` — UX/UI blueprint
+  12. `docs/IP_PROTECTION_STRATEGY.md` — IP protection strategy
+  13. `docs/SYSTEM_CAPABILITIES_MASTER.md` — 9-section capabilities reference (Markdown)
+  14. `docs/SYSTEM_CAPABILITIES_MASTER.html` — 9-section capabilities reference (HTML)
+  15. `docs/TECH_RADAR.md` — Technology radar and stack choices
+- If ANY of these 15 files references a stale version, the ENTIRE documentation set
+  is considered OUT OF DATE and must be brought into sync BEFORE the task is complete.
+- The synchronization checklist: version string, "Last Updated" date, feature lists,
+  architecture descriptions, endpoint counts, dependency graph references.
+- This rule is NON-NEGOTIABLE. The 15-file set IS the canonical documentation surface.
+- Prior 12-file rule (v5.6.0) is SUPERSEDED by this 15-file rule (v5.7.0).
+
+### VII. SYNAPSE INTEROPERABILITY PROTOCOL
+- TALOS exposes and consumes events via the SYNAPSE Event-Driven Protocol at
+  `src/integration/synapse_client.py` (emitter) and `src/api/synapse_routes.py` (receiver).
+- Outbound events: TALOS pushes JSON events to `http://localhost:8000/api/v1/events`
+  (the Synapse bus). Events include: paper_discovered, paper_evaluated, search_completed,
+  gwo_optimized, agent_step, agent_episode_end.
+- Inbound commands: TALOS listens on `POST /api/v1/synapse/webhook` for external
+  commands. Supported commands: trigger_search, trigger_evaluation, get_status, shutdown.
+- All Synapse events are JSON with mandatory fields: `event_id` (UUID), `timestamp`
+  (ISO 8601), `event_type` (string enum), `source` ("talos"), `payload` (dict).
+- Synapse runs on port 8000. TALOS FastAPI now runs on port 8001 to avoid conflicts.
+- The protocol is designed for future ALEXANDRIA ecosystem integration — TALOS is one
+  of many microservices in the distributed research intelligence mesh.
+
+### VIII. STRICT IN-CODE DOCUMENTATION STANDARDS
+- Every Python module (.py file) MUST begin with a module-level docstring in this EXACT format:
+  """
+  Module: filename.py
+  Project: TALOS v5.7.0
+  Description: [2-4 sentence overview of WHAT this module does, HOW it works,
+               and KEY design decisions made.]
+  Dependencies: [list of key imports and why they are needed]
+  """
+- Every class MUST have a docstring describing its purpose, attributes, and usage pattern.
+- Every public function/method MUST have a docstring with: description, Args (if any),
+  Returns (if any), Raises (exceptions that may be raised).
+- Inline comments MUST use `# -- section name --` headers for logical blocks within functions.
+- Comments MUST be in simple, clear English accessible to a first-year CS student.
+- NO Greek characters in code comments or docstrings (Greek is reserved for documentation
+  files in `docs/` and `CHANGELOG_GR.md`).
+- This standard applies to ALL new code and ALL modified code. Legacy code without docstrings
+  must be progressively upgraded per the Progressive Documentation Rule.
+
+---
+
+## PROJECT_MAP.md — Mandatory Knowledge Base
 
 ### On Every New Chat (MANDATORY — Step 1)
 1. **READ `PROJECT_MAP.md` FIRST** — before reading any other file.
@@ -9,13 +127,13 @@
    - Complete architecture overview with ASCII diagram
    - All functions/methods with full signatures and descriptions (for all files)
    - Dependency graph (which script imports which module)
-   - Data flow (User → CLI/API → Scripts → Core → Sources → APIs)
+   - Data flow (User -> CLI/API -> Scripts -> Core -> Sources -> APIs)
    - Configuration schema (config.json, .env keys, env vars, profile system)
    - Database schema (all columns, enrichment state machine)
    - Module descriptions and roles
    - Known gotchas and conventions
 3. **DO NOT re-read individual source files** unless you need to make changes to them.
-4. If PROJECT_MAP.md is missing or outdated → inform the user, it must be regenerated.
+4. If PROJECT_MAP.md is missing or outdated -> inform the user, it must be regenerated.
 
 ### Updating PROJECT_MAP.md & PROJECT_MAP_EN.md (MANDATORY — After Every Change)
 1. After **ANY code change** (new function, modified signature, new file, deleted file, changed import),
@@ -32,35 +150,36 @@
 8. The maps **MUST always be 100% accurate** — out-of-date information is worse than none.
 
 ### Token Efficiency
-- PROJECT_MAP.md is ~400-800 lines (~3K-6K tokens) vs. all source files (~50K+ tokens)
-- This saves ~90% of context window per chat session
+- PROJECT_MAP.md is approximately 400-800 lines (3K-6K tokens) vs. all source files (50K+ tokens)
+- This saves approximately 90% of context window per chat session
 - Enables precise, targeted edits without re-exploring the entire codebase
 
-## CRITICAL: Editor Limitations
-- The editor CANNOT match or replace Greek/Unicode text reliably.
-- ALWAYS use `insert_line` instead of `old_text`/`new_text` for edits involving Greek comments.
-- PREFER creating new files (clean) over patching corrupted ones.
-- When using `insert_line`, be aware that all subsequent line numbers shift.
-- NEVER use `python -c "..."` inline commands via PowerShell - use a .py script file instead.
+---
 
 ## Architecture
-- Entry points: `talos.py` (CLI menu), `src/api/main_api.py` (Headless FastAPI — 15 endpoints)
+- Entry points: `talos.py` (CLI menu), `src/api/main_api.py` (Headless FastAPI — 16 endpoints)
 - **Streamlit has been fully deprecated in v5.6.0.** The sole frontend is React 18 + Tailwind CSS + Shadcn UI.
+- **Synapse Protocol (NEW in v5.7.0):** `src/integration/synapse_client.py` (event emitter) + `src/api/synapse_routes.py` (webhook receiver). TALOS FastAPI runs on port 8001; Synapse bus on port 8000.
 - Core modules: `src/core/ai_manager.py` (multi-provider LLM), `src/core/database_manager.py` (SQLite + embeddings), `src/core/hardware.py` (GPU detection)
 - Ingestion agents: `src/ingestion/*.py` (14 APIs, standardized output format)
+- Integration layer: `src/integration/synapse_client.py` (EventEmitter for SYNAPSE bus)
 - Feature scripts: `src/ai/*.py`, `src/analysis/*.py`, `src/utils/*.py`
 - Configuration: `config.json` (queries, prompts)
 - Secrets: `.env` (API keys)
 - Profiles: `_profiles/<name>/` (isolated config.json + talos_research.db per research topic)
 - Templates: `templates/dashboard.html` (Flask/Tabulator.js legacy), `templates/architecture_graph.html` (D3.js)
 
+---
+
 ## Provider System (ai_manager.py)
 - Four providers: Gemini (primary), DeepSeek (fallback), HuggingFace (free cloud), Local/Ollama (offline)
-- Circuit breaker: 3+ consecutive failures → opens circuit → skips provider
+- Circuit breaker: 3+ consecutive failures -> opens circuit -> skips provider
 - System Prompt Override: used by Query Translator (query_translator.py) to act as "Research Architect" instead of "PhD Advisor"
 - All providers must handle: JSON mode, text mode, embedding mode
 - Ollama uses OpenAI-compatible API at `http://localhost:11434/v1`
 - Ollama embeddings use native API at `http://localhost:11434/api/embed`
+
+---
 
 ## Database (database_manager.py)
 - SQLite with 20+ columns including 4-layer scores (strategic, operational, tactical, playground)
@@ -71,11 +190,29 @@
 - Profile-aware: accepts optional db_path for multi-profile support
 - **Database path explicitly resolves to `data/talos_research.db` at project root** — no ghost DBs in `src/`
 
+---
+
 ## Search Agents (src/ingestion/*.py)
 - Standardized output: {doi, url, title, authors_str, publication_year, abstract, source}
 - Each agent reads its query dynamically from config.json
-- Missing API keys → print warning, set self.enabled=False, skip gracefully (NEVER raise)
+- Missing API keys -> print warning, set self.enabled=False, skip gracefully (NEVER raise)
 - Exponential backoff for rate-limited APIs
+
+---
+
+## SYNAPSE Interoperability Protocol (NEW in v5.7.0)
+- **EventEmitter** (`src/integration/synapse_client.py`): Class for pushing JSON events to the SYNAPSE bus at `http://localhost:8000/api/v1/events`.
+  - Event types: paper_discovered, paper_evaluated, search_completed, gwo_optimized, agent_step, agent_episode_end.
+  - Each event carries: event_id (UUID4), timestamp (ISO 8601), event_type, source ("talos"), payload (dict).
+  - Thread-safe, non-blocking emission with optional callback.
+- **Synapse Router** (`src/api/synapse_routes.py`): FastAPI APIRouter exposing `POST /api/v1/synapse/webhook`.
+  - Receives commands from external microservices: trigger_search, trigger_evaluation, get_status, shutdown.
+  - Validates command schema with Pydantic v2 models.
+  - Integrated into `main_api.py` via `app.include_router()`.
+- **Port allocation:** Synapse bus on 8000, TALOS on 8001 (changed from 8000 to avoid conflict).
+- **Batch runner:** `run_talos.bat` option 2 starts TALOS on `--port 8001`.
+
+---
 
 ## Known Gotchas
 - Greek comments in source files break the editor's text matching
@@ -85,6 +222,10 @@
 - `recommender.py` reads from SQLite directly (not DatabaseManager) - check queries are up to date
 - API endpoints calling `translate-query` or `recalculate-scores` must NEVER trigger interactive `questionary.confirm()` prompts — they use inline helpers instead
 - `sys.exit()` in background scrape tasks is monkey-patched in `main_api.py` to raise `_ScrapeExit(RuntimeError)` instead of killing the Uvicorn server
+- TALOS FastAPI now runs on port 8001 (v5.7.0) to leave port 8000 for the SYNAPSE event bus
+- `run_talos.bat` must use `--port 8001` for the FastAPI server option
+
+---
 
 ## Testing
 - `python -m py_compile <file>` for syntax validation
@@ -95,116 +236,36 @@
 - `python scripts/verify_dependency_map.py --ci` for CI/CD exit-code-only check
 - Local mode: `ollama pull gemma3:12b && ollama pull nomic-embed-text` then set TALOS_USE_LOCAL=1
 
-## Dependency Map Verification (NEW in v5.0.0)
-- After any significant change, run `python scripts/verify_dependency_map.py` to check that PROJECT_MAP.md Section 7 is still accurate
-- If stale/missing dependencies are found, update PROJECT_MAP.md accordingly
-- The `--ci` flag exits with code 1 if discrepancies are found (useful for GitHub Actions)
-- HTML and JSON reports are saved to `reports/audits/`
+---
 
-## Phase 0: Multi-Provider Hybrid Embeddings (v5.0.0)
-- **Database schema:** `embeddings` table (id, paper_id FK, embedding BLOB, embedding_model TEXT) with indexes
-- **Provider chain:** Ollama (nomic-embed-text, local/free) → Gemini (gemini-embedding-001, cloud/paid) — HuggingFace removed due to DNS block
-- **Generator flags:** `python scripts/embedding_generator.py` (single) or `--all` (both models)
-- **Rate limiting:** BATCH_SIZE=10, sleep=3s, retry up to 10 times with parsed `retryDelay` from 429 errors
-- **Semantic search:** model_filter in API — only compares vectors from same model
-- **Migration script:** `python scripts/db_embedding_upgrade.py` — creates `embeddings` table, migrates legacy `embedding` column records
-- **Backward compatibility:** All `get_all_embeddings()` and `get_papers_needing_embedding()` methods fall back to legacy `papers.embedding` column if `embeddings` table doesn't exist
-- **`_fix_embedding_labels.py`** renamed legacy "gemini" → "gemini:gemini-embedding-001" (one-time fix)
-- **Gemini SDK:** Uses new `google.genai` GA SDK (NOT deprecated `google.generativeai`) with `gemini-embedding-001` model, `RETRIEVAL_DOCUMENT` task type, and 768-dim output dimensionality
-
-## CRITICAL: Project Version & PROJECT_MAP.md Synchronization (NEW in v5.2.0, UPDATED v5.6.0)
-- Every time you modify ANY .py file, you MUST update the "Last Updated" date and version in `docs/PROJECT_MAP.md` BEFORE completing the task.
-- If the version number in `docs/PROJECT_MAP.md` footer doesn't match the version string in the code (e.g., `main_api.py` `version="X.Y.Z"`), THE MAP IS STALE — fix it immediately.
-- The first thing to check when opening a project: does `docs/PROJECT_MAP.md` version match the actual code version?
-- If you find a mismatch, FIX `docs/PROJECT_MAP.md` FIRST before any other work.
-- **This rule overrides all others** — an out-of-date PROJECT_MAP.md is worse than no map at all.
-
-## CRITICAL: 12-File Documentation Sync Rule (NEW in v5.6.0)
-- **Every version bump MUST synchronize EXACTLY these 12 files:**
-  1. `README.md`
-  2. `ROADMAP.md`
-  3. `CHANGELOG_EN.md`
-  4. `CHANGELOG_GR.md`
-  5. `docs/PROJECT_MAP.md`
-  6. `docs/PROJECT_MAP_EN.md`
-  7. `docs/API_HANDOVER_FOTIS.md`
-  8. `docs/UX_UI_BLUEPRINT_FOTIS.md`
-  9. `docs/IP_PROTECTION_STRATEGY.md`
-  10. `docs/SYSTEM_CAPABILITIES_MASTER.md`
-  11. `docs/SYSTEM_CAPABILITIES_MASTER.html`
-  12. `.clinerules`
-- If any of these 12 files references a stale version, the entire documentation set is considered OUT OF DATE.
-- After any version bump, verify all 12 files reflect the new version string before marking the task complete.
-- This rule is NON-NEGOTIABLE — the 12-file set is the canonical documentation surface of the project.
-
-## CRITICAL: Master Capabilities Rule (NEW in v5.6.0)
-- The Master Capabilities Reference Documents (`docs/SYSTEM_CAPABILITIES_MASTER.md` and `docs/SYSTEM_CAPABILITIES_MASTER.html`) MUST be maintained in their structured 9-section format:
-  1. System Vision & Core Architecture
-  2. Multi-Source Ingestion Engine
-  3. Deep Reinforcement Learning & Optimization (DDDQN + GWO)
-  4. Advanced Semantic & Graph Intelligence (ST-GAT)
-  5. Multi-Agent & Autonomous Swarms (PYTHIA, Swarm Commander, HMADRL)
-  6. Automated Literature Review & XAI (Quad-Layer Scoring, NATO CDE Procedural Hooks)
-  7. Edge-Cloud & Deployment Ecosystem
-  8. Dashboards & User Interfaces (React 18 + Tailwind CSS + Shadcn UI)
-  9. Complete REST API Reference (15 Endpoints)
-- The HTML version is served at `GET /api/v1/capabilities` via the FastAPI backend.
-- Any architectural change that adds/removes a capability MUST update both documents.
-- **No emojis** in these documents — formal, academic, and technical tone only.
-- **No mention of Streamlit** anywhere — Streamlit was fully deprecated in v5.6.0.
-
-## CRITICAL: Compile Check — All Changed Files (NEW in v5.2.1)
-- After ANY code change, run `python -m py_compile <file>` for EVERY changed .py file.
-- If ANY file fails compilation, fix it BEFORE marking the task complete.
-- Command: `python -m py_compile src/api/main_api.py talos.py src/core/*.py`
-- This ensures no syntax errors are ever committed to the repository.
-- This rule applies to BOTH .py and .bat changes — always test that the code is syntactically valid.
-
-## CRITICAL: Progressive Documentation Rule — ALL File Types (v5.3.3)
-- **Every time you open ANY file for ANY reason (reading, editing, checking):**
-  1. Read the ENTIRE file first
-  2. If documentation is missing, incomplete, or could be improved:
-     - Add/improve module-level/first-line description (WHAT it does, HOW it works, KEY design decisions)
-     - Add/improve docstrings/comments on all sections, functions, and logical blocks
-     - Add/improve inline comments — in simple English that a first-year CS student can understand
-  3. If you opened the file for editing: THEN make the actual bugfix/feature change
-  4. If you opened the file for reading: ADD documentation before moving on
-  **This rule is MANDATORY — do NOT skip it even if you only read a file.**
-- This applies to ALL file types: `.py`, `.css`, `.md`, `.bat`, `.json`, `.html`, `.js`, `.yml`, `.toml`, `.txt`, etc.
-- **Module docstring format** (for `.py` files):
-  ```
-  """
-  Module: filename.py (version)
-  Project: TALOS v5.6.0
-  Description: [2-3 sentence overview of WHAT this file does and HOW it works]
-  Key design decisions: [why certain choices were made]
-  ```
-- **Inline comment style:** Keep comments on their own line above the code they explain, using `# ── section ──` headers for logical sections
-- **Do NOT skip this step** even for small changes — documentation compounds across sessions
-
-## CRITICAL: NO AUTO-GIT — User Handles Version Control (NEW in v5.2.1)
+## CRITICAL: NO AUTO-GIT — User Handles Version Control
 - **NEVER run `git add`, `git commit`, `git push`, `git tag`, or any other `git` command** unless the user EXPLICITLY asks you to.
 - The user manages version control manually. Your job is to write code and documentation — NOT to push to GitHub.
 - If the user says "commit and push", THEN you may run the git commands. Otherwise, NEVER.
 - This rule exists to prevent accidental commits and to give the user full control over when changes are versioned.
 
-## CRITICAL: Documentation Sync — CHANGELOG, README, ROADMAP (NEW in v5.2.0)
-- After **ANY significant code change** (new feature, bugfix, refactor, breaking change), the following files **MUST** be updated before the task is marked complete:
-  1. **CHANGELOG_EN.md** AND **CHANGELOG_GR.md** — with **ultra-detailed** entries in both languages.
-  2. **README.md** — version number, tagline, feature list.
-  3. **ROADMAP.md** — milestone status (In Progress → Complete).
+---
+
+## CRITICAL: Compile Check — All Changed Files
+- After ANY code change, run `python -m py_compile <file>` for EVERY changed .py file.
+- If ANY file fails compilation, fix it BEFORE marking the task complete.
+- This ensures no syntax errors are ever committed to the repository.
+
+---
+
+## CRITICAL: Documentation Sync — All 15 Canonical Files
+- After **ANY significant code change** (new feature, bugfix, refactor, breaking change), the 15 canonical files MUST be updated.
+- See Section VI above for the complete 15-file list and synchronization requirements.
 - **Each changelog entry MUST include:**
-  - Exact filename and version number (e.g., `core/talos_env.py v2.0`)
+  - Exact filename and version number
   - WHAT exactly changed: function signatures, line counts, new flags/arguments, new/deleted imports
   - WHY the change was made: design rationale, problem it solves
-  - BREAKING changes clearly marked with **⚠️ BREAKING** prefix and migration guidance
+  - BREAKING changes clearly marked with BREAKING prefix and migration guidance
   - If a new file was created: full list of functions with signatures and descriptions
-  - If an existing file was modified: before/after comparison where relevant
 - **Changelog entries must be written at the level of detail that a new developer could understand the entire change without reading the source code.**
-- **Do NOT write vague entries** like "Updated X for better performance." Instead write: "Replaced `for` loop with `ThreadPoolExecutor(max_workers=15)` in `pdf_downloader.py:download_batch()`, reducing download time from ~45s to ~3s for 100 papers."
-- **This rule overrides all other completion rules** — a task is NOT complete until all documentation files are updated.
+- **This rule overrides all other completion rules** — a task is NOT complete until all 15 documentation files are synchronized.
 
-## Progressive Documentation Rule (v5.3.3 — SUPERSEDED)
-- This rule is now covered by the **CRITICAL: Progressive Documentation Rule — ALL File Types** above.
-- The key upgrade: applies to ALL file types, not just `.py` files.
-- Kept here for historical reference.
+---
+
+> **Last Updated:** 2026-07-31 (v5.7.0 — 8-Point Constitution v2.0, 15-File Sync Rule, SYNAPSE Protocol, Port 8001)
+> **Project Version:** v5.7.0

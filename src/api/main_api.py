@@ -1,46 +1,55 @@
 # -*- coding: utf-8 -*-
 """
-Module: main_api.py (v1.3)
-Project: TALOS v5.6.0
+Module: main_api.py
+Project: TALOS v5.7.0
 Description:
-    FastAPI Façade Layer exposing core TALOS functions (database queries,
-    semantic search, scraping trigger, GWO optimization) as REST endpoints
-    for a future React frontend. All endpoints wrap existing synchronous
-    core functions — no logic is rewritten.
+    FastAPI facade layer exposing core TALOS functions (database queries,
+    semantic search, scraping trigger, GWO optimization, Synapse webhook receiver)
+    as REST endpoints for the React 18 + Tailwind CSS + Shadcn UI frontend.
+    All endpoints wrap existing synchronous core functions -- no logic is rewritten.
 
-    Endpoints (15 total — 100% ecosystem coverage + capabilities doc):
-    - GET  /api/v1/health              → system health, DB stats, embedding coverage
-    - GET  /api/v1/papers              → paginated paper list
-    - GET  /api/v1/papers/{paper_id}   → full paper detail
-    - POST /api/v1/papers/{paper_id}/evaluate → single-paper AI evaluation (BgTasks)
-    - POST /api/v1/search/semantic     → natural-language semantic search
-    - POST /api/v1/scrape/trigger      → trigger daily scrape (BackgroundTasks)
-    - POST /api/v1/optimize/gwo        → trigger GWO hyperparameter optimization (BgTasks)
-    - GET  /api/v1/optimize/gwo/history → GWO optimization history for Recharts
-    - GET  /api/v1/graph/view          → serve architecture dependency graph HTML
-    - POST /api/v1/ai/translate-query  → natural-language → boolean query translation
-    - GET  /api/v1/analysis/authors    → top authors from database (for BarChart)
-    - POST /api/v1/db/recalculate-scores → bulk overall_score recalculation (BgTasks)
-    - GET  /api/v1/tasks/{task_id}     → background task status
-    - GET  /api/v1/tasks               → list all background tasks
-    - GET  /api/v1/capabilities        → serve System Capabilities Master Reference HTML
+    Endpoints (16 total -- 100% ecosystem coverage + Synapse protocol + capabilities doc):
+    - GET  /api/v1/health              -> system health, DB stats, embedding coverage
+    - GET  /api/v1/papers              -> paginated paper list
+    - GET  /api/v1/papers/{paper_id}   -> full paper detail
+    - POST /api/v1/papers/{paper_id}/evaluate -> single-paper AI evaluation (BgTasks)
+    - POST /api/v1/search/semantic     -> natural-language semantic search
+    - POST /api/v1/scrape/trigger      -> trigger daily scrape (BackgroundTasks)
+    - POST /api/v1/optimize/gwo        -> trigger GWO hyperparameter optimization (BgTasks)
+    - GET  /api/v1/optimize/gwo/history -> GWO optimization history for Recharts
+    - GET  /api/v1/graph/view          -> serve architecture dependency graph HTML
+    - POST /api/v1/ai/translate-query  -> natural-language -> boolean query translation
+    - GET  /api/v1/analysis/authors    -> top authors from database (for BarChart)
+    - POST /api/v1/db/recalculate-scores -> bulk overall_score recalculation (BgTasks)
+    - GET  /api/v1/tasks/{task_id}     -> background task status
+    - GET  /api/v1/tasks               -> list all background tasks
+    - GET  /api/v1/capabilities        -> serve System Capabilities Master Reference HTML
+    - POST /api/v1/synapse/webhook     -> SYNAPSE protocol inbound command receiver
 
     Key design decisions:
-    - Port 8000 (does not conflict with Flask dashboard:5000, Flask service:5002)
-    - Synchronous endpoints (no async def) — all core functions are blocking
+    - Port 8001 (avoids conflict with SYNAPSE event bus on port 8000)
+    - Synchronous endpoints (no async def) -- all core functions are blocking
     - BackgroundTasks (not Celery) for long-running scrape and GWO
     - Lazy singleton pattern for DatabaseManager and AIManager
     - sys.exit() monkey-patching to prevent scrape from killing the server
     - Pydantic v2 models with extra="ignore" for forward compatibility
     - Streamlit fully deprecated in v5.6.0; React 18 + Tailwind CSS + Shadcn UI is the sole frontend
+    - Synapse Event-Driven Protocol integrated in v5.7.0 for ALEXANDRIA ecosystem interoperability
+
+Dependencies:
+    - fastapi: REST framework, routing, background tasks, CORS middleware.
+    - pydantic: Request/response model validation (v2).
+    - src.core.database_manager: Database layer (SQLite + embeddings).
+    - src.core.ai_manager: Multi-provider LLM interface.
+    - src.api.synapse_routes: SYNAPSE webhook APIRouter for ecosystem eventing.
 
     Usage:
-        python -m uvicorn src.api.main_api:app --host 0.0.0.0 --port 8000
+        python -m uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001
 """
 import os
 import sys
 
-# ── Resolve project root (same pattern as all src/*.py modules) ──────────────
+# -- Resolve project root (same pattern as all src/*.py modules) --------------
 _P = os.path.abspath(os.path.dirname(__file__))
 while _P and not os.path.exists(os.path.join(_P, 'talos.py')):
     _P = os.path.dirname(_P)
@@ -65,19 +74,20 @@ from pydantic import BaseModel, Field
 
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
+from src.api.synapse_routes import router as synapse_router
 
-# ── Logging ──────────────────────────────────────────────────────────────────
+# -- Logging ------------------------------------------------------------------
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 logger = logging.getLogger("talos_api")
 
-# ── FastAPI App & CORS ───────────────────────────────────────────────────────
+# -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-    description="Façade REST API for the TALOS autonomous research platform (v5.6.0 — Streamlit deprecated, React frontend)",
-    version="5.6.0",
+    description="Facade REST API for the TALOS autonomous research platform (v5.7.0 -- Synapse protocol active, React frontend)",
+    version="5.7.0",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -87,10 +97,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Mount templates/ as static files for architecture graph assets ──────────
+# -- Include Synapse webhook router (v5.7.0) --
+app.include_router(synapse_router)
+
+# -- Mount templates/ as static files for architecture graph assets --
 app.mount("/static/templates", StaticFiles(directory="templates"), name="static_templates")
 
-# ── Singleton instances (lazy-init) ──────────────────────────────────────────
+# -- Singleton instances (lazy-init) ------------------------------------------
 _db_manager: Optional[DatabaseManager] = None
 _ai_manager: Optional[AIManager] = None
 _config: Optional[dict] = None
@@ -141,7 +154,7 @@ def _get_ai() -> AIManager:
     return _ai_manager
 
 
-# ── Background task store ────────────────────────────────────────────────────
+# -- Background task store ----------------------------------------------------
 _task_store: Dict[str, dict] = {}
 _task_lock = threading.Lock()
 
@@ -168,9 +181,9 @@ def _update_task(task_id: str, **kwargs):
             _task_store[task_id].update(kwargs)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # PYDANTIC MODELS
-# ═══════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 
 class PaperSummary(BaseModel):
     """Mirrors get_all_papers_for_dashboard() columns."""
@@ -193,7 +206,7 @@ class PaperSummary(BaseModel):
 
 
 class PaperDetail(BaseModel):
-    """Full row from get_single_paper_details() — all columns."""
+    """Full row from get_single_paper_details() -- all columns."""
     model_config = {"extra": "ignore"}
     id: int
     doi: Optional[str] = None
@@ -304,7 +317,7 @@ class TranslateQueryRequest(BaseModel):
 
 
 class TranslateQueryResponse(BaseModel):
-    """Response from query translation — flattened dict of source keys → boolean queries."""
+    """Response from query translation -- flattened dict of source keys -> boolean queries."""
     original_query: str
     boolean_query: dict
 
@@ -320,21 +333,22 @@ class EvaluatePaperRequest(BaseModel):
     model_type: str = Field(default="pro", description="AI model to use: 'pro' or 'flash'")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 # ENDPOINTS
-# ═══════════════════════════════════════════════════════════════════════════════
+# =============================================================================
 
 @app.on_event("startup")
 def on_startup():
     """Pre-warm singletons and log readiness."""
-    logger.info("TALOS FastAPI v5.6.0 starting up (Streamlit deprecated, React frontend active)...")
+    logger.info("TALOS FastAPI v5.7.0 starting up (Synapse protocol active, port 8001)...")
     _get_db()  # warm DatabaseManager
-    logger.info("TALOS FastAPI ready on http://0.0.0.0:8000")
-    logger.info("API docs: http://localhost:8000/docs")
-    logger.info("Capabilities reference: http://localhost:8000/api/v1/capabilities")
+    logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
+    logger.info("API docs: http://localhost:8001/docs")
+    logger.info("Capabilities reference: http://localhost:8001/api/v1/capabilities")
+    logger.info("Synapse webhook: http://localhost:8001/api/v1/synapse/webhook")
 
 
-# ── GET /api/v1/health ───────────────────────────────────────────────────────
+# -- GET /api/v1/health -------------------------------------------------------
 
 @app.get("/api/v1/health", response_model=SystemHealth)
 def health_check():
@@ -360,7 +374,7 @@ def health_check():
     )
 
 
-# ── GET /api/v1/papers (paginated) ───────────────────────────────────────────
+# -- GET /api/v1/papers (paginated) -------------------------------------------
 
 @app.get("/api/v1/papers", response_model=PaginatedPapers)
 def list_papers(
@@ -384,7 +398,7 @@ def list_papers(
     )
 
 
-# ── GET /api/v1/papers/{paper_id} ────────────────────────────────────────────
+# -- GET /api/v1/papers/{paper_id} --------------------------------------------
 
 @app.get("/api/v1/papers/{paper_id}", response_model=PaperDetail)
 def get_paper(paper_id: int):
@@ -396,7 +410,7 @@ def get_paper(paper_id: int):
     return paper
 
 
-# ── POST /api/v1/search/semantic ─────────────────────────────────────────────
+# -- POST /api/v1/search/semantic ---------------------------------------------
 
 @app.post("/api/v1/search/semantic", response_model=SemanticSearchResponse)
 def semantic_search(request: SemanticSearchRequest):
@@ -419,7 +433,7 @@ def semantic_search(request: SemanticSearchRequest):
         if vectors is None or len(vectors) == 0:
             raise HTTPException(
                 status_code=500,
-                detail="Embedding generation failed — all providers unavailable.",
+                detail="Embedding generation failed -- all providers unavailable.",
             )
 
         # Step 2: Cosine similarity search
@@ -450,7 +464,7 @@ def semantic_search(request: SemanticSearchRequest):
         raise HTTPException(status_code=500, detail=f"Semantic search error: {str(e)}")
 
 
-# ── POST /api/v1/scrape/trigger ──────────────────────────────────────────────
+# -- POST /api/v1/scrape/trigger ----------------------------------------------
 
 def _run_scrape_background(task_id: str, source_filter: Optional[List[str]]):
     """Background task: run daily_search.main() without killing the server.
@@ -465,7 +479,7 @@ def _run_scrape_background(task_id: str, source_filter: Optional[List[str]]):
         # Import daily_search lazily (its main() instantiates 14 source agents)
         from src.ingestion.daily_search import main as daily_search_main
 
-        # ── Monkey-patch sys.exit to prevent process death ──
+        # -- Monkey-patch sys.exit to prevent process death --
         _orig_exit = sys.exit
 
         class _ScrapeExit(RuntimeError):
@@ -535,24 +549,24 @@ def trigger_scrape(background_tasks: BackgroundTasks, request: ScrapeRequest = S
     return TaskStatus(task_id=task_id, **task_data)
 
 
-# ── POST /api/v1/optimize/gwo ────────────────────────────────────────────────
+# -- POST /api/v1/optimize/gwo ------------------------------------------------
 
 def _run_gwo_background(task_id: str, wolves: int, iterations: int, rl_episodes: int):
     """Background task: run GWO hyperparameter optimization.
 
-    GWO trains a fresh DRL agent per wolf per iteration — this is CPU-bound
+    GWO trains a fresh DRL agent per wolf per iteration -- this is CPU-bound
     and takes minutes. Progress is monitored by reading gwo_history.json.
     """
     try:
         _update_task(task_id, progress="Initializing GWO optimizer...")
 
-        # ── Import GWO lazily (imports TalosEnv, DRL agent) ──
+        # -- Import GWO lazily (imports TalosEnv, DRL agent) --
         import src.ai.optimizers.gwo_rl_optimizer as gwo_mod
 
         # Override RL episodes per the user's request
         gwo_mod.DEFAULT_RL_EPISODES = rl_episodes
 
-        # ── Start a progress monitor thread ──
+        # -- Start a progress monitor thread --
         # GWO writes gwo_history.json incrementally; we poll it
         history_path = os.path.join(_get_project_root(), "models", "gwo_history.json")
 
@@ -642,7 +656,7 @@ def trigger_gwo(background_tasks: BackgroundTasks, request: GWORunRequest = GWOR
     return TaskStatus(task_id=task_id, **task_data)
 
 
-# ── GET /api/v1/tasks/{task_id} ──────────────────────────────────────────────
+# -- GET /api/v1/tasks/{task_id} ----------------------------------------------
 
 @app.get("/api/v1/tasks/{task_id}", response_model=TaskStatus)
 def get_task_status(task_id: str):
@@ -654,7 +668,7 @@ def get_task_status(task_id: str):
     return TaskStatus(task_id=task_id, **task_data)
 
 
-# ── GET /api/v1/tasks ────────────────────────────────────────────────────────
+# -- GET /api/v1/tasks --------------------------------------------------------
 
 @app.get("/api/v1/tasks", response_model=List[TaskStatus])
 def list_tasks():
@@ -671,7 +685,7 @@ def list_tasks():
     return tasks
 
 
-# ── POST /api/v1/papers/{paper_id}/evaluate ───────────────────────────────────
+# -- POST /api/v1/papers/{paper_id}/evaluate -----------------------------------
 
 def _run_evaluate_background(task_id: str, paper_id: int, model_type: str):
     """Background task: evaluate a single paper with the LLM and update the DB."""
@@ -700,7 +714,7 @@ def _run_evaluate_background(task_id: str, paper_id: int, model_type: str):
         )
 
         if result is None:
-            _update_task(task_id, status="failed", error="AI evaluation returned null — all providers unavailable.",
+            _update_task(task_id, status="failed", error="AI evaluation returned null -- all providers unavailable.",
                          completed_at=datetime.now().isoformat())
             return
 
@@ -752,9 +766,9 @@ def evaluate_paper_endpoint(paper_id: int, background_tasks: BackgroundTasks,
     return TaskStatus(task_id=task_id, **task_data)
 
 
-# ── POST /api/v1/ai/translate-query ───────────────────────────────────────────
+# -- POST /api/v1/ai/translate-query -------------------------------------------
 
-# ── Inline helpers from query_translator.py (avoid importing the interactive main) ──
+# -- Inline helpers from query_translator.py (avoid importing the interactive main) --
 
 def _flatten_json_for_translation(y):
     """Recursively flatten a nested JSON dict, extracting known query/prompt keys."""
@@ -825,7 +839,7 @@ def translate_query(request: TranslateQueryRequest):
     return TranslateQueryResponse(original_query=request.query, boolean_query=flattened)
 
 
-# ── GET /api/v1/analysis/authors ──────────────────────────────────────────────
+# -- GET /api/v1/analysis/authors ----------------------------------------------
 
 @app.get("/api/v1/analysis/authors", response_model=List[AuthorSummary])
 def list_top_authors(
@@ -833,7 +847,7 @@ def list_top_authors(
 ):
     """Return top authors ranked by publication count in the local database.
 
-    Uses a direct SQL aggregation query on the papers table — no external API calls.
+    Uses a direct SQL aggregation query on the papers table -- no external API calls.
     Ideal for Recharts <BarChart> consumption.
     """
     db = _get_db()
@@ -854,7 +868,7 @@ def list_top_authors(
     return [AuthorSummary(author=row["authors"], count=row["cnt"]) for row in rows]
 
 
-# ── POST /api/v1/db/recalculate-scores ────────────────────────────────────────
+# -- POST /api/v1/db/recalculate-scores ----------------------------------------
 
 def _run_recalculate_background(task_id: str):
     """Background task: recalculate overall_score for every paper in the database.
@@ -876,7 +890,7 @@ def _run_recalculate_background(task_id: str):
 
         if not rows:
             _update_task(task_id, status="completed",
-                         progress="Database is empty — nothing to recalculate.",
+                         progress="Database is empty -- nothing to recalculate.",
                          completed_at=datetime.now().isoformat())
             return
 
@@ -906,7 +920,7 @@ def _run_recalculate_background(task_id: str):
         _update_task(
             task_id,
             status="completed",
-            progress=f"Recalculation complete — {total} papers updated.",
+            progress=f"Recalculation complete -- {total} papers updated.",
             result={"papers_updated": total},
             completed_at=datetime.now().isoformat(),
         )
@@ -933,7 +947,7 @@ def recalculate_scores_endpoint(background_tasks: BackgroundTasks):
     return TaskStatus(task_id=task_id, **task_data)
 
 
-# ── GET /api/v1/optimize/gwo/history ─────────────────────────────────────────
+# -- GET /api/v1/optimize/gwo/history -----------------------------------------
 
 @app.get("/api/v1/optimize/gwo/history", response_model=List[dict])
 def get_gwo_history():
@@ -961,7 +975,7 @@ def get_gwo_history():
     return []
 
 
-# ── GET /api/v1/graph/view ───────────────────────────────────────────────────
+# -- GET /api/v1/graph/view ---------------------------------------------------
 
 @app.get("/api/v1/graph/view")
 def view_architecture_graph():
@@ -982,7 +996,7 @@ def view_architecture_graph():
     return FileResponse(graph_path, media_type="text/html")
 
 
-# ── GET /api/v1/capabilities ─────────────────────────────────────────────────
+# -- GET /api/v1/capabilities -------------------------------------------------
 
 @app.get("/api/v1/capabilities", response_class=HTMLResponse, tags=["System"])
 async def get_capabilities():
@@ -990,7 +1004,7 @@ async def get_capabilities():
 
     Reads docs/SYSTEM_CAPABILITIES_MASTER.html from the project root.
     The document covers all 9 sections of the TALOS/ALEXANDRIA/ATHENA architecture
-    and the complete 14-endpoint REST API reference.
+    and the complete 16-endpoint REST API reference.
 
     Returns 404 if the document has not been generated yet.
     """
@@ -1000,16 +1014,16 @@ async def get_capabilities():
     raise HTTPException(status_code=404, detail="Capabilities document not found.")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# MAIN — development server entry point
-# ═══════════════════════════════════════════════════════════════════════════════
+# =============================================================================
+# MAIN -- development server entry point
+# =============================================================================
 
 if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
         "src.api.main_api:app",
-        host="0.0.0.0",
-        port=8000,
+        host="127.0.0.1",
+        port=8001,
         reload=False,
     )

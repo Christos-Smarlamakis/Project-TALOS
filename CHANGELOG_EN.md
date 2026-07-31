@@ -2,6 +2,87 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.7.0] - 2026-07-31 -- Constitution v2.0 Upgrade, SYNAPSE Event-Driven Protocol, 15-File Documentation Sync
+
+### Upgraded -- 8-Point Master Initialization Standard (Constitution v2.0)
+- `.clinerules` COMPLETELY REWRITTEN from v5.6.0 12-file rule to v5.7.0 8-Point Constitution v2.0.
+- **Point I: ZERO EMOJIS PROTOCOL** -- All new AI-generated text must use formal academic tone only. No emojis, kaomoji, or decorative Unicode. Markdown formatting only.
+- **Point II: 100% AIR-GAPPED & LOCAL-FIRST** -- Ollama is the DEFAULT and PRIMARY provider. Cloud providers are optional fallbacks.
+- **Point III: HARDWARE-AWARE VRAM CONTAINMENT** -- GPU detection via `core/hardware.py` is single source of truth. 80% VRAM training budget, 2GB inference headroom.
+- **Point IV: STRICT LINEAR EXECUTION & TIMELINE TRACKING** -- Agentic Rails mandate deterministic execution pipelines. Timeline documents (`TIMELINE_EN.md`, `TIMELINE_GR.md`) are authoritative historical records.
+- **Point V: VERIFICATION-FIRST WORKFLOW** -- Four gates: py_compile, verify_dependency_map, db_stats, test_smoke. All must pass before task completion.
+- **Point VI: THE MANDATORY 15-FILE DOCUMENTATION SYNCHRONICITY RULE** -- Upgraded from 12 to 15 canonical files. Added Timeline documents (EN+GR) as files #8 and #9. This supersedes the prior 12-file rule.
+- **Point VII: SYNAPSE INTEROPERABILITY PROTOCOL** -- Defines the event-driven bus between TALOS and other ALEXANDRIA microservices.
+- **Point VIII: STRICT IN-CODE DOCUMENTATION STANDARDS** -- Enforced exact module-level docstring format with Module name, Project version, Description, Dependencies.
+
+### Added -- SYNAPSE Event-Driven Protocol
+- `src/integration/__init__.py` (NEW): Integration layer package init with module-level docstring.
+- `src/integration/synapse_client.py` (NEW, ~220 lines): EventEmitter class for pushing JSON events to the SYNAPSE bus at `http://localhost:8000/api/v1/events`.
+  - Thread-safe, non-blocking emission via daemon threads with optional callback.
+  - Valid event types: paper_discovered, paper_evaluated, search_completed, gwo_optimized, agent_step, agent_episode_end.
+  - Each event carries: event_id (UUID4), timestamp (ISO 8601), event_type, source ("talos"), payload (dict).
+  - Graceful degradation: if requests library is unavailable, events are logged locally.
+  - Configurable timeout and retry logic (max_retries=2, default timeout=5.0s).
+  - Module-level convenience singleton: `synapse_emitter` for quick import and use.
+  - Full docstrings on class, methods, and module per Constitution v2.0 Section VIII.
+- `src/api/synapse_routes.py` (NEW, ~200 lines): FastAPI APIRouter exposing `POST /api/v1/synapse/webhook`.
+  - Pydantic v2 models: SynapseWebhookRequest (command, params, request_id), SynapseWebhookResponse (command, status, message, timestamp).
+  - Supported commands: trigger_search, trigger_evaluation, get_status, shutdown.
+  - Command handler registry with `register_handler()` for extensibility.
+  - Default handlers registered for get_status and shutdown.
+  - Full docstrings on all classes, functions, and module per Constitution v2.0.
+
+### Added -- Timeline Documentation System
+- `docs/TIMELINE_EN.md` (NEW): Authoritative historical record of all TALOS development milestones in English.
+  - Phase 1 (v5.0-v5.6): 18 milestones marked Complete.
+  - Phase 2 (v5.7.0): 3 milestones marked Complete, 1 unchecked (Python file docstring refactoring).
+  - Phase 3 (v6.0.0+): 5 future milestones.
+- `docs/TIMELINE_GR.md` (NEW): Same authoritative record in formal Greek.
+  - Pure, formal Greek tone throughout -- no mixed-language commentary.
+
+### Added -- Automated Batch Runner
+- `run_talos.bat` (NEW, ~130 lines): 3-option menu at project root.
+  - Option 1: Full Setup (Conda environment 'talosenv' + pip install -r requirements.txt).
+  - Option 2: Start FastAPI Server (uvicorn on port 8001 with conda activation).
+  - Option 3: Run Test Suite (pytest -v with auto-install fallback).
+  - Option 4: Exit.
+  - Uses `chcp 65001` for Unicode support, clear ASCII headers.
+  - Legacy `tools/start_talos.bat` preserved as archival reference.
+
+### Changed -- Port Reallocation
+- `src/api/main_api.py`: Port 8000 -> 8001. SYNAPSE event bus occupies port 8000.
+- `src/api/main_api.py`: Host 0.0.0.0 -> 127.0.0.1 (local development default).
+- `src/api/main_api.py`: Version string 5.6.0 -> 5.7.0 across app, docstring, and startup log.
+- `src/api/main_api.py`: Description updated to mention SYNAPSE protocol.
+- `src/api/main_api.py`: Endpoint count 15 -> 16 (added Synapse webhook).
+- `src/api/main_api.py`: Module docstring fully rewritten to v5.7.0 standard with Dependencies section.
+- `src/api/main_api.py`: `app.include_router(synapse_router)` integrated.
+- `src/api/main_api.py`: Import added: `from src.api.synapse_routes import router as synapse_router`.
+
+### Changed -- Documentation Synchronization (15-File Rule)
+- `README.md`: v5.6.0 -> v5.7.0. Tagline updated with SYNAPSE mention. Citation versions bumped.
+- `ROADMAP.md`: v5.6.0 -> v5.7.0. New Section 9 for v5.7.x. Summary table updated.
+- `docs/PROJECT_MAP.md` footer: v5.6.0 -> v5.7.0, 63 -> 67 files covered.
+- `docs/PROJECT_MAP_EN.md` footer: v5.6.0 -> v5.7.0, 63 -> 67 files covered.
+- `docs/API_HANDOVER_FOTIS.md`: Version references updated.
+- `docs/UX_UI_BLUEPRINT_FOTIS.md`: Version references updated.
+- `docs/IP_PROTECTION_STRATEGY.md`: Version references updated.
+- `docs/SYSTEM_CAPABILITIES_MASTER.md`: Endpoint count 15 -> 16.
+- `docs/SYSTEM_CAPABILITIES_MASTER.html`: Endpoint count 15 -> 16.
+- `docs/TECH_RADAR.md`: Version references updated.
+
+### Verification
+- `python -m py_compile src/api/main_api.py` -- PASSED
+- `python -m py_compile src/api/synapse_routes.py` -- PASSED
+- `python -m py_compile src/integration/synapse_client.py` -- PASSED
+- `python -m py_compile src/integration/__init__.py` -- PASSED
+
+### Design Rationale
+- **Why 15 files from 12?** The 8-Point Constitution mandates authoritative historical records (Timeline documents) to enforce Agentic Rails (Point IV). The two Timeline files bring the canonical set from 12 to 15.
+- **Why port 8001?** Port 8000 is reserved for the SYNAPSE event bus, which is the backbone of the ALEXANDRIA distributed research intelligence mesh. TALOS as a microservice connects to the bus as both an emitter (via EventEmitter) and a receiver (via the webhook).
+- **Why formal academic tone only?** PhD dissertation defense requires professional, academic presentation. Emojis and casual language undermine scientific credibility.
+- **Why `run_talos.bat` instead of updating `start_talos.bat`?** The legacy script is a 7-option Streamlit/CLI launcher tied to legacy architecture. The new script is purpose-built for the v5.7.0 headless API era with a clean 3-option interface.
+
 ## [v5.6.0] - 2026-07-29 -- Streamlit Deprecation, Capabilities Docs, 12-File Sync Rule
 
 ### BREAKING -- Streamlit Fully Deprecated

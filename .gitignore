@@ -1,25 +1,40 @@
-# Αρχείο αγνόησης ευαίσθητων δεδομένων για το Project TALOS
-# v5.4.0 — ενημερωμένο μετά το root cleanup (docs/ + tools/)
+# Project TALOS .gitignore (v5.7.0 - Proprietary & Internal Docs Hidden)
+
+# ── Internal AI Constitution & Architecture Docs (HIDDEN FROM GITHUB/OTHER DEVS) ──
+.clinerules
+docs/
+
+# ── Secrets & Environment ──
 .env
+
+# ── Databases & Raw Data Storage ──
 *.db
 talos_research.db
 talos_backup*.db
 dump.json
+data/
 _profiles/
 _library/
+
+# ── Local Configuration (Contains Proprietary Prompts) ──
+config.json
+
+# ── Generated Logs & Temporary Reports ──
 reports/
 logs/
-data/
-docs/
-# ── ΑΛΛΑ τα μόνιμα project docs ανεβαίνουν κανονικά ──
-!docs/PROJECT_MAP.md
-!docs/PROJECT_MAP_EN.md
-!docs/TECH_RADAR.md
-__pycache__/
-.DS_Store
 *.log
 tools/_git_out.txt
+
+# ── Isolated UI & Build Artifacts ──
+cherry_ui_isolated/
+frontend_ui/
+node_modules/
+
+# ── Python / IDE / OS Transient Files ──
+__pycache__/
+*.pyc
+.DS_Store
 .vscode/
-config.json
+.idea/
 venv/
 .venv/

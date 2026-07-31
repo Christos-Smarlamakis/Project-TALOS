@@ -1,9 +1,9 @@
-# Project TALOS — Strategic Roadmap & Architecture Chronicle
+# Project TALOS -- Strategic Roadmap & Architecture Chronicle
 
-This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform — and maps the path forward.
+This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward.
 
-> **Current Version:** v5.6.0 (Headless FastAPI with 15 endpoints, Streamlit deprecated, React 18 + Tailwind CSS + Shadcn UI)
-> **Last Updated:** 2026-07-29
+> **Current Version:** v5.7.0 (Headless FastAPI with 16 endpoints, SYNAPSE Event-Driven Protocol, Streamlit deprecated, React 18 + Tailwind CSS + Shadcn UI)
+> **Last Updated:** 2026-07-31
 
 ---
 
@@ -13,19 +13,19 @@ Project TALOS was born from a simple question: **what if a literature review sys
 
 The exponential growth of academic publishing (over 5 million papers per year) has broken the traditional Systematic Literature Review (SLR) workflow. A PhD researcher simply cannot manually monitor, evaluate, and synthesize the firehose of daily publications. TALOS answers this challenge by evolving through three generations:
 
-1. **Gen 1 (v1-v4): The Aggregator** — Searched 14 APIs, evaluated papers with AI, stored results in SQLite.
-2. **Gen 2 (v5.0): The Orchestrator** — A Deep Reinforcement Learning agent that learns to select optimal APIs in real-time.
-3. **Gen 3 (v6.0+): The Ecosystem** — A distributed microservice with RAG capabilities, cross-platform UI, and 3D knowledge visualization.
+1. **Gen 1 (v1-v4): The Aggregator** -- Searched 14 APIs, evaluated papers with AI, stored results in SQLite.
+2. **Gen 2 (v5.0): The Orchestrator** -- A Deep Reinforcement Learning agent that learns to select optimal APIs in real-time.
+3. **Gen 3 (v6.0+): The Ecosystem** -- A distributed microservice with RAG capabilities, cross-platform UI, and 3D knowledge visualization.
 
 ---
 
-## 2. v5.0.x — The AI Core (COMPLETED)
+## 2. v5.0.x -- The AI Core (COMPLETED)
 
-The v5.0 series represents a **paradigm shift** — TALOS ceased being a passive aggregator and became an **active, learning orchestrator**. This was the largest single update in project history, spanning four major phases and adding over 5,000 lines of code.
+The v5.0 series represents a **paradigm shift** -- TALOS ceased being a passive aggregator and became an **active, learning orchestrator**. This was the largest single update in project history, spanning four major phases and adding over 5,000 lines of code.
 
 ### 2.1 Phase 0: Multi-Provider Hybrid Embeddings
 
-**The Semantic Brain** — Before the agent could reason about papers, it needed to truly *understand* them through a dimension-agnostic embedding system.
+**The Semantic Brain** -- Before the agent could reason about papers, it needed to truly *understand* them through a dimension-agnostic embedding system.
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
@@ -35,11 +35,11 @@ The v5.0 series represents a **paradigm shift** — TALOS ceased being a passive
 | **Migration Script** | `db_embedding_upgrade.py` | Seamlessly migrated 3,849 legacy records to the new schema |
 | **Google GenAI GA SDK** | `google.genai.Client` | Future-proof API (NOT deprecated `google.generativeai`) |
 
-**Key innovation:** The `semantic_search()` method filters cosine similarity by embedding model — Ollama vectors are only compared against other Ollama vectors, Gemini against Gemini. This prevents cross-model semantic drift.
+**Key innovation:** The `semantic_search()` method filters cosine similarity by embedding model -- Ollama vectors are only compared against other Ollama vectors, Gemini against Gemini. This prevents cross-model semantic drift.
 
 ### 2.2 Phase 1: Deep Reinforcement Learning Stack
 
-**The Orchestrator's Brain** — A Double Dueling DQN (DDDQN) with LSTM that learns API foraging strategies from experience.
+**The Orchestrator's Brain** -- A Double Dueling DQN (DDDQN) with LSTM that learns API foraging strategies from experience.
 
 | Component | File | Description |
 |-----------|------|-------------|
@@ -50,9 +50,9 @@ The v5.0 series represents a **paradigm shift** — TALOS ceased being a passive
 
 ---
 
-## 3. v5.1.0 — The Insights UI (COMPLETED)
+## 3. v5.1.0 -- The Insights UI (COMPLETED)
 
-With the AI Core stable, v5.1.0 focused on **visibility and usability** — bringing the DRL ecosystem to the user through both terminal and browser interfaces.
+With the AI Core stable, v5.1.0 focused on **visibility and usability** -- bringing the DRL ecosystem to the user through both terminal and browser interfaces.
 
 | Section | Content |
 |---------|---------|
@@ -63,7 +63,7 @@ With the AI Core stable, v5.1.0 focused on **visibility and usability** — brin
 
 ---
 
-## 4. v5.2.x — Onboarding & Dynamic Orchestration (COMPLETED)
+## 4. v5.2.x -- Onboarding & Dynamic Orchestration (COMPLETED)
 
 This version transforms TALOS into a **fully guided research platform** with a 4-step onboarding wizard, research pivot workflow, and a fundamentally upgraded DRL stack supporting all 14 sources dynamically.
 
@@ -76,7 +76,7 @@ This version transforms TALOS into a **fully guided research platform** with a 4
 
 ---
 
-## 5. v5.3.x — DRL Scientific Integrity & UI Hardening (COMPLETED)
+## 5. v5.3.x -- DRL Scientific Integrity & UI Hardening (COMPLETED)
 
 | Version | Codename | Focus |
 |---------|----------|-------|
@@ -90,7 +90,7 @@ This version transforms TALOS into a **fully guided research platform** with a 4
 
 ---
 
-## 6. v5.4.x — DDD Migration & Root Cleanup (COMPLETED)
+## 6. v5.4.x -- DDD Migration & Root Cleanup (COMPLETED)
 
 | Version | Codename | Focus |
 |---------|----------|-------|
@@ -99,38 +99,48 @@ This version transforms TALOS into a **fully guided research platform** with a 4
 
 ---
 
-## 7. v5.5.x — FastAPI REST Facade & Ecosystem Coverage (COMPLETED)
+## 7. v5.5.x -- FastAPI REST Facade & Ecosystem Coverage (COMPLETED)
 
 | Version | Codename | Focus |
 |---------|----------|-------|
 | **v5.5.0** | FastAPI + DB Fix | 8 REST endpoints (health, papers, semantic search, scrape/GWO triggers, task status) + Database path fix to `data/talos_research.db` |
 | **v5.5.1** | Frontend DX | +2 endpoints: GWO history for Recharts, architecture graph HTML via FileResponse |
-| **v5.5.2** | 100% Coverage | +4 endpoints: single-paper AI evaluation, query translation, top authors, bulk score recalculation — **14 total endpoints (16 Pydantic models)** |
+| **v5.5.2** | 100% Coverage | +4 endpoints: single-paper AI evaluation, query translation, top authors, bulk score recalculation -- **14 total endpoints (16 Pydantic models)** |
 
 ---
 
-## 8. v5.6.x — Streamlit Deprecation & Documentation Enforcement (CURRENT)
+## 8. v5.6.x -- Streamlit Deprecation & Documentation Enforcement (COMPLETED)
 
 | Version | Codename | Focus |
 |---------|----------|-------|
-| **v5.6.0** | Headless API + Docs | **BREAKING: Streamlit fully deprecated.** Deleted `app.py`, `.streamlit/`, `tools/_gui_runner.py`. Removed `streamlit` from `requirements.txt`. Sole frontend is React 18 + Tailwind CSS + Shadcn UI. FastAPI upgraded to 15 endpoints (+`/api/v1/capabilities`). Created `docs/SYSTEM_CAPABILITIES_MASTER.md` and `.html` (9-section structured reference). Enforced 12-file documentation sync rule in `.clinerules`. Created `docs/API_HANDOVER_FOTIS.md`, `docs/UX_UI_BLUEPRINT_FOTIS.md`, `docs/IP_PROTECTION_STRATEGY.md`. Version bumped to `5.6.0` across all 12 canonical files. |
-
-| Feature | Description |
-|---------|-------------|
-| **Streamlit Eradicated** | `app.py` (1,175 lines), `.streamlit/` directory, and `_gui_runner.py` deleted; `streamlit` removed from `requirements.txt` |
-| **Capabilities Endpoint** | `GET /api/v1/capabilities` serves `docs/SYSTEM_CAPABILITIES_MASTER.html` as HTMLResponse |
-| **12-File Sync Rule** | `.clinerules` now mandates 12-file synchronization on every version bump |
-| **Master Capabilities Docs** | `SYSTEM_CAPABILITIES_MASTER.md` and `.html` in 9-section structured format |
+| **v5.6.0** | Headless API + Docs | **BREAKING: Streamlit fully deprecated.** Deleted `app.py`, `.streamlit/`, `tools/_gui_runner.py`. Removed `streamlit` from `requirements.txt`. Sole frontend is React 18 + Tailwind CSS + Shadcn UI. FastAPI upgraded to 15 endpoints (+`/api/v1/capabilities`). Created `docs/SYSTEM_CAPABILITIES_MASTER.md` and `.html` (9-section structured reference). Enforced 12-file documentation sync rule in `.clinerules`. Created `docs/API_HANDOVER_FOTIS.md`, `docs/UX_UI_BLUEPRINT_FOTIS.md`, `docs/IP_PROTECTION_STRATEGY.md`. |
 
 ---
 
-## 9. v6.0.0+ — The Distributed Ecosystem (FUTURE)
+## 9. v5.7.x -- Master Standard v2.0 Alignment & Synapse Protocol (CURRENT)
 
-The v6.0 series represents the **third generation** of TALOS — decoupling the monolith into a distributed microservice ecosystem with a modern cross-platform UI.
+| Version | Codename | Focus |
+|---------|----------|-------|
+| **v5.7.0** | Constitution v2.0 + Synapse | **Upgraded `.clinerules` to 8-Point Constitution v2.0.** Enforced 15-file documentation synchronization rule (added Timeline documents as files #8 and #9). Created `docs/TIMELINE_EN.md` and `docs/TIMELINE_GR.md` as authoritative historical records. **Scaffolded SYNAPSE Event-Driven Protocol:** `src/integration/synapse_client.py` (EventEmitter class) pushes JSON events to the SYNAPSE bus at port 8000; `src/api/synapse_routes.py` (FastAPI APIRouter) receives inbound commands via `POST /api/v1/synapse/webhook`. **Port reallocation:** TALOS FastAPI now on port 8001 (was 8000) to leave port 8000 for the SYNAPSE event bus. **Created `run_talos.bat`** at project root with 3-option menu (Full Setup, Start FastAPI Server on port 8001, Run Test Suite via pytest -v). Upgraded `src/api/main_api.py` module-level docstring to v5.7.0 standard with strict format. |
+
+| Feature | Description |
+|---------|-------------|
+| **8-Point Constitution v2.0** | Zero Emojis Protocol, Air-Gapped Local-First, VRAM Containment, Agentic Rails, Verification-First, 15-File Sync, Synapse Protocol, Strict Module-level Docstrings |
+| **Synapse Protocol** | EventEmitter (outbound: paper_discovered, paper_evaluated, etc.) + APIRouter (inbound webhook: trigger_search, trigger_evaluation, get_status, shutdown) for ALEXANDRIA ecosystem interoperability |
+| **Port Reallocation** | TALOS FastAPI: 8001, SYNAPSE event bus: 8000 |
+| **15-File Documentation Sync** | Upgraded from 12-file rule; Timeline documents (EN + GR) added as authoritative historical records |
+| **Automated Batch Runner** | `run_talos.bat` at project root with 3-option menu; legacy `tools/start_talos.bat` preserved |
+| **16 REST Endpoints** | 15 legacy endpoints + SYNAPSE webhook (`POST /api/v1/synapse/webhook`) |
+
+---
+
+## 10. v6.0.0+ -- The Distributed Ecosystem (FUTURE)
+
+The v6.0 series represents the **third generation** of TALOS -- decoupling the monolith into a distributed microservice ecosystem with a modern cross-platform UI.
 
 | Component | Technology | Description |
 |-----------|-----------|-------------|
-| **Headless Backend** | FastAPI | RESTful microservice with async endpoints (already started in v5.5.0) |
+| **Headless Backend** | FastAPI | RESTful microservice with async endpoints (already started in v5.5.0, enhanced in v5.7.0) |
 | **Database Layer** | PostgreSQL + pgvector | Migration from SQLite for concurrent access and vector similarity search |
 | **Cross-Platform Frontend** | Flutter | Desktop app (Windows, Linux, macOS, iOS, Android) |
 | **Local RAG** | Ollama + Chroma | Chat with your papers, PDF ingestion, knowledge graph |
@@ -139,11 +149,11 @@ The v6.0 series represents the **third generation** of TALOS — decoupling the 
 
 ---
 
-## 10. Summary Version Table
+## 11. Summary Version Table
 
 | Version | Codename | Focus | Status |
 |:--------|:---------|:------|:-------|
-| **v1.0 – v4.11** | The Aggregator | Search, Evaluate, Store | Complete |
+| **v1.0 - v4.11** | The Aggregator | Search, Evaluate, Store | Complete |
 | **v5.0.0** | The AI Core | Hybrid Embeddings + DRL Agent + GWO | Complete |
 | **v5.1.0** | The Insights UI | DRL Dashboard + TUI Reorganization | Complete |
 | **v5.2.0** | The Live Agent | Live API Routing + PDF Downloader | Complete |
@@ -161,11 +171,12 @@ The v6.0 series represents the **third generation** of TALOS — decoupling the 
 | **v5.5.0** | FastAPI + DB Fix | REST API (8 endpoints) + db path | Complete |
 | **v5.5.1** | Frontend DX | +2 endpoints: GWO history + graph HTML | Complete |
 | **v5.5.2** | 100% Coverage | +4 endpoints: eval + translate + authors + recalc | Complete |
-| **v5.6.0** | Headless API + Docs | Streamlit deprecated, 15 endpoints, 12-file sync | Current |
+| **v5.6.0** | Headless API + Docs | Streamlit deprecated, 15 endpoints, 12-file sync | Complete |
+| **v5.7.0** | Constitution v2.0 + Synapse | 8-Point Constitution, Synapse Protocol, 16 endpoints, 15-file sync | Current |
 | **v6.0.0+** | Distributed Eco. | Flutter + RAG + 3D Viz + PyInstaller | Future |
 
 ---
 
-> **Project TALOS** — From Aggregator to Autonomous Research Architect.
+> **Project TALOS** -- From Aggregator to Autonomous Research Architect.
 > Built in Kalamata, Greece.
 > (C) 2026 Christos Smarlamakis
