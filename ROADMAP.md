@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward.
 
-> **Current Version:** v5.7.2 (Headless FastAPI with 16 endpoints, SYNAPSE Event-Driven Protocol, Streamlit deprecated, React 18 + Tailwind CSS + Shadcn UI)
+> **Current Version:** v5.8.0 (Multi-Tier LLM Routing, System Execution Modes, 16 endpoints, SYNAPSE Protocol, React 18 + Tailwind CSS + Shadcn UI)
 > **Last Updated:** 2026-07-31
 
 ---
@@ -140,7 +140,7 @@ The v6.0 series represents the **third generation** of TALOS -- decoupling the m
 
 | Component | Technology | Description |
 |-----------|-----------|-------------|
-| **Headless Backend** | FastAPI | RESTful microservice with async endpoints (already started in v5.5.0, enhanced in v5.7.2) |
+| **Headless Backend** | FastAPI | RESTful microservice with async endpoints (already started in v5.5.0, enhanced in v5.7.2, with multi-tier LLM routing in v5.8.0) |
 | **Database Layer** | PostgreSQL + pgvector | Migration from SQLite for concurrent access and vector similarity search |
 | **Cross-Platform Frontend** | Flutter | Desktop app (Windows, Linux, macOS, iOS, Android) |
 | **Local RAG** | Ollama + Chroma | Chat with your papers, PDF ingestion, knowledge graph |
@@ -172,7 +172,7 @@ The v6.0 series represents the **third generation** of TALOS -- decoupling the m
 | **v5.5.1** | Frontend DX | +2 endpoints: GWO history + graph HTML | Complete |
 | **v5.5.2** | 100% Coverage | +4 endpoints: eval + translate + authors + recalc | Complete |
 | **v5.6.0** | Headless API + Docs | Streamlit deprecated, 15 endpoints, 12-file sync | Complete |
-| **v5.7.2** | Constitution v2.0 + Synapse | 8-Point Constitution, Synapse Protocol, 16 endpoints, 15-file sync | Current |
+| **v5.8.0** | Multi-Tier TUI + Exec Modes | Model Manager Refactoring, Fast/Heavy/Cloud Tiers, System Execution Modes, Zero-Emojis, 29 tests | Current |
 | **v6.0.0+** | Distributed Eco. | Flutter + RAG + 3D Viz + PyInstaller | Future |
 
 ---

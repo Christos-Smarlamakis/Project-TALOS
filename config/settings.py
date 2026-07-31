@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.7.2
+Project: TALOS v5.8.0
 Description:
-    Canonical configuration hub for TALOS v5.7.2. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.8.0. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
-    configuration, and system-wide constants. This module is the single source of
-    truth for configuration derived from .env and config.json.
+    configuration, system execution mode, and system-wide constants. This module
+    is the single source of truth for configuration derived from .env and config.json.
 
     Key design decisions:
     - Reads from environment variables with sensible defaults for air-gapped operation.
-    - Supports two-tier LLM architecture: "fast" (edge/lightweight) and "heavy"
-      (reasoning/large) model endpoints.
+    - Supports three-tier LLM architecture: "fast" (edge/lightweight, CPU, port 11435),
+      "heavy" (reasoning/large, GPU, port 11434), and "cloud" (Gemini/DeepSeek/HF).
+    - TALOS_EXECUTION_MODE controls system-wide routing: "local" (air-gapped),
+      "hybrid" (local primary, cloud fallback), or "cloud" (cloud primary, local fallback).
     - Fast tier uses Neutrino-8B at a dedicated local endpoint (port 11435).
     - Heavy tier uses qwen2.5:14b at the standard Ollama endpoint (port 11434).
     - Cloud LLM providers (Gemini, DeepSeek, HuggingFace) are configured via
@@ -91,8 +93,15 @@ HF_MODEL_NAME = os.getenv("HF_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1
 # -- System Constants --
 # ------------------------------------------------------------------
 
+# -- System Execution Mode --
+# Controls how TALOS routes inference requests across tiers.
+#   "local"  : Air-gapped. All inference via local Ollama tiers only.
+#   "hybrid" : Local tiers as primary, cloud providers as fallback.
+#   "cloud"  : Cloud providers as primary, local tiers as fallback.
+TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
+
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.7.2"
+TALOS_VERSION = "5.8.0"
 
 # TALOS FastAPI port (port 8000 is reserved for SYNAPSE event bus).
 TALOS_API_PORT = int(os.getenv("TALOS_API_PORT", "8001"))

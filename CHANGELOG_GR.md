@@ -1,17 +1,17 @@
-## [v5.7.2] - 2026-07-31 -- Πολυεπίπεδη Δρομολόγηση LLM, Εκκινητής POSIX, Απομονωμένη Ενδιάμεση Διεπαφή, Κάλυψη Pytest
+## [v5.8.0] - 2026-07-31 -- Πολυεπίπεδη Δρομολόγηση LLM, Εκκινητής POSIX, Απομονωμένη Ενδιάμεση Διεπαφή, Κάλυψη Pytest
 
 ### Προστέθηκε -- Αρχιτεκτονική Πολυεπίπεδης Δρομολόγησης LLM
-- `config/settings.py` (ΝΕΟ): Κανονικός κόμβος ρυθμίσεων. Ορίζει `FAST_EDGE_MODEL` ("fermionresearch/Neutrino-8B"), `FAST_EDGE_BASE_URL` ("http://127.0.0.1:11435/v1"), `HEAVY_REASONING_MODEL` ("qwen2.5:14b"), `OLLAMA_BASE_URL` ("http://127.0.0.1:11434"), `TALOS_VERSION` ("5.7.2"), `TALOS_API_PORT` (8001).
+- `config/settings.py` (ΝΕΟ): Κανονικός κόμβος ρυθμίσεων. Ορίζει `FAST_EDGE_MODEL` ("fermionresearch/Neutrino-8B"), `FAST_EDGE_BASE_URL` ("http://127.0.0.1:11435/v1"), `HEAVY_REASONING_MODEL` ("qwen2.5:14b"), `OLLAMA_BASE_URL` ("http://127.0.0.1:11434"), `TALOS_VERSION` ("5.8.0"), `TALOS_API_PORT` (8001).
 - `src/core/ai_manager.py` v3.9: Προστέθηκε παράμετρος `tier` ("fast"|"heavy") στην `_execute_request()`. Το γρήγορο επίπεδο καλεί τη νέα μέθοδο `_execute_fast_tier_request()` που κάνει HTTP POST στο `FAST_EDGE_BASE_URL/chat/completions` με το Neutrino-8B. Το βαρύ επίπεδο χρησιμοποιεί την τυπική αλυσίδα παρόχων.
 - `src/utils/frontend_provisioner.py` (ΝΕΟ): Κατεβάζει το φορητό Cherry Studio βάσει λειτουργικού συστήματος στον φάκελο `cherry_ui_isolated/`. Αυτόματα παράγει αρχείο ρυθμίσεων MCP JSON.
 - `run_talos.sh` (ΝΕΟ): Σενάριο bash με 5 επιλογές που αντικατοπτρίζει το `run_talos.bat`. Virtualenv, FastAPI, MCP server, Ενδιάμεση Διεπαφή, Pytest.
 - Μοναδιαίες δοκιμές: `tests/test_synapse.py` (21 δοκιμές), `tests/test_multi_tier.py` (20 δοκιμές), `tests/test_provisioner.py` (23 δοκιμές). Και οι 66 δοκιμές περνούν μέσω `pytest -v`.
 
 ### Άλλαξε
-- `.clinerules`: Έκδοση v5.7.2 -> v5.7.2. Υποσέλιδο ενημερώθηκε.
-- `docs/TIMELINE_EN.md` + `docs/TIMELINE_GR.md`: Προστέθηκε Φάση 3 με ορόσημα v5.7.2.
-- `docs/PROJECT_MAP_EN.md`: Έκδοση ενημερώθηκε σε v5.7.2.
-- `run_talos.bat`: Έκδοση ενημερώθηκε σε v5.7.2.
+- `.clinerules`: Έκδοση v5.8.0 -> v5.8.0. Υποσέλιδο ενημερώθηκε.
+- `docs/TIMELINE_EN.md` + `docs/TIMELINE_GR.md`: Προστέθηκε Φάση 3 με ορόσημα v5.8.0.
+- `docs/PROJECT_MAP_EN.md`: Έκδοση ενημερώθηκε σε v5.8.0.
+- `run_talos.bat`: Έκδοση ενημερώθηκε σε v5.8.0.
 
 ### Έλεγχος Anti-Greeklish
 - Σαρώθηκαν όλα τα αρχεία `*_GR.md`. Όλο το περιεχόμενο χρησιμοποιεί σωστή ακαδημαϊκή ελληνική γραφή με τόνους Unicode. Δεν εντοπίστηκαν Greeklish.

@@ -1,9 +1,9 @@
-﻿# Project TALOS (v5.7.2)
+﻿# Project TALOS (v5.8.0)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Takriko Praktoriko Systima Enorchistrosis Vivliografias)*
 
-> **An Autonomous Research Intelligence Platform -- Headless FastAPI Backend with 16 REST Endpoints, SYNAPSE Event-Driven Protocol, React 18 + Tailwind CSS + Shadcn UI Frontend.**
+> **An Autonomous Research Intelligence Platform -- Multi-Tier LLM Routing (CPU/GPU/Cloud), Headless FastAPI Backend with 16 REST Endpoints, SYNAPSE Event-Driven Protocol, React 18 + Tailwind CSS + Shadcn UI Frontend.**
 
 [![IEEE Computer Society](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund)
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
@@ -51,7 +51,7 @@ TALOS leitourgei os aftonomos "Research Architect," filtrarontas ton thoryvo kai
   - **Port 8001** (port 8000 reserved for SYNAPSE event bus)
   - Auto-generated interactive docs at `http://localhost:8001/docs`
   - Models saved at `models/dddqn_trained.pth` and `models/talos_drl.pth`
-- **SYNAPSE Event-Driven Protocol** (`src/integration/synapse_client.py`, `src/api/synapse_routes.py`) -- NEW in v5.7.2
+- **SYNAPSE Event-Driven Protocol** (`src/integration/synapse_client.py`, `src/api/synapse_routes.py`) -- NEW in v5.8.0
   - Thread-safe EventEmitter pushes JSON events (paper_discovered, paper_evaluated, etc.) to the SYNAPSE bus
   - APIRouter receives inbound commands (trigger_search, trigger_evaluation, get_status, shutdown) via webhook
   - Designed for distributed ALEXANDRIA ecosystem microservice interoperability
@@ -84,7 +84,7 @@ TALOS leitourgei os aftonomos "Research Architect," filtrarontas ton thoryvo kai
   - **API server** (`src/api/talos_service_api.py`) -- real-time status sto `localhost:5002/api/status`
   - Montela apothikevmena se `models/dddqn_trained.pth` kai `models/talos_drl.pth`
 - **FastAPI REST API** (`src/api/main_api.py`) -- 16 endpoints sto `localhost:8001` (port 8000 gia SYNAPSE bus)
-  - **SYNAPSE webhook** (`POST /api/v1/synapse/webhook`) gia dialeitourgikotita oikosystimatos ALEXANDRIA -- NEO stin v5.7.2
+  - **SYNAPSE webhook** (`POST /api/v1/synapse/webhook`) gia dialeitourgikotita oikosystimatos ALEXANDRIA -- NEO stin v5.8.0
 *   **Database Manager (The Knowledge Hub):** Mia SQLite3 vasi me **B-Tree indexing** pou leitourgei os gefyra metaxy oikosystimaton apothikevontas pollapla anagnoristika (`DOI`, `OpenAlex ID`, `PMID`, `PMCID`).
 *   **AI Manager (The Cognitive Engine):** Mia model-agnostic michani (Gemini, DeepSeek, Ollama) pou chrisimopoiei to **Adapter Design Pattern** me **Circuit Breakers** gia anthektikotita kai **Surgical JSON Extraction** gia akeraiotita dedomenon.
 *   **Quad-Layer Evaluation Framework:** Mia idioktiti methodologia vathmologisis pou axiologei papers se tesseris diastaseis:
@@ -178,7 +178,7 @@ Apaiteitai **Ollama** gia na dynatai na trechei topika to montelo `gemma4`.
 This software is part of ongoing PhD research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.7.2, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.8.0, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -187,7 +187,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.7.2},
+  version = {v5.8.0},
   year = {2026}
 }
 ```
@@ -198,7 +198,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
 Ean chrisimopoiisete to TALOS stin erevna sas, parakaloume na to anaferete os exis:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.7.2, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.8.0, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -207,7 +207,7 @@ Ean chrisimopoiisete to TALOS stin erevna sas, parakaloume na to anaferete os ex
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.7.2},
+  version = {v5.8.0},
   year = {2026}
 }
 ```
