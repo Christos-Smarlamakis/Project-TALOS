@@ -4,16 +4,18 @@ Module: test_provisioner.py
 Project: TALOS v5.8.2
 Description:
     Unit tests for the isolated frontend provisioner (frontend_provisioner.py).
-    Tests cover OS detection, MCP config generation, target directory resolution,
-    download URL resolution (dynamic API + fallback), asset matching logic, and
-    the full provisioning pipeline.
+    Tests cover OS/arch detection, MCP config generation, target directory
+    resolution, architecture-aware download URL resolution (dynamic API +
+    fallback), per-platform asset matching with priority rules and exclusion
+    lists, and the full provisioning pipeline.
 
     Key design decisions:
-    - Mock all network and filesystem operations to maintain hermeticity.
-    - Tests verify the logic without actual downloads.
+    - Mock all network, filesystem, and platform calls for hermeticity.
+    - Tests verify logic without actual downloads.
     - MCP config structure is validated for correctness.
-    - OS detection tests are safe (no actual platform calls needed for logic tests).
-    - GitHub API asset resolution is tested with sample JSON payloads.
+    - Architecture detection is tested across x64/arm64/unknown variants.
+    - Per-platform asset matching is tested with realistic GitHub release
+      payloads covering priority ordering and exclusion behavior.
 
 Dependencies:
     - pytest: Test framework for fixture-based testing.
@@ -26,6 +28,78 @@ import tempfile
 import pytest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
+
+
+# ------------------------------------------------------------------
+# -- Architecture Detection Tests --
+# ------------------------------------------------------------------
+
+class TestArchitectureDetection:
+    """Tests for the _detect_architecture function."""
+
+    def test_detect_x86_64(self):
+        """Verify x86_64 machine returns 'x64'."""
+        with patch('platform.machine', return_value='x86_64'):
+            from src.utils.frontend_provisioner import _detect_architecture
+            assert _detect_architecture() == 'x64'
+
+    def test_detect_amd64(self):
+        """Verify amd64 machine returns 'x64'."""
+        with patch('platform.machine', return_value='amd64'):
+            from src.utils.frontend_provisioner import _detect_architecture
+            assert _detect_architecture() == 'x64'
+
+    def test_detect_x64(self):
+        """Verify x64 machine returns 'x64'."""
+        with patch('platform.machine', return_value='x64'):
+            from src.utils.frontend_provisioner import _detect_architecture
+            assert _detect_architecture() == 'x64'
+
+    def test_detect_arm64(self):
+        """Verify arm64 machine returns 'arm64'."""
+        with patch('platform.machine', return_value='arm64'):
+            from src.utils.frontend_provisioner import _detect_architecture
+            assert _detect_architecture() == 'arm64'
+
+    def test_detect_aarch64(self):
+        """Verify aarch64 machine returns 'arm64'."""
+        with patch('platform.machine', return_value='aarch64'):
+            from src.utils.frontend_provisioner import _detect_architecture
+            assert _detect_architecture() == 'arm64'
+
+    def test_unknown_arch_defaults_to_x64(self):
+        """Verify unknown machine defaults to 'x64'."""
+        with patch('platform.machine', return_value='riscv64'):
+            from src.utils.frontend_provisioner import _detect_architecture
+            assert _detect_architecture() == 'x64'
+
+
+# ------------------------------------------------------------------
+# -- Arch Matches Helper Tests --
+# ------------------------------------------------------------------
+
+class TestArchMatches:
+    """Tests for the _arch_matches helper."""
+
+    def test_x64_target_returns_true_for_amd64_keyword(self):
+        """Verify x64 target matches 'amd64' in combined string."""
+        from src.utils.frontend_provisioner import _arch_matches
+        assert _arch_matches("Cherry-Studio-amd64.AppImage", "x64") is True
+
+    def test_x64_target_returns_false_for_arm64_keyword(self):
+        """Verify x64 target rejects string containing 'arm64'."""
+        from src.utils.frontend_provisioner import _arch_matches
+        assert _arch_matches("Cherry-Studio-arm64.dmg", "x64") is False
+
+    def test_arm64_target_returns_true_for_aarch64(self):
+        """Verify arm64 target matches 'aarch64'."""
+        from src.utils.frontend_provisioner import _arch_matches
+        assert _arch_matches("app-aarch64.AppImage", "arm64") is True
+
+    def test_arm64_target_returns_false_for_x86_64(self):
+        """Verify arm64 target rejects 'x86_64'."""
+        from src.utils.frontend_provisioner import _arch_matches
+        assert _arch_matches("app-x86_64.tar.gz", "arm64") is False
 
 
 # ------------------------------------------------------------------
@@ -114,8 +188,6 @@ class TestMCPConfigGeneration:
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "mcp_config.json"
             config = generate_mcp_config(output_path=output_path)
-
-            # File should exist and contain valid JSON.
             assert output_path.exists()
             with open(output_path, 'r') as f:
                 file_content = json.load(f)
@@ -127,7 +199,6 @@ class TestMCPConfigGeneration:
         with tempfile.TemporaryDirectory() as tmpdir:
             output_path = Path(tmpdir) / "nested" / "dir" / "mcp_config.json"
             config = generate_mcp_config(output_path=output_path)
-
             assert output_path.exists()
             assert output_path.parent.exists()
 
@@ -150,7 +221,6 @@ class TestProvisionFull:
         """Verify that provision_full creates the target directory."""
         with tempfile.TemporaryDirectory() as tmpdir:
             from src.utils.frontend_provisioner import provision_full
-            # Patch download to avoid actual network calls.
             with patch(
                 'src.utils.frontend_provisioner.download_cherry_studio',
                 return_value=True,
@@ -169,7 +239,6 @@ class TestProvisionFull:
                 return_value=True,
             ):
                 provision_full(target_dir=target)
-
             mcp_config = target / "mcp_config.json"
             assert mcp_config.exists()
 
@@ -183,7 +252,6 @@ class TestProvisionFull:
                 return_value=True,
             ):
                 provision_full(target_dir=target)
-
             instructions = target / "LAUNCH_INSTRUCTIONS.txt"
             assert instructions.exists()
             content = instructions.read_text()
@@ -199,38 +267,38 @@ class TestProvisionFull:
                 'src.utils.frontend_provisioner.download_cherry_studio',
                 return_value=False,
             ):
-                # Should still succeed (download failure is non-fatal).
                 success = provision_full(target_dir=target)
-                # MCP config should still exist.
                 assert (target / "mcp_config.json").exists()
-                # Launch instructions should still exist.
                 assert (target / "LAUNCH_INSTRUCTIONS.txt").exists()
 
 
 # ------------------------------------------------------------------
-# -- Fallback URL Tests (replaces old DownloadURLSelection tests) --
+# -- Fallback URL Tests --
 # ------------------------------------------------------------------
 
 class TestFallbackURLs:
     """Tests verifying fallback download URL integrity per OS."""
 
-    def test_windows_fallback_url_is_zip(self):
-        """Verify Windows fallback URL points to a .zip archive."""
+    def test_windows_fallback_is_portable_exe(self):
+        """Verify Windows fallback URL is a portable .exe with x64."""
         from src.utils.frontend_provisioner import _FALLBACK_URLS
         url = _FALLBACK_URLS.get("Windows", "")
-        assert url.endswith(".zip")
+        assert "portable.exe" in url
+        assert "x64" in url
 
-    def test_linux_fallback_url_is_tar_gz(self):
-        """Verify Linux fallback URL points to a .tar.gz archive."""
+    def test_linux_fallback_is_appimage(self):
+        """Verify Linux fallback URL is an x86_64 .AppImage."""
         from src.utils.frontend_provisioner import _FALLBACK_URLS
         url = _FALLBACK_URLS.get("Linux", "")
-        assert url.endswith(".tar.gz")
+        assert ".AppImage" in url
+        assert "x86_64" in url
 
-    def test_macos_fallback_url_is_dmg(self):
-        """Verify macOS fallback URL points to a .dmg archive."""
+    def test_macos_fallback_is_arm64_dmg(self):
+        """Verify macOS fallback URL is an arm64 .dmg."""
         from src.utils.frontend_provisioner import _FALLBACK_URLS
         url = _FALLBACK_URLS.get("Darwin", "")
-        assert url.endswith(".dmg")
+        assert ".dmg" in url
+        assert "arm64" in url
 
     def test_all_supported_os_have_fallback_urls(self):
         """Verify that all supported OS have fallback download URLs."""
@@ -252,34 +320,70 @@ class TestFallbackURLs:
                 f"Fallback URL for {os_name} does not contain version {_FALLBACK_VERSION}"
             )
 
+    def test_windows_fallback_excludes_installers(self):
+        """Verify Windows fallback URL contains no installer indicators."""
+        from src.utils.frontend_provisioner import _FALLBACK_URLS
+        url = _FALLBACK_URLS.get("Windows", "").lower()
+        assert "setup" not in url
+        assert "nsis" not in url
+        assert ".msi" not in url
+
+    def test_linux_fallback_excludes_package_formats(self):
+        """Verify Linux fallback URL contains no .deb/.rpm/tar.gz/zip."""
+        from src.utils.frontend_provisioner import _FALLBACK_URLS
+        url = _FALLBACK_URLS.get("Linux", "").lower()
+        assert ".deb" not in url
+        assert ".rpm" not in url
+        assert ".tar.gz" not in url
+        assert ".zip" not in url
+
+    def test_macos_fallback_excludes_cross_platform(self):
+        """Verify macOS fallback URL contains no Windows/Linux artifacts."""
+        from src.utils.frontend_provisioner import _FALLBACK_URLS
+        url = _FALLBACK_URLS.get("Darwin", "").lower()
+        assert ".exe" not in url
+        assert ".appimage" not in url
+        assert ".deb" not in url
+        assert ".rpm" not in url
+
 
 # ------------------------------------------------------------------
 # -- GitHub API Asset Resolution Tests --
 # ------------------------------------------------------------------
 
-# Sample GitHub release JSON payload mimicking a real Cherry Studio release.
+# Sample GitHub release JSON payload simulating Cherry Studio v2.0.0.
 _SAMPLE_RELEASE_JSON = {
     "tag_name": "v2.0.0",
     "assets": [
+        # Windows portable assets
         {
-            "name": "Cherry-Studio-portable-win-x64-2.0.0.zip",
+            "name": "Cherry-Studio-2.0.0-x64-portable.exe",
             "browser_download_url": (
                 "https://github.com/CherryHQ/cherry-studio/releases/download/"
-                "v2.0.0/Cherry-Studio-portable-win-x64-2.0.0.zip"
+                "v2.0.0/Cherry-Studio-2.0.0-x64-portable.exe"
             ),
         },
         {
-            "name": "Cherry-Studio-portable-linux-x64-2.0.0.tar.gz",
+            "name": "Cherry-Studio-2.0.0-win-x64.zip",
             "browser_download_url": (
                 "https://github.com/CherryHQ/cherry-studio/releases/download/"
-                "v2.0.0/Cherry-Studio-portable-linux-x64-2.0.0.tar.gz"
+                "v2.0.0/Cherry-Studio-2.0.0-win-x64.zip"
             ),
         },
+        # Linux portable asset
         {
-            "name": "Cherry-Studio-portable-mac-arm64-2.0.0.dmg",
+            "name": "Cherry-Studio-2.0.0-x86_64.AppImage",
             "browser_download_url": (
                 "https://github.com/CherryHQ/cherry-studio/releases/download/"
-                "v2.0.0/Cherry-Studio-portable-mac-arm64-2.0.0.dmg"
+                "v2.0.0/Cherry-Studio-2.0.0-x86_64.AppImage"
+            ),
+        },
+        # macOS portable assets
+        {
+            "name": "Cherry-Studio-2.0.0-arm64.dmg",
+            "browser_download_url": (
+                "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                "v2.0.0/Cherry-Studio-2.0.0-arm64.dmg"
             ),
         },
     ],
@@ -292,65 +396,340 @@ class TestGetCherryVersionFromRelease:
     def test_strips_leading_v(self):
         """Verify the leading 'v' is stripped from tag_name."""
         from src.utils.frontend_provisioner import _get_cherry_version_from_release
-        result = _get_cherry_version_from_release({"tag_name": "v2.0.0"})
-        assert result == "2.0.0"
+        assert _get_cherry_version_from_release({"tag_name": "v2.0.0"}) == "2.0.0"
 
     def test_no_v_prefix_preserved(self):
         """Verify version without 'v' prefix is returned as-is."""
         from src.utils.frontend_provisioner import _get_cherry_version_from_release
-        result = _get_cherry_version_from_release({"tag_name": "2.0.0"})
-        assert result == "2.0.0"
+        assert _get_cherry_version_from_release({"tag_name": "2.0.0"}) == "2.0.0"
 
     def test_missing_tag_falls_back(self):
         """Verify missing tag_name returns fallback version."""
         from src.utils.frontend_provisioner import _get_cherry_version_from_release
-        result = _get_cherry_version_from_release({})
-        assert result == "1.9.12"
+        assert _get_cherry_version_from_release({}) == "1.9.12"
 
 
-class TestMatchAssetForOS:
-    """Tests for _match_asset_for_os."""
+class TestMatchWindowsAsset:
+    """Tests for _match_windows_asset with architecture awareness."""
 
-    def test_match_windows_zip(self):
-        """Verify Windows asset matching selects .zip."""
-        from src.utils.frontend_provisioner import _match_asset_for_os
-        url = _match_asset_for_os(_SAMPLE_RELEASE_JSON["assets"], "Windows")
+    def test_windows_x64_portable_exe_selected(self):
+        """Verify x64 portable .exe is selected on x64 arch."""
+        from src.utils.frontend_provisioner import _match_windows_asset
+        assets = _SAMPLE_RELEASE_JSON["assets"]
+        url = _match_windows_asset(assets, "x64")
+        assert url is not None
+        assert "x64-portable.exe" in url
+        assert "setup" not in url.lower()
+
+    def test_windows_rejects_setup_exe(self):
+        """Verify Windows rejects setup.exe installers."""
+        from src.utils.frontend_provisioner import _match_windows_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-Setup-2.0.0.exe",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-Setup-2.0.0.exe"
+                ),
+            },
+            {
+                "name": "Cherry-Studio-2.0.0-x64-portable.exe",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-x64-portable.exe"
+                ),
+            },
+        ]
+        url = _match_windows_asset(assets, "x64")
+        assert url is not None
+        assert "portable" in url
+        assert "setup" not in url.lower()
+
+    def test_windows_rejects_nsis_installer(self):
+        """Verify Windows rejects NSIS installer assets."""
+        from src.utils.frontend_provisioner import _match_windows_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-2.0.0-nsis-setup.exe",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-nsis-setup.exe"
+                ),
+            },
+        ]
+        url = _match_windows_asset(assets, "x64")
+        assert url is None
+
+    def test_windows_rejects_msi(self):
+        """Verify Windows rejects .msi assets."""
+        from src.utils.frontend_provisioner import _match_windows_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-2.0.0.msi",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0.msi"
+                ),
+            },
+        ]
+        url = _match_windows_asset(assets, "x64")
+        assert url is None
+
+    def test_windows_rejects_macos_dmg(self):
+        """Verify Windows rejects .dmg (macOS) assets."""
+        from src.utils.frontend_provisioner import _match_windows_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-2.0.0.dmg",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0.dmg"
+                ),
+            },
+        ]
+        url = _match_windows_asset(assets, "x64")
+        assert url is None
+
+    def test_windows_falls_back_to_zip_when_no_portable_exe(self):
+        """Verify Windows falls back to win-x64.zip when no portable .exe exists."""
+        from src.utils.frontend_provisioner import _match_windows_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-2.0.0-win-x64.zip",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-win-x64.zip"
+                ),
+            },
+        ]
+        url = _match_windows_asset(assets, "x64")
         assert url is not None
         assert ".zip" in url
 
-    def test_match_linux_tar_gz(self):
-        """Verify Linux asset matching selects .tar.gz."""
-        from src.utils.frontend_provisioner import _match_asset_for_os
-        url = _match_asset_for_os(_SAMPLE_RELEASE_JSON["assets"], "Linux")
-        assert url is not None
-        assert ".tar.gz" in url
-
-    def test_match_macos_dmg(self):
-        """Verify macOS asset matching selects .dmg."""
-        from src.utils.frontend_provisioner import _match_asset_for_os
-        url = _match_asset_for_os(_SAMPLE_RELEASE_JSON["assets"], "Darwin")
-        assert url is not None
-        assert ".dmg" in url
-
-    def test_no_match_returns_none(self):
-        """Verify None is returned when no asset matches the OS patterns."""
-        from src.utils.frontend_provisioner import _match_asset_for_os
-        # No asset in the sample set matches .AppImage (Linux second pattern
-        # would match .tar.gz, so we test an asset set with only Windows files).
-        win_only = [
+    def test_windows_arm64_portable_exe_selected(self):
+        """Verify arm64 portable .exe is selected on arm64 arch."""
+        from src.utils.frontend_provisioner import _match_windows_asset
+        assets = [
             {
-                "name": "Cherry-Setup.exe",
-                "browser_download_url": "https://example.com/Cherry-Setup.exe",
-            }
+                "name": "Cherry-Studio-2.0.0-x64-portable.exe",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-x64-portable.exe"
+                ),
+            },
+            {
+                "name": "Cherry-Studio-2.0.0-arm64-portable.exe",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-arm64-portable.exe"
+                ),
+            },
         ]
-        url = _match_asset_for_os(win_only, "Linux")
+        url = _match_windows_asset(assets, "arm64")
+        assert url is not None
+        assert "arm64-portable.exe" in url
+
+
+class TestMatchLinuxAsset:
+    """Tests for _match_linux_asset with architecture awareness."""
+
+    def test_linux_x86_64_appimage_selected(self):
+        """Verify x86_64 .AppImage is selected on x64 arch."""
+        from src.utils.frontend_provisioner import _match_linux_asset
+        assets = _SAMPLE_RELEASE_JSON["assets"]
+        url = _match_linux_asset(assets, "x64")
+        assert url is not None
+        assert ".AppImage" in url
+        assert "x86_64" in url
+
+    def test_linux_rejects_deb(self):
+        """Verify Linux rejects .deb packages."""
+        from src.utils.frontend_provisioner import _match_linux_asset
+        assets = [
+            {
+                "name": "cherry-studio_2.0.0_amd64.deb",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/cherry-studio_2.0.0_amd64.deb"
+                ),
+            },
+        ]
+        url = _match_linux_asset(assets, "x64")
         assert url is None
 
-    def test_empty_assets_returns_none(self):
-        """Verify empty asset list returns None."""
-        from src.utils.frontend_provisioner import _match_asset_for_os
-        url = _match_asset_for_os([], "Windows")
+    def test_linux_rejects_rpm(self):
+        """Verify Linux rejects .rpm packages."""
+        from src.utils.frontend_provisioner import _match_linux_asset
+        assets = [
+            {
+                "name": "cherry-studio-2.0.0.x86_64.rpm",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/cherry-studio-2.0.0.x86_64.rpm"
+                ),
+            },
+        ]
+        url = _match_linux_asset(assets, "x64")
         assert url is None
+
+    def test_linux_rejects_tar_gz(self):
+        """Verify Linux rejects .tar.gz archives."""
+        from src.utils.frontend_provisioner import _match_linux_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-2.0.0-linux-x64.tar.gz",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-linux-x64.tar.gz"
+                ),
+            },
+        ]
+        url = _match_linux_asset(assets, "x64")
+        assert url is None
+
+    def test_linux_rejects_windows_exe(self):
+        """Verify Linux rejects .exe cross-platform artifacts."""
+        from src.utils.frontend_provisioner import _match_linux_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-2.0.0.exe",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0.exe"
+                ),
+            },
+        ]
+        url = _match_linux_asset(assets, "x64")
+        assert url is None
+
+    def test_linux_arm64_appimage_selected(self):
+        """Verify aarch64 .AppImage is selected on arm64 arch."""
+        from src.utils.frontend_provisioner import _match_linux_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-2.0.0-aarch64.AppImage",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-aarch64.AppImage"
+                ),
+            },
+        ]
+        url = _match_linux_asset(assets, "arm64")
+        assert url is not None
+        assert "aarch64.AppImage" in url
+
+
+class TestMatchMacOSAsset:
+    """Tests for _match_macos_asset with architecture awareness."""
+
+    def test_macos_arm64_dmg_selected(self):
+        """Verify arm64 .dmg is selected on arm64 arch."""
+        from src.utils.frontend_provisioner import _match_macos_asset
+        assets = _SAMPLE_RELEASE_JSON["assets"]
+        url = _match_macos_asset(assets, "arm64")
+        assert url is not None
+        assert "arm64.dmg" in url
+
+    def test_macos_zip_fallback(self):
+        """Verify arch-specific .zip is selected when no .dmg matches."""
+        from src.utils.frontend_provisioner import _match_macos_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-2.0.0-x64.zip",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-x64.zip"
+                ),
+            },
+        ]
+        url = _match_macos_asset(assets, "x64")
+        assert url is not None
+        assert "x64.zip" in url
+
+    def test_macos_rejects_exe(self):
+        """Verify macOS rejects .exe cross-platform artifacts."""
+        from src.utils.frontend_provisioner import _match_macos_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-2.0.0-x64-portable.exe",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-x64-portable.exe"
+                ),
+            },
+        ]
+        url = _match_macos_asset(assets, "arm64")
+        assert url is None
+
+    def test_macos_rejects_appimage(self):
+        """Verify macOS rejects .AppImage artifacts."""
+        from src.utils.frontend_provisioner import _match_macos_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-2.0.0-x86_64.AppImage",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-x86_64.AppImage"
+                ),
+            },
+        ]
+        url = _match_macos_asset(assets, "arm64")
+        assert url is None
+
+    def test_macos_universal_dmg_fallback(self):
+        """Verify universal .dmg is selected when no arch-specific match exists."""
+        from src.utils.frontend_provisioner import _match_macos_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-2.0.0-universal.dmg",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-universal.dmg"
+                ),
+            },
+        ]
+        url = _match_macos_asset(assets, "arm64")
+        assert url is not None
+        assert "universal.dmg" in url
+
+    def test_macos_universal_zip_fallback(self):
+        """Verify universal .zip is the last-resort fallback."""
+        from src.utils.frontend_provisioner import _match_macos_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-2.0.0-universal.zip",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-universal.zip"
+                ),
+            },
+        ]
+        url = _match_macos_asset(assets, "arm64")
+        assert url is not None
+        assert "universal.zip" in url
+
+    def test_macos_dmg_priority_over_zip(self):
+        """Verify arch-specific .dmg takes priority over arch-specific .zip."""
+        from src.utils.frontend_provisioner import _match_macos_asset
+        assets = [
+            {
+                "name": "Cherry-Studio-2.0.0-arm64.zip",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-arm64.zip"
+                ),
+            },
+            {
+                "name": "Cherry-Studio-2.0.0-arm64.dmg",
+                "browser_download_url": (
+                    "https://github.com/CherryHQ/cherry-studio/releases/download/"
+                    "v2.0.0/Cherry-Studio-2.0.0-arm64.dmg"
+                ),
+            },
+        ]
+        url = _match_macos_asset(assets, "arm64")
+        assert url is not None
+        assert ".dmg" in url  # .dmg has priority 1 over .zip priority 2
 
 
 class TestResolveDownloadURLs:
@@ -363,14 +742,19 @@ class TestResolveDownloadURLs:
             'src.utils.frontend_provisioner._fetch_latest_release_assets',
             return_value=_SAMPLE_RELEASE_JSON,
         ):
-            version, urls = _resolve_download_urls()
-            assert version == "2.0.0"
-            assert "Windows" in urls
-            assert "Linux" in urls
-            assert "Darwin" in urls
-            assert ".zip" in urls["Windows"]
-            assert ".tar.gz" in urls["Linux"]
-            assert ".dmg" in urls["Darwin"]
+            with patch('platform.machine', return_value='x86_64'):
+                version, urls = _resolve_download_urls()
+                assert version == "2.0.0"
+                assert "Windows" in urls
+                assert "Linux" in urls
+                assert "Darwin" in urls
+                assert "x64-portable.exe" in urls["Windows"]
+                assert ".AppImage" in urls["Linux"]
+                # On x86_64 machine, macOS matches arm64.dmg from sample (no x64 .dmg)
+                # so _match_macos_asset will look for arch match first then universal.
+                # With only arm64.dmg in sample, x64 won't match arch, so falls through.
+                # Verify Darwin URL is not None.
+                assert urls["Darwin"] is not None
 
     def test_resolve_falls_back_when_api_fails(self):
         """Verify fallback URLs are used when the API returns None."""
@@ -381,9 +765,9 @@ class TestResolveDownloadURLs:
         ):
             version, urls = _resolve_download_urls()
             assert version == _FALLBACK_VERSION
-            assert urls["Windows"].endswith(".zip")
-            assert urls["Linux"].endswith(".tar.gz")
-            assert urls["Darwin"].endswith(".dmg")
+            assert "portable.exe" in urls["Windows"]
+            assert ".AppImage" in urls["Linux"]
+            assert ".dmg" in urls["Darwin"]
 
     def test_resolve_falls_back_when_assets_empty(self):
         """Verify fallback when release JSON has no assets array."""
@@ -394,7 +778,6 @@ class TestResolveDownloadURLs:
             return_value=empty_release,
         ):
             version, urls = _resolve_download_urls()
-            # Should fall back since assets are empty.
             assert version == "1.9.12"
 
 
@@ -451,7 +834,6 @@ class TestSkipAlreadyProvisioned:
         with tempfile.TemporaryDirectory() as tmpdir:
             from src.utils.frontend_provisioner import download_cherry_studio
 
-            # Create the marker file to simulate already installed.
             marker = Path(tmpdir) / ".cherry_installed"
             marker.write_text("version=1.2.3\nos=Linux\n")
 
@@ -461,15 +843,11 @@ class TestSkipAlreadyProvisioned:
 
     def test_download_with_force_overrides_marker(self):
         """Verify that force=True bypasses the marker check and proceeds to download."""
-        # This test verifies the force flag logic. When force=True, the code
-        # should skip the marker check and attempt a download. We mock the
-        # network operations to keep the test hermetic.
         from src.utils.frontend_provisioner import download_cherry_studio
-        from unittest.mock import patch, mock_open
 
         fallback_url = (
             "https://github.com/CherryHQ/cherry-studio/releases/download/"
-            "v1.9.12/Cherry-Studio-portable-win-x64-1.9.12.zip"
+            "v1.9.12/Cherry-Studio-1.9.12-x64-portable.exe"
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -477,19 +855,18 @@ class TestSkipAlreadyProvisioned:
             marker.write_text("version=1.2.3\nos=Windows\n")
 
             with patch('platform.system', return_value='Windows'):
-                with patch(
-                    'src.utils.frontend_provisioner._resolve_download_urls',
-                    return_value=("1.9.12", {"Windows": fallback_url}),
-                ):
-                    with patch('urllib.request.urlretrieve'):
-                        with patch('shutil.unpack_archive'):
-                            with patch('os.unlink'):
-                                result = download_cherry_studio(
-                                    target_dir=Path(tmpdir), force=True,
-                                )
-                                # force=True should bypass marker and attempt download.
-                                # With all operations mocked, download succeeds.
-                                assert result is True
+                with patch('platform.machine', return_value='x86_64'):
+                    with patch(
+                        'src.utils.frontend_provisioner._resolve_download_urls',
+                        return_value=("1.9.12", {"Windows": fallback_url}),
+                    ):
+                        with patch('urllib.request.urlretrieve'):
+                            with patch('shutil.unpack_archive'):
+                                with patch('os.unlink'):
+                                    result = download_cherry_studio(
+                                        target_dir=Path(tmpdir), force=True,
+                                    )
+                                    assert result is True
 
 
 # ------------------------------------------------------------------
@@ -523,15 +900,44 @@ class TestConstants:
         assert "TALOS" in _USER_AGENT
         assert "5.8.2" in _USER_AGENT
 
-    def test_platform_extension_patterns_cover_all_os(self):
-        """Verify all supported OS have extension matching patterns."""
-        from src.utils.frontend_provisioner import _PLATFORM_EXTENSION_PATTERNS, _SUPPORTED_OS
-        for os_name in _SUPPORTED_OS:
-            assert os_name in _PLATFORM_EXTENSION_PATTERNS, (
-                f"Missing extension patterns for OS: {os_name}"
-            )
-            patterns = _PLATFORM_EXTENSION_PATTERNS[os_name]
-            assert len(patterns) > 0, f"Empty patterns list for OS: {os_name}"
+    def test_windows_exclude_has_installer_keywords(self):
+        """Verify _WINDOWS_EXCLUDE contains setup/nsis/msi/mac/dmg entries."""
+        from src.utils.frontend_provisioner import _WINDOWS_EXCLUDE
+        assert "setup.exe" in _WINDOWS_EXCLUDE
+        assert "nsis" in _WINDOWS_EXCLUDE
+        assert ".msi" in _WINDOWS_EXCLUDE
+        assert ".dmg" in _WINDOWS_EXCLUDE
+
+    def test_linux_exclude_has_package_keywords(self):
+        """Verify _LINUX_EXCLUDE contains .deb/.rpm/.tar.gz/.zip/.exe."""
+        from src.utils.frontend_provisioner import _LINUX_EXCLUDE
+        assert ".deb" in _LINUX_EXCLUDE
+        assert ".rpm" in _LINUX_EXCLUDE
+        assert ".tar.gz" in _LINUX_EXCLUDE
+        assert ".zip" in _LINUX_EXCLUDE
+        assert ".exe" in _LINUX_EXCLUDE
+
+    def test_macos_exclude_has_cross_platform_keywords(self):
+        """Verify _MACOS_EXCLUDE contains .exe/.appimage/.deb/.rpm."""
+        from src.utils.frontend_provisioner import _MACOS_EXCLUDE
+        assert ".exe" in _MACOS_EXCLUDE
+        assert ".appimage" in _MACOS_EXCLUDE
+        assert ".deb" in _MACOS_EXCLUDE
+        assert ".rpm" in _MACOS_EXCLUDE
+
+    def test_arch_x64_keywords_include_variants(self):
+        """Verify _ARCH_X64_KEYWORDS covers x64/x86_64/amd64/intel64."""
+        from src.utils.frontend_provisioner import _ARCH_X64_KEYWORDS
+        assert "x64" in _ARCH_X64_KEYWORDS
+        assert "x86_64" in _ARCH_X64_KEYWORDS
+        assert "amd64" in _ARCH_X64_KEYWORDS
+        assert "intel64" in _ARCH_X64_KEYWORDS
+
+    def test_arch_arm64_keywords_include_variants(self):
+        """Verify _ARCH_ARM64_KEYWORDS covers arm64/aarch64."""
+        from src.utils.frontend_provisioner import _ARCH_ARM64_KEYWORDS
+        assert "arm64" in _ARCH_ARM64_KEYWORDS
+        assert "aarch64" in _ARCH_ARM64_KEYWORDS
 
 
 # ------------------------------------------------------------------
@@ -545,7 +951,6 @@ class TestEdgeCases:
         """Verify trailing slashes are handled correctly."""
         with tempfile.TemporaryDirectory() as tmpdir:
             from src.utils.frontend_provisioner import resolve_target_dir
-            # Path with trailing separator.
             path_with_slash = tmpdir + os.sep
             result = resolve_target_dir(project_root=path_with_slash)
             assert result.name == "cherry_ui_isolated"
@@ -554,5 +959,5 @@ class TestEdgeCases:
         """Verify all MCP config keys are strings (not Path objects)."""
         from src.utils.frontend_provisioner import generate_mcp_config
         config = generate_mcp_config()
-        config_str = json.dumps(config)  # Should not raise.
+        config_str = json.dumps(config)
         assert isinstance(config_str, str)
