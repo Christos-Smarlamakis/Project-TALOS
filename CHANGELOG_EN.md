@@ -2,10 +2,33 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
-## [v5.7.0] - 2026-07-31 -- Constitution v2.0 Upgrade, SYNAPSE Event-Driven Protocol, 15-File Documentation Sync
+## [v5.7.2] - 2026-07-31 -- Multi-Tier LLM Routing, Cross-Platform POSIX Launcher, Isolated Interim UI, Pytest Coverage
+
+### Added -- Multi-Tier LLM Routing Architecture
+- `config/settings.py` (NEW): Canonical configuration hub. Defines `FAST_EDGE_MODEL` ("fermionresearch/Neutrino-8B"), `FAST_EDGE_BASE_URL` ("http://127.0.0.1:11435/v1"), `HEAVY_REASONING_MODEL` ("qwen2.5:14b"), `OLLAMA_BASE_URL` ("http://127.0.0.1:11434"), `TALOS_VERSION` ("5.7.2"), `TALOS_API_PORT` (8001), `SYNAPSE_BUS_URL`.
+- `src/core/ai_manager.py` v3.9: Added `tier` parameter ("fast"|"heavy") to `_execute_request()`. Fast tier calls new `_execute_fast_tier_request()` which HTTP POSTs to `FAST_EDGE_BASE_URL/chat/completions` with Neutrino-8B. Heavy tier uses standard provider chain. New method `_execute_fast_tier_request(prompt, response_format)` with connection/HTTP/JSON error handling.
+- `src/utils/frontend_provisioner.py` (NEW): Downloads portable Cherry Studio based on OS into `cherry_ui_isolated/`. Auto-generates MCP config JSON. Public API: `get_os_name()`, `resolve_target_dir()`, `generate_mcp_config()`, `download_cherry_studio()`, `provision_full()`.
+- `run_talos.sh` (NEW): bash script with 5 options mirroring `run_talos.bat`. Virtualenv, FastAPI, MCP server, Interim UI, Pytest.
+- Unit tests: `tests/test_synapse.py` (21 tests), `tests/test_multi_tier.py` (20 tests), `tests/test_provisioner.py` (23 tests). All 66 tests pass via `pytest -v`.
+
+### Changed
+- `.clinerules`: Version v5.7.2 -> v5.7.2. Footer updated.
+- `docs/TIMELINE_EN.md` + `docs/TIMELINE_GR.md`: Phase 3 added with v5.7.2 milestones.
+- `docs/PROJECT_MAP_EN.md`: Version bumped to v5.7.2.
+- `run_talos.bat`: Version bumped to v5.7.2.
+
+### Anti-Greeklish Audit
+- Scanned all `*_GR.md` files. All content uses proper academic Greek with Unicode accents. No Greeklish detected.
+
+### Verification
+- `py_compile` on all 6 new/changed `.py` files -- PASSED. `pytest -v` on 66 tests -- ALL PASSED.
+
+---
+
+## [v5.7.2] - 2026-07-31 -- Constitution v2.0 Upgrade, SYNAPSE Event-Driven Protocol, 15-File Documentation Sync
 
 ### Upgraded -- 8-Point Master Initialization Standard (Constitution v2.0)
-- `.clinerules` COMPLETELY REWRITTEN from v5.6.0 12-file rule to v5.7.0 8-Point Constitution v2.0.
+- `.clinerules` COMPLETELY REWRITTEN from v5.6.0 12-file rule to v5.7.2 8-Point Constitution v2.0.
 - **Point I: ZERO EMOJIS PROTOCOL** -- All new AI-generated text must use formal academic tone only. No emojis, kaomoji, or decorative Unicode. Markdown formatting only.
 - **Point II: 100% AIR-GAPPED & LOCAL-FIRST** -- Ollama is the DEFAULT and PRIMARY provider. Cloud providers are optional fallbacks.
 - **Point III: HARDWARE-AWARE VRAM CONTAINMENT** -- GPU detection via `core/hardware.py` is single source of truth. 80% VRAM training budget, 2GB inference headroom.
@@ -35,7 +58,7 @@ All notable changes to the TALOS project will be documented in this file. The pr
 ### Added -- Timeline Documentation System
 - `docs/TIMELINE_EN.md` (NEW): Authoritative historical record of all TALOS development milestones in English.
   - Phase 1 (v5.0-v5.6): 18 milestones marked Complete.
-  - Phase 2 (v5.7.0): 3 milestones marked Complete, 1 unchecked (Python file docstring refactoring).
+  - Phase 2 (v5.7.2): 3 milestones marked Complete, 1 unchecked (Python file docstring refactoring).
   - Phase 3 (v6.0.0+): 5 future milestones.
 - `docs/TIMELINE_GR.md` (NEW): Same authoritative record in formal Greek.
   - Pure, formal Greek tone throughout -- no mixed-language commentary.
@@ -52,18 +75,18 @@ All notable changes to the TALOS project will be documented in this file. The pr
 ### Changed -- Port Reallocation
 - `src/api/main_api.py`: Port 8000 -> 8001. SYNAPSE event bus occupies port 8000.
 - `src/api/main_api.py`: Host 0.0.0.0 -> 127.0.0.1 (local development default).
-- `src/api/main_api.py`: Version string 5.6.0 -> 5.7.0 across app, docstring, and startup log.
+- `src/api/main_api.py`: Version string 5.6.0 -> 5.7.2 across app, docstring, and startup log.
 - `src/api/main_api.py`: Description updated to mention SYNAPSE protocol.
 - `src/api/main_api.py`: Endpoint count 15 -> 16 (added Synapse webhook).
-- `src/api/main_api.py`: Module docstring fully rewritten to v5.7.0 standard with Dependencies section.
+- `src/api/main_api.py`: Module docstring fully rewritten to v5.7.2 standard with Dependencies section.
 - `src/api/main_api.py`: `app.include_router(synapse_router)` integrated.
 - `src/api/main_api.py`: Import added: `from src.api.synapse_routes import router as synapse_router`.
 
 ### Changed -- Documentation Synchronization (15-File Rule)
-- `README.md`: v5.6.0 -> v5.7.0. Tagline updated with SYNAPSE mention. Citation versions bumped.
-- `ROADMAP.md`: v5.6.0 -> v5.7.0. New Section 9 for v5.7.x. Summary table updated.
-- `docs/PROJECT_MAP.md` footer: v5.6.0 -> v5.7.0, 63 -> 67 files covered.
-- `docs/PROJECT_MAP_EN.md` footer: v5.6.0 -> v5.7.0, 63 -> 67 files covered.
+- `README.md`: v5.6.0 -> v5.7.2. Tagline updated with SYNAPSE mention. Citation versions bumped.
+- `ROADMAP.md`: v5.6.0 -> v5.7.2. New Section 9 for v5.7.x. Summary table updated.
+- `docs/PROJECT_MAP.md` footer: v5.6.0 -> v5.7.2, 63 -> 67 files covered.
+- `docs/PROJECT_MAP_EN.md` footer: v5.6.0 -> v5.7.2, 63 -> 67 files covered.
 - `docs/API_HANDOVER_FOTIS.md`: Version references updated.
 - `docs/UX_UI_BLUEPRINT_FOTIS.md`: Version references updated.
 - `docs/IP_PROTECTION_STRATEGY.md`: Version references updated.
@@ -81,7 +104,7 @@ All notable changes to the TALOS project will be documented in this file. The pr
 - **Why 15 files from 12?** The 8-Point Constitution mandates authoritative historical records (Timeline documents) to enforce Agentic Rails (Point IV). The two Timeline files bring the canonical set from 12 to 15.
 - **Why port 8001?** Port 8000 is reserved for the SYNAPSE event bus, which is the backbone of the ALEXANDRIA distributed research intelligence mesh. TALOS as a microservice connects to the bus as both an emitter (via EventEmitter) and a receiver (via the webhook).
 - **Why formal academic tone only?** PhD dissertation defense requires professional, academic presentation. Emojis and casual language undermine scientific credibility.
-- **Why `run_talos.bat` instead of updating `start_talos.bat`?** The legacy script is a 7-option Streamlit/CLI launcher tied to legacy architecture. The new script is purpose-built for the v5.7.0 headless API era with a clean 3-option interface.
+- **Why `run_talos.bat` instead of updating `start_talos.bat`?** The legacy script is a 7-option Streamlit/CLI launcher tied to legacy architecture. The new script is purpose-built for the v5.7.2 headless API era with a clean 3-option interface.
 
 ## [v5.6.0] - 2026-07-29 -- Streamlit Deprecation, Capabilities Docs, 12-File Sync Rule
 

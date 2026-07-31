@@ -355,8 +355,13 @@ class AIManager:
     # --- Internal: Request Execution ---
 
     def _execute_request(self, prompt: str, model_type: str,
-                         response_format: str = 'text') -> Union[Dict[str, Any], str, None]:
+                         response_format: str = 'text',
+                         tier: str = 'fast') -> Union[Dict[str, Any], str, None]:
         """Execute a request across all enabled providers with fallback.
+
+        Supports multi-tier routing (v5.7.1): ``tier='fast'`` routes to the
+        Neutrino-8B edge endpoint at FAST_EDGE_BASE_URL; ``tier='heavy'`` uses
+        the standard provider priority chain with qwen2.5:14b via Ollama.
 
         Iterates through ``provider_priority``, attempting each non-open-circuit
         provider. On success, resets the failure counter for that provider.
@@ -366,10 +371,21 @@ class AIManager:
             prompt (str): Full prompt text to send.
             model_type (str): ``'pro'`` or ``'flash'`` (Gemini only).
             response_format (str): ``'json'`` or ``'text'``.
+            tier (str): ``'fast'`` for edge/lightweight model or ``'heavy'``
+                        for standard reasoning model (default: 'fast').
 
         Returns:
             dict, str, or None: Parsed response, or None if all providers fail.
         """
+        # -- v5.7.1: Multi-tier routing --
+        if tier == 'fast':
+            result = self._execute_fast_tier_request(prompt, response_format)
+            if result is not None:
+                self.last_provider_used = 'fast_edge'
+                return result
+            # Fall through to standard providers if fast tier fails
+            print("  >!> Fast tier failed. Falling back to standard provider chain...")
+
         for provider_name in self.provider_priority:
             if provider_name in self.providers and not self.providers[provider_name]['circuit_open']:
                 print(f"  > Attempting request with provider: {provider_name.upper()}")
@@ -392,6 +408,75 @@ class AIManager:
                     continue
         print("FATAL: All AI providers failed.")
         return None
+
+    # ------------------------------------------------------------------
+    # -- v5.7.1: Fast Tier (Edge) Request Execution --
+    # ------------------------------------------------------------------
+
+    def _execute_fast_tier_request(self, prompt: str,
+                                   response_format: str = 'text') -> Union[Dict[str, Any], str, None]:
+        """Execute a request against the fast edge tier (Neutrino-8B).
+
+        Uses the FAST_EDGE_BASE_URL and FAST_EDGE_MODEL from config/settings.py
+        (or environment variables). This is an OpenAI-compatible HTTP POST to
+        the dedicated edge endpoint.
+
+        Args:
+            prompt (str): Full prompt text to send.
+            response_format (str): ``'json'`` or ``'text'``.
+
+        Returns:
+            dict, str, or None: Parsed response, or None on failure.
+        """
+        try:
+            from config.settings import FAST_EDGE_BASE_URL, FAST_EDGE_MODEL
+        except ImportError:
+            FAST_EDGE_BASE_URL = os.getenv("FAST_EDGE_BASE_URL", "http://127.0.0.1:11435/v1")
+            FAST_EDGE_MODEL = os.getenv("FAST_EDGE_MODEL", "fermionresearch/Neutrino-8B")
+
+        final_prompt = prompt
+        if response_format == 'json':
+            final_prompt += (
+                "\n\nIMPORTANT: Your response MUST be a single, valid JSON object. "
+                "Do not include any text explanation before or after the JSON."
+            )
+
+        payload = {
+            "model": FAST_EDGE_MODEL,
+            "messages": [{"role": "user", "content": final_prompt}],
+            "temperature": 0.5,
+        }
+
+        try:
+            print(f"  > Attempting fast-tier request: {FAST_EDGE_MODEL} @ {FAST_EDGE_BASE_URL}")
+            response = requests.post(
+                f"{FAST_EDGE_BASE_URL}/chat/completions",
+                json=payload,
+                timeout=30,
+                headers={"Content-Type": "application/json"},
+            )
+            if response.status_code == 200:
+                data = response.json()
+                response_text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if not response_text:
+                    print("  >!> Fast tier returned empty response.")
+                    return None
+                if response_format == 'json':
+                    try:
+                        return json.loads(self._clean_json_string(response_text))
+                    except json.JSONDecodeError:
+                        print("  >!> Fast tier JSON decode failed.")
+                        return None
+                return response_text
+            else:
+                print(f"  >!> Fast tier HTTP {response.status_code}: {response.text[:200]}")
+                return None
+        except requests.exceptions.ConnectionError as e:
+            print(f"  >!> Fast tier connection refused: {e}")
+            return None
+        except Exception as e:
+            print(f"  >!> Fast tier unexpected error: {e}")
+            return None
 
     def _execute_gemini_request(self, prompt: str, model_type: str,
                                 response_format: str) -> Union[Dict[str, Any], str, None]:

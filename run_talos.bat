@@ -1,9 +1,9 @@
 @echo off
-title Project TALOS v5.7.0 — Automated Batch Runner
+title Project TALOS v5.7.2 — Automated Batch Runner
 chcp 65001 >nul 2>&1
 
 REM ===========================================================================
-REM run_talos.bat — Automated Batch Runner for Project TALOS v5.7.0
+REM run_talos.bat — Automated Batch Runner for Project TALOS v5.7.2
 REM
 REM Provides a 3-option menu for setup, server launch, and testing.
 REM TALOS FastAPI now runs on port 8001 (port 8000 is reserved for SYNAPSE bus).
@@ -14,7 +14,7 @@ REM ===========================================================================
 :TOP
 cls
 echo =============================================
-echo    Project TALOS v5.7.0
+echo    Project TALOS v5.7.2
 echo    Research Intelligence Platform
 echo    SYNAPSE Protocol Active (Bus :8000 / API :8001)
 echo =============================================
@@ -73,7 +73,7 @@ IF ERRORLEVEL 1 (
 
 echo.
 echo =============================================
-echo    Setup complete. TALOS v5.7.0 is ready.
+echo    Setup complete. TALOS v5.7.2 is ready.
 echo =============================================
 echo.
 echo    TALOS API will start on port 8001.
@@ -88,7 +88,7 @@ REM ---------------------------------------------------------------------------
 :SERVER
 cls
 echo =============================================
-echo    Starting TALOS FastAPI Server (v5.7.0)
+echo    Starting TALOS FastAPI Server (v5.7.2)
 echo    Port: 8001
 echo    API Docs: http://localhost:8001/docs
 echo    Health:   http://localhost:8001/api/v1/health
@@ -154,6 +154,6 @@ REM ---------------------------------------------------------------------------
 :END
 echo.
 echo =============================================
-echo    Closing Project TALOS v5.7.0...
+echo    Closing Project TALOS v5.7.2...
 echo =============================================
 exit /b

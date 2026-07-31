@@ -1,5 +1,5 @@
 # TALOS Project Instructions for AI Coding Agents
-# Version: v5.7.0
+# Version: v5.7.2
 
 ## CONSTITUTION v2.0 — The 8-Point Master Initialization Standard
 
@@ -267,5 +267,5 @@
 
 ---
 
-> **Last Updated:** 2026-07-31 (v5.7.0 — 8-Point Constitution v2.0, 15-File Sync Rule, SYNAPSE Protocol, Port 8001)
-> **Project Version:** v5.7.0
+> **Last Updated:** 2026-07-31 (v5.7.2 — Cloud LLM Configuration Centralization in config/settings.py)
+> **Project Version:** v5.7.2

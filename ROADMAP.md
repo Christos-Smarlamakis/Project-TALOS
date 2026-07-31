@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward.
 
-> **Current Version:** v5.7.0 (Headless FastAPI with 16 endpoints, SYNAPSE Event-Driven Protocol, Streamlit deprecated, React 18 + Tailwind CSS + Shadcn UI)
+> **Current Version:** v5.7.2 (Headless FastAPI with 16 endpoints, SYNAPSE Event-Driven Protocol, Streamlit deprecated, React 18 + Tailwind CSS + Shadcn UI)
 > **Last Updated:** 2026-07-31
 
 ---
@@ -121,7 +121,7 @@ This version transforms TALOS into a **fully guided research platform** with a 4
 
 | Version | Codename | Focus |
 |---------|----------|-------|
-| **v5.7.0** | Constitution v2.0 + Synapse | **Upgraded `.clinerules` to 8-Point Constitution v2.0.** Enforced 15-file documentation synchronization rule (added Timeline documents as files #8 and #9). Created `docs/TIMELINE_EN.md` and `docs/TIMELINE_GR.md` as authoritative historical records. **Scaffolded SYNAPSE Event-Driven Protocol:** `src/integration/synapse_client.py` (EventEmitter class) pushes JSON events to the SYNAPSE bus at port 8000; `src/api/synapse_routes.py` (FastAPI APIRouter) receives inbound commands via `POST /api/v1/synapse/webhook`. **Port reallocation:** TALOS FastAPI now on port 8001 (was 8000) to leave port 8000 for the SYNAPSE event bus. **Created `run_talos.bat`** at project root with 3-option menu (Full Setup, Start FastAPI Server on port 8001, Run Test Suite via pytest -v). Upgraded `src/api/main_api.py` module-level docstring to v5.7.0 standard with strict format. |
+| **v5.7.2** | Constitution v2.0 + Synapse | **Upgraded `.clinerules` to 8-Point Constitution v2.0.** Enforced 15-file documentation synchronization rule (added Timeline documents as files #8 and #9). Created `docs/TIMELINE_EN.md` and `docs/TIMELINE_GR.md` as authoritative historical records. **Scaffolded SYNAPSE Event-Driven Protocol:** `src/integration/synapse_client.py` (EventEmitter class) pushes JSON events to the SYNAPSE bus at port 8000; `src/api/synapse_routes.py` (FastAPI APIRouter) receives inbound commands via `POST /api/v1/synapse/webhook`. **Port reallocation:** TALOS FastAPI now on port 8001 (was 8000) to leave port 8000 for the SYNAPSE event bus. **Created `run_talos.bat`** at project root with 3-option menu (Full Setup, Start FastAPI Server on port 8001, Run Test Suite via pytest -v). Upgraded `src/api/main_api.py` module-level docstring to v5.7.2 standard with strict format. |
 
 | Feature | Description |
 |---------|-------------|
@@ -140,7 +140,7 @@ The v6.0 series represents the **third generation** of TALOS -- decoupling the m
 
 | Component | Technology | Description |
 |-----------|-----------|-------------|
-| **Headless Backend** | FastAPI | RESTful microservice with async endpoints (already started in v5.5.0, enhanced in v5.7.0) |
+| **Headless Backend** | FastAPI | RESTful microservice with async endpoints (already started in v5.5.0, enhanced in v5.7.2) |
 | **Database Layer** | PostgreSQL + pgvector | Migration from SQLite for concurrent access and vector similarity search |
 | **Cross-Platform Frontend** | Flutter | Desktop app (Windows, Linux, macOS, iOS, Android) |
 | **Local RAG** | Ollama + Chroma | Chat with your papers, PDF ingestion, knowledge graph |
@@ -172,7 +172,7 @@ The v6.0 series represents the **third generation** of TALOS -- decoupling the m
 | **v5.5.1** | Frontend DX | +2 endpoints: GWO history + graph HTML | Complete |
 | **v5.5.2** | 100% Coverage | +4 endpoints: eval + translate + authors + recalc | Complete |
 | **v5.6.0** | Headless API + Docs | Streamlit deprecated, 15 endpoints, 12-file sync | Complete |
-| **v5.7.0** | Constitution v2.0 + Synapse | 8-Point Constitution, Synapse Protocol, 16 endpoints, 15-file sync | Current |
+| **v5.7.2** | Constitution v2.0 + Synapse | 8-Point Constitution, Synapse Protocol, 16 endpoints, 15-file sync | Current |
 | **v6.0.0+** | Distributed Eco. | Flutter + RAG + 3D Viz + PyInstaller | Future |
 
 ---
