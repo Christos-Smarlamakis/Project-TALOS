@@ -10,13 +10,22 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.8.4
+Project: TALOS v5.8.5
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
     Conda environment, API port, Synapse bus, execution mode, and active
     LLM tiers. 10-option menu with integrated Model Manager, CLI research
     tools, and system diagnostics.
+
+    v5.8.5: Universal TUI Beautification -- all sub-menu launches, diagnostic
+    outputs, and informational prompts wrapped in styled Rich Panels with
+    color-coded borders. New _build_info_panel() and _build_results_table()
+    helpers for consistent Sci-Fi terminal aesthetics. Elite paper scores
+    (>=7) highlighted in gold. PYTHIA query translator and baseline reports
+    display contextual descriptions before subprocess launch. Fixed model name
+    display in status panel -- full raw configuration strings printed directly
+    without split(":") truncation.
 
     v5.8.4: Full Rich TUI refactoring (Console, Panel, Table, Box, Text).
     Model Manager integrated as menu option 1 via direct import.
@@ -145,6 +154,89 @@ def _resolve_script_path(script_name):
     # Fallback: old-style (should not happen post-migration)
     return os.path.join(project_root, 'scripts', script_name)
 
+def _build_info_panel(title, message, border_style="bright_blue"):
+    """Build a styled Rich Panel for informational messages.
+
+    Args:
+        title: Panel title string.
+        message: Body text (str or list of str).
+        border_style: Rich border style color.
+
+    Returns:
+        A rich.panel.Panel ready for console.print().
+    """
+    if isinstance(message, str):
+        body = Text(message, style="white")
+    else:
+        body = Text()
+        for i, line in enumerate(message):
+            body.append(line)
+            if i < len(message) - 1:
+                body.append("\n")
+    return Panel(
+        Align.center(body),
+        title=f"[bold]{title}[/bold]",
+        border_style=border_style,
+        box=box.ROUNDED,
+        padding=(1, 2),
+    )
+
+
+def _build_results_table(papers, title="Search Results"):
+    """Build a styled Rich Table for paper search results.
+
+    Columns: ID (cyan), Title (white/bold), Source (magenta),
+             Year (yellow), Overall Score (emerald/bold).
+    Elite papers (overall_score >= 7) are highlighted in gold.
+
+    Args:
+        papers: List of dicts with keys id, title, source,
+                publication_year, overall_score.
+        title: Table title string.
+
+    Returns:
+        A rich.table.Table ready for display.
+    """
+    table = Table(
+        title=f"[bold bright_cyan]{title}[/bold bright_cyan]",
+        box=box.ROUNDED,
+        border_style="bright_blue",
+        show_lines=True,
+        header_style="bold bright_cyan",
+    )
+    table.add_column("ID", style="dim cyan", width=6, no_wrap=True)
+    table.add_column("Title", style="white", width=50, overflow="fold")
+    table.add_column("Source", style="magenta", width=16)
+    table.add_column("Year", style="yellow", width=6, justify="right")
+    table.add_column("Score", style="bold emerald", width=8, justify="right")
+
+    for p in papers:
+        score = p.get("overall_score", 0)
+        try:
+            score_f = float(score)
+        except (TypeError, ValueError):
+            score_f = 0.0
+        score_str = f"{score_f:.1f}"
+        # Highlight elite papers (score >= 7) in gold
+        if score_f >= 7:
+            score_style = "[bold gold1]"
+            row_style = None
+            score_str_display = f"{score_style}{score_str}[/bold gold1]"
+        else:
+            score_style = ""
+            row_style = None
+            score_str_display = score_str
+        title_text = str(p.get("title", "N/A"))[:100]
+        table.add_row(
+            str(p.get("id", "?")),
+            title_text,
+            str(p.get("source", "N/A")),
+            str(p.get("publication_year", "N/A")),
+            score_str_display,
+        )
+    return table
+
+
 def run_script(script_name, python_exe, args=None, capture=False):
     """Launch a TALOS script as a subprocess.
 
@@ -153,7 +245,12 @@ def run_script(script_name, python_exe, args=None, capture=False):
     """
     script_path = _resolve_script_path(script_name)
     command = [python_exe, script_path] + (args or [])
-    print(f"\n--- Launching '{script_name}'... ---\n")
+    launch_panel = _build_info_panel(
+        f"Launching: {script_name}",
+        f"[dim]Command: {' '.join(command)}[/dim]",
+        border_style="cyan",
+    )
+    console.print(launch_panel)
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
     if USE_LOCAL_MODEL: env["TALOS_USE_LOCAL"] = "1"
@@ -165,23 +262,23 @@ def run_script(script_name, python_exe, args=None, capture=False):
         if capture:
             result = subprocess.run(command, check=True, capture_output=True, text=True, encoding="utf-8", env=env)
             print(result.stdout)
-            print(f"\n--- '{script_name}' completed. ---")
+            console.print(f"\n[dim green]--- '{script_name}' completed. ---[/dim green]")
             return result
         else:
             subprocess.run(command, check=True, env=env)
-            print(f"\n--- '{script_name}' completed. ---")
+            console.print(f"\n[dim green]--- '{script_name}' completed. ---[/dim green]")
             return True
     except KeyboardInterrupt:
-        print(f"\n\n--- '{script_name}' cancelled. ---")
+        console.print(f"\n[yellow]--- '{script_name}' cancelled by user. ---[/yellow]")
         return False
     except subprocess.CalledProcessError as e:
         if "interactive_dashboard.py" in script_name and e.returncode in [1, 2, -2, 3221225786]:
-            print(f"\n--- Dashboard server terminated by user. ---")
+            console.print(f"\n[dim green]--- Dashboard server terminated by user. ---[/dim green]")
             return True
-        print(f"\n--- Error: {e} ---")
+        console.print(f"\n[red]--- Error: {e} ---[/red]")
         return None
     except Exception as e:
-        print(f"\n--- Error: {e} ---")
+        console.print(f"\n[red]--- Error: {e} ---[/red]")
         return None
 
 def check_first_run(python_exe):
@@ -468,29 +565,22 @@ def _build_status_table():
     }
     mode_display = mode_labels.get(mode, mode)
 
-    # -- Fast Edge model (strip tag for brevity) --
+    # -- Fast Edge model: use raw configuration string directly --
     fast_edge = os.environ.get("FAST_EDGE_MODEL", FAST_EDGE_MODEL)
-    if ":" in fast_edge:
-        fast_edge = fast_edge.split(":")[0]
-    # Truncate long model names
-    if len(fast_edge) > 28:
-        fast_edge = fast_edge[:25] + "..."
 
-    # -- Heavy Reasoning model --
+    # -- Heavy Reasoning model: use raw configuration string directly --
     heavy_model = os.environ.get("HEAVY_REASONING_MODEL", HEAVY_REASONING_MODEL)
-    if ":" in heavy_model:
-        heavy_model = heavy_model.split(":")[-1]  # keep tag for clarity (e.g. "14b")
-    if len(heavy_model) > 28:
-        heavy_model = heavy_model[:25] + "..."
 
-    # -- Cloud provider --
+    # -- Cloud provider: display raw provider name + raw model name --
     cloud_prov = os.environ.get("TALOS_CLOUD_PROVIDER", CLOUD_PROVIDER)
     if cloud_prov == "gemini":
-        cloud_display = f"Gemini ({os.environ.get('GEMINI_FLASH_MODEL', GEMINI_FLASH_MODEL)})"
+        gemini_model = os.environ.get("GEMINI_FLASH_MODEL", GEMINI_FLASH_MODEL)
+        cloud_display = f"Gemini ({gemini_model})"
     elif cloud_prov == "deepseek":
-        cloud_display = f"DeepSeek ({os.environ.get('DEEPSEEK_MODEL_CHAT', DEEPSEEK_MODEL_CHAT)})"
+        deepseek_model = os.environ.get("DEEPSEEK_MODEL_CHAT", DEEPSEEK_MODEL_CHAT)
+        cloud_display = f"DeepSeek ({deepseek_model})"
     else:
-        cloud_display = cloud_prov.capitalize() if cloud_prov else "None"
+        cloud_display = str(cloud_prov) if cloud_prov else "None"
 
     # -- Synapse bus URL shorthand --
     synapse_short = "localhost:8000" if "8000" in SYNAPSE_BUS_URL else SYNAPSE_BUS_URL
@@ -646,17 +736,23 @@ def main_menu():
                     run_script("historic_search.py", python_exe)
             elif "2c" in choice2: run_script("grey_literature_miner.py", python_exe)
             elif "2d" in choice2:
-                print("\n" + "=" * 65)
-                print("  Live DRL Agent -- Real API Orchestration")
-                print("=" * 65)
-                print("\n  The trained DRL agent selects the optimal API source in real-time.")
+                info = _build_info_panel(
+                    "Live DRL Agent -- Real API Orchestration",
+                    "The trained DRL agent selects the optimal API source in real-time\n"
+                    "using the 14-source academic API environment.",
+                    border_style="cyan",
+                )
+                console.print(info)
                 if questionary.confirm("Start live agent? (Ctrl+C to stop)", default=True).ask():
                     run_script("talos_live_agent.py", python_exe, args=["--verbose"])
             elif "2e" in choice2:
-                print("\n" + "=" * 65)
-                print("  Autonomous Research Process -- 24/7 + DRL")
-                print("=" * 65)
-                print("\n  Runs INDEFINITELY. Uses DRL agent to discover papers around the clock.")
+                info = _build_info_panel(
+                    "Autonomous Research Process -- 24/7 + DRL",
+                    "Runs INDEFINITELY. Uses the DRL agent to discover papers\n"
+                    "around the clock with periodic AI evaluation and reporting.",
+                    border_style="yellow",
+                )
+                console.print(info)
                 if questionary.confirm("Start autonomous process? (Ctrl+C to stop)", default=True).ask():
                     run_script("talos_service.py", python_exe)
             elif "2f" in choice2: run_script("knowledge_path_generator.py", python_exe)
@@ -668,24 +764,65 @@ def main_menu():
                 fm = "Dashboard terminated. Press Enter..."
             elif "2k" in choice2: run_script("drl_trainer.py", python_exe)
             elif "2l" in choice2:
-                print("\nCompare Baselines -- Pre/Post DRL")
+                info = _build_info_panel(
+                    "Compare Baselines -- Pre/Post DRL",
+                    "Generates a new academic baseline report and compares it\n"
+                    "against the previous one (Delta analysis).",
+                    border_style="yellow",
+                )
+                console.print(info)
                 if questionary.confirm("Generate new baseline and compare?", default=True).ask():
                     run_script("generate_baseline_report.py", python_exe, args=["--academic"])
                     rb = os.path.join(project_root, "reports", "general_status_report")
                     if os.path.exists(rb):
                         folders = sorted([d for d in os.listdir(rb) if os.path.isdir(os.path.join(rb, d))], reverse=True)
                         if len(folders) >= 2:
-                            print(f"\n  Latest:   {folders[0]}")
-                            print(f"  Previous: {folders[1]}")
+                            comp = _build_info_panel(
+                                "Baseline Comparison",
+                                [f"[cyan]Latest:[/cyan]   {folders[0]}",
+                                 f"[cyan]Previous:[/cyan] {folders[1]}"],
+                                border_style="green",
+                            )
+                            console.print(comp)
         elif "3." in choice:
+            info = _build_info_panel(
+                "Metadata Enrichment",
+                "Enriches paper records with metadata from OpenAlex,\n"
+                "Crossref, DBLP, and Semantic Scholar (multi-source fallback chain).",
+                border_style="cyan",
+            )
+            console.print(info)
             run_script("metadata_enricher.py", python_exe)
         elif "4." in choice:
+            info = _build_info_panel(
+                "Research Goal -- Query Translator (PYTHIA)",
+                "Translates a natural-language research goal into optimized\n"
+                "boolean search queries for all 14 academic APIs.\n"
+                "[dim]Uses the AI Manager with Research Architect persona.[/dim]",
+                border_style="bright_magenta",
+            )
+            console.print(info)
             run_script("query_translator.py", python_exe)
         elif "5." in choice:
             run_script("model_manager.py", python_exe)
         elif "6." in choice:
+            info = _build_info_panel(
+                "Baseline Report (Standard)",
+                "Generates a standard baseline report with score distribution,\n"
+                "quad-layer averages, source distribution, and embedding coverage.",
+                border_style="green",
+            )
+            console.print(info)
             run_script("generate_baseline_report.py", python_exe)
         elif "7." in choice:
+            info = _build_info_panel(
+                "Baseline Report (Academic -- 600 DPI)",
+                "Generates a publication-quality academic baseline report\n"
+                "with serif fonts, 600 DPI plots, and muted color palette\n"
+                "suitable for IEEE/Springer journals.",
+                border_style="yellow",
+            )
+            console.print(info)
             run_script("generate_baseline_report.py", python_exe, args=["--academic"])
         elif "8." in choice:
             # -- DRL Status: rich-powered display --
@@ -716,8 +853,14 @@ def main_menu():
             )
             console.print(drl_panel)
         elif "9." in choice:
-            console.print("\n[bold]Codebase Documentation Generator (18 Languages)[/bold]")
-            console.print("[dim]Uses LOCAL Ollama -- zero cloud cost, full privacy.[/dim]")
+            info = _build_info_panel(
+                "Codebase Documentation Generator (18 Languages)",
+                "Uses LOCAL Ollama -- zero cloud cost, full privacy.\n"
+                "Produces detailed Markdown docs for every code file selected.\n"
+                "[dim]Supports: English, Greek, Chinese, Hindi, Spanish, Arabic, and 12 more.[/dim]",
+                border_style="bright_blue",
+            )
+            console.print(info)
             if questionary.confirm("Launch documentation generator?", default=True).ask():
                 run_script("generate_docs.py", python_exe)
 
