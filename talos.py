@@ -10,17 +10,25 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.3.7
+Project: TALOS v5.8.4
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
-    menu-driven interface for accessing various research tools, including
-    author analysis, database management, system diagnostics, and API key
-    configuration. Supports graceful handling of missing dependencies and
-    limited console environments.
+    Rich-powered terminal dashboard with a dynamic status table showing
+    Conda environment, API port, Synapse bus, execution mode, and active
+    LLM tiers. 10-option menu with integrated Model Manager, CLI research
+    tools, and system diagnostics.
 
-    v5.4.1 (src/ migration): run_script() now resolves scripts from the
-    src/ package layout. All sys.path hacks removed — imports use proper
-    package paths (src.core.*, etc.).
+    v5.8.4: Full Rich TUI refactoring (Console, Panel, Table, Box, Text).
+    Model Manager integrated as menu option 1 via direct import.
+    Zero emojis protocol enforced across all Rich-formatted output.
+
+Dependencies:
+    - config.settings: Single source of truth for TALOS_VERSION.
+    - src.core.profile_manager: Profile switching and retrieval.
+    - src.ai.llm.model_manager: Multi-tier AI model management TUI.
+    - rich: Terminal UI beautification (Console, Panel, Table, Box, Text).
+    - questionary: Terminal UI interactive prompts.
+    - python-dotenv: Environment variable loading.
 """
 import questionary
 import os
@@ -34,16 +42,30 @@ load_dotenv()
 
 import shutil
 
+from config.settings import TALOS_VERSION, TALOS_API_PORT, TALOS_EXECUTION_MODE
+from config.settings import FAST_EDGE_MODEL, HEAVY_REASONING_MODEL
+from config.settings import CLOUD_PROVIDER, GEMINI_FLASH_MODEL, DEEPSEEK_MODEL_CHAT
+from config.settings import SYNAPSE_BUS_URL
 from src.core.profile_manager import (
     get_active_profile_name, save_current_state_to_profile, set_active_profile_name,
 )
 
+# -- Rich imports for the gorgeous terminal dashboard --
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich.text import Text
+from rich import box
+from rich.align import Align
+
+console = Console()
+
 USE_LOCAL_MODEL = False
 
-# ── Script-name → relative-path map (for run_script) ─────────────────────────
+# -- Script-name -> relative-path map (for run_script) -------------------------
 # Maps the script filename to its package subdirectory under src/.
 _SCRIPT_MAP = {
-    # ── Ingestion ──
+    # -- Ingestion --
     "daily_search.py":            "ingestion",
     "historic_search.py":         "ingestion",
     "grey_literature_miner.py":   "ingestion",
@@ -51,22 +73,22 @@ _SCRIPT_MAP = {
     "zotero_connector.py":        "ingestion",
     "metadata_enricher.py":       "ingestion",
     "data_enricher.py":           "ingestion",
-    # ── DRL ──
+    # -- DRL --
     "drl_trainer.py":             "ai/drl",
     "train_agent.py":             "ai/drl",
     "talos_live_agent.py":        "ai/drl",
     "talos_service.py":           "ai/drl",
-    # ── Optimizers ──
+    # -- Optimizers --
     "gwo_rl_optimizer.py":        "ai/optimizers",
     "gwo_live_dashboard.py":      "ai/optimizers",
-    # ── Embeddings ──
+    # -- Embeddings --
     "embedding_generator.py":     "ai/embeddings",
     "db_embedding_upgrade.py":    "ai/embeddings",
-    # ── LLM ──
+    # -- LLM --
     "query_translator.py":        "ai/llm",
     "model_manager.py":           "ai/llm",
     "research_pivot.py":          "ai/llm",
-    # ── Analysis ──
+    # -- Analysis --
     "citation_analyzer.py":       "analysis",
     "author_profiler.py":         "analysis",
     "author_trajectory_analyzer.py": "analysis",
@@ -76,7 +98,7 @@ _SCRIPT_MAP = {
     "recommender.py":             "analysis",
     "generate_baseline_report.py": "analysis",
     "generate_architecture_graph.py": "analysis",
-    # ── Utils ──
+    # -- Utils --
     "db_stats.py":                "utils",
     "recalculate_scores.py":      "utils",
     "reevaluate_database.py":     "utils",
@@ -85,24 +107,21 @@ _SCRIPT_MAP = {
     "generate_docs.py":           "utils",
     "verify_dependency_map.py":   "utils",
     "interactive_dashboard.py":   "utils",
-    # ── Core (profile manager is imported directly, but can also be run) ──
+    # -- Core (profile manager is imported directly, but can also be run) --
     "profile_manager.py":         "core",
-    # ── API ──
+    # -- API --
     "talos_service_api.py":       "api",
 }
-
-# ── Single source of truth for the version shown in the TUI header ──────────
-TALOS_VERSION = "v5.4.1"
 
 def safe_select(message, choices):
     """Questionary select with graceful fallback.
     Returns None on Ctrl+C (all menus treat None as 'Back')."""
     try:
-        return questionary.select(message, choices=choices, use_indicator=True, pointer="»").ask()
+        return questionary.select(message, choices=choices, use_indicator=True, pointer=">").ask()
     except KeyboardInterrupt:
         return None
     except Exception:
-        # Fancy select failed (e.g. limited console) — plain fallback.
+        # Fancy select failed (e.g. limited console) -- plain fallback.
         try:
             return questionary.select(message, choices=choices).unsafe_ask()
         except KeyboardInterrupt:
@@ -128,7 +147,7 @@ def _resolve_script_path(script_name):
 
 def run_script(script_name, python_exe, args=None, capture=False):
     """Launch a TALOS script as a subprocess.
-    
+
     The script is resolved from the _SCRIPT_MAP (src/<subdir>/<name>).
     All TALOS_* environment variables are forwarded to the child process.
     """
@@ -177,7 +196,7 @@ def check_first_run(python_exe):
             print("ERROR: 'config.template.json' not found.")
             return
         if not os.path.exists("_profiles"): os.makedirs("_profiles")
-        # .ask() returns None on Ctrl+C — treat as "no" (skip config).
+        # .ask() returns None on Ctrl+C -- treat as "no" (skip config).
         answer = questionary.confirm("Start configuration now?", default=True).ask()
         if answer:
             run_script("query_translator.py", python_exe)
@@ -215,7 +234,7 @@ def database_data_menu(python_exe):
     rdb = os.path.join(project_root, 'data', 'talos_research.db')   # moved to data/
     tdb = pdb if os.path.exists(pdb) else rdb
     choice = safe_select("Database & Data:", choices=[
-        "1. Statistics & Health", "2. Metadata Enrichment (APOLLO)", "3. Zotero Sync",
+        "1. Statistics & Health", "2. Metadata Enrichment", "3. Zotero Sync",
         "4. Generate/Update Embeddings", "5. AI Re-evaluation", "6. Data Enrichment (Unpaywall)",
         "7. Scientometrics Report", "8. PDF Downloader", questionary.Separator(), "Back"
     ])
@@ -231,24 +250,27 @@ def database_data_menu(python_exe):
 
 def system_health_menu(python_exe):
     os.system('cls' if os.name == 'nt' else 'clear')
-    project_root = os.path.dirname(os.path.abspath(__file__))    
+    project_root = os.path.dirname(os.path.abspath(__file__))
     choice = safe_select("System Diagnostics:", choices=[
         "1. Code Integrity Check", "2. Documentation Audit",
         "3. Open Architecture Graph", "4. Architecture Intelligence Report",
-        "5. GWO Live Dashboard (Dash — Real-Time 3D Swarm)",
-        "6. GWO Swarm Hunt Replay (Streamlit — 3D History)",
-        questionary.Separator(), "7. Baseline Report (Standard)",
-        "8. Baseline Report (Academic — 600 DPI)", "9. DRL Agent Status",
+        "5. GWO Live Dashboard (Dash -- Real-Time 3D Swarm)",
+        questionary.Separator(), "6. Baseline Report (Standard)",
+        "7. Baseline Report (Academic -- 600 DPI)", "8. DRL Agent Status",
         questionary.Separator(),
-        "10. Generate Codebase Docs (18 Languages, LOCAL Only)",
+        "9. Generate Codebase Docs (18 Languages, LOCAL Only)",
         questionary.Separator(), "Back"
     ])
     if choice is None or "Back" in choice: return
     if choice.startswith("1."):
-        tp = os.path.join(project_root, 'test_smoke.py')
+        tp = os.path.join(project_root, 'tests', 'test_smoke.py')
+        if not os.path.exists(tp):
+            tp = os.path.join(project_root, 'test_smoke.py')  # legacy fallback
         if os.path.exists(tp):
             r = subprocess.run([python_exe, tp], check=False, env=os.environ.copy())
             print("\nAll checks passed!" if r.returncode == 0 else f"\nCode {r.returncode}.")
+        else:
+            print("\nSmoke test not found at tests/test_smoke.py")
     elif choice.startswith("2."):
         run_script("verify_dependency_map.py", python_exe, args=["--all"])
     elif choice.startswith("3."):
@@ -266,15 +288,13 @@ def system_health_menu(python_exe):
         if questionary.confirm("Start now? (may take 60s)", default=True).ask():
             run_script("architecture_intelligence_report.py", python_exe)
     elif choice.startswith("5."):
-        # GWO Live Dashboard — starts Dash server for live 3D visualization
         import webbrowser, socket
         print("\n" + "=" * 65)
-        print("  GWO Live Dashboard — Real-Time 3D Swarm Hunt")
+        print("  GWO Live Dashboard -- Real-Time 3D Swarm Hunt")
         print("=" * 65)
         print("\n  Starts a Dash server at http://localhost:8050")
         print("  Shows live 3D scatter plot of GWO wolf pack convergence.")
         print("  Auto-refreshes every 3 seconds.")
-        # Check if dash is already running
         dash_running = False
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -296,23 +316,12 @@ def system_health_menu(python_exe):
         print("\n  Dashboard opened in browser.")
         print("  NOTE: Run GWO first from another terminal with --live flag.")
         print("  python src/ai/optimizers/gwo_rl_optimizer.py --live")
-    elif choice.startswith("6."):
-        # GWO Swarm Hunt Replay — opens Streamlit GUI
-        import webbrowser
-        print("\n  Opens Streamlit -> DRL Dashboard -> Swarm Hunt 3D for replay.")
-        if questionary.confirm("Open Streamlit GUI now?", default=True).ask():
-            subprocess.Popen([python_exe, "-m", "streamlit", "run",
-                os.path.join(project_root, "app.py")],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            time.sleep(3)
-            webbrowser.open("http://localhost:8501")
-    elif choice.startswith("7."): run_script("generate_baseline_report.py", python_exe)
-    elif choice.startswith("8."): run_script("generate_baseline_report.py", python_exe, args=["--academic"])
-    elif choice.startswith("9."):
+    elif choice.startswith("6."): run_script("generate_baseline_report.py", python_exe)
+    elif choice.startswith("7."): run_script("generate_baseline_report.py", python_exe, args=["--academic"])
+    elif choice.startswith("8."):
         mp = os.path.join(project_root, "models", "dddqn_trained.pth")
         gp = os.path.join(project_root, "models", "gwo_best_params.json")
         try:
-            from rich.console import Console; from rich.table import Table; from rich.panel import Panel
             c = Console(); t = Table(show_header=False, box=None)
             t.add_column("K"); t.add_column("V")
             if os.path.exists(mp): t.add_row("Model", f"[green]Present ({os.path.getsize(mp)/1024:.0f}KB)")
@@ -335,11 +344,11 @@ def system_health_menu(python_exe):
                 import json
                 with open(gp) as f: p = json.load(f)
                 print(f"  LR={p['learning_rate']:.6e} GAMMA={p['gamma']:.4f} EPS={p['epsilon_decay']:.6f} Fitness={p['best_fitness']:.1f}")
-    elif choice.startswith("10."):
+    elif choice.startswith("9."):
         print("\n" + "=" * 65)
         print("  Codebase Documentation Generator (18 Languages)")
         print("=" * 65)
-        print("\n  Uses LOCAL Ollama — zero cloud cost, full privacy.")
+        print("\n  Uses LOCAL Ollama -- zero cloud cost, full privacy.")
         print("  Produces detailed Markdown docs for every code file you select.")
         if questionary.confirm("Launch documentation generator?", default=True).ask():
             run_script("generate_docs.py", python_exe)
@@ -387,7 +396,6 @@ def api_keys_menu(python_exe):
                 k = sel.split()[0]; cv = vals.get(k, "")
                 nv = questionary.text(f"New value for {k}:", default=cv).ask()
                 if nv is not None:
-                    # Rewrite env file preserving others
                     from dotenv import set_key
                     try:
                         set_key(env_path, k, nv.strip())
@@ -404,7 +412,7 @@ def profile_settings_menu(python_exe):
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
         c = safe_select("Profile & Settings:", choices=[
-            "1. Manage Profiles", "2. Research Goal (PYTHIA)", "3. AI Model Management",
+            "1. Manage Profiles", "2. Research Goal (Query Translator)", "3. AI Model Management",
             "4. API Keys Management", "5. API Diagnostics", "6. Research Pivot & Retrain",
             questionary.Separator(), "Back"
         ])
@@ -434,10 +442,80 @@ def _verify_local_models():
         os.environ["TALOS_MODELS_VERIFIED"] = "1"
     except Exception: pass
 
+
+# ---------------------------------------------------------------------------
+# -- Rich TUI: Dynamic Status Table Builder --
+# ---------------------------------------------------------------------------
+
+def _build_status_table():
+    """Build and return a Rich Table with live system status information.
+
+    Reads configuration from environment variables and config/settings.py
+    to display:
+      - Conda Environment / API Port / Synapse Bus
+      - Active Execution Mode (Air-Gapped Local / Hybrid / Cloud)
+      - Active Tiers: Fast Edge, Heavy Reasoning, Cloud Provider
+    """
+    # -- Detect Conda environment name --
+    conda_env = os.environ.get("CONDA_DEFAULT_ENV", "N/A")
+
+    # -- Execution mode human-readable label --
+    mode = os.environ.get("TALOS_EXECUTION_MODE", TALOS_EXECUTION_MODE)
+    mode_labels = {
+        "local":  "Air-Gapped Local",
+        "hybrid": "Hybrid (Local + Cloud Fallback)",
+        "cloud":  "Cloud Priority",
+    }
+    mode_display = mode_labels.get(mode, mode)
+
+    # -- Fast Edge model (strip tag for brevity) --
+    fast_edge = os.environ.get("FAST_EDGE_MODEL", FAST_EDGE_MODEL)
+    if ":" in fast_edge:
+        fast_edge = fast_edge.split(":")[0]
+    # Truncate long model names
+    if len(fast_edge) > 28:
+        fast_edge = fast_edge[:25] + "..."
+
+    # -- Heavy Reasoning model --
+    heavy_model = os.environ.get("HEAVY_REASONING_MODEL", HEAVY_REASONING_MODEL)
+    if ":" in heavy_model:
+        heavy_model = heavy_model.split(":")[-1]  # keep tag for clarity (e.g. "14b")
+    if len(heavy_model) > 28:
+        heavy_model = heavy_model[:25] + "..."
+
+    # -- Cloud provider --
+    cloud_prov = os.environ.get("TALOS_CLOUD_PROVIDER", CLOUD_PROVIDER)
+    if cloud_prov == "gemini":
+        cloud_display = f"Gemini ({os.environ.get('GEMINI_FLASH_MODEL', GEMINI_FLASH_MODEL)})"
+    elif cloud_prov == "deepseek":
+        cloud_display = f"DeepSeek ({os.environ.get('DEEPSEEK_MODEL_CHAT', DEEPSEEK_MODEL_CHAT)})"
+    else:
+        cloud_display = cloud_prov.capitalize() if cloud_prov else "None"
+
+    # -- Synapse bus URL shorthand --
+    synapse_short = "localhost:8000" if "8000" in SYNAPSE_BUS_URL else SYNAPSE_BUS_URL
+
+    # -- Build the table --
+    table = Table(show_header=False, box=None, padding=(0, 2))
+    table.add_column("Key", style="dim cyan", no_wrap=True)
+    table.add_column("Value", style="white")
+
+    table.add_row("Conda Environment", f"[bold bright_cyan]{conda_env}[/bold bright_cyan]")
+    table.add_row("API Port", f"[bold green]{TALOS_API_PORT}[/bold green]")
+    table.add_row("Synapse Bus", f"[dim green]{synapse_short}[/dim green]")
+    table.add_row("", "")
+    table.add_row("Execution Mode", f"[bold yellow]{mode_display}[/bold yellow]")
+    table.add_row("", "")
+    table.add_row("Fast Edge Tier", f"[bright_cyan]{fast_edge}[/bright_cyan]")
+    table.add_row("Heavy Reasoning Tier", f"[bright_magenta]{heavy_model}[/bright_magenta]")
+    table.add_row("Cloud Provider", f"[bright_blue]{cloud_display}[/bright_blue]")
+
+    return table
+
+
 def main_menu():
     python_exe = sys.executable or "python"
     project_root = os.path.dirname(os.path.abspath(__file__))
-    print(f"INFO: Python from: {python_exe}")
     check_first_run(python_exe)
     time.sleep(1)
     global USE_LOCAL_MODEL
@@ -457,88 +535,197 @@ def main_menu():
 
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
+
+        # -- Build the Rich dashboard header --
         ap = get_active_profile_name()
-        header = f"TALOS {TALOS_VERSION} | Profile: [{ap}]"
+
+        # -- Title banner --
+        title_text = Text()
+        title_text.append("TALOS", style="bold bright_cyan")
+        title_text.append(f" v{TALOS_VERSION}", style="bold cyan")
+        title_text.append(f"  |  Profile: [{ap}]", style="dim white")
+
+        # -- Database stats line --
+        db_line = ""
         try:
             from src.core.database_manager import DatabaseManager
             db = DatabaseManager(); s = db.get_database_statistics()
-            prov = f"LOCAL ({os.getenv('LOCAL_MODEL_NAME','local')})" if USE_LOCAL_MODEL else "CLOUD (Gemini+DeepSeek)"
-            vr = ""
-            try:
-                from src.core.hardware import detect_vram_gb
-                v = detect_vram_gb()
-                if v: vr = f" | VRAM: {v:.0f}GB"
-            except Exception: pass
-            header = f"TALOS {TALOS_VERSION} | Profile: [{ap}] | {s['total_papers']} papers | {s['elite_papers']} elite | {prov}{vr}"
-        except Exception: pass
+            db_line = f"Papers: {s['total_papers']}  |  Elite: {s['elite_papers']}"
+        except Exception:
+            pass
 
-        choice = safe_select(header, choices=[
+        # -- VRAM line --
+        vram_line = ""
+        try:
+            from src.core.hardware import detect_vram_gb
+            v = detect_vram_gb()
+            if v: vram_line = f"VRAM: {v:.0f} GB"
+        except Exception:
+            pass
+
+        # Status panel
+        status_table = _build_status_table()
+
+        # -- Assemble the full header panel --
+        header_content = Table(show_header=False, box=None, padding=(0, 0))
+        header_content.add_column(justify="center")
+        header_content.add_row(title_text)
+        if db_line or vram_line:
+            stats_parts = []
+            if db_line: stats_parts.append(db_line)
+            if vram_line: stats_parts.append(vram_line)
+            header_content.add_row(Text(" | ".join(stats_parts), style="dim white"))
+        header_content.add_row("")
+        header_content.add_row(status_table)
+
+        header_panel = Panel(
+            Align.center(header_content),
+            border_style="bright_blue",
+            box=box.ROUNDED,
+            padding=(1, 2),
+        )
+
+        console.print(header_panel)
+
+        # -- Menu choices (10 options) --
+        choice = safe_select("Select operation:", choices=[
+            questionary.Separator("  CORE CONFIGURATION"),
+            " 1. Configure AI Models & Execution Modes (Model Manager)",
             questionary.Separator("  SEARCH & DISCOVERY"),
-            "1. Daily Search (14 APIs)",
-            "2. Historical Search (Deep Archive)",
-            "3. Grey Literature / Web Horizon Scan",
-            questionary.Separator("  AI-POWERED SEARCH (DRL)"),
-            "4. Live DRL Agent (Real API Orchestration)",
-            "5. Autonomous Research Process (24/7)",
-            questionary.Separator("  ANALYSIS & INSIGHTS"),
-            "6. Knowledge Path Generator",
-            "7. Citation Network Analyzer",
-            "8. Strategic Reading Report",
-            "9. Author Analysis Tools",
-            "10. Interactive Dashboard",
-            "11. DRL Training (API Orchestrator)",
-            "12. Compare Baselines (Pre/Post DRL)",
-            questionary.Separator("  DATABASE & SETTINGS"),
-            "13. Database & Data",
-            "14. System Diagnostics",
-            "15. Profile & Settings",
-            questionary.Separator(), "Exit"
+            " 2. CLI Research Search (Interactive)",
+            questionary.Separator("  ENRICHMENT & ANALYSIS"),
+            " 3. Metadata Enrichment",
+            " 4. Research Goal (Query Translator)",
+            questionary.Separator("  MODEL MANAGEMENT"),
+            " 5. Model Manager (Legacy/Direct)",
+            questionary.Separator("  SYSTEM DIAGNOSTICS"),
+            " 6. System Diagnostics: Baseline Standard",
+            " 7. System Diagnostics: Baseline Academic",
+            " 8. System Diagnostics: DRL Status",
+            " 9. System Diagnostics: Docs Generator",
+            questionary.Separator(),
+            "10. Exit",
         ])
-        if choice is None or choice == "Exit": break
+        if choice is None or "Exit" in choice: break
         fm = "Press Enter to return..."
 
-        if choice.startswith("1."): run_script("daily_search.py", python_exe)
-        elif choice.startswith("2."):
-            if questionary.confirm("This may take a long time. Sure?", default=False).ask():
-                run_script("historic_search.py", python_exe)
-        elif choice.startswith("3."): run_script("grey_literature_miner.py", python_exe)
-        elif choice.startswith("4."):
-            print("\n" + "=" * 65)
-            print("  Live DRL Agent — Real API Orchestration")
-            print("=" * 65)
-            print("\n  The trained DRL agent selects the optimal API source in real-time.")
-            if questionary.confirm("Start live agent? (Ctrl+C to stop)", default=True).ask():
-                run_script("talos_live_agent.py", python_exe, args=["--verbose"])
-        elif choice.startswith("5."):
-            print("\n" + "=" * 65)
-            print("  Autonomous Research Process — 24/7 + DRL")
-            print("=" * 65)
-            print("\n  Runs INDEFINITELY. Uses DRL agent to discover papers around the clock.")
-            if questionary.confirm("Start autonomous process? (Ctrl+C to stop)", default=True).ask():
-                run_script("talos_service.py", python_exe)
-        elif choice.startswith("6."): run_script("knowledge_path_generator.py", python_exe)
-        elif choice.startswith("7."): run_script("citation_analyzer.py", python_exe)
-        elif choice.startswith("8."): run_script("recommender.py", python_exe)
-        elif choice.startswith("9."): author_tools_menu(python_exe)
-        elif choice.startswith("10."):
-            run_script("interactive_dashboard.py", python_exe)
-            fm = "Dashboard terminated. Press Enter..."
-        elif choice.startswith("11."): run_script("drl_trainer.py", python_exe)
-        elif choice.startswith("12."):
-            print("\nCompare Baselines — Pre/Post DRL")
-            if questionary.confirm("Generate new baseline and compare?", default=True).ask():
-                run_script("generate_baseline_report.py", python_exe, args=["--academic"])
-                rb = os.path.join(project_root, "reports", "general_status_report")
-                if os.path.exists(rb):
-                    folders = sorted([d for d in os.listdir(rb) if os.path.isdir(os.path.join(rb, d))], reverse=True)
-                    if len(folders) >= 2:
-                        print(f"\n  Latest:   {folders[0]}")
-                        print(f"  Previous: {folders[1]}")
-        elif choice.startswith("13."): database_data_menu(python_exe)
-        elif choice.startswith("14."): system_health_menu(python_exe)
-        elif choice.startswith("15."): profile_settings_menu(python_exe)
-        if choice != "Exit": safe_pause(fm)
-    print("\nTalos Command Center Closing...\n")
+        # -- Route menu choices --
+        if "1." in choice:
+            # -- Model Manager: import and run main() in-process --
+            console.print("\n[bold bright_cyan]Launching AI Model Manager...[/bold bright_cyan]\n")
+            try:
+                from src.ai.llm.model_manager import main as mm_main
+                mm_main()
+            except Exception as e:
+                console.print(f"[red]Error launching Model Manager: {e}[/red]")
+                safe_pause("\nPress Enter...")
+        elif "2." in choice:
+            # -- CLI Research Search: open the full legacy search menu --
+            choice2 = safe_select("CLI Research Search:", choices=[
+                questionary.Separator("  SEARCH & DISCOVERY"),
+                "2a. Daily Search (14 APIs)",
+                "2b. Historical Search (Deep Archive)",
+                "2c. Grey Literature / Web Horizon Scan",
+                questionary.Separator("  AI-POWERED SEARCH (DRL)"),
+                "2d. Live DRL Agent (Real API Orchestration)",
+                "2e. Autonomous Research Process (24/7)",
+                questionary.Separator("  ANALYSIS & INSIGHTS"),
+                "2f. Knowledge Path Generator",
+                "2g. Citation Network Analyzer",
+                "2h. Strategic Reading Report",
+                "2i. Author Analysis Tools",
+                "2j. Interactive Dashboard",
+                "2k. DRL Training (API Orchestrator)",
+                "2l. Compare Baselines (Pre/Post DRL)",
+                questionary.Separator(), "Back"
+            ])
+            if choice2 is None or "Back" in choice2: continue
+            if "2a" in choice2: run_script("daily_search.py", python_exe)
+            elif "2b" in choice2:
+                if questionary.confirm("This may take a long time. Sure?", default=False).ask():
+                    run_script("historic_search.py", python_exe)
+            elif "2c" in choice2: run_script("grey_literature_miner.py", python_exe)
+            elif "2d" in choice2:
+                print("\n" + "=" * 65)
+                print("  Live DRL Agent -- Real API Orchestration")
+                print("=" * 65)
+                print("\n  The trained DRL agent selects the optimal API source in real-time.")
+                if questionary.confirm("Start live agent? (Ctrl+C to stop)", default=True).ask():
+                    run_script("talos_live_agent.py", python_exe, args=["--verbose"])
+            elif "2e" in choice2:
+                print("\n" + "=" * 65)
+                print("  Autonomous Research Process -- 24/7 + DRL")
+                print("=" * 65)
+                print("\n  Runs INDEFINITELY. Uses DRL agent to discover papers around the clock.")
+                if questionary.confirm("Start autonomous process? (Ctrl+C to stop)", default=True).ask():
+                    run_script("talos_service.py", python_exe)
+            elif "2f" in choice2: run_script("knowledge_path_generator.py", python_exe)
+            elif "2g" in choice2: run_script("citation_analyzer.py", python_exe)
+            elif "2h" in choice2: run_script("recommender.py", python_exe)
+            elif "2i" in choice2: author_tools_menu(python_exe)
+            elif "2j" in choice2:
+                run_script("interactive_dashboard.py", python_exe)
+                fm = "Dashboard terminated. Press Enter..."
+            elif "2k" in choice2: run_script("drl_trainer.py", python_exe)
+            elif "2l" in choice2:
+                print("\nCompare Baselines -- Pre/Post DRL")
+                if questionary.confirm("Generate new baseline and compare?", default=True).ask():
+                    run_script("generate_baseline_report.py", python_exe, args=["--academic"])
+                    rb = os.path.join(project_root, "reports", "general_status_report")
+                    if os.path.exists(rb):
+                        folders = sorted([d for d in os.listdir(rb) if os.path.isdir(os.path.join(rb, d))], reverse=True)
+                        if len(folders) >= 2:
+                            print(f"\n  Latest:   {folders[0]}")
+                            print(f"  Previous: {folders[1]}")
+        elif "3." in choice:
+            run_script("metadata_enricher.py", python_exe)
+        elif "4." in choice:
+            run_script("query_translator.py", python_exe)
+        elif "5." in choice:
+            run_script("model_manager.py", python_exe)
+        elif "6." in choice:
+            run_script("generate_baseline_report.py", python_exe)
+        elif "7." in choice:
+            run_script("generate_baseline_report.py", python_exe, args=["--academic"])
+        elif "8." in choice:
+            # -- DRL Status: rich-powered display --
+            mp = os.path.join(project_root, "models", "dddqn_trained.pth")
+            gp = os.path.join(project_root, "models", "gwo_best_params.json")
+            t = Table(show_header=False, box=box.SIMPLE, border_style="cyan")
+            t.add_column("Parameter", style="dim cyan")
+            t.add_column("Value", style="white")
+            if os.path.exists(mp):
+                t.add_row("DRL Model", f"[green]Present ({os.path.getsize(mp)/1024:.0f} KB)")
+            else:
+                t.add_row("DRL Model", "[red]Not found")
+            if os.path.exists(gp):
+                import json
+                with open(gp) as f: p = json.load(f)
+                t.add_row("Learning Rate", f"[yellow]{p['learning_rate']:.6e}")
+                t.add_row("Gamma", f"[yellow]{p['gamma']:.4f}")
+                t.add_row("Epsilon Decay", f"[yellow]{p['epsilon_decay']:.6f}")
+                t.add_row("Best Fitness", f"[magenta]{p['best_fitness']:.1f}")
+                t.add_row("Best Reward", f"[green]{p['best_avg_reward']:.1f}")
+            else:
+                t.add_row("GWO Params", "[red]Not found")
+            drl_panel = Panel(
+                t,
+                title="[bold]DRL Agent Status[/bold]",
+                border_style="cyan",
+                box=box.ROUNDED,
+            )
+            console.print(drl_panel)
+        elif "9." in choice:
+            console.print("\n[bold]Codebase Documentation Generator (18 Languages)[/bold]")
+            console.print("[dim]Uses LOCAL Ollama -- zero cloud cost, full privacy.[/dim]")
+            if questionary.confirm("Launch documentation generator?", default=True).ask():
+                run_script("generate_docs.py", python_exe)
+
+        if choice and "Exit" not in choice:
+            safe_pause(fm)
+
+    # -- Exit sequence --
+    console.print("\n[dim]TALOS Command Center Closing...[/dim]\n")
 
 if __name__ == "__main__":
     # Top-level guard: any stray Ctrl+C exits cleanly with code 0
@@ -546,5 +733,5 @@ if __name__ == "__main__":
     try:
         main_menu()
     except KeyboardInterrupt:
-        print("\n\nTalos Closing...\n")
+        print("\n\nTALOS Closing...\n")
         sys.exit(0)

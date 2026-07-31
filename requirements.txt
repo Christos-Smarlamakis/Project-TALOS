@@ -1,4 +1,4 @@
-# TALOS v5.8.2 — Dependencies
+# TALOS v5.8.4 — Dependencies
 # Install: pip install -r requirements.txt
 
 # === Core: API Framework & Networking ===
@@ -40,6 +40,7 @@ networkx                    # Knowledge graph creation
 pyvis                       # Interactive network visualization
 
 # === Interface & UX ===
+rich                        # Terminal UI beautification (Console, Panel, Table, Box)
 questionary                 # Terminal UI (interactive menus)
 tqdm                        # Progress bars
 
