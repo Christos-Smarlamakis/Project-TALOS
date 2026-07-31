@@ -1,5 +1,5 @@
 # TALOS Project Instructions for AI Coding Agents
-# Version: v5.7.2
+# Version: v5.8.2
 
 ## CONSTITUTION v2.0 — The 8-Point Master Initialization Standard
 
@@ -52,7 +52,7 @@
 - After ANY architectural change, run `python scripts/verify_dependency_map.py` to audit
   the dependency graph against PROJECT_MAP.md Section 7.
 - After ANY database schema change, run `python scripts/db_stats.py` to verify integrity.
-- After ANY documentation change, run `python tools/test_smoke.py` for system health.
+- After ANY documentation change, run `python tests/test_smoke.py` for system health.
 - No change is "complete" until ALL four verification gates pass:
   1. `py_compile` (syntax)
   2. `verify_dependency_map.py` (imports)
@@ -64,9 +64,9 @@
 - Every version bump (e.g., v5.6.0 to v5.7.0) MUST synchronize EXACTLY these 15 files:
   1. `.clinerules` — The Constitution (this file)
   2. `README.md` — Project overview and quickstart
-  3. `ROADMAP.md` — Strategic roadmap and version history
-  4. `CHANGELOG_EN.md` — Detailed changelog (English)
-  5. `CHANGELOG_GR.md` — Detailed changelog (Greek)
+  3. `docs/ROADMAP.md` — Strategic roadmap and version history
+  4. `docs/CHANGELOG_EN.md` — Detailed changelog (English)
+  5. `docs/CHANGELOG_GR.md` — Detailed changelog (Greek)
   6. `docs/PROJECT_MAP.md` — Complete project map (Greek master)
   7. `docs/PROJECT_MAP_EN.md` — Complete project map (English)
   8. `docs/TIMELINE_EN.md` — Historical timeline (English)
@@ -231,7 +231,7 @@
 - `python -m py_compile <file>` for syntax validation
 - `python talos.py` for full integration test
 - `python scripts/db_stats.py` for database health check
-- `python tools/test_smoke.py` for system health check
+- `python tests/test_smoke.py` for system health check
 - `python scripts/verify_dependency_map.py` for dependency map audit (AST vs PROJECT_MAP.md)
 - `python scripts/verify_dependency_map.py --ci` for CI/CD exit-code-only check
 - Local mode: `ollama pull gemma3:12b && ollama pull nomic-embed-text` then set TALOS_USE_LOCAL=1
@@ -267,5 +267,5 @@
 
 ---
 
-> **Last Updated:** 2026-07-31 (v5.8.0 — Multi-Tier TUI Refactoring, System Execution Modes, Zero Emojis Protocol, 29-Unit Test Suite)
-> **Project Version:** v5.8.0
+> **Last Updated:** 2026-08-01 (v5.8.2 — Workspace Sanitation, Template Updates, Docker Modernization, 15-File Sync)
+> **Project Version:** v5.8.2

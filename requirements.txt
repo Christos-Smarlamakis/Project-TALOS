@@ -1,55 +1,60 @@
-# Project TALOS - Dependencies
+# TALOS v5.8.2 — Dependencies
 # Install: pip install -r requirements.txt
 
-# === Core: AI, Environment & Networking ===
-google-generativeai       # Επικοινωνία με Google Gemini API
-google-genai              # Google Gemini API (new SDK - Grey Literature)
+# === Core: API Framework & Networking ===
+fastapi                     # REST API framework (TALOS Facade — main_api.py)
+uvicorn[standard]           # ASGI server for FastAPI (port 8001)
+pydantic                    # Data validation & serialization (Pydantic v2 API models)
+httpx                       # Async HTTP client for external API calls
+requests                    # HTTP requests (general, synchronous)
+python-dotenv               # Environment variable management (.env)
 
-openai                    # Επικοινωνία με DeepSeek/OpenAI API
-python-dotenv             # Διαχείριση Environment Variables (.env)
-requests                  # HTTP Requests (General)
+# === MCP Protocol (v5.8.0+) ===
+mcp                         # Model Context Protocol SDK
 
-duckduckgo-search          # Web search for Grey Literature Miner
+# === Core: AI & LLM Providers ===
+google-generativeai         # Google Gemini API communication
+google-genai                # Google Gemini API (new SDK — Grey Literature)
+openai                      # DeepSeek/OpenAI-compatible API communication
 
 # === Sources: Academic APIs & Integrations ===
-arxiv                     # ArXiv API Client
-semanticscholar           # Semantic Scholar API Client
-elsapy                    # Elsevier/Scopus API Client
-pymed                     # PubMed API Client
-pyzotero                  # Zotero Web API Client
+arxiv                       # ArXiv API client
+semanticscholar             # Semantic Scholar API client
+elsapy                      # Elsevier/Scopus API client
+pymed                       # PubMed API client
+pyzotero                    # Zotero Web API client
 
 # === Data Science: Analysis & ML ===
-numpy                     # Numerical operations & Embeddings calculation
-pandas>=2.1.0             # Data Manipulation (DataFrames)
-scikit-learn              # Machine Learning (Clustering, TF-IDF)
+numpy                       # Numerical operations & embedding calculations
+pandas>=2.1.0               # Data manipulation (DataFrames)
+scikit-learn                # Machine learning (clustering, TF-IDF)
+psutil                      # Process & system monitoring (daemon, VRAM queries)
 
 # === Visualization & Scientometrics ===
-plotly>=5.18.0            # Interactive 3D visualizations (GWO Swarm Hunt)
-dash>=4.0.0               # Live real-time GWO dashboard (Dash)
-matplotlib>=3.8.0         # Basic Plotting Library
-seaborn>=0.13.0           # Advanced Statistical Data Visualization
-wordcloud>=1.9.0          # Word Cloud Generation
-networkx                  # Knowledge Graph Creation
-pyvis                     # Interactive Network Visualization
+plotly>=5.18.0              # Interactive 3D visualizations (GWO Swarm Hunt)
+dash>=4.0.0                 # Live real-time GWO dashboard (Dash)
+matplotlib>=3.8.0           # Basic plotting library
+seaborn>=0.13.0             # Advanced statistical data visualization
+wordcloud>=1.9.0            # Word cloud generation
+networkx                    # Knowledge graph creation
+pyvis                       # Interactive network visualization
 
 # === Interface & UX ===
-questionary               # Terminal UI (Interactive Menus)
-tqdm                      # Progress Bars
+questionary                 # Terminal UI (interactive menus)
+tqdm                        # Progress bars
 
 # === Reporting & Web Dashboard ===
-Flask                     # Web Server for Interactive Dashboard
-Jinja2                    # Templating Engine (HTML Reports)
-python-docx               # Word Document Generation
-tabulate                  # Markdown Table Formatting
+Flask                       # Web server for interactive dashboard
+Jinja2                      # Templating engine (HTML reports)
+python-docx                 # Word document generation
+tabulate                    # Markdown table formatting
 
-# === Deep Reinforcement Learning (Phase 1-2) ===
-gymnasium                 # RL environment standard (Gymnasium API)
-torch                     # Neural network framework (PyTorch - CPU or CUDA)
+# === Deep Reinforcement Learning (DRL) ===
+gymnasium                   # RL environment standard (Gymnasium API)
+torch                       # Neural network framework (PyTorch — CPU or CUDA)
 
-# === Web GUI & API ===
-fastapi                   # REST API framework (TALOS Façade — main_api.py)
-uvicorn[standard]         # ASGI server for FastAPI (port 8000)
-pydantic                  # Data validation & serialization (API models)
+# === Testing (v5.8.0+) ===
+pytest                      # Unit test framework
 
-# === Daemon & Notifications ===
-psutil                    # Process priority management (daemon)
+# === Web Search (Grey Literature Miner) ===
+duckduckgo-search           # Web search for Grey Literature Miner
