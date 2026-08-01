@@ -11,7 +11,7 @@
 
 """
 Module: elsevier_source.py
-Project: TALOS v5.3.7
+Project: TALOS v5.8.8
 
 Description:
     Search agent for the Elsevier Scopus API via the elsapy library.
@@ -19,14 +19,24 @@ Description:
     matching the configured Scopus query, with an additional targeted
     call to the Abstract Retrieval API when abstracts are missing from
     the initial search results. Gracefully disables itself if API keys
-    are not configured.
+    are not configured or if the elsapy library is not installed.
 """
 import os
 from datetime import datetime, timedelta
-from elsapy.elsclient import ElsClient
-from elsapy.elssearch import ElsSearch
-from elsapy.elsdoc import AbsDoc
 from typing import List, Dict, Any
+
+# -- Graceful import degradation for elsapy --
+try:
+    from elsapy.elsclient import ElsClient
+    from elsapy.elssearch import ElsSearch
+    from elsapy.elsdoc import AbsDoc
+    ELSAPY_AVAILABLE = True
+except ImportError:
+    ELSAPY_AVAILABLE = False
+    ElsClient = None
+    ElsSearch = None
+    AbsDoc = None
+# -------------------------------------------
 
 
 class ElsevierSource:
@@ -48,6 +58,11 @@ class ElsevierSource:
             config (dict): Application configuration dictionary.
         """
         self.enabled = True
+
+        if not ELSAPY_AVAILABLE:
+            print("WARNING: elsapy library is not installed. Skipping Elsevier source.")
+            self.enabled = False
+            return
 
         self.api_key = os.getenv("ELSEVIER_API_KEY")
         self.inst_token = os.getenv("ELSEVIER_INST_TOKEN")

@@ -33,7 +33,10 @@ import questionary
 from src.core.ai_manager import AIManager
 
 def load_config():
-    path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config.json'))
+    project_root = _P if _P else os.getcwd()
+    path = os.path.join(project_root, 'config.json')
+    if not os.path.exists(path):
+        path = os.path.join(project_root, 'config.template.json')
     with open(path, 'r', encoding='utf-8') as f:
         return json.load(f), path
 

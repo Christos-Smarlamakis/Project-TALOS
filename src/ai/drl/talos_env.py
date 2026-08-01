@@ -29,6 +29,11 @@ Description:
 """
 import os
 import sys
+import os, sys
+_P = os.path.abspath(os.path.dirname(__file__))
+while _P and not os.path.exists(os.path.join(_P, 'talos.py')):
+    _P = os.path.dirname(_P)
+if _P: sys.path.insert(0, _P)
 import json
 import numpy as np
 import gymnasium as gym
@@ -93,9 +98,10 @@ def _try_load_config():
     Returns:
         dict or None: The loaded config, or None if the file is missing.
     """
-    project_root = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), ".."))
+    project_root = _P if _P else os.getcwd()
     config_path = os.path.join(project_root, "config.json")
+    if not os.path.exists(config_path):
+        config_path = os.path.join(project_root, "config.template.json")
     if not os.path.exists(config_path):
         return None
     try:

@@ -211,8 +211,10 @@ class TestDotenvKeyUpdates(unittest.TestCase):
         from src.ai.llm.model_manager import select_execution_mode
 
         mock_dotenv_values.return_value = {"TALOS_EXECUTION_MODE": "hybrid"}
-        mock_select.return_value.ask.return_value = "local (Air-Gapped)"
-        mock_confirm.return_value.ask.return_value = False
+        # New v5.8.6: select returns internal value "local" via Choice(value=...)
+        mock_select.return_value.ask.return_value = "local"
+        # New v5.8.6: _confirm_setting_change calls confirm too -- must accept
+        mock_confirm.return_value.ask.return_value = True
 
         with patch("os.system"), patch("builtins.input"):
             select_execution_mode("/fake/.env")
@@ -352,6 +354,135 @@ class TestGetAvailableTags(unittest.TestCase):
 
         result = get_available_tags("nonexistent")
         self.assertEqual(result, [])
+
+
+class TestConfirmSettingChange(unittest.TestCase):
+    """Tests for _confirm_setting_change() safety lock helper (v5.8.6)."""
+
+    def setUp(self):
+        from src.ai.llm.model_manager import _confirm_setting_change
+        self._confirm_setting_change = _confirm_setting_change
+
+    @patch("src.ai.llm.model_manager.questionary.confirm")
+    def test_confirms_when_user_says_yes(self, mock_confirm):
+        """When user confirms, _confirm_setting_change should return True."""
+        mock_confirm.return_value.ask.return_value = True
+        result = self._confirm_setting_change(
+            "/fake/.env", "TEST_KEY", "old_value", "new_value"
+        )
+        self.assertTrue(result)
+
+    @patch("src.ai.llm.model_manager.questionary.confirm")
+    def test_rejects_when_user_says_no(self, mock_confirm):
+        """When user declines, _confirm_setting_change should return False."""
+        mock_confirm.return_value.ask.return_value = False
+        result = self._confirm_setting_change(
+            "/fake/.env", "TEST_KEY", "old_value", "new_value"
+        )
+        self.assertFalse(result)
+
+    @patch("src.ai.llm.model_manager.questionary.confirm")
+    def test_returns_false_when_user_cancels(self, mock_confirm):
+        """When user cancels (None), _confirm_setting_change should return False."""
+        mock_confirm.return_value.ask.return_value = None
+        result = self._confirm_setting_change(
+            "/fake/.env", "TEST_KEY", "old_value", "new_value"
+        )
+        self.assertFalse(result)
+
+    @patch("src.ai.llm.model_manager.questionary.confirm")
+    def test_displays_empty_old_value_as_empty(self, mock_confirm):
+        """When old_value is empty/None, panel should show '(empty)' without crashing."""
+        mock_confirm.return_value.ask.return_value = True
+        # Should not raise; empty string displayed as "(empty)"
+        result = self._confirm_setting_change(
+            "/fake/.env", "LOCAL_EMBEDDING_MODEL", "", "nomic-embed-text"
+        )
+        self.assertTrue(result)
+
+
+class TestSubMenuCancellation(unittest.TestCase):
+    """Tests for sub-menu cancellation flows (v5.8.6)."""
+
+    @patch("src.ai.llm.model_manager._set_key")
+    @patch("src.ai.llm.model_manager.dotenv_values")
+    @patch("src.ai.llm.model_manager.questionary.select")
+    @patch("src.ai.llm.model_manager.questionary.confirm")
+    def test_execution_mode_cancel_via_sentinel(
+        self, mock_confirm, mock_select, mock_dotenv_values, mock_set_key
+    ):
+        """When user selects Cancel in execution mode, _set_key should not be called."""
+        from src.ai.llm.model_manager import select_execution_mode
+
+        mock_dotenv_values.return_value = {"TALOS_EXECUTION_MODE": "local"}
+        mock_select.return_value.ask.return_value = "__cancel__"
+        mock_confirm.return_value.ask.return_value = False
+
+        with patch("os.system"), patch("builtins.input"):
+            select_execution_mode("/fake/.env")
+
+        mock_set_key.assert_not_called()
+
+    @patch("src.ai.llm.model_manager._set_key")
+    @patch("src.ai.llm.model_manager.dotenv_values")
+    @patch("src.ai.llm.model_manager.questionary.select")
+    @patch("src.ai.llm.model_manager.questionary.confirm")
+    def test_execution_mode_confirm_then_apply(
+        self, mock_confirm, mock_select, mock_dotenv_values, mock_set_key
+    ):
+        """When user selects a mode and confirms, _set_key should be called."""
+        from src.ai.llm.model_manager import select_execution_mode
+
+        mock_dotenv_values.return_value = {"TALOS_EXECUTION_MODE": "local"}
+        mock_select.return_value.ask.return_value = "cloud"
+        # First confirm: configuration panel (yes)
+        mock_confirm.return_value.ask.return_value = True
+
+        with patch("os.system"), patch("builtins.input"):
+            select_execution_mode("/fake/.env")
+
+        # Should have called _set_key for TALOS_EXECUTION_MODE + backward compat keys
+        call_keys = {args[1] for args, _ in mock_set_key.call_args_list}
+        self.assertIn("TALOS_EXECUTION_MODE", call_keys)
+
+    @patch("src.ai.llm.model_manager._set_key")
+    @patch("src.ai.llm.model_manager.dotenv_values")
+    @patch("src.ai.llm.model_manager.questionary.select")
+    @patch("src.ai.llm.model_manager.questionary.confirm")
+    def test_execution_mode_decline_confirmation(
+        self, mock_confirm, mock_select, mock_dotenv_values, mock_set_key
+    ):
+        """When user selects a mode but declines confirmation, _set_key should NOT be called."""
+        from src.ai.llm.model_manager import select_execution_mode
+
+        mock_dotenv_values.return_value = {"TALOS_EXECUTION_MODE": "local"}
+        mock_select.return_value.ask.return_value = "cloud"
+        # Declined confirmation
+        mock_confirm.return_value.ask.return_value = False
+
+        with patch("os.system"), patch("builtins.input"):
+            select_execution_mode("/fake/.env")
+
+        mock_set_key.assert_not_called()
+
+    @patch("src.ai.llm.model_manager.questionary.select")
+    @patch("src.ai.llm.model_manager.questionary.confirm")
+    @patch("src.ai.llm.model_manager.dotenv_values")
+    @patch("src.ai.llm.model_manager.check_ollama_alive")
+    def test_embedding_model_cancel_via_sentinel(
+        self, mock_ollama, mock_dotenv, mock_confirm, mock_select
+    ):
+        """When user cancels embedding selection, should return without changes."""
+        from src.ai.llm.model_manager import select_embedding_model
+
+        mock_ollama.return_value = True
+        mock_dotenv.return_value = {"LOCAL_EMBEDDING_MODEL": ""}
+        mock_select.return_value.ask.return_value = "__cancel__"
+
+        with patch("os.system"), patch("builtins.input"):
+            select_embedding_model("/fake/.env")
+
+        # Should not raise -- graceful return
 
 
 if __name__ == "__main__":

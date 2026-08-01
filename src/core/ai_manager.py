@@ -26,10 +26,50 @@ Description:
 
 import os, json, re, requests
 from dotenv import load_dotenv
-import google.generativeai as genai
-import openai
-from typing import Union, List, Dict, Any, Tuple
+from typing import Union, List, Dict, Any, Tuple, Optional
 import numpy as np
+
+# -- Lazy SDK imports (Constitution II: cloud providers are OPTIONAL) --
+# All SDKs are loaded only when their provider is configured and needed.
+# The module itself must be importable without any cloud SDK installed.
+
+# OpenAI SDK (v1.x) -- used by DeepSeek, HuggingFace, and local Ollama providers
+_openai: Optional[Any] = None
+_openai_available: bool = False
+_openai_import_error: Optional[str] = None
+
+def _try_import_openai() -> bool:
+    """Lazy-import openai (v1.x SDK). Returns True on success."""
+    global _openai, _openai_available, _openai_import_error
+    if _openai_available:
+        return True
+    try:
+        import openai
+        _openai = openai
+        _openai_available = True
+        return True
+    except ImportError as e:
+        _openai_import_error = str(e)
+        return False
+
+# Google Generative AI SDK (v1) -- used by Gemini text generation
+_genai: Optional[Any] = None
+_genai_available: bool = False
+_genai_import_error: Optional[str] = None
+
+def _try_import_genai() -> bool:
+    """Lazy-import google.generativeai (v1 SDK). Returns True on success."""
+    global _genai, _genai_available, _genai_import_error
+    if _genai_available:
+        return True
+    try:
+        import google.generativeai as genai
+        _genai = genai
+        _genai_available = True
+        return True
+    except ImportError as e:
+        _genai_import_error = str(e)
+        return False
 
 # New GA Gemini SDK for embeddings (replaces deprecated embed_content on v1beta)
 try:
@@ -72,44 +112,50 @@ class AIManager:
 
         # --- Gemini Provider ---
         gemini_api_key = os.getenv("GEMINI_API_KEY")
-        if gemini_api_key:
-            genai.configure(api_key=gemini_api_key)
+        if gemini_api_key and _try_import_genai():
+            _genai.configure(api_key=gemini_api_key)
             self.providers['gemini'] = {
-                'flash_model': genai.GenerativeModel(config.get("pre_screening_model", "gemini-2.5-flash-lite")),
-                'pro_model': genai.GenerativeModel(config.get("model_for_daily_search", "gemini-2.5-pro")),
+                'flash_model': _genai.GenerativeModel(config.get("pre_screening_model", "gemini-2.5-flash-lite")),
+                'pro_model': _genai.GenerativeModel(config.get("model_for_daily_search", "gemini-2.5-pro")),
                 'embedding_model': "models/embedding-001",
                 'consecutive_failures': 0, 'circuit_open': False
             }
             print("INFO: Gemini provider initialized.")
+        elif gemini_api_key:
+            print(f"WARNING: Gemini API key found but google-generativeai not installed ({_genai_import_error}). Skipping Gemini.")
 
         # --- DeepSeek Provider ---
         deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-        if deepseek_api_key:
+        if deepseek_api_key and _try_import_openai():
             self.providers['deepseek'] = {
-                'client': openai.OpenAI(api_key=deepseek_api_key, base_url="https://api.deepseek.com/v1"),
+                'client': _openai.OpenAI(api_key=deepseek_api_key, base_url="https://api.deepseek.com/v1"),
                 'model_name': config.get("deepseek_model_chat", "deepseek-chat"),
                 'consecutive_failures': 0, 'circuit_open': False
             }
             print("INFO: DeepSeek provider initialized.")
+        elif deepseek_api_key:
+            print(f"WARNING: DeepSeek API key found but openai not installed ({_openai_import_error}). Skipping DeepSeek.")
 
         # --- Hugging Face Provider (Free cloud inference) ---
         hf_token = os.getenv("HF_TOKEN")
-        if hf_token:
+        if hf_token and _try_import_openai():
             self.providers['huggingface'] = {
-                'client': openai.OpenAI(api_key=hf_token, base_url="https://router.huggingface.co/v1"),
+                'client': _openai.OpenAI(api_key=hf_token, base_url="https://router.huggingface.co/v1"),
                 'model_name': os.getenv("HF_MODEL_NAME", "Qwen/Qwen2.5-7B-Instruct"),
                 'consecutive_failures': 0, 'circuit_open': False
             }
             print("INFO: Hugging Face provider initialized.")
             if 'huggingface' not in self.provider_priority:
                 self.provider_priority.insert(0, 'huggingface')  # Free first
+        elif hf_token:
+            print(f"WARNING: HF API key found but openai not installed ({_openai_import_error}). Skipping HuggingFace.")
 
         # --- Local Model Provider (Ollama) ---
         local_url = os.getenv("LOCAL_MODEL_BASE_URL", "http://localhost:11434/v1")
         self.local_enabled = os.getenv("TALOS_USE_LOCAL", "").lower() in ("1", "true", "yes")
-        if self.local_enabled:
+        if self.local_enabled and _try_import_openai():
             self.providers['local'] = {
-                'client': openai.OpenAI(api_key=os.getenv("LOCAL_MODEL_API_KEY", "ollama"), base_url=local_url),
+                'client': _openai.OpenAI(api_key=os.getenv("LOCAL_MODEL_API_KEY", "ollama"), base_url=local_url),
                 'model_name': os.getenv("LOCAL_MODEL_NAME", "gemma3:12b"),
                 'embedding_model': os.getenv("LOCAL_EMBEDDING_MODEL", "nomic-embed-text"),
                 'ollama_url': local_url.replace("/v1", ""),
@@ -484,7 +530,7 @@ class AIManager:
         model = provider['pro_model'] if model_type == 'pro' else provider['flash_model']
         try:
             if response_format == 'json':
-                gen_config = genai.types.GenerationConfig(response_mime_type="application/json")
+                gen_config = _genai.types.GenerationConfig(response_mime_type="application/json")
                 response = model.generate_content(prompt, generation_config=gen_config)
                 return json.loads(response.text)
             else:

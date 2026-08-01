@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: zotero_connector.py (v2.0 - JSON Reliability Update)
-Project: TALOS v2.21.0
+Module: zotero_connector.py (v2.1 - Graceful Import Degradation)
+Project: TALOS v5.8.8
 
 Description:
 Η πλήρως αναβαθμισμένη έκδοση του "Zotero Bridge", εναρμονισμένη με την αρχιτεκτονική
@@ -32,7 +32,16 @@ while _P and not os.path.exists(os.path.join(_P, 'talos.py')):
 if _P: sys.path.insert(0, _P)
 import json
 import time
-from pyzotero import zotero
+
+# -- Graceful import degradation for pyzotero --
+try:
+    from pyzotero import zotero
+    PYZOTERO_AVAILABLE = True
+except ImportError:
+    PYZOTERO_AVAILABLE = False
+    zotero = None
+# ---------------------------------------------
+
 from dotenv import load_dotenv
 from tqdm import tqdm
 
@@ -45,12 +54,18 @@ def main():
     Κύρια συνάρτηση που ενορχηστρώνει τον συγχρονισμό και την επανα-αξιολόγηση
     της βιβλιοθήκης Zotero.
     """
-    print("--- ΕΝΑΡΞΗ ZOTERO BRIDGE (v2.0 - PRO MODEL JSON EVALUATION) ---")
+    if not PYZOTERO_AVAILABLE:
+        print("WARNING: pyzotero library is not installed. Skipping Zotero Bridge.")
+        return
+
+    print("--- ΕΝΑΡΞΗ ZOTERO BRIDGE (v2.1 - GRACEFUL IMPORT DEGRADATION) ---")
     
     # --- ΦΑΣΗ 1: ΑΡΧΙΚΟΠΟΙΗΣΗ ---
     print("INFO: Φόρτωση ρυθμίσεων...")
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    project_root = _P if _P else os.getcwd()
     config_path = os.path.join(project_root, 'config.json')
+    if not os.path.exists(config_path):
+        config_path = os.path.join(project_root, 'config.template.json')
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             config = json.load(f)

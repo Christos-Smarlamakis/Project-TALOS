@@ -48,7 +48,7 @@ import json
 # ── SETUP PATHS & ENV ───────────────────────────────────────────────────────
 # Resolve the project root so that all relative paths work regardless
 # of the working directory from which the script was launched.
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+project_root = _P if _P else os.getcwd()
 sys.path.insert(0, project_root)
 
 # ── Load Environment Variables ──────────────────────────────────────────────

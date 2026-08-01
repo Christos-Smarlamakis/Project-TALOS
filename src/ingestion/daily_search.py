@@ -123,8 +123,10 @@ def load_configuration():
         SystemExit: If config.json is missing or invalid.
     """
     print("PHASE 1: Loading configuration...")
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    project_root = _P if _P else os.getcwd()
     config_path = os.path.join(project_root, 'config.json')
+    if not os.path.exists(config_path):
+        config_path = os.path.join(project_root, 'config.template.json')
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)

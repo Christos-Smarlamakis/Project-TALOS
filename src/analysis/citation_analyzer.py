@@ -163,8 +163,10 @@ def get_target_paper_from_user(db_manager: DatabaseManager) -> Union[str, None]:
 def main():
     print("--- ΕΝΑΡΞΗ ORPHEUS CITATION ANALYZER (v2.1) ---")
     
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    project_root = _P if _P else os.getcwd()
     config_path = os.path.join(project_root, 'config.json')
+    if not os.path.exists(config_path):
+        config_path = os.path.join(project_root, 'config.template.json')
     try:
         with open(config_path, "r", encoding="utf-8") as f: config = json.load(f)
     except Exception as e:

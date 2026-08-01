@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_multi_tier.py
-Project: TALOS v5.8.5
+Project: TALOS v5.8.8
 Description:
     Unit tests for the multi-tier LLM routing architecture (v5.7.1). Tests cover:
     - Fast tier routing via HTTP POST to FAST_EDGE_BASE_URL with Neutrino-8B.
@@ -315,9 +315,9 @@ class TestSettingsResolution:
         assert DEFAULT_TIER == "fast"
 
     def test_talos_version(self):
-        """Verify the TALOS_VERSION is v5.8.5."""
+        """Verify the TALOS_VERSION is v5.8.8."""
         from config.settings import TALOS_VERSION
-        assert TALOS_VERSION == "5.8.5"
+        assert TALOS_VERSION == "5.8.8"
 
     def test_talos_api_port(self):
         """Verify the default TALOS_API_PORT is 8001."""

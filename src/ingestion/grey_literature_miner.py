@@ -49,7 +49,9 @@ def load_config():
     Returns:
         dict: Configuration dictionary.
     """
-    path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config.json'))
+    path = os.path.join(_P if _P else os.getcwd(), 'config.json')
+    if not os.path.exists(path):
+        path = os.path.join(_P if _P else os.getcwd(), 'config.template.json')
     with open(path, 'r', encoding='utf-8') as f:
         return json.load(f)
 

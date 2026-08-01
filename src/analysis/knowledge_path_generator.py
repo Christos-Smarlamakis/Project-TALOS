@@ -207,8 +207,10 @@ class KnowledgePathGenerator:
         print("\n--- Η διαδικασία του ολοκληρώθηκε ---")
 
 if __name__ == '__main__':
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    project_root = _P if _P else os.getcwd()
     config_path = os.path.join(project_root, 'config.json')
+    if not os.path.exists(config_path):
+        config_path = os.path.join(project_root, 'config.template.json')
     try:
         with open(config_path, "r", encoding="utf-8") as f:
             config_data = json.load(f)

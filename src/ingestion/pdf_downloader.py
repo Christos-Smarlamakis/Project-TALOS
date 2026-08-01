@@ -44,7 +44,9 @@ def get_mailto():
     email = os.getenv("UNPAYWALL_EMAIL", "") or os.getenv("MAILTO", "")
     if not email:
         import json
-        config_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'config.json'))
+        config_path = os.path.join(_P if _P else os.getcwd(), 'config.json')
+        if not os.path.exists(config_path):
+            config_path = os.path.join(_P if _P else os.getcwd(), 'config.template.json')
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)

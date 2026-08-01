@@ -27,7 +27,7 @@ from pathlib import Path
 from datetime import datetime
 
 # Add project root to path for core imports
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(_P) if _P else Path(os.getcwd())
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.core.ai_manager import AIManager
@@ -45,8 +45,10 @@ REPORT_GR_PATH = REPORTS_DIR / f"architecture_intelligence_report_gr_{_TIMESTAMP
 
 
 def load_config():
-    """Load config.json."""
+    """Load config.json using canonical project root resolution."""
     config_path = PROJECT_ROOT / "config.json"
+    if not config_path.exists():
+        config_path = PROJECT_ROOT / "config.template.json"
     if config_path.exists():
         with open(config_path, "r", encoding="utf-8") as f:
             return json.load(f)

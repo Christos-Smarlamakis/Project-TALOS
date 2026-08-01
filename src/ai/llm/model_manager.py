@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: model_manager.py
-Project: TALOS v5.8.0
+Project: TALOS v5.8.6
 Description:
     Interactive TUI for configuring all LLM tiers (Fast Edge CPU, Heavy Reasoning GPU,
     Cloud API) and setting the system execution mode (air-gapped local, hybrid, or
@@ -24,6 +24,9 @@ Description:
     - All network-dependent operations check Ollama reachability first via
       check_ollama_alive() and degrade gracefully.
     - Zero-emojis protocol enforced: all status indicators use formal text badges.
+    - Rich library used for structured Panels, Tables, and user feedback.
+    - Navigation safety locks: explicit Cancel/Back in all sub-menus.
+    - Confirmation panel before any .env write operation.
     - Path resolution uses config/settings.py constants where available.
 
 Dependencies:
@@ -31,6 +34,7 @@ Dependencies:
     - requests: HTTP calls to Ollama REST API.
     - questionary: Interactive terminal selection menus.
     - dotenv: Reading and writing .env key-value pairs.
+    - rich: Terminal UI formatting (Console, Panel, Table, Box).
     - src.core.hardware: GPU detection, model sizing, VRAM recommendations.
     - config.settings: Canonical environment variable keys and defaults.
 """
@@ -42,11 +46,21 @@ import requests
 import questionary
 from dotenv import dotenv_values, set_key as _set_key
 
+# -- Rich TUI imports (v5.8.6) --
+from rich.console import Console
+from rich.panel import Panel
+from rich.table import Table
+from rich import box
+from rich.text import Text
+
 # -- Project root resolution via pathlib (clean, no sys.path hacks) --
 from pathlib import Path
 
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 _ENV_PATH = str(_PROJECT_ROOT / ".env")
+
+# -- Rich Console instance for all TUI output --
+console = Console()
 
 # -- Import hardware utilities (project root is already in sys.path via talos.py launcher) --
 from src.core.hardware import (
@@ -277,24 +291,24 @@ def pull_model(full_name):
     Returns:
         bool: True if the pull succeeded, False otherwise.
     """
-    print(f"\n  Downloading {full_name} via ollama pull...")
-    print(f"  (This may take several minutes depending on size)\n")
+    console.print(f"\n  [bold cyan]Downloading[/] [white]{full_name}[/] [dim]via ollama pull...[/]")
+    console.print("  [dim](This may take several minutes depending on size)[/]\n")
     try:
         result = subprocess.run(
             ["ollama", "pull", full_name],
             check=False
         )
         if result.returncode == 0:
-            print(f"\n  [{full_name}] installed successfully.")
+            console.print(f"\n  [bold green][[SUCCESS]][/] [white]{full_name}[/] installed successfully.")
             return True
         else:
-            print(f"\n  Failed to pull {full_name}. Exit code: {result.returncode}")
+            console.print(f"\n  [bold red][[FAILED]][/] Failed to pull {full_name}. Exit code: {result.returncode}")
             return False
     except FileNotFoundError:
-        print("\n  ERROR: ollama command not found. Is Ollama installed?")
+        console.print("\n  [bold red][[ERROR]][/] ollama command not found. Is Ollama installed?")
         return False
     except Exception as e:
-        print(f"\n  ERROR pulling model: {e}")
+        console.print(f"\n  [bold red][[ERROR]][/] Pulling model: {e}")
         return False
 
 
@@ -353,6 +367,61 @@ def _fits_label(fits, size_gb, vram_limit):
 
 
 # ---------------------------------------------------------------------------
+# -- Confirmation Safety Lock (v5.8.6 -- NEW) --
+# ---------------------------------------------------------------------------
+
+def _confirm_setting_change(env_path, key_name, old_value, new_value):
+    """Display a Rich confirmation panel before writing a .env key change.
+
+    Constructs a styled Panel summarizing the pending change with the setting
+    name, previous value, and proposed new value. Prompts the user for
+    confirmation before applying the change.
+
+    Args:
+        env_path: Absolute path to the .env file (unused in panel, passed through
+                  for caller context consistency).
+        key_name: The .env key being modified (e.g., 'FAST_EDGE_MODEL').
+        old_value: The current value (before the proposed change).
+        new_value: The proposed new value.
+
+    Returns:
+        bool: True if the user confirmed the change, False otherwise.
+    """
+    # -- Build the confirmation table --
+    table = Table(box=box.ROUNDED, show_header=True, header_style="bold white")
+    table.add_column("Setting", style="cyan", no_wrap=True)
+    table.add_column("Previous Value", style="dim yellow")
+    table.add_column("Proposed Value", style="bold green")
+
+    table.add_row(key_name, str(old_value) if old_value else "(empty)", str(new_value))
+
+    # -- Wrap in a Panel --
+    panel = Panel(
+        table,
+        title="[bold]Confirm Environment Change[/]",
+        title_align="left",
+        border_style="yellow",
+        box=box.ROUNDED,
+        padding=(1, 2),
+    )
+    console.print()
+    console.print(panel)
+
+    # -- Confirm with user --
+    confirmed = questionary.confirm(
+        "Apply this change to environment?",
+        default=True
+    ).ask()
+
+    if confirmed:
+        console.print(f"  [bold green][[CONFIRMED]][/] Change applied.")
+    else:
+        console.print(f"  [dim][[CANCELLED]][/] Change discarded.")
+
+    return confirmed
+
+
+# ---------------------------------------------------------------------------
 # -- Internal: shared model browsing logic (used by Fast and Heavy tiers) --
 # ---------------------------------------------------------------------------
 
@@ -360,8 +429,8 @@ def _browse_and_pick_ollama_model(vram_gb, vram_limit, env_path, current_model_k
     """Shared interactive model browser for Ollama tiers.
 
     Displays installed models, library models, and BitNet models with VRAM
-    fitness badges. Returns the selected fully qualified model name or None
-    if the user cancels.
+    fitness badges in a Rich Table. Returns the selected fully qualified
+    model name or None if the user cancels.
 
     Args:
         vram_gb: Detected GPU VRAM in GB (or None).
@@ -376,10 +445,10 @@ def _browse_and_pick_ollama_model(vram_gb, vram_limit, env_path, current_model_k
     values = dotenv_values(env_path)
     current_model = values.get(current_model_key, "")
 
-    print(f"  Currently configured: {current_model if current_model else 'None'}")
+    console.print(f"  [dim]Currently configured:[/] [cyan]{current_model if current_model else 'None'}[/]")
 
     # -- Build model list from core.hardware --
-    print("\n  Fetching available models from Ollama library...")
+    console.print("\n  [dim]Fetching available models from Ollama library...[/]")
     all_models = get_all_chat_models_sorted(vram_gb)
 
     # Add library models not already in the sorted list
@@ -409,32 +478,81 @@ def _browse_and_pick_ollama_model(vram_gb, vram_limit, env_path, current_model_k
     section_order = {"installed": 0, "library": 1, "bitnet": 2}
     all_models.sort(key=lambda m: (section_order.get(m.get("section", "library"), 99), m["size_gb"]))
 
-    # Build choice list with VRAM indicators
-    choices = []
+    # -- Build Rich Table for model display --
+    table = Table(box=box.ROUNDED, show_header=True, header_style="bold white")
+    table.add_column("#", style="dim", width=4)
+    table.add_column("Model Name", style="cyan", no_wrap=True)
+    table.add_column("Est. Size", style="yellow", justify="right")
+    table.add_column("VRAM Status", style="white")
+    table.add_column("State", style="white")
+
+    section_labels = {
+        "installed": "--- [INSTALLED] ---",
+        "library": "--- Available (Ollama Library) ---",
+        "bitnet": "--- 1-Bit Models (Edge Devices) ---",
+    }
+
+    choices_map = {}
+    idx = 1
     current_section = None
     for m in all_models:
         section = m.get("section", "library")
         if section != current_section:
             current_section = section
-            section_labels = {
-                "installed": "--- [INSTALLED] ---",
-                "library": "--- Available (Ollama Library) ---",
-                "bitnet": "--- 1-Bit Models (Edge Devices) ---",
-            }
-            choices.append(questionary.Separator(f"  {section_labels.get(section, section)}"))
+            # Add a separator row
+            table.add_section()
+            table.add_row(
+                "", Text(section_labels.get(section, section), style="bold magenta"),
+                "", "", ""
+            )
 
-        label = m["name"]
-        label += f" (~{m['size_gb']}GB)"
-        label += _fits_label(m["fits"], m["size_gb"], vram_limit)
+        vram_label = _fits_label(m["fits"], m["size_gb"], vram_limit)
+        state_label = ""
         if m.get("installed"):
-            label += " [INSTALLED]"
+            state_label = "[INSTALLED]"
         if m.get("recommended"):
-            label += " [RECOMMENDED]"
-        choices.append(label)
+            state_label += " [RECOMMENDED]"
+
+        # Determine VRAM status style
+        vram_style = "white"
+        if "[FITS]" in vram_label:
+            vram_style = "green"
+        elif "[TIGHT]" in vram_label:
+            vram_style = "yellow"
+        elif "[TOO BIG]" in vram_label:
+            vram_style = "red"
+
+        table.add_row(
+            str(idx),
+            m["name"],
+            f"~{m['size_gb']}GB" if m.get("size_gb") else "?",
+            Text(vram_label.strip(), style=vram_style) if vram_label else "-",
+            state_label.strip() if state_label else "-",
+        )
+        choices_map[str(idx)] = m["name"]
+        idx += 1
+
+    console.print()
+    console.print(table)
+
+    # -- Build questionary choices --
+    choices = []
+    for k, name in choices_map.items():
+        label = name
+        # Find model info for badges
+        model_info = next((m for m in all_models if m["name"] == name), None)
+        if model_info:
+            label += f" (~{model_info['size_gb']}GB)"
+            label += _fits_label(model_info["fits"], model_info["size_gb"], vram_limit)
+            if model_info.get("installed"):
+                label += " [INSTALLED]"
+            if model_info.get("recommended"):
+                label += " [RECOMMENDED]"
+        choices.append(questionary.Choice(title=label, value=name))
 
     choices.append(questionary.Separator())
-    choices.append("Custom model name...")
-    choices.append("Cancel")
+    choices.append(questionary.Choice(title="Custom model name...", value="__custom__"))
+    choices.append(questionary.Choice(title="[Cancel / Return to Main Menu]", value="__cancel__"))
 
     selected = questionary.select(
         "Select a model:",
@@ -442,22 +560,26 @@ def _browse_and_pick_ollama_model(vram_gb, vram_limit, env_path, current_model_k
         use_indicator=True,
     ).ask()
 
-    if not selected or selected == "Cancel":
+    if selected == "__cancel__" or selected is None:
+        console.print("  [dim][[CANCELLED]][/] Returning to main menu.")
         return None
 
-    if selected == "Custom model name...":
+    if selected == "__custom__":
         model_name = questionary.text("Enter model name (e.g., gemma3:12b):").ask()
         if not model_name or not model_name.strip():
+            console.print("  [dim][[CANCELLED]][/] No name entered.")
             return None
         model_name = model_name.strip()
-    else:
-        model_name = selected.split(" (")[0].strip()
+        return model_name
 
-    return model_name
+    return selected
 
 
 def _pick_quantization(model_name, vram_limit, installed_models):
     """Let the user choose a quantization tag for a given base model.
+
+    Renders quantization variants in a Rich Table grouped by bit-depth
+    before prompting for choice. Includes a Cancel option.
 
     Args:
         model_name: Model name, optionally with a tag.
@@ -469,44 +591,102 @@ def _pick_quantization(model_name, vram_limit, installed_models):
     """
     base_name = model_name.split(":")[0]
 
-    print(f"\n  Fetching quantization variants for {base_name}...")
+    console.print(f"\n  [dim]Fetching quantization variants for [cyan]{base_name}[/]...[/]")
     categories = get_quantized_variants(base_name)
 
-    quant_choices = []
+    # -- Build Rich Table for quantization display --
+    table = Table(box=box.ROUNDED, show_header=True, header_style="bold white")
+    table.add_column("#", style="dim", width=4)
+    table.add_column("Variant", style="cyan", no_wrap=True)
+    table.add_column("Est. Size", style="yellow", justify="right")
+    table.add_column("VRAM Status", style="white")
+    table.add_column("State", style="white")
+
+    choices_map = {}
+    idx = 1
     for cat_name, variants in categories.items():
-        quant_choices.append(questionary.Separator(f"  {cat_name}"))
+        table.add_section()
+        table.add_row("", Text(cat_name, style="bold magenta"), "", "", "")
         for v in variants:
             label = v["full_name"]
             tag = v.get("tag", "")
             est_size = estimate_size_for_quant(model_name, tag) if tag else v.get("size_gb")
+            size_str = ""
+            vram_label = ""
             if est_size and est_size > 0 and est_size < 99:
-                label += f" (est. ~{est_size}GB)"
-                label += _fits_label(vram_limit and est_size <= vram_limit, est_size, vram_limit)
+                size_str = f"~{est_size}GB"
+                vram_label = _fits_label(vram_limit and est_size <= vram_limit, est_size, vram_limit)
             elif v.get("size_gb"):
-                label += f" (~{v['size_gb']}GB)"
-                label += _fits_label(vram_limit and v["size_gb"] <= vram_limit, v["size_gb"], vram_limit)
-            if v["installed"]:
-                label += " [INSTALLED]"
-            quant_choices.append(label)
+                size_str = f"~{v['size_gb']}GB"
+                vram_label = _fits_label(vram_limit and v["size_gb"] <= vram_limit, v["size_gb"], vram_limit)
+            state_label = "[INSTALLED]" if v["installed"] else ""
+
+            vram_style = "white"
+            if "[FITS]" in vram_label:
+                vram_style = "green"
+            elif "[TIGHT]" in vram_label:
+                vram_style = "yellow"
+            elif "[TOO BIG]" in vram_label:
+                vram_style = "red"
+
+            table.add_row(
+                str(idx),
+                label,
+                size_str if size_str else "-",
+                Text(vram_label.strip(), style=vram_style) if vram_label else "-",
+                state_label if state_label else "-",
+            )
+            choices_map[str(idx)] = v["full_name"]
+            idx += 1
+
+    console.print()
+    console.print(table)
+
+    # -- Build questionary choices --
+    quant_choices = []
+    for k, full in choices_map.items():
+        # Find variant info for filtering
+        variant_info = None
+        for cat_variants in categories.values():
+            for v in cat_variants:
+                if v["full_name"] == full:
+                    variant_info = v
+                    break
+            if variant_info:
+                break
+
+        display_label = full
+        if variant_info:
+            tag = variant_info.get("tag", "")
+            est_size = estimate_size_for_quant(model_name, tag) if tag else variant_info.get("size_gb")
+            if est_size and est_size > 0 and est_size < 99:
+                display_label += f" (est. ~{est_size}GB)"
+                display_label += _fits_label(vram_limit and est_size <= vram_limit, est_size, vram_limit)
+            elif variant_info.get("size_gb"):
+                display_label += f" (~{variant_info['size_gb']}GB)"
+                display_label += _fits_label(vram_limit and variant_info["size_gb"] <= vram_limit, variant_info["size_gb"], vram_limit)
+            if variant_info.get("installed"):
+                display_label += " [INSTALLED]"
+        quant_choices.append(questionary.Choice(title=display_label, value=full))
 
     quant_choices.append(questionary.Separator())
-    quant_choices.append("Use base tag (no quantization suffix)")
-    quant_choices.append("Cancel")
+    quant_choices.append(questionary.Choice(title="Use base tag (no quantization suffix)", value="__base__"))
+    quant_choices.append(questionary.Choice(title="[Cancel / Return to Main Menu]", value="__cancel__"))
 
-    selected_tag = questionary.select(
-        f"Select quantization for {base_name}:",
+    selected = questionary.select(
+        f"Select quantization for [cyan]{base_name}[/]:",
         choices=quant_choices,
         use_indicator=True,
     ).ask()
 
-    if not selected_tag or selected_tag == "Cancel":
+    if selected == "__cancel__" or selected is None:
+        console.print("  [dim][[CANCELLED]][/] Returning to main menu.")
         return None
 
-    if selected_tag == "Use base tag (no quantization suffix)":
+    if selected == "__base__":
         return model_name
-    else:
-        clean = selected_tag.split(" (")[0].strip()
-        return clean if ":" in clean else model_name
+
+    return selected if ":" in selected else model_name
 
 
 def _install_if_needed(final_model, installed_models, vram_limit):
@@ -526,12 +706,12 @@ def _install_if_needed(final_model, installed_models, vram_limit):
 
     tag = final_model.split(":", 1)[1] if ":" in final_model else ""
     est_size = estimate_size_for_quant(final_model, tag) if tag else estimate_size_for_quant(final_model)
-    print(f"\n  {final_model}")
+    console.print(f"\n  [bold]{final_model}[/]")
     if est_size and est_size < 99:
-        print(f"  Estimated size: ~{est_size}GB")
+        console.print(f"  [dim]Estimated size: ~{est_size}GB[/]")
     if vram_limit and est_size and est_size > vram_limit:
-        print(f"  [WARNING] This model ({est_size}GB) exceeds available VRAM ({vram_limit:.1f}GB)")
-    print(f"  Model is not installed.")
+        console.print(f"  [bold yellow][[WARNING]][/] This model ({est_size}GB) exceeds available VRAM ({vram_limit:.1f}GB)")
+    console.print("  [dim]Model is not installed.[/]")
     do_pull = questionary.confirm(
         f"Download {final_model} now? (ollama pull)",
         default=True
@@ -539,8 +719,8 @@ def _install_if_needed(final_model, installed_models, vram_limit):
     if do_pull:
         return pull_model(final_model)
     else:
-        print("  Skipping download. Model not changed.")
-        input("\nPress Enter to continue...")
+        console.print("  [dim]Skipping download. Model not changed.[/]")
+        console.input("[dim]Press Enter to continue...[/]")
         return False
 
 
@@ -553,37 +733,43 @@ def select_fast_edge_model(env_path):
 
     Prompts the user to select a lightweight model suitable for CPU-based
     pre-screening and quick evaluations. Writes FAST_EDGE_MODEL and
-    FAST_EDGE_BASE_URL to .env.
+    FAST_EDGE_BASE_URL to .env with confirmation safety locks.
+
+    Implements explicit Cancel/Back navigation guardrails.
 
     Args:
         env_path: Absolute path to the .env file.
     """
     os.system('cls' if os.name == 'nt' else 'clear')
-    print("\n" + "=" * 62)
-    print("  Fast Edge Tier Configuration (CPU / Port 11435)")
-    print("=" * 62)
+    panel = Panel(
+        "[bold]Fast Edge Tier Configuration[/]\n[dim]CPU-Optimized | Port 11435 | Lightweight Pre-Screening[/]",
+        border_style="cyan",
+        box=box.ROUNDED,
+        padding=(1, 2),
+    )
+    console.print(panel)
 
     if not check_ollama_alive():
-        print("\n  [ERROR] Ollama server not reachable at", get_ollama_base())
-        print("  Make sure Ollama is running (ollama serve).")
-        input("\nPress Enter to return...")
+        console.print(f"\n  [bold red][[ERROR]][/] Ollama server not reachable at [cyan]{get_ollama_base()}[/]")
+        console.print("  [dim]Make sure Ollama is running (ollama serve).[/]")
+        console.input("\n[dim]Press Enter to return...[/]")
         return
 
     vram_gb = detect_vram_gb()
     vram_limit = vram_gb * VRAM_HEADROOM if vram_gb else None
     if vram_gb:
-        print(f"\n  GPU VRAM: {vram_gb:.1f}GB | Available for models: {vram_limit:.1f}GB (70% headroom)")
+        console.print(f"\n  [dim]GPU VRAM:[/] [green]{vram_gb:.1f}GB[/] [dim]| Available for models: [yellow]{vram_limit:.1f}GB[/] (70% headroom)[/]")
     else:
-        print("\n  GPU VRAM: Not detected (no NVIDIA GPU or nvidia-smi missing)")
+        console.print("\n  [dim]GPU VRAM: Not detected (no NVIDIA GPU or nvidia-smi missing)[/]")
 
-    print("\n  Fast Edge Tier uses a lightweight model for low-latency pre-screening.")
-    print("  Recommended: fermionresearch/Neutrino-8B or similar small model.")
+    console.print("\n  [dim]Fast Edge Tier uses a lightweight model for low-latency pre-screening.[/]")
+    console.print("  [dim]Recommended: fermionresearch/Neutrino-8B or similar small model.[/]")
 
     values = dotenv_values(env_path)
     current_edge = values.get("FAST_EDGE_MODEL", "fermionresearch/Neutrino-8B")
     current_edge_url = values.get("FAST_EDGE_BASE_URL", "http://127.0.0.1:11435/v1")
-    print(f"\n  Current Fast Edge Model: {current_edge}")
-    print(f"  Current Fast Edge URL:   {current_edge_url}")
+    console.print(f"\n  [dim]Current Fast Edge Model:[/] [cyan]{current_edge}[/]")
+    console.print(f"  [dim]Current Fast Edge URL:  [/] [cyan]{current_edge_url}[/]")
 
     # -- Configure endpoint URL --
     if questionary.confirm("Change Fast Edge endpoint URL?", default=False).ask():
@@ -592,65 +778,81 @@ def select_fast_edge_model(env_path):
             default=current_edge_url
         ).ask()
         if new_url and new_url.strip():
-            _set_key(env_path, "FAST_EDGE_BASE_URL", new_url.strip())
-            os.environ["FAST_EDGE_BASE_URL"] = new_url.strip()
-            print(f"  [FAST_EDGE_BASE_URL] set to: {new_url.strip()}")
+            new_url_stripped = new_url.strip()
+            # -- Confirmation safety lock --
+            if _confirm_setting_change(env_path, "FAST_EDGE_BASE_URL", current_edge_url, new_url_stripped):
+                _set_key(env_path, "FAST_EDGE_BASE_URL", new_url_stripped)
+                os.environ["FAST_EDGE_BASE_URL"] = new_url_stripped
+                console.print(f"  [bold green][[OK]][/] FAST_EDGE_BASE_URL set to: [cyan]{new_url_stripped}[/]")
 
     # -- Select model --
     model_name = _browse_and_pick_ollama_model(vram_gb, vram_limit, env_path, "FAST_EDGE_MODEL")
     if not model_name:
+        console.input("\n[dim]Press Enter to return...[/]")
         return
 
     installed = get_installed_models()
     final_model = _pick_quantization(model_name, vram_limit, installed)
     if not final_model:
+        console.input("\n[dim]Press Enter to return...[/]")
         return
 
     if not _install_if_needed(final_model, installed, vram_limit):
+        console.input("\n[dim]Press Enter to return...[/]")
         return
 
-    _set_key(env_path, "FAST_EDGE_MODEL", final_model)
-    os.environ["FAST_EDGE_MODEL"] = final_model
-    print(f"\n  [FAST_EDGE_MODEL] set to: {final_model}")
-    print("  Restart TALOS or re-enter local mode for changes to take effect.")
-    input("\nPress Enter to continue...")
+    # -- Confirmation safety lock --
+    if _confirm_setting_change(env_path, "FAST_EDGE_MODEL", current_edge, final_model):
+        _set_key(env_path, "FAST_EDGE_MODEL", final_model)
+        os.environ["FAST_EDGE_MODEL"] = final_model
+        console.print(f"\n  [bold green][[OK]][/] FAST_EDGE_MODEL set to: [cyan]{final_model}[/]")
+        console.print("  [dim]Restart TALOS or re-enter local mode for changes to take effect.[/]")
+
+    console.input("\n[dim]Press Enter to continue...[/]")
 
 
 def select_heavy_model(env_path):
     """Configure the Heavy Reasoning Tier model and endpoint.
 
     Prompts the user to select a large model for deep analysis and complex
-    reasoning tasks. Writes HEAVY_REASONING_MODEL and OLLAMA_BASE_URL to .env.
+    reasoning tasks. Writes HEAVY_REASONING_MODEL and OLLAMA_BASE_URL to .env
+    with confirmation safety locks.
+
+    Implements explicit Cancel/Back navigation guardrails.
 
     Args:
         env_path: Absolute path to the .env file.
     """
     os.system('cls' if os.name == 'nt' else 'clear')
-    print("\n" + "=" * 62)
-    print("  Heavy Reasoning Tier Configuration (GPU / Port 11434)")
-    print("=" * 62)
+    panel = Panel(
+        "[bold]Heavy Reasoning Tier Configuration[/]\n[dim]GPU-Optimized | Port 11434 | Deep Analysis & Complex Reasoning[/]",
+        border_style="magenta",
+        box=box.ROUNDED,
+        padding=(1, 2),
+    )
+    console.print(panel)
 
     if not check_ollama_alive():
-        print("\n  [ERROR] Ollama server not reachable at", get_ollama_base())
-        print("  Make sure Ollama is running (ollama serve).")
-        input("\nPress Enter to return...")
+        console.print(f"\n  [bold red][[ERROR]][/] Ollama server not reachable at [cyan]{get_ollama_base()}[/]")
+        console.print("  [dim]Make sure Ollama is running (ollama serve).[/]")
+        console.input("\n[dim]Press Enter to return...[/]")
         return
 
     vram_gb = detect_vram_gb()
     vram_limit = vram_gb * VRAM_HEADROOM if vram_gb else None
     if vram_gb:
-        print(f"\n  GPU VRAM: {vram_gb:.1f}GB | Available for models: {vram_limit:.1f}GB (70% headroom)")
+        console.print(f"\n  [dim]GPU VRAM:[/] [green]{vram_gb:.1f}GB[/] [dim]| Available for models: [yellow]{vram_limit:.1f}GB[/] (70% headroom)[/]")
     else:
-        print("\n  GPU VRAM: Not detected (no NVIDIA GPU or nvidia-smi missing)")
+        console.print("\n  [dim]GPU VRAM: Not detected (no NVIDIA GPU or nvidia-smi missing)[/]")
 
-    print("\n  Heavy Reasoning Tier uses a larger model for deep analysis tasks.")
-    print("  Recommended: qwen2.5:14b or similar 7-14B parameter model.")
+    console.print("\n  [dim]Heavy Reasoning Tier uses a larger model for deep analysis tasks.[/]")
+    console.print("  [dim]Recommended: qwen2.5:14b or similar 7-14B parameter model.[/]")
 
     values = dotenv_values(env_path)
     current_heavy = values.get("HEAVY_REASONING_MODEL", "qwen2.5:14b")
     current_heavy_url = values.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
-    print(f"\n  Current Heavy Reasoning Model: {current_heavy}")
-    print(f"  Current Ollama URL:            {current_heavy_url}")
+    console.print(f"\n  [dim]Current Heavy Reasoning Model:[/] [cyan]{current_heavy}[/]")
+    console.print(f"  [dim]Current Ollama URL:           [/] [cyan]{current_heavy_url}[/]")
 
     # -- Configure endpoint URL --
     if questionary.confirm("Change Heavy Reasoning endpoint URL?", default=False).ask():
@@ -660,123 +862,190 @@ def select_heavy_model(env_path):
         ).ask()
         if new_url and new_url.strip():
             normalized = new_url.strip().rstrip("/")
-            _set_key(env_path, "OLLAMA_BASE_URL", normalized)
-            os.environ["OLLAMA_BASE_URL"] = normalized
-            # Also update LOCAL_MODEL_BASE_URL for backward compatibility
-            _set_key(env_path, "LOCAL_MODEL_BASE_URL", normalized + "/v1")
-            os.environ["LOCAL_MODEL_BASE_URL"] = normalized + "/v1"
-            print(f"  [OLLAMA_BASE_URL] set to: {normalized}")
+            # -- Confirmation safety lock --
+            if _confirm_setting_change(env_path, "OLLAMA_BASE_URL", current_heavy_url, normalized):
+                _set_key(env_path, "OLLAMA_BASE_URL", normalized)
+                os.environ["OLLAMA_BASE_URL"] = normalized
+                # Also update LOCAL_MODEL_BASE_URL for backward compatibility
+                local_url = normalized + "/v1"
+                _set_key(env_path, "LOCAL_MODEL_BASE_URL", local_url)
+                os.environ["LOCAL_MODEL_BASE_URL"] = local_url
+                console.print(f"  [bold green][[OK]][/] OLLAMA_BASE_URL set to: [cyan]{normalized}[/]")
 
     # -- Select model --
     model_name = _browse_and_pick_ollama_model(vram_gb, vram_limit, env_path, "HEAVY_REASONING_MODEL")
     if not model_name:
+        console.input("\n[dim]Press Enter to return...[/]")
         return
 
     installed = get_installed_models()
     final_model = _pick_quantization(model_name, vram_limit, installed)
     if not final_model:
+        console.input("\n[dim]Press Enter to return...[/]")
         return
 
     if not _install_if_needed(final_model, installed, vram_limit):
+        console.input("\n[dim]Press Enter to return...[/]")
         return
 
-    _set_key(env_path, "HEAVY_REASONING_MODEL", final_model)
-    os.environ["HEAVY_REASONING_MODEL"] = final_model
-    print(f"\n  [HEAVY_REASONING_MODEL] set to: {final_model}")
-    print("  Restart TALOS or re-enter local mode for changes to take effect.")
-    input("\nPress Enter to continue...")
+    # -- Confirmation safety lock --
+    if _confirm_setting_change(env_path, "HEAVY_REASONING_MODEL", current_heavy, final_model):
+        _set_key(env_path, "HEAVY_REASONING_MODEL", final_model)
+        os.environ["HEAVY_REASONING_MODEL"] = final_model
+        console.print(f"\n  [bold green][[OK]][/] HEAVY_REASONING_MODEL set to: [cyan]{final_model}[/]")
+        console.print("  [dim]Restart TALOS or re-enter local mode for changes to take effect.[/]")
+
+    console.input("\n[dim]Press Enter to continue...[/]")
 
 
 def select_cloud_models(env_path):
     """Interactive cloud model selection (Gemini, DeepSeek, Hugging Face).
 
-    Reads current configuration from .env and config/settings.py defaults.
-    Offers to configure each provider only if its API key is present.
+    Displays current Cloud API provider statuses and key presence in structured
+    Rich panels. Offers to configure each provider only if its API key is present.
+    Implements explicit Cancel/Back navigation guardrails.
 
     Args:
         env_path: Absolute path to the .env file.
     """
     os.system('cls' if os.name == 'nt' else 'clear')
-    print("\n" + "=" * 62)
-    print("  Cloud API Tier Configuration (Gemini / DeepSeek / HF)")
-    print("=" * 62)
+    panel = Panel(
+        "[bold]Cloud API Tier Configuration[/]\n[dim]Gemini | DeepSeek | Hugging Face -- Internet-dependent[/]",
+        border_style="yellow",
+        box=box.ROUNDED,
+        padding=(1, 2),
+    )
+    console.print(panel)
 
     values = dotenv_values(env_path)
 
+    # -- Provider status table --
+    status_table = Table(box=box.ROUNDED, show_header=True, header_style="bold white")
+    status_table.add_column("Provider", style="cyan")
+    status_table.add_column("API Key Status", style="white")
+    status_table.add_column("Current Model", style="green")
+
+    gemini_has_key = bool(os.getenv("GEMINI_API_KEY") or values.get("GEMINI_API_KEY"))
+    deepseek_has_key = bool(os.getenv("DEEPSEEK_API_KEY") or values.get("DEEPSEEK_API_KEY"))
+    hf_has_key = bool(os.getenv("HF_TOKEN") or values.get("HF_TOKEN"))
+
+    status_table.add_row(
+        "Gemini",
+        "[green][CONFIGURED][/]" if gemini_has_key else "[dim][NO KEY][/]",
+        f"{values.get('GEMINI_FLASH_MODEL', DEFAULT_GEMINI_FLASH)} / {values.get('GEMINI_PRO_MODEL', DEFAULT_GEMINI_PRO)}"
+    )
+    status_table.add_row(
+        "DeepSeek",
+        "[green][CONFIGURED][/]" if deepseek_has_key else "[dim][NO KEY][/]",
+        values.get("DEEPSEEK_MODEL_CHAT", DEFAULT_DEEPSEEK_MODEL)
+    )
+    status_table.add_row(
+        "Hugging Face",
+        "[green][CONFIGURED][/]" if hf_has_key else "[dim][NO KEY][/]",
+        values.get("HF_MODEL_NAME", DEFAULT_HF_MODEL)
+    )
+
+    console.print()
+    console.print(status_table)
+
+    has_any_key = gemini_has_key or deepseek_has_key or hf_has_key
+    if not has_any_key:
+        console.print("\n  [dim]No cloud API keys detected. Configure keys in .env to enable cloud providers.[/]")
+        console.print("  [dim]Required: GEMINI_API_KEY, DEEPSEEK_API_KEY, or HF_TOKEN[/]")
+        console.input("\n[dim]Press Enter to return...[/]")
+        return
+
     # -- Gemini --
-    if os.getenv("GEMINI_API_KEY") or values.get("GEMINI_API_KEY"):
-        print("\n" + "-" * 62)
-        print("  [Gemini Models]")
+    if gemini_has_key:
+        console.print("\n" + "-" * 62)
+        console.print("  [bold]Gemini Models[/]")
         current_gemini_flash = values.get("GEMINI_FLASH_MODEL", DEFAULT_GEMINI_FLASH)
         current_gemini_pro = values.get("GEMINI_PRO_MODEL", DEFAULT_GEMINI_PRO)
-        print(f"  Flash (pre-screening): {current_gemini_flash}")
-        print(f"  Pro   (deep analysis): {current_gemini_pro}")
+        console.print(f"  [dim]Flash (pre-screening):[/] [cyan]{current_gemini_flash}[/]")
+        console.print(f"  [dim]Pro   (deep analysis):[/] [cyan]{current_gemini_pro}[/]")
 
         if questionary.confirm("Configure Gemini models?", default=False).ask():
-            flash_choices = [f"{m[0]} - {m[1]}" for m in GEMINI_MODELS]
+            flash_choices = [questionary.Choice(title=f"{m[0]} - {m[1]}", value=m[0]) for m in GEMINI_MODELS]
+            flash_choices.append(questionary.Separator())
+            flash_choices.append(questionary.Choice(title="[Cancel / Back]", value="__cancel__"))
             flash_sel = questionary.select(
                 "Select Flash model (pre-screening):",
-                choices=flash_choices + ["Cancel"],
+                choices=flash_choices,
             ).ask()
-            if flash_sel and flash_sel != "Cancel":
-                flash_model = flash_sel.split(" - ")[0]
-                _set_key(env_path, "GEMINI_FLASH_MODEL", flash_model)
-                os.environ["GEMINI_FLASH_MODEL"] = flash_model
-                print(f"  [GEMINI_FLASH_MODEL] set to: {flash_model}")
+            if flash_sel and flash_sel != "__cancel__":
+                # -- Confirmation safety lock --
+                if _confirm_setting_change(env_path, "GEMINI_FLASH_MODEL", current_gemini_flash, flash_sel):
+                    _set_key(env_path, "GEMINI_FLASH_MODEL", flash_sel)
+                    os.environ["GEMINI_FLASH_MODEL"] = flash_sel
+                    console.print(f"  [bold green][[OK]][/] GEMINI_FLASH_MODEL set to: [cyan]{flash_sel}[/]")
 
+            pro_choices = [questionary.Choice(title=f"{m[0]} - {m[1]}", value=m[0]) for m in GEMINI_MODELS]
+            pro_choices.append(questionary.Separator())
+            pro_choices.append(questionary.Choice(title="[Cancel / Back]", value="__cancel__"))
             pro_sel = questionary.select(
                 "Select Pro model (deep analysis):",
-                choices=flash_choices + ["Cancel"],
+                choices=pro_choices,
             ).ask()
-            if pro_sel and pro_sel != "Cancel":
-                pro_model = pro_sel.split(" - ")[0]
-                _set_key(env_path, "GEMINI_PRO_MODEL", pro_model)
-                os.environ["GEMINI_PRO_MODEL"] = pro_model
-                print(f"  [GEMINI_PRO_MODEL] set to: {pro_model}")
+            if pro_sel and pro_sel != "__cancel__":
+                # -- Confirmation safety lock --
+                if _confirm_setting_change(env_path, "GEMINI_PRO_MODEL", current_gemini_pro, pro_sel):
+                    _set_key(env_path, "GEMINI_PRO_MODEL", pro_sel)
+                    os.environ["GEMINI_PRO_MODEL"] = pro_sel
+                    console.print(f"  [bold green][[OK]][/] GEMINI_PRO_MODEL set to: [cyan]{pro_sel}[/]")
 
     # -- DeepSeek --
-    if os.getenv("DEEPSEEK_API_KEY") or values.get("DEEPSEEK_API_KEY"):
-        print("\n" + "-" * 62)
-        print("  [DeepSeek Models]")
+    if deepseek_has_key:
+        console.print("\n" + "-" * 62)
+        console.print("  [bold]DeepSeek Models[/]")
         current_ds = values.get("DEEPSEEK_MODEL_CHAT", DEFAULT_DEEPSEEK_MODEL)
-        print(f"  Current: {current_ds}")
+        console.print(f"  [dim]Current:[/] [cyan]{current_ds}[/]")
 
         if questionary.confirm("Configure DeepSeek model?", default=False).ask():
-            ds_choices = [f"{m[0]} - {m[1]}" for m in DEEPSEEK_MODELS]
+            ds_choices = [questionary.Choice(title=f"{m[0]} - {m[1]}", value=m[0]) for m in DEEPSEEK_MODELS]
+            ds_choices.append(questionary.Separator())
+            ds_choices.append(questionary.Choice(title="[Cancel / Back]", value="__cancel__"))
             ds_sel = questionary.select(
                 "Select DeepSeek model:",
-                choices=ds_choices + ["Cancel"],
+                choices=ds_choices,
             ).ask()
-            if ds_sel and ds_sel != "Cancel":
-                ds_model = ds_sel.split(" - ")[0]
-                _set_key(env_path, "DEEPSEEK_MODEL_CHAT", ds_model)
-                os.environ["DEEPSEEK_MODEL_CHAT"] = ds_model
-                print(f"  [DEEPSEEK_MODEL_CHAT] set to: {ds_model}")
+            if ds_sel and ds_sel != "__cancel__":
+                # -- Confirmation safety lock --
+                if _confirm_setting_change(env_path, "DEEPSEEK_MODEL_CHAT", current_ds, ds_sel):
+                    _set_key(env_path, "DEEPSEEK_MODEL_CHAT", ds_sel)
+                    os.environ["DEEPSEEK_MODEL_CHAT"] = ds_sel
+                    console.print(f"  [bold green][[OK]][/] DEEPSEEK_MODEL_CHAT set to: [cyan]{ds_sel}[/]")
 
     # -- Hugging Face --
-    if os.getenv("HF_TOKEN") or values.get("HF_TOKEN"):
-        print("\n" + "-" * 62)
-        print("  [Hugging Face Models]")
+    if hf_has_key:
+        console.print("\n" + "-" * 62)
+        console.print("  [bold]Hugging Face Models[/]")
         current_hf = values.get("HF_MODEL_NAME", DEFAULT_HF_MODEL)
-        print(f"  Current: {current_hf}")
+        console.print(f"  [dim]Current:[/] [cyan]{current_hf}[/]")
 
         if questionary.confirm("Configure Hugging Face model?", default=False).ask():
+            hf_choices = [questionary.Choice(title=m, value=m) for m in HF_MODELS]
+            hf_choices.append(questionary.Choice(title="Custom...", value="__custom__"))
+            hf_choices.append(questionary.Separator())
+            hf_choices.append(questionary.Choice(title="[Cancel / Back]", value="__cancel__"))
             hf_sel = questionary.select(
                 "Select HF model (free tier):",
-                choices=HF_MODELS + ["Custom...", "Cancel"],
+                choices=hf_choices,
             ).ask()
-            if hf_sel and hf_sel != "Cancel":
-                if hf_sel == "Custom...":
-                    custom = questionary.text("Enter HF model ID:").ask()
-                    if custom and custom.strip():
-                        hf_sel = custom.strip()
-                    else:
-                        return
-                _set_key(env_path, "HF_MODEL_NAME", hf_sel)
-                os.environ["HF_MODEL_NAME"] = hf_sel
-                print(f"  [HF_MODEL_NAME] set to: {hf_sel}")
+            if hf_sel == "__custom__":
+                custom = questionary.text("Enter HF model ID:").ask()
+                if custom and custom.strip():
+                    hf_sel = custom.strip()
+                else:
+                    console.print("  [dim][[CANCELLED]][/] No model ID entered.")
+                    hf_sel = None
+            if hf_sel and hf_sel != "__cancel__":
+                # -- Confirmation safety lock --
+                if _confirm_setting_change(env_path, "HF_MODEL_NAME", current_hf, hf_sel):
+                    _set_key(env_path, "HF_MODEL_NAME", hf_sel)
+                    os.environ["HF_MODEL_NAME"] = hf_sel
+                    console.print(f"  [bold green][[OK]][/] HF_MODEL_NAME set to: [cyan]{hf_sel}[/]")
 
-    input("\nPress Enter to continue...")
+    console.input("\n[dim]Press Enter to continue...[/]")
 
 
 def select_execution_mode(env_path):
@@ -787,32 +1056,66 @@ def select_execution_mode(env_path):
       - "hybrid"  : Local tiers as primary, cloud providers as fallback.
       - "cloud"   : Cloud providers as primary, local as fallback.
 
+    Displays an informational Rich Panel comparison table before prompting.
+    Implements explicit Cancel/Back navigation guardrails.
+
     Args:
         env_path: Absolute path to the .env file.
     """
     os.system('cls' if os.name == 'nt' else 'clear')
-    print("\n" + "=" * 62)
-    print("  System Execution Mode Selector")
-    print("=" * 62)
+    panel = Panel(
+        "[bold]System Execution Mode Selector[/]\n[dim]Controls how TALOS routes inference across local and cloud tiers[/]",
+        border_style="blue",
+        box=box.ROUNDED,
+        padding=(1, 2),
+    )
+    console.print(panel)
 
     values = dotenv_values(env_path)
     current_mode = values.get("TALOS_EXECUTION_MODE", "local")
-    print(f"\n  Current Execution Mode: {current_mode}")
 
-    print("\n  Execution modes:")
-    print("    local   - Air-gapped. All inference via local Ollama tiers only.")
-    print("              No cloud APIs are called. Works fully offline.")
-    print("    hybrid  - Local tiers as primary, cloud providers as fallback.")
-    print("              Uses cloud only when local models are unavailable or fail.")
-    print("    cloud   - Cloud providers as primary, local tiers as fallback.")
-    print("              Uses cloud APIs for all inference when keys are available.\n")
+    # -- Comparison table --
+    mode_table = Table(box=box.ROUNDED, show_header=True, header_style="bold white")
+    mode_table.add_column("Mode", style="cyan", no_wrap=True)
+    mode_table.add_column("Description", style="white")
+    mode_table.add_column("VRAM Required", style="yellow")
+    mode_table.add_column("Internet Required", style="yellow")
+    mode_table.add_column("Status", style="green")
+
+    mode_table.add_row(
+        "local",
+        "Air-gapped. All inference via local Ollama tiers only. No cloud APIs called.",
+        "Yes",
+        "[red]No[/]",
+        "[bold green][ACTIVE][/]" if current_mode == "local" else "[dim]inactive[/]"
+    )
+    mode_table.add_row(
+        "hybrid",
+        "Local tiers as primary, cloud providers as fallback. Cloud used only when local unavailable.",
+        "Yes",
+        "[yellow]Optional[/]",
+        "[bold green][ACTIVE][/]" if current_mode == "hybrid" else "[dim]inactive[/]"
+    )
+    mode_table.add_row(
+        "cloud",
+        "Cloud providers as primary, local tiers as fallback. Uses cloud APIs when keys available.",
+        "Optional",
+        "[green]Yes[/]",
+        "[bold green][ACTIVE][/]" if current_mode == "cloud" else "[dim]inactive[/]"
+    )
+
+    console.print()
+    console.print(mode_table)
+    console.print(f"\n  [dim]Current Execution Mode:[/] [bold cyan]{current_mode}[/]")
 
     mode_map = {
         "local (Air-Gapped)": "local",
         "hybrid (Local + Cloud Fallback)": "hybrid",
         "cloud (Cloud Priority)": "cloud",
     }
-    choices = list(mode_map.keys()) + ["Cancel"]
+    choices = [questionary.Choice(title=k, value=v) for k, v in mode_map.items()]
+    choices.append(questionary.Separator())
+    choices.append(questionary.Choice(title="[Cancel / Return to Main Menu]", value="__cancel__"))
 
     selected = questionary.select(
         "Select execution mode:",
@@ -820,10 +1123,18 @@ def select_execution_mode(env_path):
         use_indicator=True,
     ).ask()
 
-    if not selected or selected == "Cancel":
+    if selected == "__cancel__" or selected is None:
+        console.print("  [dim][[CANCELLED]][/] Returning to main menu.")
+        console.input("\n[dim]Press Enter to continue...[/]")
         return
 
-    mode_value = mode_map[selected]
+    mode_value = selected
+
+    # -- Confirmation safety lock --
+    if not _confirm_setting_change(env_path, "TALOS_EXECUTION_MODE", current_mode, mode_value):
+        console.input("\n[dim]Press Enter to continue...[/]")
+        return
+
     _set_key(env_path, "TALOS_EXECUTION_MODE", mode_value)
     os.environ["TALOS_EXECUTION_MODE"] = mode_value
 
@@ -844,35 +1155,40 @@ def select_execution_mode(env_path):
         os.environ["TALOS_USE_LOCAL"] = "0"
         os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
 
-    print(f"\n  [TALOS_EXECUTION_MODE] set to: {mode_value}")
-    print(f"  [TALOS_USE_LOCAL] set to: {os.environ.get('TALOS_USE_LOCAL', '')}")
-    print(f"  [TALOS_ALLOW_CLOUD_FALLBACK] set to: {os.environ.get('TALOS_ALLOW_CLOUD_FALLBACK', '')}")
-    print("  Restart TALOS for changes to take effect.")
-    input("\nPress Enter to continue...")
+    console.print(f"\n  [bold green][[OK]][/] TALOS_EXECUTION_MODE set to: [cyan]{mode_value}[/]")
+    console.print(f"  [dim]TALOS_USE_LOCAL:[/] [cyan]{os.environ.get('TALOS_USE_LOCAL', '')}[/]")
+    console.print(f"  [dim]TALOS_ALLOW_CLOUD_FALLBACK:[/] [cyan]{os.environ.get('TALOS_ALLOW_CLOUD_FALLBACK', '')}[/]")
+    console.print("  [dim]Restart TALOS for changes to take effect.[/]")
+    console.input("\n[dim]Press Enter to continue...[/]")
 
 
 def select_embedding_model(env_path):
     """Select the local embedding model for vector search.
 
     Offers a curated list of known-good embedding models, checks if they are
-    installed, and offers to pull missing ones.
+    installed, and offers to pull missing ones. Implements explicit Cancel/Back
+    navigation guardrails and confirmation safety lock.
 
     Args:
         env_path: Absolute path to the .env file.
     """
     os.system('cls' if os.name == 'nt' else 'clear')
-    print("\n" + "=" * 62)
-    print("  Embedding Model Selection (Ollama)")
-    print("=" * 62)
+    panel = Panel(
+        "[bold]Embedding Model Selection[/]\n[dim]Local Ollama models for vector search & semantic retrieval[/]",
+        border_style="green",
+        box=box.ROUNDED,
+        padding=(1, 2),
+    )
+    console.print(panel)
 
     if not check_ollama_alive():
-        print("\n  [ERROR] Ollama not reachable.")
-        input("\nPress Enter to return...")
+        console.print("\n  [bold red][[ERROR]][/] Ollama not reachable.")
+        console.input("\n[dim]Press Enter to return...[/]")
         return
 
     values = dotenv_values(env_path)
     current_emb = values.get("LOCAL_EMBEDDING_MODEL", "")
-    print(f"\n  Current embedding model: {current_emb if current_emb else 'Not set'}")
+    console.print(f"\n  [dim]Current embedding model:[/] [cyan]{current_emb if current_emb else 'Not set'}[/]")
 
     # Known good embedding models
     embedding_models = [
@@ -885,36 +1201,61 @@ def select_embedding_model(env_path):
     ]
     installed = get_installed_models()
 
+    # -- Build Rich Table for embedding models --
+    emb_table = Table(box=box.ROUNDED, show_header=True, header_style="bold white")
+    emb_table.add_column("#", style="dim", width=4)
+    emb_table.add_column("Model Name", style="cyan")
+    emb_table.add_column("Installation State", style="white")
+
+    choices_map = {}
+    for idx, m in enumerate(embedding_models, start=1):
+        state = "[green][INSTALLED][/]" if m in installed else "[dim][Available][/]"
+        emb_table.add_row(str(idx), m, state)
+        choices_map[str(idx)] = m
+
+    console.print()
+    console.print(emb_table)
+
+    # -- Build questionary choices --
     choices = []
-    for m in embedding_models:
-        prefix = "[INSTALLED] " if m in installed else "[Available] "
-        choices.append(f"{prefix}{m}")
-    choices.append("Custom...")
-    choices.append("Cancel")
+    for k, name in choices_map.items():
+        prefix = "[INSTALLED] " if name in installed else "[Available] "
+        choices.append(questionary.Choice(title=f"{prefix}{name}", value=name))
+    choices.append(questionary.Choice(title="Custom...", value="__custom__"))
+    choices.append(questionary.Separator())
+    choices.append(questionary.Choice(title="[Cancel / Return to Main Menu]", value="__cancel__"))
 
     sel = questionary.select("Select embedding model:", choices=choices).ask()
-    if not sel or sel == "Cancel":
+    if sel == "__cancel__" or sel is None:
+        console.print("  [dim][[CANCELLED]][/] Returning to main menu.")
+        console.input("\n[dim]Press Enter to continue...[/]")
         return
 
-    model_name = sel.replace("[INSTALLED] ", "").replace("[Available] ", "").strip()
-    if sel.startswith("Custom..."):
+    if sel == "__custom__":
         model_name = questionary.text("Enter model name:").ask()
         if not model_name or not model_name.strip():
+            console.print("  [dim][[CANCELLED]][/] No model name entered.")
+            console.input("\n[dim]Press Enter to continue...[/]")
             return
         model_name = model_name.strip()
+    else:
+        model_name = sel
 
     # Check and pull if needed
     if model_name not in installed:
         do_pull = questionary.confirm(f"Download {model_name}?", default=True).ask()
         if do_pull:
             if not pull_model(model_name):
-                input("\nPress Enter to continue...")
+                console.input("\n[dim]Press Enter to continue...[/]")
                 return
 
-    _set_key(env_path, "LOCAL_EMBEDDING_MODEL", model_name)
-    os.environ["LOCAL_EMBEDDING_MODEL"] = model_name
-    print(f"\n  [LOCAL_EMBEDDING_MODEL] set to: {model_name}")
-    input("\nPress Enter to continue...")
+    # -- Confirmation safety lock --
+    if _confirm_setting_change(env_path, "LOCAL_EMBEDDING_MODEL", current_emb if current_emb else "(empty)", model_name):
+        _set_key(env_path, "LOCAL_EMBEDDING_MODEL", model_name)
+        os.environ["LOCAL_EMBEDDING_MODEL"] = model_name
+        console.print(f"\n  [bold green][[OK]][/] LOCAL_EMBEDDING_MODEL set to: [cyan]{model_name}[/]")
+
+    console.input("\n[dim]Press Enter to continue...[/]")
 
 
 # ---------------------------------------------------------------------------
@@ -934,7 +1275,8 @@ def main():
     7. Exit
 
     Ensures .env exists (copies from example.env if needed). All sub-menus
-    handle cancellation (questionary.select -> Cancel) gracefully.
+    handle cancellation (questionary.select -> Cancel) gracefully with
+    explicit Cancel/Back navigation guardrails.
     """
     env_path = _ENV_PATH
 
@@ -949,33 +1291,46 @@ def main():
 
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
-        print("\n" + "=" * 62)
-        print("  TALOS v5.8.0 -- Multi-Tier AI Model Management")
-        print("=" * 62)
+
+        # -- Main menu header panel --
+        header_panel = Panel(
+            "[bold white]TALOS v5.8.6[/]\n[dim]Multi-Tier AI Model Management | Enterprise TUI | Safety Locks Active[/]",
+            border_style="bright_blue",
+            box=box.ROUNDED,
+            padding=(1, 2),
+        )
+        console.print(header_panel)
 
         values = dotenv_values(env_path)
-        ollama_status = "[CONNECTED]" if check_ollama_alive() else "[OFFLINE]"
+        ollama_status = "[green][CONNECTED][/]" if check_ollama_alive() else "[red][OFFLINE][/]"
 
-        print(f"\n  Ollama Status:         {ollama_status}")
-        print(f"  Execution Mode:        {values.get('TALOS_EXECUTION_MODE', 'local')}")
-        print(f"  Fast Edge Model:       {values.get('FAST_EDGE_MODEL', 'fermionresearch/Neutrino-8B')}")
-        print(f"  Fast Edge URL:         {values.get('FAST_EDGE_BASE_URL', 'http://127.0.0.1:11435/v1')}")
-        print(f"  Heavy Reasoning Model: {values.get('HEAVY_REASONING_MODEL', 'qwen2.5:14b')}")
-        print(f"  Ollama Base URL:       {values.get('OLLAMA_BASE_URL', 'http://127.0.0.1:11434')}")
-        print(f"  Embedding Model:       {values.get('LOCAL_EMBEDDING_MODEL', 'Not set')}")
-        print(f"  Gemini Flash:          {values.get('GEMINI_FLASH_MODEL', DEFAULT_GEMINI_FLASH)}")
-        print(f"  Gemini Pro:            {values.get('GEMINI_PRO_MODEL', DEFAULT_GEMINI_PRO)}")
-        print(f"  DeepSeek:              {values.get('DEEPSEEK_MODEL_CHAT', DEFAULT_DEEPSEEK_MODEL)}")
-        print(f"  Hugging Face:          {values.get('HF_MODEL_NAME', DEFAULT_HF_MODEL)}")
+        # -- Status table --
+        status_table = Table(box=box.ROUNDED, show_header=False, pad_edge=False)
+        status_table.add_column("Key", style="dim")
+        status_table.add_column("Value", style="white")
+        status_table.add_row("Ollama Status:", ollama_status)
+        status_table.add_row("Execution Mode:", values.get('TALOS_EXECUTION_MODE', 'local'))
+        status_table.add_row("Fast Edge Model:", values.get('FAST_EDGE_MODEL', 'fermionresearch/Neutrino-8B'))
+        status_table.add_row("Fast Edge URL:", values.get('FAST_EDGE_BASE_URL', 'http://127.0.0.1:11435/v1'))
+        status_table.add_row("Heavy Reasoning:", values.get('HEAVY_REASONING_MODEL', 'qwen2.5:14b'))
+        status_table.add_row("Ollama Base URL:", values.get('OLLAMA_BASE_URL', 'http://127.0.0.1:11434'))
+        status_table.add_row("Embedding Model:", values.get('LOCAL_EMBEDDING_MODEL', 'Not set'))
+        status_table.add_row("Gemini Flash:", values.get('GEMINI_FLASH_MODEL', DEFAULT_GEMINI_FLASH))
+        status_table.add_row("Gemini Pro:", values.get('GEMINI_PRO_MODEL', DEFAULT_GEMINI_PRO))
+        status_table.add_row("DeepSeek:", values.get('DEEPSEEK_MODEL_CHAT', DEFAULT_DEEPSEEK_MODEL))
+        status_table.add_row("Hugging Face:", values.get('HF_MODEL_NAME', DEFAULT_HF_MODEL))
 
-        print("\n" + "-" * 62)
-        print("  [1] Configure Fast Edge Tier (CPU / Port 11435)")
-        print("  [2] Configure Heavy Reasoning Tier (GPU / Port 11434)")
-        print("  [3] Configure Cloud API Tier (Gemini / DeepSeek / HF)")
-        print("  [4] Select System Execution Mode (Air-Gapped Local / Hybrid / Full Cloud)")
-        print("  [5] Select Local Embedding Model (Ollama)")
-        print("  [6] Pull Ollama Model Manually")
-        print("  [7] Exit")
+        console.print(status_table)
+
+        # -- Menu options --
+        console.print("\n" + "-" * 62)
+        console.print("  [bold cyan][1][/] Configure Fast Edge Tier (CPU / Port 11435)")
+        console.print("  [bold magenta][2][/] Configure Heavy Reasoning Tier (GPU / Port 11434)")
+        console.print("  [bold yellow][3][/] Configure Cloud API Tier (Gemini / DeepSeek / HF)")
+        console.print("  [bold blue][4][/] Select System Execution Mode (Air-Gapped Local / Hybrid / Full Cloud)")
+        console.print("  [bold green][5][/] Select Local Embedding Model (Ollama)")
+        console.print("  [bold white][6][/] Pull Ollama Model Manually")
+        console.print("  [dim][7][/] Exit")
 
         choice = questionary.select(
             "Select action:",
@@ -992,6 +1347,7 @@ def main():
         ).ask()
 
         if not choice or choice.startswith("7"):
+            console.print("\n  [dim]Exiting Model Manager. Configuration changes saved.[/]")
             break
 
         if choice.startswith("1"):
@@ -1008,7 +1364,7 @@ def main():
             model = questionary.text("Enter model to pull (e.g., gemma3:12b):").ask()
             if model and model.strip():
                 pull_model(model.strip())
-                input("\nPress Enter to continue...")
+                console.input("\n[dim]Press Enter to continue...[/]")
 
 
 if __name__ == "__main__":
