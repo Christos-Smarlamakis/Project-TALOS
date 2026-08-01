@@ -1,9 +1,9 @@
-﻿# Project TALOS (v5.8.9)
+﻿# Project TALOS (v5.9.0)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Takriko Praktoriko Systima Enorchistrosis Vivliografias)*
 
-> **An Autonomous Research Intelligence Platform -- Multi-Tier LLM Routing (CPU/GPU/Cloud), Headless FastAPI Backend with 16 REST Endpoints, SYNAPSE Event-Driven Protocol, React 18 + Tailwind CSS + Shadcn UI Frontend.**
+> **An Autonomous Research Intelligence Platform -- Multi-Tier LLM Routing (CPU/GPU/Cloud), Headless FastAPI Backend with 18 REST Endpoints, SYNAPSE Event-Driven Protocol, RL-Driven Autonomous System Tester with LLM-as-a-Judge Diagnostics, React 18 + Tailwind CSS + Shadcn UI Frontend.**
 
 [![IEEE Computer Society](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund)
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
@@ -42,16 +42,25 @@ TALOS leitourgei os aftonomos "Research Architect," filtrarontas ton thoryvo kai
   - **Grey Wolf Optimizer** (`src/ai/optimizers/gwo_rl_optimizer.py`) for hyperparameter tuning
   - **24/7 Autonomous Service** (`src/ai/drl/talos_service.py`) -- background research agent with Telegram/Discord/Email notifications
 - **Flask API server** (`src/api/talos_service_api.py`) -- real-time service status at `localhost:5002/api/status`
-- **FastAPI REST API** (`src/api/main_api.py`) -- full REST facade with 16 endpoints at `localhost:8001`
+- **FastAPI REST API** (`src/api/main_api.py`) -- full REST facade with 18 endpoints at `localhost:8001`
   - Semantic search, paginated papers, scrape/GWO triggers with BackgroundTasks
   - Single-paper AI evaluation, natural-language to boolean query translation
   - GWO history for Recharts, architecture graph HTML, top authors for BarChart
   - Bulk score recalculation, DB health stats, System Capabilities Master Reference
+  - **Autonomous System Tester** (`GET /api/v1/tester/status`, `GET /api/v1/tester/reports`) -- Q-table status and crash report listing
   - **SYNAPSE webhook receiver** (`POST /api/v1/synapse/webhook`) for ALEXANDRIA ecosystem interoperability
   - **Port 8001** (port 8000 reserved for SYNAPSE event bus)
   - Auto-generated interactive docs at `http://localhost:8001/docs`
   - Models saved at `models/dddqn_trained.pth` and `models/talos_drl.pth`
-- **SYNAPSE Event-Driven Protocol** (`src/integration/synapse_client.py`, `src/api/synapse_routes.py`) -- NEW in v5.8.9
+- **Autonomous System Tester (RL-Driven Chaos Engineering)** (`src/ai/testing/autonomous_tester.py`) -- NEW in v5.9.0
+  - **Non-Stationary Multi-Armed Bandit** with Epsilon-Greedy (epsilon=0.2, alpha=0.1) stress-tests system components via subprocess
+  - **LLM-as-a-Judge Diagnostics**: Crash stderr sent to Fast Edge LLM (Neutrino-8B) for two-sentence human-readable diagnosis
+  - **Rich TUI Visualization**: Spinners, red crash Panels, yellow AI Diagnosis Panels, green PASS confirmations, color-coded Q-Table (Component Fragility)
+  - **Crash Reports**: Timestamped Markdown files in `reports/autonomous_tester/`
+  - **Synapse Event Emission**: `agent_episode_end` events on each test cycle
+  - **Q-Table Persistence**: `data/tester_q_table.json` for continuity across runs
+  - Integrated into `talos.py` menu (Option 6), `run_talos.bat` (Option 8), and `run_talos.sh` (Option 8)
+- **SYNAPSE Event-Driven Protocol** (`src/integration/synapse_client.py`, `src/api/synapse_routes.py`)
   - Thread-safe EventEmitter pushes JSON events (paper_discovered, paper_evaluated, etc.) to the SYNAPSE bus
   - APIRouter receives inbound commands (trigger_search, trigger_evaluation, get_status, shutdown) via webhook
   - Designed for distributed ALEXANDRIA ecosystem microservice interoperability
@@ -83,8 +92,15 @@ TALOS leitourgei os aftonomos "Research Architect," filtrarontas ton thoryvo kai
   - **24/7 Aftonomi Ypiresia** (`src/ai/drl/talos_service.py`) -- praktoras fontou me eidopoiiseis Telegram/Discord/Email
   - **API server** (`src/api/talos_service_api.py`) -- real-time status sto `localhost:5002/api/status`
   - Montela apothikevmena se `models/dddqn_trained.pth` kai `models/talos_drl.pth`
-- **FastAPI REST API** (`src/api/main_api.py`) -- 16 endpoints sto `localhost:8001` (port 8000 gia SYNAPSE bus)
-  - **SYNAPSE webhook** (`POST /api/v1/synapse/webhook`) gia dialeitourgikotita oikosystimatos ALEXANDRIA -- NEO stin v5.8.9
+- **FastAPI REST API** (`src/api/main_api.py`) -- 18 endpoints sto `localhost:8001` (port 8000 gia SYNAPSE bus)
+  - **Aftonomos Elegktis Systimatos** (`GET /api/v1/tester/status`, `GET /api/v1/tester/reports`) -- Katastasi Pinaka Q kai anaforwn katarrifseon
+  - **SYNAPSE webhook** (`POST /api/v1/synapse/webhook`) gia dialeitourgikotita oikosystimatos ALEXANDRIA
+- **Aftonomos Elegktis Systimatos (RL-Driven Chaos Engineering)** (`src/ai/testing/autonomous_tester.py`) -- NEO stin v5.9.0
+  - **Mi Statheros Polyvrachionas Listis** me Epsilon-Greedy dokimazei yposystimata meso ypodiergasion
+  - **LLM-as-a-Judge Diagnostika**: Stderr katarrifseon apostelletai sto Fast Edge LLM gia diagnostiki anafora
+  - **Optikopoiisi Rich TUI**: Spinners, kokkina Panels katarrifseon, kitrina Panels Diagnosis AI, prasines epivevaioseis PASS
+  - **Ekthesi katarrifseon** se Markdown sto `reports/autonomous_tester/`
+  - **Pinakas Q** apothikevetai sto `data/tester_q_table.json`
 *   **Database Manager (The Knowledge Hub):** Mia SQLite3 vasi me **B-Tree indexing** pou leitourgei os gefyra metaxy oikosystimaton apothikevontas pollapla anagnoristika (`DOI`, `OpenAlex ID`, `PMID`, `PMCID`).
 *   **AI Manager (The Cognitive Engine):** Mia model-agnostic michani (Gemini, DeepSeek, Ollama) pou chrisimopoiei to **Adapter Design Pattern** me **Circuit Breakers** gia anthektikotita kai **Surgical JSON Extraction** gia akeraiotita dedomenon.
 *   **Quad-Layer Evaluation Framework:** Mia idioktiti methodologia vathmologisis pou axiologei papers se tesseris diastaseis:
@@ -123,7 +139,7 @@ Run TALOS in a completely isolated environment without installing Python or depe
 ### Method B: 1-Click Launcher (Windows)
 For users without Docker.
 1. Set up your `.env` file.
-2. Double-click **`run_talos.bat`**. The script provides a 3-option menu: Full Setup (Conda env + pip install), Start FastAPI Server (port 8001), or Run Test Suite (pytest -v).
+2. Double-click **`run_talos.bat`**. The script provides a 10-option menu: Full Setup (Conda env + pip install), Start FastAPI Server (port 8001), MCP Server, Interim UI, TALOS CLI, Research Daemon, Live DRL Agent, Autonomous System Tester, Run Test Suite, or Exit.
 
 ### Method C: Traditional Python Environment (Linux/Mac)
 ```bash
@@ -156,7 +172,7 @@ Choris anagki egkatastasis Python i vivliothikon sto systima sas.
 
 ### Methodos B: 1-Click Launcher (Gia Windows)
 1. Symplirote to archeio `.env`.
-2. Kante diplo klik sto archeio **`run_talos.bat`**. Prosferei menou 3 epilogon: Pliris Egkatastasi (Conda env + pip install), Ekkinisi FastAPI Server (thyra 8001), i Ektelesi Test Suite (pytest -v).
+2. Kante diplo klik sto archeio **`run_talos.bat`**. Prosferei menou 10 epilogon: Pliris Egkatastasi (Conda env + pip install), Ekkinisi FastAPI Server (thyra 8001), MCP Server, Endiameso UI, TALOS CLI, Erevnitikos Daimonas, Live DRL Agent, Aftonomos Elegktis Systimatos, Ektelesi Test Suite (pytest -v), i Exodos.
 
 ### Methodos G: Paradosiako Perivallon Python
 ```bash
@@ -178,7 +194,7 @@ Apaiteitai **Ollama** gia na dynatai na trechei topika to montelo `gemma4`.
 This software is part of ongoing PhD research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.8.9, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.0, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -187,7 +203,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.8.9},
+  version = {v5.9.0},
   year = {2026}
 }
 ```
@@ -198,7 +214,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
 Ean chrisimopoiisete to TALOS stin erevna sas, parakaloume na to anaferete os exis:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.8.9, July 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.0, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -207,7 +223,7 @@ Ean chrisimopoiisete to TALOS stin erevna sas, parakaloume na to anaferete os ex
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.8.9},
+  version = {v5.9.0},
   year = {2026}
 }
 ```

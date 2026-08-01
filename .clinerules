@@ -71,9 +71,9 @@
   7. `docs/PROJECT_MAP_EN.md` — Complete project map (English)
   8. `docs/TIMELINE_EN.md` — Historical timeline (English)
   9. `docs/TIMELINE_GR.md` — Historical timeline (Greek)
-  10. `docs/API_HANDOVER_FOTIS.md` — API handover reference
-  11. `docs/UX_UI_BLUEPRINT_FOTIS.md` — UX/UI blueprint
-  12. `docs/IP_PROTECTION_STRATEGY.md` — IP protection strategy
+  10. `docs/internal/API_HANDOVER_FOTIS.md` — API handover reference
+  11. `docs/internal/UX_UI_BLUEPRINT_FOTIS.md` — UX/UI blueprint
+  12. `docs/internal/IP_PROTECTION_STRATEGY.md` — IP protection strategy
   13. `docs/SYSTEM_CAPABILITIES_MASTER.md` — 9-section capabilities reference (Markdown)
   14. `docs/SYSTEM_CAPABILITIES_MASTER.html` — 9-section capabilities reference (HTML)
   15. `docs/TECH_RADAR.md` — Technology radar and stack choices
@@ -267,8 +267,8 @@
 
 ---
 
-> **Last Updated:** 2026-08-01 (v5.8.9 -- SQLite Column Fix, Fermion Auto-Start, Active Focus TUI, Code Version Synchronicity Rule, Interactive Pivot Menu)
-> **Project Version:** v5.8.9
+> **Last Updated:** 2026-08-01 (v5.9.0 -- Autonomous System Tester, RL Chaos Fuzzer, LLM-as-a-Judge, rich TUI Q-Table, Code Version Synchronicity Rule enforcement)
+> **Project Version:** v5.9.0
 
 ---
 

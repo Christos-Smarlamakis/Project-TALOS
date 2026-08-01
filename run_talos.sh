@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # ===========================================================================
-# run_talos.sh -- Cross-Platform POSIX Launcher for Project TALOS v5.8.9
+# run_talos.sh -- Cross-Platform POSIX Launcher for Project TALOS v5.9.0
 #
-# Provides a 9-option structured menu with full parity to run_talos.bat:
+# Provides a 10-option structured menu with full parity to run_talos.bat:
 #   Section 1: REST API & FRONTEND
 #     [1] Full Setup (virtualenv/Conda + pip install + Frontend Provisioner)
 #     [2] Start FastAPI Server (uvicorn, port 8001) -- detached background
@@ -13,15 +13,17 @@
 #     [6] Autonomous Research Daemon (python src/ai/drl/talos_service.py)
 #     [7] Live DRL Agent (python src/ai/drl/talos_live_agent.py --verbose)
 #   Section 3: TESTING & SYSTEM
-#     [8] Run Test Suite (pytest -v)
-#     [9] Exit
+#     [8] Autonomous System Tester (RL Chaos Fuzzer)
+#     [9] Run Test Suite (pytest -v)
+#     [10] Exit
 #
 # TALOS FastAPI runs on port 8001 (port 8000 is reserved for SYNAPSE bus).
 #
-# Features (v5.8.9):
+# Features (v5.9.0):
+#   - Autonomous System Tester (RL-Driven Chaos Engineering with
+#     LLM-as-a-Judge diagnostics).
 #   - Auto-detects virtualenv (.venv/ or venv/) or Conda environments.
-#   - Background servers launched as detached POSIX daemons with output
-#     redirected to /dev/null.
+#   - Background servers launched as detached POSIX daemons.
 #   - Option 4 auto-starts the FastAPI backend chain before provisioning.
 #   - Automatic Fermion CPU server spawning when FAST_EDGE_MODEL contains
 #     Neutrino or is set to local mode.
@@ -51,7 +53,7 @@ if ! command -v python3 &>/dev/null; then
 fi
 
 # ===========================================================================
-# -- Auto-Environment Detection (v5.8.9) --
+# -- Auto-Environment Detection --
 # Scans for a local virtualenv (.venv/ or venv/) first, then falls back to
 # Conda if available. Activates the first valid environment found and exports
 # the path for all subsequent operations.
@@ -108,7 +110,7 @@ detect_and_activate_env() {
 print_banner() {
     clear
     echo "============================================="
-    echo "   Project TALOS v5.8.9"
+    echo "   Project TALOS v5.9.0"
     echo "   Research Intelligence Platform"
     echo "   SYNAPSE Protocol Active (Bus :8000 / API :8001)"
     echo "============================================="
@@ -139,10 +141,11 @@ show_menu() {
     echo "   [7] Live DRL Agent (python src/ai/drl/talos_live_agent.py --verbose)"
     echo ""
     echo "   -- Section 3: TESTING and SYSTEM --"
-    echo "   [8] Run Test Suite (pytest -v)"
-    echo "   [9] Exit"
+    echo "   [8] Autonomous System Tester (RL Chaos Fuzzer)"
+    echo "   [9] Run Test Suite (pytest -v)"
+    echo "   [10] Exit"
     echo ""
-    echo -n "   Select mode [1-9]: "
+    echo -n "   Select mode [1-10]: "
 }
 
 # ===========================================================================
@@ -215,7 +218,7 @@ do_setup() {
 
     echo ""
     echo "============================================="
-    echo -e "   ${GREEN}Setup complete. TALOS v5.8.9 is ready.${NC}"
+    echo -e "   ${GREEN}Setup complete. TALOS v5.9.0 is ready.${NC}"
     echo "============================================="
     echo ""
     echo "   TALOS API will start on port 8001."
@@ -234,7 +237,7 @@ do_setup() {
 do_server() {
     clear
     echo "============================================="
-    echo "   Starting TALOS FastAPI Server (v5.8.9)"
+    echo "   Starting TALOS FastAPI Server (v5.9.0)"
     echo "   Port: 8001"
     echo "   API Docs: http://localhost:8001/docs"
     echo "   Health:   http://localhost:8001/api/v1/health"
@@ -255,7 +258,7 @@ do_server() {
     FASTAPI_PID=$!
     echo -e "${GREEN}[INFO]${NC} TALOS FastAPI server started (PID: $FASTAPI_PID)."
 
-    # -- v5.8.9: Auto-start Fermion CPU daemon if FAST_EDGE_MODEL is Neutrino/local --
+    # -- Auto-start Fermion CPU daemon if FAST_EDGE_MODEL is Neutrino/local --
     check_fermion
 
     echo "[INFO] Wait a few seconds then visit http://localhost:8001/docs"
@@ -271,7 +274,7 @@ do_server() {
 do_mcp_server() {
     clear
     echo "============================================="
-    echo "   Starting TALOS MCP Server (v5.8.9)"
+    echo "   Starting TALOS MCP Server (v5.9.0)"
     echo "============================================="
     echo ""
     echo "   Launching MCP server as a detached background process..."
@@ -338,11 +341,10 @@ do_provision_ui() {
 do_cli() {
     clear
     echo "============================================="
-    echo "   TALOS Terminal CLI (v5.8.9)"
+    echo "   TALOS Terminal CLI (v5.9.0)"
     echo "============================================="
     echo ""
     echo "   Launching the interactive TALOS command-line interface."
-    echo "   Type 'help' inside the CLI for available commands."
     echo "   Press Ctrl+C to exit back to this menu."
     echo ""
 
@@ -361,7 +363,7 @@ do_cli() {
 do_daemon() {
     clear
     echo "============================================="
-    echo "   Autonomous Research Daemon (v5.8.9)"
+    echo "   Autonomous Research Daemon (v5.9.0)"
     echo "   24/7 Background Research Service"
     echo "============================================="
     echo ""
@@ -386,7 +388,7 @@ do_daemon() {
 do_live_drl() {
     clear
     echo "============================================="
-    echo "   Live DRL Agent (v5.8.9)"
+    echo "   Live DRL Agent (v5.9.0)"
     echo "   Deep Reinforcement Learning Agent -- Verbose Mode"
     echo "============================================="
     echo ""
@@ -406,7 +408,36 @@ do_live_drl() {
 }
 
 # ===========================================================================
-# -- Option 8: Run Test Suite --
+# -- Option 8: Autonomous System Tester (RL Chaos Fuzzer) --
+# ===========================================================================
+
+do_auto_tester() {
+    clear
+    echo "============================================="
+    echo "   Autonomous System Tester (v5.9.0)"
+    echo "   RL-Driven Chaos Engineering with LLM-as-a-Judge"
+    echo "============================================="
+    echo ""
+    echo "   Stress-tests TALOS system components using a Non-Stationary"
+    echo "   Epsilon-Greedy Multi-Armed Bandit. Diagnoses crashes with the"
+    echo "   Fast Edge LLM and saves Markdown reports in reports/autonomous_tester/."
+    echo ""
+    echo "   Target components: FastAPI Server, MCP Server, Daily Search,"
+    echo "   Citation Analyzer. Q-table saved to data/tester_q_table.json."
+    echo ""
+    echo "   Press Ctrl+C to abort the test run early."
+    echo ""
+
+    # -- Activate environment --
+    detect_and_activate_env
+
+    # -- Launch autonomous tester --
+    $PYTHON_CMD src/ai/testing/autonomous_tester.py "$@"
+    press_enter
+}
+
+# ===========================================================================
+# -- Option 9: Run Test Suite --
 # ===========================================================================
 
 do_test() {
@@ -447,7 +478,7 @@ do_test() {
 }
 
 # ===========================================================================
-# -- Fermion Auto-Start Subroutine (v5.8.9) --
+# -- Fermion Auto-Start Subroutine --
 # Reads .env for FAST_EDGE_MODEL; if it contains "Neutrino" or equals
 # "local", spawns fermion serve as a detached background daemon.
 # ===========================================================================
@@ -505,16 +536,17 @@ main() {
             5) do_cli ;;
             6) do_daemon ;;
             7) do_live_drl ;;
-            8) do_test ;;
-            9)
+            8) do_auto_tester ;;
+            9) do_test ;;
+            10)
                 echo ""
                 echo "============================================="
-                echo "   Closing Project TALOS v5.8.9..."
+                echo "   Closing Project TALOS v5.9.0..."
                 echo "============================================="
                 exit 0
                 ;;
             *)
-                echo -e "${RED}Invalid choice. Please select [1-9].${NC}"
+                echo -e "${RED}Invalid choice. Please select [1-10].${NC}"
                 sleep 1
                 ;;
         esac

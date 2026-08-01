@@ -1,0 +1,662 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.0</title>
+<style>
+  /* ═══════════════════════════════════════════════════════════════════════════
+     Dark Academic Theme — Slate/Zinc palette, monospace code, sticky ToC
+     ═══════════════════════════════════════════════════════════════════════ */
+  :root {
+    --bg: #0f1117;
+    --bg-card: #16181d;
+    --bg-sidebar: #111318;
+    --border: #272a33;
+    --text: #c9cdd4;
+    --text-muted: #6b7280;
+    --accent: #4a9eff;
+    --accent-dim: #2d5a9e;
+    --header-text: #e4e7ee;
+    --code-bg: #1a1d24;
+    --table-stripe: #14161b;
+    --table-hover: #1e2130;
+    --link-hover: #6db3ff;
+    --scrollbar-thumb: #2a2d36;
+    --scrollbar-track: #111318;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; font-size: 15px; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    display: flex;
+    min-height: 100vh;
+  }
+
+  /* ─── Scrollbar ─── */
+  ::-webkit-scrollbar { width: 8px; }
+  ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3d48; }
+
+  /* ─── Sidebar ToC ─── */
+  nav#toc {
+    position: sticky;
+    top: 0;
+    width: 280px;
+    min-width: 280px;
+    height: 100vh;
+    overflow-y: auto;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    padding: 2rem 1.25rem;
+    font-size: 0.85rem;
+  }
+  nav#toc h2 {
+    color: var(--accent);
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+  nav#toc a {
+    display: block;
+    color: var(--text-muted);
+    text-decoration: none;
+    padding: 0.3rem 0;
+    border-left: 2px solid transparent;
+    padding-left: 0.75rem;
+    transition: all 0.15s ease;
+  }
+  nav#toc a:hover,
+  nav#toc a.active {
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: rgba(74, 158, 255, 0.05);
+  }
+  nav#toc a.section-link { font-weight: 600; color: var(--text); margin-top: 0.5rem; }
+  nav#toc a.sub-link { padding-left: 2rem; }
+
+  /* ─── Main Content ─── */
+  main {
+    flex: 1;
+    max-width: 960px;
+    padding: 2.5rem 3rem;
+    overflow-y: auto;
+  }
+  main h1 {
+    font-size: 2rem;
+    color: var(--header-text);
+    border-bottom: 2px solid var(--accent-dim);
+    padding-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  main h2 {
+    font-size: 1.45rem;
+    color: var(--header-text);
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+  main h3 {
+    font-size: 1.15rem;
+    color: var(--accent);
+    margin-top: 1.75rem;
+    margin-bottom: 0.6rem;
+  }
+  main p { margin-bottom: 0.85rem; }
+  main a { color: var(--accent); text-decoration: none; }
+  main a:hover { color: var(--link-hover); text-decoration: underline; }
+  main strong { color: var(--header-text); }
+
+  /* ─── Metadata block ─── */
+  .meta-block {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 2rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  .meta-block strong { color: var(--text); }
+
+  /* ─── Tables ─── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.88rem;
+  }
+  thead { background: var(--accent-dim); }
+  thead th {
+    color: var(--header-text);
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  tbody td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even) { background: var(--table-stripe); }
+  tbody tr:hover { background: var(--table-hover); }
+
+  /* ─── Code ─── */
+  code {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.15em 0.4em;
+    font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+    font-size: 0.88em;
+    color: #e2a478;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    margin: 1rem 0 1.5rem;
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #c9cdd4;
+    font-size: inherit;
+  }
+
+  /* ─── Blockquote ─── */
+  blockquote {
+    border-left: 3px solid var(--accent-dim);
+    padding: 0.5rem 1rem;
+    margin: 1rem 0;
+    background: var(--bg-card);
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* ─── Dividers ─── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
+
+  /* ─── Responsive ─── */
+  @media (max-width: 900px) {
+    body { flex-direction: column; }
+    nav#toc {
+      position: relative;
+      width: 100%;
+      min-width: unset;
+      height: auto;
+      max-height: 40vh;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+    main { padding: 1.5rem; }
+  }
+</style>
+</head>
+<body>
+
+<nav id="toc">
+  <h2>Table of Contents</h2>
+  <a href="#s1" class="section-link">1. System Vision & Core Architecture</a>
+  <a href="#s2" class="section-link">2. Multi-Source Ingestion Engine</a>
+  <a href="#s3" class="section-link">3. Deep Reinforcement Learning & Optimization</a>
+  <a href="#s4" class="section-link">4. Advanced Semantic & Graph Intelligence</a>
+  <a href="#s5" class="section-link">5. Multi-Agent & Autonomous Swarms</a>
+  <a href="#s6" class="section-link">6. Automated Literature Review & XAI</a>
+  <a href="#s7" class="section-link">7. Edge-Cloud & Deployment Ecosystem</a>
+  <a href="#s8" class="section-link">8. Dashboards & User Interfaces</a>
+  <a href="#s9" class="section-link">9. Complete REST API Reference</a>
+</nav>
+
+<main>
+
+<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.0</h1>
+
+<div class="meta-block">
+  <strong>Document ID:</strong> TALOS-SYS-CAP-001 &nbsp;|&nbsp;
+  <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
+  <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend) &nbsp;|&nbsp;
+  <strong>Last Updated:</strong> 29 July 2026
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="s1">Section 1: System Vision & Core Architecture</h2>
+
+<h3>1.1 Foundational Principle</h3>
+
+<p>TALOS is an autonomous Research Intelligence Platform that ingests, evaluates, synthesizes, and visualizes scientific knowledge across 14 academic sources. It replaces manual systematic literature review workflows with an AI-driven, DRL-orchestrated pipeline that maintains a human-in-the-loop at every critical decision boundary.</p>
+
+<h3>1.2 Architectural Pillars</h3>
+
+<p>The system operates as a three-layer architecture:</p>
+
+<table>
+  <thead><tr><th>Layer</th><th>Component</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Frontend</strong></td><td>React 18 with Tailwind CSS and Shadcn UI</td><td>User-facing dashboard leveraging the REST API</td></tr>
+    <tr><td><strong>Backend</strong></td><td><code>src/api/main_api.py</code> (14 endpoints)</td><td>Headless FastAPI facade exposing all core capabilities</td></tr>
+    <tr><td><strong>Persistence</strong></td><td><code>src/core/database_manager.py</code></td><td>SQLite + multi-model vector embeddings (Ollama + Gemini)</td></tr>
+  </tbody>
+</table>
+
+<h3>1.3 Data Flow</h3>
+
+<pre><code>User (React UI) --> FastAPI (:8000) --> src/core/*.py --> src/ingestion/*.py --> External APIs
+                                               ^
+                                               | --> src/ai/*.py --> DRL Agent + GWO + PYTHIA
+                                                              |
+                                               data/talos_research.db (SQLite + Embeddings)
+                                                              |
+                                               config.json + .env (Configuration + Secrets)</code></pre>
+
+<h3>1.4 Operational Modes</h3>
+<ul>
+  <li><strong>Production:</strong> Headless FastAPI listener on port 8000, React frontend consuming the API</li>
+  <li><strong>Development:</strong> <code>uvicorn src.api.main_api:app --reload --port 8000</code></li>
+  <li><strong>Background Services:</strong> Scraping pipeline, GWO optimizer, DRL training -- all via FastAPI BackgroundTasks</li>
+  <li><strong>CLI:</strong> <code>talos.py</code> retains full terminal-mode access for maintenance and diagnostics</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="s2">Section 2: Multi-Source Ingestion Engine</h2>
+
+<h3>2.1 The "Genesis" Operation</h3>
+
+<p>TALOS ingests academic literature from <strong>14 independent APIs</strong>, each implemented as a standalone source agent under <code>src/ingestion/</code>. Every agent conforms to a standardized output format:</p>
+
+<pre><code>{
+  "doi": "string or null",
+  "url": "string or null",
+  "title": "string",
+  "authors_str": "string",
+  "publication_year": "integer or null",
+  "abstract": "string or null",
+  "source": "string"
+}</code></pre>
+
+<h3>2.2 Source Agent Inventory</h3>
+
+<table>
+  <thead><tr><th>Source</th><th>Module</th><th>Auth Model</th><th>Rate Limit Handling</th></tr></thead>
+  <tbody>
+    <tr><td>ArXiv</td><td><code>src/ingestion/arxiv.py</code></td><td>Public API</td><td>Exponential backoff</td></tr>
+    <tr><td>IEEE Xplore</td><td><code>src/ingestion/ieee.py</code></td><td>API key</td><td>Exponential backoff</td></tr>
+    <tr><td>Semantic Scholar</td><td><code>src/ingestion/semantic_scholar.py</code></td><td>Public API</td><td>100 req/5min batch</td></tr>
+    <tr><td>Springer Nature</td><td><code>src/ingestion/springer.py</code></td><td>API key</td><td>Exponential backoff</td></tr>
+    <tr><td>OpenAlex</td><td><code>src/ingestion/openalex.py</code></td><td>Public API</td><td>Polite crawl delay</td></tr>
+    <tr><td>DBLP</td><td><code>src/ingestion/dblp.py</code></td><td>Public API</td><td>Basic rate limit</td></tr>
+    <tr><td>Elsevier/Scopus</td><td><code>src/ingestion/elsevier.py</code></td><td>API key + institutional token</td><td>Exponential backoff</td></tr>
+    <tr><td>CORE</td><td><code>src/ingestion/core.py</code></td><td>API key</td><td>Exponential backoff</td></tr>
+    <tr><td>CrossRef</td><td><code>src/ingestion/crossref.py</code></td><td>Public API</td><td>Polite crawl delay</td></tr>
+    <tr><td>OpenArchives</td><td><code>src/ingestion/openarchives.py</code></td><td>Public OAI-PMH</td><td>Polite crawl delay</td></tr>
+    <tr><td>PubMed</td><td><code>src/ingestion/pubmed.py</code></td><td>Public NCBI API</td><td>3 req/sec</td></tr>
+    <tr><td>Sci.gov</td><td><code>src/ingestion/scigov.py</code></td><td>Public API</td><td>Basic rate limit</td></tr>
+    <tr><td>OSTI.gov</td><td><code>src/ingestion/osti.py</code></td><td>Public API</td><td>Basic rate limit</td></tr>
+    <tr><td>PLOS</td><td><code>src/ingestion/plos.py</code></td><td>Public API</td><td>Basic rate limit</td></tr>
+  </tbody>
+</table>
+
+<h3>2.3 Ingestion Pipelines</h3>
+<ul>
+  <li><strong>Daily Search</strong> (<code>src/ingestion/daily_search.py</code>): Concurrent 14-source fetch with deduplication and two-stage AI evaluation (Flash pre-screen, Pro deep analysis)</li>
+  <li><strong>Historical Search</strong> (<code>src/ingestion/historic_search.py</code>): Year-by-year backfill with epoch deduplication logic</li>
+  <li><strong>Grey Literature Miner</strong> (<code>src/ingestion/grey_literature_miner.py</code>): DuckDuckGo web search for preprints, technical reports, and white papers</li>
+  <li><strong>PDF Downloader</strong> (<code>src/ingestion/pdf_downloader.py</code>): ThreadPoolExecutor-batched Open Access PDF retrieval</li>
+  <li><strong>Zotero Connector</strong> (<code>src/ingestion/zotero_connector.py</code>): Bi-directional sync with Zotero cloud library</li>
+  <li><strong>Metadata Enricher</strong> (<code>src/ingestion/metadata_enricher.py</code>): DOI resolution and metadata augmentation</li>
+  <li><strong>Data Enricher</strong> (<code>src/ingestion/data_enricher.py</code>): Unpaywall API integration for OA status and PDF links</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="s3">Section 3: Deep Reinforcement Learning & Optimization (DDDQN + GWO)</h2>
+
+<h3>3.1 DRL Agent Architecture</h3>
+
+<p>The TALOS DRL Agent (<code>src/ai/drl/</code>) employs a <strong>Double Dueling Deep Q-Network with 3-layer LSTM</strong> trained on 3,849 real paper scores.</p>
+
+<table>
+  <thead><tr><th>Component</th><th>File</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>RL Environment</td><td><code>src/ai/drl/talos_env.py</code></td><td>Gymnasium-compliant N-source observation space with provider-aware state (1+N+2+4 dimensions)</td></tr>
+    <tr><td>Network Architectures</td><td><code>src/ai/drl/drl_networks.py</code></td><td>DuelingLSTM, DuelingMLP, and supporting value/advantage heads</td></tr>
+    <tr><td>Training Loop</td><td><code>src/ai/drl/drl_trainer.py</code></td><td>Epsilon-greedy training with prioritized experience replay</td></tr>
+    <tr><td>Live Orchestrator</td><td><code>src/ai/drl/live_agent_orchestrator.py</code></td><td>Main loop with cooldown mechanism, provider tracking, and reward calculation</td></tr>
+    <tr><td>Autonomous Service</td><td><code>src/ai/drl/talos_service.py</code></td><td>24/7 background agent with Telegram/Discord/Email notifications</td></tr>
+    <tr><td>Live Agent Entry</td><td><code>src/ai/drl/talos_live_agent.py</code></td><td>CLI entry point for live API-fetching agent</td></tr>
+    <tr><td>Source Discovery</td><td><code>src/ai/drl/live_agent_sources.py</code></td><td>Dynamic source class import from config.json</td></tr>
+  </tbody>
+</table>
+
+<h3>3.2 Action Space</h3>
+<ul>
+  <li>Actions 0..N-1: Query the corresponding academic source</li>
+  <li>Action N: Sleep (cooldown/reset)</li>
+  <li>Environment dynamically adjusts N based on configured sources</li>
+</ul>
+
+<h3>3.3 Reward Function</h3>
+
+<table>
+  <thead><tr><th>Score Range</th><th>Reward</th></tr></thead>
+  <tbody>
+    <tr><td>score >= 8.0</td><td>+20 (elite paper)</td></tr>
+    <tr><td>score >= 6.0</td><td>+5 (good paper)</td></tr>
+    <tr><td>score < 6.0</td><td>-10 (low-value paper)</td></tr>
+  </tbody>
+</table>
+
+<h3>3.4 Grey Wolf Optimizer (GWO)</h3>
+
+<p>The GWO (<code>src/ai/optimizers/gwo_rl_optimizer.py</code>) tunes three hyperparameters:</p>
+<ul>
+  <li><strong>Learning Rate</strong> (log scale): Controls DQN update magnitude</li>
+  <li><strong>Gamma</strong> (discount factor): Balances immediate vs. future rewards</li>
+  <li><strong>Epsilon Decay</strong>: Governs exploration-exploitation tradeoff</li>
+</ul>
+
+<p>Each wolf trains a fresh DRL agent for <em>N</em> episodes per iteration. The pack converges toward the alpha wolf's position in 3D parameter space. A companion Dash dashboard (<code>gwo_live_dashboard.py</code>) renders the 3D swarm hunt in real-time at <code>localhost:8050</code>.</p>
+
+<h3>3.5 Model Artifacts</h3>
+<ul>
+  <li><code>models/dddqn_trained.pth</code>: Trained DDDQN model weights (PyTorch)</li>
+  <li><code>models/dddqn_partial.pth</code>: Partial training checkpoint</li>
+  <li><code>models/talos_drl.pth</code>: Bundled agent state (network + optimizer)</li>
+  <li><code>models/gwo_best_params.json</code>: Converged hyperparameters</li>
+  <li><code>models/gwo_history.json</code>: Per-iteration wolf pack positions</li>
+  <li><code>models/gwo_progress.json</code>: Real-time progress file</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="s4">Section 4: Advanced Semantic & Graph Intelligence (ST-GAT)</h2>
+
+<h3>4.1 Multi-Provider Hybrid Embeddings</h3>
+
+<p>TALOS implements a <strong>dual-provider embedding architecture</strong> stored in the <code>embeddings</code> table:</p>
+
+<table>
+  <thead><tr><th>Provider</th><th>Model</th><th>Dimensions</th><th>Cost</th><th>Latency</th></tr></thead>
+  <tbody>
+    <tr><td>Ollama (local)</td><td><code>nomic-embed-text</code></td><td>768</td><td>Free</td><td>~50ms</td></tr>
+    <tr><td>Gemini (cloud)</td><td><code>gemini-embedding-001</code></td><td>768</td><td>Paid</td><td>~500ms</td></tr>
+  </tbody>
+</table>
+
+<h3>4.2 Semantic Search Pipeline</h3>
+<ol>
+  <li><strong>Embed the query</strong> via <code>AIManager.generate_embeddings()</code> with fallback chain (Ollama -> Gemini)</li>
+  <li><strong>Compute cosine similarity</strong> against all stored vectors filtered by model</li>
+  <li><strong>Rank and return</strong> the top-k papers with full metadata</li>
+  <li><strong>Model filtering</strong> ensures vectors from different providers are never compared</li>
+</ol>
+
+<h3>4.3 Architecture Graph Intelligence</h3>
+<p>The Architecture Dependency Graph (<code>templates/architecture_graph.html</code>) provides:</p>
+<ul>
+  <li>Interactive D3.js force-directed visualization of the codebase</li>
+  <li>Node coloring by module role (core, ingestion, analysis, AI, API, utils)</li>
+  <li>Edge connections representing import dependencies</li>
+  <li>Tooltip exposure of function signatures and module descriptions</li>
+</ul>
+
+<h3>4.4 Knowledge Path Generation</h3>
+<p><code>src/analysis/knowledge_path_generator.py</code> constructs directed knowledge paths from seed papers through citation networks, identifying the evolution of ideas across publication years.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="s5">Section 5: Multi-Agent & Autonomous Swarms (PYTHIA, Swarm Commander, HMADRL)</h2>
+
+<h3>5.1 PYTHIA -- The AI Reasoning Engine</h3>
+
+<p>PYTHIA (<code>src/ai/llm/</code>) provides multi-model AI reasoning with circuit breaker resilience:</p>
+
+<table>
+  <thead><tr><th>Provider</th><th>Models</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td>Gemini</td><td><code>gemini-2.5-pro</code>, <code>gemini-2.5-flash</code></td><td>Primary deep analysis + pre-screening</td></tr>
+    <tr><td>DeepSeek</td><td><code>deepseek-chat</code>, <code>deepseek-reasoner</code></td><td>First fallback</td></tr>
+    <tr><td>HuggingFace</td><td><code>Mixtral-8x7B</code>, <code>Llama-3.1-8B</code></td><td>Free cloud fallback</td></tr>
+    <tr><td>Ollama (local)</td><td><code>gemma3:12b</code></td><td>Offline fallback, zero-cost</td></tr>
+  </tbody>
+</table>
+
+<h3>5.2 Circuit Breaker Pattern</h3>
+<p>Each provider tracks consecutive failures. After <strong>3 consecutive failures</strong>, the circuit opens and that provider is skipped for subsequent requests. The circuit resets on the next successful request from any provider.</p>
+
+<h3>5.3 Query Translator (Research Architect)</h3>
+<p><code>src/ai/llm/query_translator.py</code> transforms natural-language research goals into optimized boolean queries for all 14 sources simultaneously. It uses a dedicated system prompt override that instructs the LLM to act as a "Research Architect" rather than the default "PhD Advisor" role.</p>
+
+<h3>5.4 Research Pivot</h3>
+<p><code>src/ai/llm/research_pivot.py</code> provides a guided wizard for changing research direction: reconfigures query translator parameters, re-evaluates the database against new criteria, and optionally retrains the DRL agent.</p>
+
+<h3>5.5 Autonomous Swarm Commander (Roadmap)</h3>
+<p>Planned HMADRL (Heterogeneous Multi-Agent DRL) architecture for coordinating multiple specialized agents (scraper, evaluator, summarizer, reviewer) in parallel research workflows.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="s6">Section 6: Automated Literature Review & XAI (Quad-Layer Scoring, NATO CDE Procedural Hooks)</h2>
+
+<h3>6.1 Quad-Layer Evaluation Framework</h3>
+
+<p>Every paper ingested by TALOS is scored across four orthogonal dimensions:</p>
+
+<table>
+  <thead><tr><th>Layer</th><th>Weight</th><th>Focus</th><th>Example Criteria</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Strategic</strong></td><td>30%</td><td>Theoretical framework, high-level decision making</td><td>Novelty, field impact, paradigm shift</td></tr>
+    <tr><td><strong>Operational</strong></td><td>30%</td><td>Resource allocation, coordination mechanisms</td><td>Task allocation, auctions, consensus</td></tr>
+    <tr><td><strong>Tactical</strong></td><td>30%</td><td>Algorithmic implementation, neural policies</td><td>DRL architectures, training methodology</td></tr>
+    <tr><td><strong>Playground</strong></td><td>10%</td><td>Simulation environments, datasets, benchmarks</td><td>Gymnasium envs, real-world datasets</td></tr>
+  </tbody>
+</table>
+
+<p>Overall Score Formula:</p>
+
+<pre><code>Overall = 0.30 * S + 0.30 * O + 0.30 * T + 0.10 * P</code></pre>
+
+<h3>6.2 Two-Stage AI Evaluation</h3>
+<ol>
+  <li><strong>Pre-Screening (Flash model):</strong> Rapid triage of all new papers using the <code>pre_screening_prompt</code></li>
+  <li><strong>Deep Analysis (Pro model):</strong> Thorough evaluation of papers passing pre-screening using the <code>phd_focus_system_prompt</code></li>
+</ol>
+
+<h3>6.3 Enrichment State Machine</h3>
+
+<table>
+  <thead><tr><th>Status</th><th>Value</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td>Pending</td><td>0</td><td>Paper has not yet been enriched</td></tr>
+    <tr><td>Enriched</td><td>1</td><td>Metadata + OA PDF successfully resolved</td></tr>
+    <tr><td>Failed</td><td>2</td><td>Enrichment attempted but failed</td></tr>
+  </tbody>
+</table>
+
+<h3>6.4 XAI Reasoning Outputs</h3>
+<p>For each evaluated paper, the AI generates:</p>
+<ul>
+  <li><code>evaluation_reasoning</code>: Narrative explanation of the scores</li>
+  <li><code>evaluation_contribution</code>: The paper's contribution to the field</li>
+  <li><code>evaluation_utilization</code>: How the paper's findings can be applied</li>
+  <li><code>suggested_tags</code>: Auto-generated keyword tags</li>
+  <li><code>suggested_folder</code>: Recommended organizational folder</li>
+  <li><code>suggested_discord_channel</code>: Relevant notification channel</li>
+</ul>
+
+<h3>6.5 NATO CDE Procedural Hooks</h3>
+<p>The Architecture Intelligence Report (<code>src/analysis/architecture_intelligence_report.py</code>) generates dual-language (EN + GR) reports compatible with NATO CDE (Concept Development & Experimentation) procedural documentation standards.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="s7">Section 7: Edge-Cloud & Deployment Ecosystem</h2>
+
+<h3>7.1 Deployment Options</h3>
+
+<table>
+  <thead><tr><th>Mode</th><th>Components</th><th>Command</th></tr></thead>
+  <tbody>
+    <tr><td>Development</td><td>FastAPI with reload</td><td><code>uvicorn src.api.main_api:app --reload</code></td></tr>
+    <tr><td>Production</td><td>FastAPI on port 8000</td><td><code>uvicorn src.api.main_api:app --host 0.0.0.0 --port 8000</code></td></tr>
+    <tr><td>Docker</td><td>Containerized with GPU passthrough</td><td><code>docker-compose up --build</code></td></tr>
+    <tr><td>Kubernetes</td><td>Cluster with Ollama sidecar</td><td><code>kubectl apply -f k8s/</code></td></tr>
+  </tbody>
+</table>
+
+<h3>7.2 Hardware Requirements</h3>
+
+<table>
+  <thead><tr><th>Tier</th><th>GPU</th><th>VRAM</th><th>Capability</th></tr></thead>
+  <tbody>
+    <tr><td>Minimum</td><td>CPU only</td><td>N/A</td><td>Ingestion + evaluation (cloud LLMs only)</td></tr>
+    <tr><td>Recommended</td><td>RTX 3060+</td><td>12 GB</td><td>Local nomic-embed-text + light chat models</td></tr>
+    <tr><td>Optimal</td><td>RTX 4070+</td><td>16 GB</td><td>Full local DRL training + embedding generation</td></tr>
+  </tbody>
+</table>
+
+<h3>7.3 Environment Configuration</h3>
+<ul>
+  <li><strong><code>.env</code></strong>: API keys for all providers (Gemini, DeepSeek, HuggingFace, Discord, Telegram, Zotero, Unpaywall, ORCID)</li>
+  <li><strong><code>config.json</code></strong>: Query strings, system prompts, source configuration</li>
+  <li><strong><code>config.template.json</code></strong>: Reference template with placeholder values</li>
+  <li><strong>Profiles</strong>: <code>_profiles/<name>/</code> directories with isolated config.json + talos_research.db per research topic</li>
+</ul>
+
+<h3>7.4 Docker Support</h3>
+<ul>
+  <li><code>Dockerfile</code>: Multi-stage Python 3.11 build with CUDA 12.1 support</li>
+  <li><code>docker-compose.yml</code>: FastAPI + Ollama services with shared volumes for models and data</li>
+</ul>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="s8">Section 8: Dashboards & User Interfaces</h2>
+
+<h3>8.1 React 18 Frontend (Primary)</h3>
+
+<p>The production user interface is a <strong>React 18 Single Page Application</strong> built with:</p>
+<ul>
+  <li><strong>Tailwind CSS</strong>: Utility-first CSS framework for responsive design</li>
+  <li><strong>Shadcn UI</strong>: Headless component primitives for accessible, composable UI</li>
+  <li><strong>Recharts</strong>: Composable charting library for data visualization</li>
+</ul>
+
+<p>The React frontend consumes the FastAPI REST API at port 8000 and provides:</p>
+<ul>
+  <li>Interactive paper library with semantic search, filtering, and pagination</li>
+  <li>DRL agent dashboard with live status and training controls</li>
+  <li>GWO optimization history visualizations (LineChart, 3D Scatter)</li>
+  <li>Author publication statistics (BarChart)</li>
+  <li>Architecture dependency graph embedding</li>
+  <li>Background task monitoring and management</li>
+</ul>
+
+<h3>8.2 Flask Dashboard (Legacy/Embedded)</h3>
+<p><code>templates/dashboard.html</code> serves a Tabulator.js-based interactive table at port 5000 for direct database browsing. This remains available as a lightweight alternative when the React frontend is not deployed.</p>
+
+<h3>8.3 CLI Interface</h3>
+<p><code>talos.py</code> retains a full-featured text-based interface via <code>questionary</code> prompts:</p>
+<ul>
+  <li>Search & Discovery operations</li>
+  <li>Paper evaluation</li>
+  <li>Analysis & insights generation</li>
+  <li>Database maintenance (statistics, enrichment, embedding generation)</li>
+  <li>Diagnostics (code integrity check, dependency map verification)</li>
+  <li>DRL training and GWO optimization</li>
+  <li>Profile management</li>
+</ul>
+
+<h3>8.4 Architecture Graph</h3>
+<p><code>templates/architecture_graph.html</code> is an interactive D3.js force-directed graph served both via the API (<code>/api/v1/graph/view</code>) and as a standalone HTML document. Node colors encode module roles, edges show import dependencies, and tooltips expose function-level detail.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<h2 id="s9">Section 9: Complete REST API Reference (14 Endpoints)</h2>
+
+<h3>9.1 Base URL</h3>
+<pre><code>http://localhost:8000/api/v1</code></pre>
+
+<h3>9.2 Interactive Documentation</h3>
+<p>Auto-generated OpenAPI docs at:</p>
+<ul>
+  <li><a href="http://localhost:8000/docs">http://localhost:8000/docs</a> (Swagger UI)</li>
+  <li><a href="http://localhost:8000/redoc">http://localhost:8000/redoc</a> (ReDoc)</li>
+</ul>
+
+<h3>9.3 Endpoint Catalog</h3>
+
+<table>
+  <thead><tr><th>#</th><th>Method</th><th>Path</th><th>Description</th><th>Response</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><code>GET</code></td><td><code>/health</code></td><td>System health, DB stats, embedding coverage</td><td><code>SystemHealth</code></td></tr>
+    <tr><td>2</td><td><code>GET</code></td><td><code>/papers</code></td><td>Paginated paper list (sorted by overall_score)</td><td><code>PaginatedPapers</code></td></tr>
+    <tr><td>3</td><td><code>GET</code></td><td><code>/papers/{paper_id}</code></td><td>Full paper detail with all 25 fields</td><td><code>PaperDetail</code></td></tr>
+    <tr><td>4</td><td><code>POST</code></td><td><code>/papers/{paper_id}/evaluate</code></td><td>Single-paper AI evaluation (BackgroundTasks)</td><td><code>TaskStatus</code> (202)</td></tr>
+    <tr><td>5</td><td><code>POST</code></td><td><code>/search/semantic</code></td><td>Natural-language semantic vector search</td><td><code>SemanticSearchResponse</code></td></tr>
+    <tr><td>6</td><td><code>POST</code></td><td><code>/scrape/trigger</code></td><td>Trigger daily scrape pipeline (BackgroundTasks)</td><td><code>TaskStatus</code> (202)</td></tr>
+    <tr><td>7</td><td><code>POST</code></td><td><code>/optimize/gwo</code></td><td>Trigger GWO hyperparameter optimization (BackgroundTasks)</td><td><code>TaskStatus</code> (202)</td></tr>
+    <tr><td>8</td><td><code>GET</code></td><td><code>/optimize/gwo/history</code></td><td>GWO optimization history for Recharts</td><td><code>List[dict]</code></td></tr>
+    <tr><td>9</td><td><code>GET</code></td><td><code>/graph/view</code></td><td>Serve architecture dependency graph HTML</td><td><code>HTML</code> (FileResponse)</td></tr>
+    <tr><td>10</td><td><code>POST</code></td><td><code>/ai/translate-query</code></td><td>Natural-language to boolean query translation</td><td><code>TranslateQueryResponse</code></td></tr>
+    <tr><td>11</td><td><code>GET</code></td><td><code>/analysis/authors</code></td><td>Top authors ranked by publication count</td><td><code>List[AuthorSummary]</code></td></tr>
+    <tr><td>12</td><td><code>POST</code></td><td><code>/db/recalculate-scores</code></td><td>Bulk overall_score recalculation (BackgroundTasks)</td><td><code>TaskStatus</code> (202)</td></tr>
+    <tr><td>13</td><td><code>GET</code></td><td><code>/tasks/{task_id}</code></td><td>Background task status</td><td><code>TaskStatus</code></td></tr>
+    <tr><td>14</td><td><code>GET</code></td><td><code>/tasks</code></td><td>List all background tasks (newest first)</td><td><code>List[TaskStatus]</code></td></tr>
+  </tbody>
+</table>
+
+<h3>9.4 Additional System Endpoint</h3>
+
+<table>
+  <thead><tr><th>#</th><th>Method</th><th>Path</th><th>Description</th><th>Response</th></tr></thead>
+  <tbody>
+    <tr><td>15</td><td><code>GET</code></td><td><code>/capabilities</code></td><td>Serve the System Capabilities Master Reference</td><td><code>HTMLResponse</code></td></tr>
+  </tbody>
+</table>
+
+<h3>9.5 Authentication</h3>
+<p>Endpoints are currently unauthenticated (development mode). Production deployment should add JWT-based authentication via FastAPI middleware.</p>
+
+<h3>9.6 Rate Limiting</h3>
+<p>Background task endpoints (<code>/scrape/trigger</code>, <code>/optimize/gwo</code>, <code>/db/recalculate-scores</code>, <code>/papers/{id}/evaluate</code>) are designed for single-concurrent-task operation. Starting a new task while one is running does not queue -- it creates an independent task. Future versions will implement a proper job queue with concurrent task limits.</p>
+
+<h3>9.7 CORS Configuration</h3>
+<p>CORS is configured with <code>allow_origins=["*"]</code> for development. Production must restrict this to the React frontend origin.</p>
+
+<hr>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.0</em></p>
+
+</main>
+
+<script>
+  /* ─── Intersection Observer for sticky ToC active link ─── */
+  (function() {
+    const sections = document.querySelectorAll('main h2[id]');
+    const links = document.querySelectorAll('nav#toc a');
+    const observer = new IntersectionObserver(
+      function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            const id = entry.target.getAttribute('id');
+            links.forEach(function(a) {
+              a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+            });
+          }
+        });
+      },
+      { rootMargin: '-20% 0px -70% 0px' }
+    );
+    sections.forEach(function(s) { observer.observe(s); });
+  })();
+</script>
+
+</body>
+</html>

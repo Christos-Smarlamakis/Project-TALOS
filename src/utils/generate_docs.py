@@ -38,7 +38,7 @@ except ImportError:
 # ── Constants ──────────────────────────────────────────────────────────────────
 DEFAULT_MODEL = "gemma4"
 REQUEST_TIMEOUT = 120  # seconds
-OUTPUT_DIR = "docs"
+OUTPUT_DIR = "docs/generated"
 
 # Files/directories to EXCLUDE from scanning
 EXCLUDE_PATTERNS = [
@@ -437,7 +437,7 @@ def main() -> None:
 
         try:
             save_documentation(file_path, doc_content, OUTPUT_DIR, lang_code)
-            tqdm.write(f"    [OK] → docs/{lang_code}/")
+            tqdm.write(f"    [OK] → docs/generated/{lang_code}/")
             success_count += 1
         except Exception as exc:
             tqdm.write(f"    [FAIL] Could not write output: {exc}")

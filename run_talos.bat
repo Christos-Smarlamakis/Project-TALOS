@@ -1,11 +1,11 @@
 @echo off
-title Project TALOS v5.8.9 -- Automated Batch Runner
+title Project TALOS v5.9.0 -- Automated Batch Runner
 chcp 65001 >nul 2>&1
 
 REM ===========================================================================
-REM run_talos.bat -- Automated Batch Runner for Project TALOS v5.8.9
+REM run_talos.bat -- Automated Batch Runner for Project TALOS v5.9.0
 REM
-REM Provides a 9-option structured menu:
+REM Provides a 10-option structured menu:
 REM   Section 1: REST API & FRONTEND
 REM     [1] Full Setup (Conda env + pip install + Frontend Provisioner)
 REM     [2] Start FastAPI Server (uvicorn, port 8001) -- background window
@@ -16,13 +16,14 @@ REM     [5] TALOS Terminal CLI (python talos.py)
 REM     [6] Autonomous Research Daemon (python src/ai/drl/talos_service.py)
 REM     [7] Live DRL Agent (python src/ai/drl/talos_live_agent.py --verbose)
 REM   Section 3: TESTING & SYSTEM
-REM     [8] Run Test Suite (pytest -v)
-REM     [9] Exit
+REM     [8] Autonomous System Tester (RL Chaos Fuzzer)
+REM     [9] Run Test Suite (pytest -v)
+REM     [10] Exit
 REM
 REM TALOS FastAPI runs on port 8001 (port 8000 is reserved for SYNAPSE bus).
-REM Features (v5.8.9): Auto-Conda path detection, background windows, auto-start
-REM chain, automatic Fermion CPU server spawning when FAST_EDGE_MODEL contains
-REM Neutrino or is set to local mode.
+REM Features (v5.9.0): Autonomous System Tester (RL-Driven Chaos Engineering with
+REM LLM-as-a-Judge diagnostics), Auto-Conda path detection, background windows,
+REM auto-start chain, automatic Fermion CPU server spawning.
 REM ===========================================================================
 
 REM ---------------------------------------------------------------------------
@@ -92,7 +93,7 @@ goto :EOF
 :TOP
 cls
 echo =============================================
-echo    Project TALOS v5.8.9
+echo    Project TALOS v5.9.0
 echo    Research Intelligence Platform
 echo    SYNAPSE Protocol Active (Bus :8000 / API :8001)
 echo =============================================
@@ -109,10 +110,11 @@ echo    [6] Autonomous Research Daemon (24/7 Service)
 echo    [7] Live DRL Agent (python src/ai/drl/talos_live_agent.py --verbose)
 echo.
 echo    -- Section 3: TESTING and SYSTEM --
-echo    [8] Run Test Suite (pytest -v)
-echo    [9] Exit
+echo    [8] Autonomous System Tester (RL Chaos Fuzzer)
+echo    [9] Run Test Suite (pytest -v)
+echo    [10] Exit
 echo.
-set /p choice="    Select mode [1-9]: "
+set /p choice="    Select mode [1-10]: "
 
 if "%choice%"=="1" goto SETUP
 if "%choice%"=="2" goto SERVER
@@ -121,8 +123,9 @@ if "%choice%"=="4" goto PROVISION_UI
 if "%choice%"=="5" goto CLI
 if "%choice%"=="6" goto DAEMON
 if "%choice%"=="7" goto LIVE_DRL
-if "%choice%"=="8" goto TEST
-if "%choice%"=="9" goto END
+if "%choice%"=="8" goto AUTO_TESTER
+if "%choice%"=="9" goto TEST
+if "%choice%"=="10" goto END
 goto TOP
 
 REM ---------------------------------------------------------------------------
@@ -176,7 +179,7 @@ IF ERRORLEVEL 1 (
 
 echo.
 echo =============================================
-echo    Setup complete. TALOS v5.8.9 is ready.
+echo    Setup complete. TALOS v5.9.0 is ready.
 echo =============================================
 echo.
 echo    TALOS API will start on port 8001.
@@ -191,7 +194,7 @@ REM ---------------------------------------------------------------------------
 :SERVER
 cls
 echo =============================================
-echo    Starting TALOS FastAPI Server (v5.8.9)
+echo    Starting TALOS FastAPI Server (v5.9.0)
 echo    Port: 8001
 echo    API Docs: http://localhost:8001/docs
 echo    Health:   http://localhost:8001/api/v1/health
@@ -210,7 +213,7 @@ start "TALOS FastAPI Server" /min cmd /c "python -m uvicorn src.api.main_api:app
 echo.
 echo [INFO] TALOS FastAPI server launched in background window.
 
-REM -- v5.8.9: Auto-start Fermion CPU server if FAST_EDGE_MODEL is Neutrino/local --
+REM -- Auto-start Fermion CPU server if FAST_EDGE_MODEL is Neutrino/local --
 call :CHECK_FERMION
 
 echo [INFO] Wait a few seconds then visit http://localhost:8001/docs
@@ -225,7 +228,7 @@ REM ---------------------------------------------------------------------------
 :MCP_SERVER
 cls
 echo =============================================
-echo    Starting TALOS MCP Server (v5.8.9)
+echo    Starting TALOS MCP Server (v5.9.0)
 echo =============================================
 echo.
 echo    Launching MCP server in a separate minimized window...
@@ -288,11 +291,10 @@ REM ---------------------------------------------------------------------------
 :CLI
 cls
 echo =============================================
-echo    TALOS Terminal CLI (v5.8.9)
+echo    TALOS Terminal CLI (v5.9.0)
 echo =============================================
 echo.
 echo    Launching the interactive TALOS command-line interface.
-echo    Type 'help' inside the CLI for available commands.
 echo    Press Ctrl+C to exit back to this menu.
 echo.
 
@@ -309,7 +311,7 @@ REM ---------------------------------------------------------------------------
 :DAEMON
 cls
 echo =============================================
-echo    Autonomous Research Daemon (v5.8.9)
+echo    Autonomous Research Daemon (v5.9.0)
 echo    24/7 Background Research Service
 echo =============================================
 echo.
@@ -332,7 +334,7 @@ REM ---------------------------------------------------------------------------
 :LIVE_DRL
 cls
 echo =============================================
-echo    Live DRL Agent (v5.8.9)
+echo    Live DRL Agent (v5.9.0)
 echo    Deep Reinforcement Learning Agent -- Verbose Mode
 echo =============================================
 echo.
@@ -351,7 +353,34 @@ python src/ai/drl/talos_live_agent.py --verbose
 goto TOP
 
 REM ---------------------------------------------------------------------------
-REM Option 8: Run Test Suite
+REM Option 8: Autonomous System Tester (RL Chaos Fuzzer)
+REM ---------------------------------------------------------------------------
+:AUTO_TESTER
+cls
+echo =============================================
+echo    Autonomous System Tester (v5.9.0)
+echo    RL-Driven Chaos Engineering with LLM-as-a-Judge
+echo =============================================
+echo.
+echo    Stress-tests TALOS system components using a Non-Stationary
+echo    Epsilon-Greedy Multi-Armed Bandit. Diagnoses crashes with the
+echo    Fast Edge LLM and saves Markdown reports in reports/autonomous_tester/.
+echo.
+echo    Target components: FastAPI Server, MCP Server, Daily Search,
+echo    Citation Analyzer. Q-table saved to data/tester_q_table.json.
+echo.
+echo    Press Ctrl+C to abort the test run early.
+echo.
+
+REM -- Activate conda environment first --
+call :ACTIVATE_CONDA
+
+REM -- Launch autonomous tester --
+python src/ai/testing/autonomous_tester.py %*
+goto TOP
+
+REM ---------------------------------------------------------------------------
+REM Option 9: Run Test Suite
 REM ---------------------------------------------------------------------------
 :TEST
 cls
@@ -391,7 +420,7 @@ pause
 goto TOP
 
 REM ===========================================================================
-REM -- Fermion Auto-Start Subroutine (v5.8.9) --
+REM -- Fermion Auto-Start Subroutine --
 REM Reads .env for FAST_EDGE_MODEL; if it contains "Neutrino" or equals
 REM "local", spawns fermion serve in a background minimized window.
 REM ===========================================================================
@@ -420,11 +449,11 @@ echo [FERMION] Fast Edge engine ready on port 11435.
 goto :EOF
 
 REM ---------------------------------------------------------------------------
-REM Option 9: Exit
+REM Option 10: Exit
 REM ---------------------------------------------------------------------------
 :END
 echo.
 echo =============================================
-echo    Closing Project TALOS v5.8.9...
+echo    Closing Project TALOS v5.9.0...
 echo =============================================
 exit /b

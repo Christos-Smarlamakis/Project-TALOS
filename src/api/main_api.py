@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.8.9
+Project: TALOS v5.9.0
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
-    semantic search, scraping trigger, GWO optimization, Synapse webhook receiver)
-    as REST endpoints for the React 18 + Tailwind CSS + Shadcn UI frontend.
-    All endpoints wrap existing synchronous core functions -- no logic is rewritten.
+    semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
+    autonomous tester status/reports) as REST endpoints for the React 18 +
+    Tailwind CSS + Shadcn UI frontend. All endpoints wrap existing synchronous
+    core functions -- no logic is rewritten.
 
-    Endpoints (16 total -- 100% ecosystem coverage + Synapse protocol + capabilities doc):
+    Endpoints (18 total -- 100% ecosystem coverage + Synapse protocol + capabilities + tester):
     - GET  /api/v1/health              -> system health, DB stats, embedding coverage
     - GET  /api/v1/papers              -> paginated paper list
     - GET  /api/v1/papers/{paper_id}   -> full paper detail
@@ -25,6 +26,8 @@ Description:
     - GET  /api/v1/tasks               -> list all background tasks
     - GET  /api/v1/capabilities        -> serve System Capabilities Master Reference HTML
     - POST /api/v1/synapse/webhook     -> SYNAPSE protocol inbound command receiver
+    - GET  /api/v1/tester/status       -> Autonomous System Tester Q-table status
+    - GET  /api/v1/tester/reports      -> list crash report metadata
 
     Key design decisions:
     - Port 8001 (avoids conflict with SYNAPSE event bus on port 8000)
@@ -35,6 +38,7 @@ Description:
     - Pydantic v2 models with extra="ignore" for forward compatibility
     - Streamlit fully deprecated in v5.6.0; React 18 + Tailwind CSS + Shadcn UI is the sole frontend
     - Synapse Event-Driven Protocol integrated in v5.7.0 for ALEXANDRIA ecosystem interoperability
+    - Autonomous System Tester (RL-Driven Chaos Engineering) integrated in v5.9.0
 
 Dependencies:
     - fastapi: REST framework, routing, background tasks, CORS middleware.
@@ -42,6 +46,7 @@ Dependencies:
     - src.core.database_manager: Database layer (SQLite + embeddings).
     - src.core.ai_manager: Multi-provider LLM interface.
     - src.api.synapse_routes: SYNAPSE webhook APIRouter for ecosystem eventing.
+    - src.api.tester_routes: Autonomous System Tester Q-table and reports endpoints.
 
     Usage:
         python -m uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001
@@ -75,6 +80,7 @@ from pydantic import BaseModel, Field
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
 from src.api.synapse_routes import router as synapse_router
+from src.api.tester_routes import router as tester_router
 
 # -- Logging ------------------------------------------------------------------
 logging.basicConfig(
@@ -86,8 +92,8 @@ logger = logging.getLogger("talos_api")
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-description="Facade REST API for the TALOS autonomous research platform (v5.8.9 -- SQLite Fix, Fermion Auto-Start, Active Focus TUI, Synapse protocol active, React frontend)",
-version="5.8.9",
+description="Facade REST API for the TALOS autonomous research platform (v5.9.0 -- Autonomous Tester, RL Chaos Fuzzer, SQLite Fix, Fermion Auto-Start, Active Focus TUI, Synapse protocol active, React frontend)",
+version="5.9.0",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -99,6 +105,9 @@ app.add_middleware(
 
 # -- Include Synapse webhook router (v5.7.0) --
 app.include_router(synapse_router)
+
+# -- Include Autonomous System Tester router (v5.9.0) --
+app.include_router(tester_router)
 
 # -- Mount templates/ as static files for architecture graph assets --
 app.mount("/static/templates", StaticFiles(directory="templates"), name="static_templates")
@@ -340,7 +349,7 @@ class EvaluatePaperRequest(BaseModel):
 @app.on_event("startup")
 def on_startup():
     """Pre-warm singletons and log readiness."""
-    logger.info("TALOS FastAPI v5.8.9 starting up (SQLite Fix, Fermion Auto-Start, Active Focus TUI, Synapse protocol active, port 8001)...")
+    logger.info("TALOS FastAPI v5.9.0 starting up (Autonomous Tester, RL Chaos Fuzzer, SQLite Fix, Fermion Auto-Start, Active Focus TUI, Synapse protocol active, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")

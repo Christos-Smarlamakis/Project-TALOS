@@ -10,15 +10,21 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.8.9
+Project: TALOS v5.9.0
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
     Conda environment, API port, Synapse bus, execution mode, active
     LLM tiers, and the current active research focus from config.json.
-    10-option menu with integrated Model Manager, CLI research tools,
-    interactive View & Pivot Research Focus (PYTHIA), and system
-    diagnostics.
+    11-option menu with integrated Model Manager, CLI research tools,
+    interactive View & Pivot Research Focus (Query Translator), system
+    diagnostics, and the Autonomous System Tester (RL Chaos Fuzzer).
+
+    v5.9.0: Autonomous System Tester (RL-Driven Chaos Engineering) integrated
+    as menu option 8. Runs a Non-Stationary Epsilon-Greedy Multi-Armed Bandit
+    that stress-tests TALOS components via subprocess, diagnoses crashes with
+    LLM-as-a-Judge (Fast Edge tier), saves Markdown reports, and displays
+    Rich Q-table (Component Fragility) with Spinners, Panels, and Tables.
 
     v5.8.9: Active Research Focus row in status table (reads
     user_research_goal from config.json, truncated at 65 chars). Option 4
@@ -30,7 +36,7 @@ Description:
     outputs, and informational prompts wrapped in styled Rich Panels with
     color-coded borders. New _build_info_panel() and _build_results_table()
     helpers for consistent Sci-Fi terminal aesthetics. Elite paper scores
-    (>=7) highlighted in gold. PYTHIA query translator and baseline reports
+    (>=7) highlighted in gold. Query Translator and baseline reports
     display contextual descriptions before subprocess launch. Fixed model name
     display in status panel -- full raw configuration strings printed directly
     without split(":") truncation.
@@ -43,6 +49,7 @@ Dependencies:
     - config.settings: Single source of truth for TALOS_VERSION.
     - src.core.profile_manager: Profile switching and retrieval.
     - src.ai.llm.model_manager: Multi-tier AI model management TUI.
+    - src.ai.testing.autonomous_tester: RL-driven chaos engineering daemon.
     - rich: Terminal UI beautification (Console, Panel, Table, Box, Text).
     - questionary: Terminal UI interactive prompts.
     - python-dotenv: Environment variable loading.
@@ -867,7 +874,7 @@ def main_menu():
 
         console.print(header_panel)
 
-        # -- Menu choices (10 options) --
+        # -- Menu choices (11 options) --
         choice = safe_select("Select operation:", choices=[
             questionary.Separator("  CORE CONFIGURATION"),
             " 1. Configure AI Models & Execution Modes (Model Manager)",
@@ -875,16 +882,18 @@ def main_menu():
             " 2. CLI Research Search (Interactive)",
             questionary.Separator("  ENRICHMENT & ANALYSIS"),
             " 3. Metadata Enrichment",
-            " 4. View & Pivot Research Focus (Query Translator / PYTHIA)",
+            " 4. View & Pivot Research Focus (Query Translator)",
             questionary.Separator("  MODEL MANAGEMENT"),
             " 5. Model Manager (Legacy/Direct)",
+            questionary.Separator("  TESTING & CI/CD"),
+            " 6. Autonomous System Tester (RL Chaos Fuzzer)",
             questionary.Separator("  SYSTEM DIAGNOSTICS"),
-            " 6. System Diagnostics: Baseline Standard",
-            " 7. System Diagnostics: Baseline Academic",
-            " 8. System Diagnostics: DRL Status",
-            " 9. System Diagnostics: Docs Generator",
+            " 7. Baseline Report (Standard)",
+            " 8. Baseline Report (Academic -- 600 DPI)",
+            " 9. DRL Agent Status",
+            "10. Codebase Docs Generator (18 Languages)",
             questionary.Separator(),
-            "10. Exit",
+            "11. Exit",
         ])
         if choice is None or "Exit" in choice: break
         fm = "Press Enter to return..."
@@ -989,6 +998,33 @@ def main_menu():
         elif "5." in choice:
             run_script("model_manager.py", python_exe)
         elif "6." in choice:
+            # -- Autonomous System Tester (RL Chaos Fuzzer) --
+            info = _build_info_panel(
+                "Autonomous System Tester (RL-Driven Chaos Engineering)",
+                "Stress-tests TALOS system components using a Non-Stationary\n"
+                "Epsilon-Greedy Multi-Armed Bandit. Diagnoses crashes with\n"
+                "LLM-as-a-Judge (Fast Edge tier) and saves Markdown reports.\n"
+                "[dim]Displays Rich Q-table (Component Fragility) with Spinners,\n"
+                "Panels, and Tables. Emits Synapse events on each test cycle.[/dim]",
+                border_style="bright_magenta",
+            )
+            console.print(info)
+            cycles_str = questionary.text(
+                "Number of test cycles (default 10):",
+                default="10"
+            ).ask()
+            if cycles_str is not None:
+                try:
+                    cycles = int(cycles_str.strip()) if cycles_str.strip() else 10
+                except ValueError:
+                    cycles = 10
+                    console.print("[yellow]Invalid input. Using default (10).[/yellow]")
+                try:
+                    from src.ai.testing.autonomous_tester import run_autonomous_tester
+                    run_autonomous_tester(cycles=cycles)
+                except Exception as e:
+                    console.print(f"[red]Error running Autonomous Tester: {e}[/red]")
+        elif "7." in choice:
             info = _build_info_panel(
                 "Baseline Report (Standard)",
                 "Generates a standard baseline report with score distribution,\n"
@@ -997,7 +1033,7 @@ def main_menu():
             )
             console.print(info)
             run_script("generate_baseline_report.py", python_exe)
-        elif "7." in choice:
+        elif "8." in choice:
             info = _build_info_panel(
                 "Baseline Report (Academic -- 600 DPI)",
                 "Generates a publication-quality academic baseline report\n"
@@ -1007,7 +1043,7 @@ def main_menu():
             )
             console.print(info)
             run_script("generate_baseline_report.py", python_exe, args=["--academic"])
-        elif "8." in choice:
+        elif "9." in choice:
             # -- DRL Status: rich-powered display --
             mp = os.path.join(project_root, "models", "dddqn_trained.pth")
             gp = os.path.join(project_root, "models", "gwo_best_params.json")
@@ -1035,7 +1071,7 @@ def main_menu():
                 box=box.ROUNDED,
             )
             console.print(drl_panel)
-        elif "9." in choice:
+        elif "10." in choice:
             info = _build_info_panel(
                 "Codebase Documentation Generator (18 Languages)",
                 "Uses LOCAL Ollama -- zero cloud cost, full privacy.\n"

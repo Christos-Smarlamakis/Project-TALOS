@@ -1,8 +1,9 @@
 # Project TALOS .gitignore (v5.7.0 - Proprietary & Internal Docs Hidden)
 
-# ── Internal AI Constitution & Architecture Docs (HIDDEN FROM GITHUB/OTHER DEVS) ──
+# ── Internal AI Constitution & Proprietary Docs (HIDDEN FROM GITHUB) ──
 .clinerules
-docs/
+docs/internal/
+docs/generated/
 
 # ── Secrets & Environment ──
 .env
