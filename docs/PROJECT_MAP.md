@@ -1,4 +1,4 @@
-﻿# PROJECT_MAP.md -- Pliris Chartis tou Project TALOS v5.9.0
+﻿# PROJECT_MAP.md -- Pliris Chartis tou Project TALOS v5.9.1
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται — χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
@@ -437,6 +437,6 @@ generate_docs.py → requests, dotenv, tqdm
 
 ---
 
-> **Teleutaia enimerosi:** 2026-08-01 (v5.9.0 -- Autonomous System Tester, RL Chaos Fuzzer, LLM-as-a-Judge, rich Q-Table, 18 Endpoints, 11-Option TUI)
-> **Ekdosi Project:** v5.9.0
+> **Teleutaia enimerosi:** 2026-08-01 (v5.9.1 -- LLM Focus Summarization, 4-Way Execution Mode Matrix, 100% Rich Sub-Menus, Per-Tier Routing, 18 Endpoints, 11-Option TUI)
+> **Ekdosi Project:** v5.9.1
 > **Συνολικά αρχεία που καλύπτονται:** 72 (61 src/ + 3 integration/ + 8 root entry/config/docs/tests)

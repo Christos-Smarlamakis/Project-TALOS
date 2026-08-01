@@ -210,18 +210,20 @@ class TestDotenvKeyUpdates(unittest.TestCase):
         """Setting execution mode to 'local' should set TALOS_USE_LOCAL=1 and TALOS_ALLOW_CLOUD_FALLBACK=0."""
         from src.ai.llm.model_manager import select_execution_mode
 
-        mock_dotenv_values.return_value = {"TALOS_EXECUTION_MODE": "hybrid"}
-        # New v5.8.6: select returns internal value "local" via Choice(value=...)
-        mock_select.return_value.ask.return_value = "local"
-        # New v5.8.6: _confirm_setting_change calls confirm too -- must accept
+        mock_dotenv_values.return_value = {"TALOS_EXECUTION_MODE": "hybrid", "TALOS_FAST_ROUTING": "cloud", "TALOS_HEAVY_ROUTING": "cloud"}
+        # v5.9.1: select returns new value "pure-local" via Choice(value=...)
+        mock_select.return_value.ask.return_value = "pure-local"
+        # v5.9.1: confirmation is a direct questionary.confirm call
         mock_confirm.return_value.ask.return_value = True
 
         with patch("os.system"), patch("builtins.input"):
             select_execution_mode("/fake/.env")
 
-        # Check that both keys were set
+        # Check that all routing keys were set
         calls = {args[1] for args, _ in mock_set_key.call_args_list}
         self.assertIn("TALOS_EXECUTION_MODE", calls)
+        self.assertIn("TALOS_FAST_ROUTING", calls)
+        self.assertIn("TALOS_HEAVY_ROUTING", calls)
         self.assertIn("TALOS_USE_LOCAL", calls)
         self.assertIn("TALOS_ALLOW_CLOUD_FALLBACK", calls)
 
@@ -434,16 +436,19 @@ class TestSubMenuCancellation(unittest.TestCase):
         from src.ai.llm.model_manager import select_execution_mode
 
         mock_dotenv_values.return_value = {"TALOS_EXECUTION_MODE": "local"}
-        mock_select.return_value.ask.return_value = "cloud"
+        # v5.9.1: use "pure-cloud" which maps to fast=cloud, heavy=cloud
+        mock_select.return_value.ask.return_value = "pure-cloud"
         # First confirm: configuration panel (yes)
         mock_confirm.return_value.ask.return_value = True
 
         with patch("os.system"), patch("builtins.input"):
             select_execution_mode("/fake/.env")
 
-        # Should have called _set_key for TALOS_EXECUTION_MODE + backward compat keys
+        # Should have called _set_key for TALOS_EXECUTION_MODE + routing keys
         call_keys = {args[1] for args, _ in mock_set_key.call_args_list}
         self.assertIn("TALOS_EXECUTION_MODE", call_keys)
+        self.assertIn("TALOS_FAST_ROUTING", call_keys)
+        self.assertIn("TALOS_HEAVY_ROUTING", call_keys)
 
     @patch("src.ai.llm.model_manager._set_key")
     @patch("src.ai.llm.model_manager.dotenv_values")
@@ -456,7 +461,8 @@ class TestSubMenuCancellation(unittest.TestCase):
         from src.ai.llm.model_manager import select_execution_mode
 
         mock_dotenv_values.return_value = {"TALOS_EXECUTION_MODE": "local"}
-        mock_select.return_value.ask.return_value = "cloud"
+        # v5.9.1: use "pure-cloud" which maps to fast=cloud, heavy=cloud
+        mock_select.return_value.ask.return_value = "pure-cloud"
         # Declined confirmation
         mock_confirm.return_value.ask.return_value = False
 

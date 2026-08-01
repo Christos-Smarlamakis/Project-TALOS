@@ -201,11 +201,15 @@ class TestMultiTierRouting:
         """Verify that tier='fast' calls _execute_fast_tier_request."""
         from src.core.ai_manager import AIManager
         # Block all cloud API keys so no providers initialize.
+        # v5.9.2: Explicitly set per-tier routing to "local" to ensure
+        # fast tier routes to the local edge endpoint.
         with patch.dict('os.environ', {
             'GEMINI_API_KEY': '',
             'DEEPSEEK_API_KEY': '',
             'HF_TOKEN': '',
             'TALOS_USE_LOCAL': '',
+            'TALOS_FAST_ROUTING': 'local',
+            'TALOS_HEAVY_ROUTING': 'local',
         }, clear=False):
             mgr = AIManager({
                 "ai_provider_priority": [],
@@ -315,9 +319,9 @@ class TestSettingsResolution:
         assert DEFAULT_TIER == "fast"
 
     def test_talos_version(self):
-        """Verify the TALOS_VERSION is v5.9.0."""
+        """Verify the TALOS_VERSION is v5.9.3."""
         from config.settings import TALOS_VERSION
-        assert TALOS_VERSION == "5.9.0"
+        assert TALOS_VERSION == "5.9.3"
 
     def test_talos_api_port(self):
         """Verify the default TALOS_API_PORT is 8001."""

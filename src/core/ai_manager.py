@@ -5,8 +5,8 @@
 #  This program is free software...
 #
 """
-Module: ai_manager.py (v3.6 - Hybrid Multi-Provider Embeddings)
-Project: TALOS v5.0.0
+Module: ai_manager.py (v3.7 - Interactive Runtime Cloud Fallback)
+Project: TALOS v5.9.2
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture
@@ -24,7 +24,7 @@ Description:
     automatic failover across Ollama → HuggingFace → Gemini.
 """
 
-import os, json, re, requests
+import os, json, re, requests, sys
 from dotenv import load_dotenv
 from typing import Union, List, Dict, Any, Tuple, Optional
 import numpy as np
@@ -405,9 +405,10 @@ class AIManager:
                          tier: str = 'fast') -> Union[Dict[str, Any], str, None]:
         """Execute a request across all enabled providers with fallback.
 
-        Supports multi-tier routing (v5.7.1): ``tier='fast'`` routes to the
-        Neutrino-8B edge endpoint at FAST_EDGE_BASE_URL; ``tier='heavy'`` uses
-        the standard provider priority chain with qwen2.5:14b via Ollama.
+        Supports multi-tier routing (v5.7.1) with per-tier routing control
+        (v5.9.1): ``TALOS_FAST_ROUTING`` and ``TALOS_HEAVY_ROUTING`` .env
+        variables independently control whether each tier routes to local
+        Ollama or cloud API providers.
 
         Iterates through ``provider_priority``, attempting each non-open-circuit
         provider. On success, resets the failure counter for that provider.
@@ -423,14 +424,28 @@ class AIManager:
         Returns:
             dict, str, or None: Parsed response, or None if all providers fail.
         """
-        # -- v5.7.1: Multi-tier routing --
+        # -- v5.9.1: Per-tier routing via TALOS_FAST_ROUTING / TALOS_HEAVY_ROUTING --
+        fast_routing = os.getenv("TALOS_FAST_ROUTING", "local")
+        heavy_routing = os.getenv("TALOS_HEAVY_ROUTING", "local")
+
         if tier == 'fast':
-            result = self._execute_fast_tier_request(prompt, response_format)
-            if result is not None:
-                self.last_provider_used = 'fast_edge'
-                return result
-            # Fall through to standard providers if fast tier fails
-            print("  >!> Fast tier failed. Falling back to standard provider chain...")
+            if fast_routing == "local":
+                result = self._execute_fast_tier_request(prompt, response_format)
+                if result is not None:
+                    self.last_provider_used = 'fast_edge'
+                    return result
+                # Fall through to cloud if local fast tier fails
+                print("  >!> Fast tier (local) failed. Falling back to cloud providers...")
+            else:
+                # Fast routing is "cloud": skip local, go directly to cloud chain
+                print("  > FAST_ROUTING=cloud: routing directly to cloud providers...")
+
+        elif tier == 'heavy':
+            if heavy_routing == "cloud":
+                # Heavy routing is "cloud": skip local chain, go directly to cloud
+                print("  > HEAVY_ROUTING=cloud: routing directly to cloud providers...")
+                # Jump directly to provider chain (which includes cloud providers)
+            # else heavy_routing == "local": standard provider chain (default)
 
         for provider_name in self.provider_priority:
             if provider_name in self.providers and not self.providers[provider_name]['circuit_open']:
@@ -519,7 +534,7 @@ class AIManager:
                 return None
         except requests.exceptions.ConnectionError as e:
             print(f"  >!> Fast tier connection refused: {e}")
-            return None
+            return self._interactive_cloud_fallback(e, tier="fast")
         except Exception as e:
             print(f"  >!> Fast tier unexpected error: {e}")
             return None
@@ -586,6 +601,48 @@ class AIManager:
             return response_text
         except Exception as e:
             print(f"  >!> {provider_name} execution error: {e}")
+            return None
+
+    # ------------------------------------------------------------------
+    # -- v5.9.2: Interactive Runtime Cloud Fallback --
+    # ------------------------------------------------------------------
+    def _interactive_cloud_fallback(self, error, tier="fast"):
+        """Prompt the user to fallback to cloud on local model connection failure.
+
+        If the session is interactive (``sys.stdin.isatty()``), uses questionary
+        to ask: "Local model connection failed. Switch to Cloud fallback for this
+        session?" If Yes, temporarily sets the environment variable to route this
+        tier to cloud and returns None (caller should retry with cloud routing).
+        If No or non-interactive, returns None.
+
+        Args:
+            error: The exception that triggered the fallback.
+            tier: Which tier failed ('fast' or 'heavy').
+
+        Returns:
+            None always. The caller should check env vars and retry.
+        """
+        if not sys.stdin.isatty():
+            print(f"  >!> Non-interactive session -- cloud fallback not available for {tier} tier.")
+            return None
+        try:
+            import questionary
+            answer = questionary.confirm(
+                f"Local {tier} model connection failed ({error}).\n"
+                "Switch to Cloud fallback (Gemini/DeepSeek) for this session?",
+                default=True,
+            ).ask()
+            if answer:
+                if tier == "fast":
+                    os.environ["TALOS_FAST_ROUTING"] = "cloud"
+                elif tier == "heavy":
+                    os.environ["TALOS_HEAVY_ROUTING"] = "cloud"
+                print(f"  > [FALLBACK] {tier} tier rerouted to cloud for this session.")
+                return None
+            else:
+                print(f"  > [SKIP] Cloud fallback declined for {tier} tier.")
+                return None
+        except KeyboardInterrupt:
             return None
 
     # --- Circuit Breaker ---

@@ -1,4 +1,4 @@
-﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.9.0
+﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.9.1
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects — without re-reading all files.
 >
@@ -428,6 +428,6 @@ generate_docs.py → requests, dotenv, tqdm
 
 ---
 
-> **Last Updated:** 2026-08-01 (v5.9.0 — Autonomous System Tester, RL Chaos Fuzzer, LLM-as-a-Judge, Rich Q-Table, 18 Endpoints, 11-Option TUI)
-> **Project Version:** v5.9.0
+> **Last Updated:** 2026-08-01 (v5.9.1 — Autonomous System Tester, RL Chaos Fuzzer, LLM-as-a-Judge, Rich Q-Table, 18 Endpoints, 11-Option TUI)
+> **Project Version:** v5.9.1
 > **Total Files Covered:** 69 (58 src/ + 3 integration/ + 8 root entry/config/docs/tests)

@@ -1,8 +1,8 @@
-﻿# Project TALOS -- Strategic Roadmap & Architecture Chronicle
+# Project TALOS -- Strategic Roadmap & Architecture Chronicle
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward.
 
-> **Current Version:** v5.9.0 (Autonomous System Tester, RL Chaos Fuzzer, LLM-as-a-Judge Diagnostics, Rich Q-Table, 18 Endpoints, 11-Option TUI)
+> **Current Version:** v5.9.3 (Autonomous System Tester, RL Chaos Fuzzer, LLM-as-a-Judge Diagnostics, Rich Q-Table, 18 Endpoints, 11-Option TUI)
 > **Last Updated:** 2026-08-01
 
 ---

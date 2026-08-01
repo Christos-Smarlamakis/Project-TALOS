@@ -1,13 +1,13 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.0</title>
+<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.2</title>
 <style>
-  /* ═══════════════════════════════════════════════════════════════════════════
-     Dark Academic Theme — Slate/Zinc palette, monospace code, sticky ToC
-     ═══════════════════════════════════════════════════════════════════════ */
+  /* ===========================================================================
+     Dark Academic Theme � Slate/Zinc palette, monospace code, sticky ToC
+     ======================================================================= */
   :root {
     --bg: #0f1117;
     --bg-card: #16181d;
@@ -36,13 +36,13 @@
     min-height: 100vh;
   }
 
-  /* ─── Scrollbar ─── */
+  /* --- Scrollbar --- */
   ::-webkit-scrollbar { width: 8px; }
   ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
   ::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: #3a3d48; }
 
-  /* ─── Sidebar ToC ─── */
+  /* --- Sidebar ToC --- */
   nav#toc {
     position: sticky;
     top: 0;
@@ -82,7 +82,7 @@
   nav#toc a.section-link { font-weight: 600; color: var(--text); margin-top: 0.5rem; }
   nav#toc a.sub-link { padding-left: 2rem; }
 
-  /* ─── Main Content ─── */
+  /* --- Main Content --- */
   main {
     flex: 1;
     max-width: 960px;
@@ -115,7 +115,7 @@
   main a:hover { color: var(--link-hover); text-decoration: underline; }
   main strong { color: var(--header-text); }
 
-  /* ─── Metadata block ─── */
+  /* --- Metadata block --- */
   .meta-block {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -127,7 +127,7 @@
   }
   .meta-block strong { color: var(--text); }
 
-  /* ─── Tables ─── */
+  /* --- Tables --- */
   table {
     width: 100%;
     border-collapse: collapse;
@@ -152,7 +152,7 @@
   tbody tr:nth-child(even) { background: var(--table-stripe); }
   tbody tr:hover { background: var(--table-hover); }
 
-  /* ─── Code ─── */
+  /* --- Code --- */
   code {
     background: var(--code-bg);
     border: 1px solid var(--border);
@@ -180,7 +180,7 @@
     font-size: inherit;
   }
 
-  /* ─── Blockquote ─── */
+  /* --- Blockquote --- */
   blockquote {
     border-left: 3px solid var(--accent-dim);
     padding: 0.5rem 1rem;
@@ -190,10 +190,10 @@
     font-style: italic;
   }
 
-  /* ─── Dividers ─── */
+  /* --- Dividers --- */
   hr { border: none; border-top: 1px solid var(--border); margin: 2rem 0; }
 
-  /* ─── Responsive ─── */
+  /* --- Responsive --- */
   @media (max-width: 900px) {
     body { flex-direction: column; }
     nav#toc {
@@ -226,7 +226,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.0</h1>
+<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.2</h1>
 
 <div class="meta-block">
   <strong>Document ID:</strong> TALOS-SYS-CAP-001 &nbsp;|&nbsp;
@@ -235,7 +235,7 @@
   <strong>Last Updated:</strong> 29 July 2026
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- =========================================================================== -->
 <h2 id="s1">Section 1: System Vision & Core Architecture</h2>
 
 <h3>1.1 Foundational Principle</h3>
@@ -273,7 +273,7 @@
   <li><strong>CLI:</strong> <code>talos.py</code> retains full terminal-mode access for maintenance and diagnostics</li>
 </ul>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- =========================================================================== -->
 <h2 id="s2">Section 2: Multi-Source Ingestion Engine</h2>
 
 <h3>2.1 The "Genesis" Operation</h3>
@@ -323,7 +323,7 @@
   <li><strong>Data Enricher</strong> (<code>src/ingestion/data_enricher.py</code>): Unpaywall API integration for OA status and PDF links</li>
 </ul>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- =========================================================================== -->
 <h2 id="s3">Section 3: Deep Reinforcement Learning & Optimization (DDDQN + GWO)</h2>
 
 <h3>3.1 DRL Agent Architecture</h3>
@@ -382,7 +382,7 @@
   <li><code>models/gwo_progress.json</code>: Real-time progress file</li>
 </ul>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- =========================================================================== -->
 <h2 id="s4">Section 4: Advanced Semantic & Graph Intelligence (ST-GAT)</h2>
 
 <h3>4.1 Multi-Provider Hybrid Embeddings</h3>
@@ -417,7 +417,7 @@
 <h3>4.4 Knowledge Path Generation</h3>
 <p><code>src/analysis/knowledge_path_generator.py</code> constructs directed knowledge paths from seed papers through citation networks, identifying the evolution of ideas across publication years.</p>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- =========================================================================== -->
 <h2 id="s5">Section 5: Multi-Agent & Autonomous Swarms (PYTHIA, Swarm Commander, HMADRL)</h2>
 
 <h3>5.1 PYTHIA -- The AI Reasoning Engine</h3>
@@ -446,7 +446,7 @@
 <h3>5.5 Autonomous Swarm Commander (Roadmap)</h3>
 <p>Planned HMADRL (Heterogeneous Multi-Agent DRL) architecture for coordinating multiple specialized agents (scraper, evaluator, summarizer, reviewer) in parallel research workflows.</p>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- =========================================================================== -->
 <h2 id="s6">Section 6: Automated Literature Review & XAI (Quad-Layer Scoring, NATO CDE Procedural Hooks)</h2>
 
 <h3>6.1 Quad-Layer Evaluation Framework</h3>
@@ -498,7 +498,7 @@
 <h3>6.5 NATO CDE Procedural Hooks</h3>
 <p>The Architecture Intelligence Report (<code>src/analysis/architecture_intelligence_report.py</code>) generates dual-language (EN + GR) reports compatible with NATO CDE (Concept Development & Experimentation) procedural documentation standards.</p>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- =========================================================================== -->
 <h2 id="s7">Section 7: Edge-Cloud & Deployment Ecosystem</h2>
 
 <h3>7.1 Deployment Options</h3>
@@ -538,7 +538,7 @@
   <li><code>docker-compose.yml</code>: FastAPI + Ollama services with shared volumes for models and data</li>
 </ul>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- =========================================================================== -->
 <h2 id="s8">Section 8: Dashboards & User Interfaces</h2>
 
 <h3>8.1 React 18 Frontend (Primary)</h3>
@@ -578,7 +578,7 @@
 <h3>8.4 Architecture Graph</h3>
 <p><code>templates/architecture_graph.html</code> is an interactive D3.js force-directed graph served both via the API (<code>/api/v1/graph/view</code>) and as a standalone HTML document. Node colors encode module roles, edges show import dependencies, and tooltips expose function-level detail.</p>
 
-<!-- ═══════════════════════════════════════════════════════════════════════════ -->
+<!-- =========================================================================== -->
 <h2 id="s9">Section 9: Complete REST API Reference (14 Endpoints)</h2>
 
 <h3>9.1 Base URL</h3>
@@ -632,12 +632,12 @@
 <p>CORS is configured with <code>allow_origins=["*"]</code> for development. Production must restrict this to the React frontend origin.</p>
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.0</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.2</em></p>
 
 </main>
 
 <script>
-  /* ─── Intersection Observer for sticky ToC active link ─── */
+  /* --- Intersection Observer for sticky ToC active link --- */
   (function() {
     const sections = document.querySelectorAll('main h2[id]');
     const links = document.querySelectorAll('nav#toc a');

@@ -1,5 +1,5 @@
 # TALOS Project Instructions for AI Coding Agents
-# Version: v5.8.9
+# Version: v5.9.3
 
 ## CONSTITUTION v2.0 — The 8-Point Master Initialization Standard
 
@@ -84,7 +84,20 @@
 - This rule is NON-NEGOTIABLE. The 15-file set IS the canonical documentation surface.
 - Prior 12-file rule (v5.6.0) is SUPERSEDED by this 15-file rule (v5.7.0).
 
-### VII. SYNAPSE INTEROPERABILITY PROTOCOL
+### VII. EXHAUSTIVE CAPABILITIES SYNC RULE
+- During every version bump, the AI agent MUST scan all changelogs (CHANGELOG_EN.md,
+  CHANGELOG_GR.md), roadmaps (ROADMAP.md), timelines (TIMELINE_EN.md, TIMELINE_GR.md),
+  and the full codebase to identify every single active system capability, endpoint,
+  agent, integration, and routing mechanism.
+- The AI MUST then exhaustively rewrite both `docs/SYSTEM_CAPABILITIES_MASTER.md` and
+  `docs/SYSTEM_CAPABILITIES_MASTER.html` to be ultra-detailed technical whitepapers
+  covering 100% of all current system endpoints, agents, routing matrices, MCP tools,
+  Synapse events, RL components, file counts, and configuration surfaces.
+- This rule ensures that the master capabilities documentation NEVER drifts from the
+  actual codebase. The capabilities documents are the authoritative external reference
+  for what TALOS can do at any given version.
+
+### VIII. SYNAPSE INTEROPERABILITY PROTOCOL
 - TALOS exposes and consumes events via the SYNAPSE Event-Driven Protocol at
   `src/integration/synapse_client.py` (emitter) and `src/api/synapse_routes.py` (receiver).
 - Outbound events: TALOS pushes JSON events to `http://localhost:8000/api/v1/events`
@@ -98,7 +111,7 @@
 - The protocol is designed for future ALEXANDRIA ecosystem integration — TALOS is one
   of many microservices in the distributed research intelligence mesh.
 
-### VIII. STRICT IN-CODE DOCUMENTATION STANDARDS
+### IX. STRICT IN-CODE DOCUMENTATION STANDARDS
 - Every Python module (.py file) MUST begin with a module-level docstring in this EXACT format:
   """
   Module: filename.py
@@ -157,7 +170,7 @@
 ---
 
 ## Architecture
-- Entry points: `talos.py` (CLI menu), `src/api/main_api.py` (Headless FastAPI — 16 endpoints)
+- Entry points: `talos.py` (CLI menu), `src/api/main_api.py` (Headless FastAPI — 18 endpoints)
 - **Streamlit has been fully deprecated in v5.6.0.** The sole frontend is React 18 + Tailwind CSS + Shadcn UI.
 - **Synapse Protocol (NEW in v5.7.0):** `src/integration/synapse_client.py` (event emitter) + `src/api/synapse_routes.py` (webhook receiver). TALOS FastAPI runs on port 8001; Synapse bus on port 8000.
 - Core modules: `src/core/ai_manager.py` (multi-provider LLM), `src/core/database_manager.py` (SQLite + embeddings), `src/core/hardware.py` (GPU detection)
@@ -267,10 +280,13 @@
 
 ---
 
-> **Last Updated:** 2026-08-01 (v5.9.0 -- Autonomous System Tester, RL Chaos Fuzzer, LLM-as-a-Judge, rich TUI Q-Table, Code Version Synchronicity Rule enforcement)
-> **Project Version:** v5.9.0
+> **Last Updated:** 2026-08-01 (v5.9.3 -- Dynamic Focus Summarization, Interactive Runtime Cloud Fallback, Exhaustive Capabilities Rewrite, Exhaustive Capabilities Sync Rule enforcement)
+> **Project Version:** v5.9.3
 
 ---
+
+## CRITICAL: Exhaustive Capabilities Sync Rule (v5.9.3)
+- **During every version bump, the AI must scan the changelogs and codebase to ensure `SYSTEM_CAPABILITIES_MASTER.md` and `.html` are ultra-detailed, covering 100% of all current system endpoints, agents, routing matrices, and integrations.** This includes: all REST API endpoints with full path/method/description tables, all MCP server tools with schemas, all Synapse event types and payloads, all RL/DRL components (DDDQN, GWO, Autonomous Tester Non-Stationary MAB), the 4-Way Execution Mode Matrix with per-tier routing, all 14 ingestion sources, all analysis modules, and all system constants. The capabilities documents MUST be complete technical whitepapers suitable for a new developer to understand the entire system without reading source code.
 
 ## CRITICAL: Code Version Synchronicity Rule
 - **During any version bump, the version string inside the core executable launchers and code entry points MUST be synchronized exactly to the target version.** The affected files are:

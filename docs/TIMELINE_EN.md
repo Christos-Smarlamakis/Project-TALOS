@@ -4,7 +4,7 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-01 (v5.9.0 -- Autonomous System Tester, RL Chaos Fuzzer, LLM-as-a-Judge, Rich Q-Table, 18 Endpoints)
+> **Last Updated:** 2026-08-01 (v5.9.3 -- Conda Env Detection Hotfix)
 
 ---
 
@@ -151,7 +151,38 @@
 
 ---
 
-## Phase 9: Distributed Ecosystem (Future -- v6.0.0+)
+## Phase 11: Ultimate TUI UX, LLM Focus Summarization & Advanced Execution Modes (v5.9.1)
+
+- [x] **v5.9.1 -- LLM-Based Active Focus Summarization** -- After Query Translator generates boolean queries, a Fast Edge LLM call summarizes the research goal into a 6-10 word title saved as `active_focus_summary` in `config.json`. The TUI status table displays this clean summary in bold bright green instead of truncating the raw system prompt at 65 characters.
+- [x] **v5.9.1 -- 4-Way Execution Mode Matrix** -- Refactored `model_manager.py` `select_execution_mode()` to offer 4 distinct routing combinations using a gorgeous Rich Table: (1) Pure Local (Fast: Local CPU | Heavy: Local GPU), (2) Edge-to-Cloud Hybrid (Fast: Local CPU | Heavy: Cloud API), (3) Cloud-to-Edge Hybrid (Fast: Cloud API | Heavy: Local GPU), (4) Pure Cloud (Fast: Cloud API | Heavy: Cloud API). New `.env` variables `TALOS_FAST_ROUTING` and `TALOS_HEAVY_ROUTING` allow independent per-tier routing configuration.
+- [x] **v5.9.1 -- 100% Rich Sub-Menu Migration in model_manager.py** -- All remaining plain `print()` statements in `model_manager.py` sub-menus (Fast Edge Tier, Heavy Reasoning Tier, Cloud Config, Execution Mode, Embedding Selection) replaced with `rich.panel.Panel` and `rich.table.Table` components.
+- [x] **v5.9.1 -- Force-Sync All 15 Documentation Files and 5 Code Files to v5.9.1**
+
+---
+
+## Phase 12: Dynamic Focus, Interactive Fallbacks & Capabilities Rewrite (v5.9.3)
+
+### Status: COMPLETED (2026-08-01)
+
+- [x] **v5.9.3 -- Purge Legacy Interactive Startup Prompts** -- Removed the legacy `questionary` prompts asking "Where to run AI calls? LOCAL/CLOUD" from `talos.py` `main_menu()`. TALOS now reads `TALOS_USE_LOCAL` from `.env` directly. Silent initialization with zero user interaction.
+- [x] **v5.9.3 -- Dynamic Focus Summarization on Startup** -- New `_maybe_generate_focus_summary()` in `talos.py`. If `config.json` lacks `active_focus_summary` but has `user_research_goal` or any `*_query` keys, a Fast Edge LLM call generates a 6-10 word title, saves it, and displays it in the TUI header.
+- [x] **v5.9.3 -- Interactive Runtime Cloud Fallback in AIManager** -- New `_interactive_cloud_fallback()` method. Catches `ConnectionError` in `_execute_fast_tier_request`. Uses `sys.stdin.isatty()` to check interactivity. If interactive, prompts with `questionary` to fallback to cloud. Non-interactive sessions fail gracefully.
+- [x] **v5.9.3 -- Exhaustive Capabilities Sync Rule** -- Added to `.clinerules` as CRITICAL rule. Mandates that during every version bump, the AI must scan the codebase and rewrite `SYSTEM_CAPABILITIES_MASTER.md` and `.html` to cover 100% of all endpoints, agents, routing matrices, MCP tools, Synapse events, and RL components.
+- [x] **v5.9.3 -- Exhaustive Capabilities Rewrite** -- Completely rewrote `docs/SYSTEM_CAPABILITIES_MASTER.md` and `.html` as ultra-detailed technical whitepapers covering: 18 REST API endpoints, MCP server tools, Synapse event types and payloads, DDDQN + GWO + Autonomous Tester Non-Stationary MAB, 4-Way Execution Mode Matrix, all 14 ingestion sources, all analysis modules, and system constants.
+- [x] **v5.9.3 -- Force-Sync All 15 Documentation Files and 5 Code Files to v5.9.3** -- All version strings updated. Test assertion updated in `tests/test_multi_tier.py`. All 20 multi-tier tests pass.
+
+---
+
+## Phase 13: Conda Env Detection Hotfix (v5.9.3)
+
+### Status: COMPLETED (2026-08-01)
+
+- [x] **v5.9.3 -- Conda Environment Detection Hotfix** -- Updated `_build_status_table()` in `talos.py` to use `sys.prefix` fallback for Conda environment detection. When `CONDA_DEFAULT_ENV` is not set (common when running via VS Code or direct Python executable path), the script now extracts the environment name from `os.path.basename(sys.prefix)` if `"envs"` is in `sys.prefix`, or falls back to `sys.base_prefix != sys.prefix` / `hasattr(sys, "real_prefix")` for virtualenv detection. The status table no longer displays "N/A" when running in a properly activated Conda environment via a path-executed Python interpreter.
+- [x] **v5.9.3 -- Force-Sync All 15 Documentation Files and 5 Code Files to v5.9.3** -- All version strings updated. Test assertion updated in `tests/test_multi_tier.py`.
+
+---
+
+## Phase 14: Distributed Ecosystem (Future -- v6.0.0+)
 
 - [ ] **v6.0.0 -- PostgreSQL + pgvector Migration** -- Replace SQLite with PostgreSQL for concurrent access and production-grade vector similarity search.
 - [ ] **v6.1.0 -- Local RAG Pipeline** -- Ollama + Chroma integration for chat-with-papers, PDF ingestion, and knowledge graph construction.

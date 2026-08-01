@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.9.0
+Project: TALOS v5.9.3
 Description:
     Canonical configuration hub for TALOS v5.8.8. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
@@ -101,7 +101,14 @@ HF_MODEL_NAME = os.getenv("HF_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.9.0"
+TALOS_VERSION = "5.9.3"
+
+# -- v5.9.1: Per-Tier Routing Configuration --
+# Controls where each tier routes its inference requests.
+#   "local"  : Route to local Ollama instance (CPU for fast, GPU for heavy).
+#   "cloud"  : Route to cloud API provider (Gemini/DeepSeek/HF).
+TALOS_FAST_ROUTING = os.getenv("TALOS_FAST_ROUTING", "local")
+TALOS_HEAVY_ROUTING = os.getenv("TALOS_HEAVY_ROUTING", "local")
 
 # TALOS FastAPI port (port 8000 is reserved for SYNAPSE event bus).
 TALOS_API_PORT = int(os.getenv("TALOS_API_PORT", "8001"))

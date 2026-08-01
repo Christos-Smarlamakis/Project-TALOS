@@ -1,9 +1,9 @@
 @echo off
-title Project TALOS v5.9.0 -- Automated Batch Runner
+title Project TALOS v5.9.3 -- Automated Batch Runner
 chcp 65001 >nul 2>&1
 
 REM ===========================================================================
-REM run_talos.bat -- Automated Batch Runner for Project TALOS v5.9.0
+REM run_talos.bat -- Automated Batch Runner for Project TALOS v5.9.3
 REM
 REM Provides a 10-option structured menu:
 REM   Section 1: REST API & FRONTEND
@@ -21,7 +21,7 @@ REM     [9] Run Test Suite (pytest -v)
 REM     [10] Exit
 REM
 REM TALOS FastAPI runs on port 8001 (port 8000 is reserved for SYNAPSE bus).
-REM Features (v5.9.0): Autonomous System Tester (RL-Driven Chaos Engineering with
+REM Features (v5.9.3): Autonomous System Tester (RL-Driven Chaos Engineering with
 REM LLM-as-a-Judge diagnostics), Auto-Conda path detection, background windows,
 REM auto-start chain, automatic Fermion CPU server spawning.
 REM ===========================================================================
@@ -93,7 +93,7 @@ goto :EOF
 :TOP
 cls
 echo =============================================
-echo    Project TALOS v5.9.0
+echo    Project TALOS v5.9.3
 echo    Research Intelligence Platform
 echo    SYNAPSE Protocol Active (Bus :8000 / API :8001)
 echo =============================================
@@ -179,7 +179,7 @@ IF ERRORLEVEL 1 (
 
 echo.
 echo =============================================
-echo    Setup complete. TALOS v5.9.0 is ready.
+echo    Setup complete. TALOS v5.9.3 is ready.
 echo =============================================
 echo.
 echo    TALOS API will start on port 8001.
@@ -194,7 +194,7 @@ REM ---------------------------------------------------------------------------
 :SERVER
 cls
 echo =============================================
-echo    Starting TALOS FastAPI Server (v5.9.0)
+echo    Starting TALOS FastAPI Server (v5.9.3)
 echo    Port: 8001
 echo    API Docs: http://localhost:8001/docs
 echo    Health:   http://localhost:8001/api/v1/health
@@ -228,7 +228,7 @@ REM ---------------------------------------------------------------------------
 :MCP_SERVER
 cls
 echo =============================================
-echo    Starting TALOS MCP Server (v5.9.0)
+echo    Starting TALOS MCP Server (v5.9.3)
 echo =============================================
 echo.
 echo    Launching MCP server in a separate minimized window...
@@ -291,7 +291,7 @@ REM ---------------------------------------------------------------------------
 :CLI
 cls
 echo =============================================
-echo    TALOS Terminal CLI (v5.9.0)
+echo    TALOS Terminal CLI (v5.9.3)
 echo =============================================
 echo.
 echo    Launching the interactive TALOS command-line interface.
@@ -311,7 +311,7 @@ REM ---------------------------------------------------------------------------
 :DAEMON
 cls
 echo =============================================
-echo    Autonomous Research Daemon (v5.9.0)
+echo    Autonomous Research Daemon (v5.9.3)
 echo    24/7 Background Research Service
 echo =============================================
 echo.
@@ -334,7 +334,7 @@ REM ---------------------------------------------------------------------------
 :LIVE_DRL
 cls
 echo =============================================
-echo    Live DRL Agent (v5.9.0)
+echo    Live DRL Agent (v5.9.3)
 echo    Deep Reinforcement Learning Agent -- Verbose Mode
 echo =============================================
 echo.
@@ -358,7 +358,7 @@ REM ---------------------------------------------------------------------------
 :AUTO_TESTER
 cls
 echo =============================================
-echo    Autonomous System Tester (v5.9.0)
+echo    Autonomous System Tester (v5.9.3)
 echo    RL-Driven Chaos Engineering with LLM-as-a-Judge
 echo =============================================
 echo.
@@ -454,6 +454,6 @@ REM ---------------------------------------------------------------------------
 :END
 echo.
 echo =============================================
-echo    Closing Project TALOS v5.9.0...
+echo    Closing Project TALOS v5.9.3...
 echo =============================================
 exit /b

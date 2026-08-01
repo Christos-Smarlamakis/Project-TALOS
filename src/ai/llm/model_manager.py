@@ -1049,22 +1049,28 @@ def select_cloud_models(env_path):
 
 
 def select_execution_mode(env_path):
-    """Configure the system execution mode.
+    """Configure the system execution mode with independent per-tier routing.
 
-    Sets TALOS_EXECUTION_MODE in .env to one of:
-      - "local"   : Air-gapped. All inference via local Ollama tiers only.
-      - "hybrid"  : Local tiers as primary, cloud providers as fallback.
-      - "cloud"   : Cloud providers as primary, local as fallback.
+    v5.9.1: Offers 4 distinct routing combinations via a Rich comparison table:
+      - Pure Local:        Fast (Local CPU) | Heavy (Local GPU)
+      - Edge-to-Cloud Hybrid:  Fast (Local CPU) | Heavy (Cloud API)
+      - Cloud-to-Edge Hybrid:  Fast (Cloud API) | Heavy (Local GPU)
+      - Pure Cloud:           Fast (Cloud API) | Heavy (Cloud API)
 
-    Displays an informational Rich Panel comparison table before prompting.
-    Implements explicit Cancel/Back navigation guardrails.
+    Sets TALOS_FAST_ROUTING and TALOS_HEAVY_ROUTING in .env independently,
+    plus backward-compatible TALOS_EXECUTION_MODE, TALOS_USE_LOCAL, and
+    TALOS_ALLOW_CLOUD_FALLBACK keys.
+
+    Displays an informational Rich Panel with a 4-row comparison table before
+    prompting. Implements explicit Cancel/Back navigation guardrails.
 
     Args:
         env_path: Absolute path to the .env file.
     """
     os.system('cls' if os.name == 'nt' else 'clear')
     panel = Panel(
-        "[bold]System Execution Mode Selector[/]\n[dim]Controls how TALOS routes inference across local and cloud tiers[/]",
+        "[bold]4-Way Execution Mode Matrix[/]\n"
+        "[dim]Independently controls Fast Edge and Heavy Reasoning routing per tier[/]",
         border_style="blue",
         box=box.ROUNDED,
         padding=(1, 2),
@@ -1072,54 +1078,90 @@ def select_execution_mode(env_path):
     console.print(panel)
 
     values = dotenv_values(env_path)
-    current_mode = values.get("TALOS_EXECUTION_MODE", "local")
+    current_fast = values.get("TALOS_FAST_ROUTING", "local")
+    current_heavy = values.get("TALOS_HEAVY_ROUTING", "local")
 
-    # -- Comparison table --
-    mode_table = Table(box=box.ROUNDED, show_header=True, header_style="bold white")
-    mode_table.add_column("Mode", style="cyan", no_wrap=True)
-    mode_table.add_column("Description", style="white")
-    mode_table.add_column("VRAM Required", style="yellow")
-    mode_table.add_column("Internet Required", style="yellow")
-    mode_table.add_column("Status", style="green")
+    # -- Determine the active label from current .env state --
+    active_label = _resolve_mode_label(current_fast, current_heavy)
 
-    mode_table.add_row(
-        "local",
-        "Air-gapped. All inference via local Ollama tiers only. No cloud APIs called.",
-        "Yes",
-        "[red]No[/]",
-        "[bold green][ACTIVE][/]" if current_mode == "local" else "[dim]inactive[/]"
+    # -- 4-Row Comparison Table --
+    mode_table = Table(
+        box=box.ROUNDED,
+        show_header=True,
+        header_style="bold white",
+        title="[bold bright_cyan]Execution Mode Routing Combinations[/bold bright_cyan]",
+        title_justify="center",
     )
+    mode_table.add_column("Mode", style="cyan", no_wrap=True, width=22)
+    mode_table.add_column("Fast Edge Tier", style="bright_cyan", width=22)
+    mode_table.add_column("Heavy Reasoning Tier", style="bright_magenta", width=22)
+    mode_table.add_column("Use Case", style="white", width=30)
+    mode_table.add_column("Status", style="green", width=20)
+
+    # Row 1: Pure Local
     mode_table.add_row(
-        "hybrid",
-        "Local tiers as primary, cloud providers as fallback. Cloud used only when local unavailable.",
-        "Yes",
-        "[yellow]Optional[/]",
-        "[bold green][ACTIVE][/]" if current_mode == "hybrid" else "[dim]inactive[/]"
+        "Pure Local",
+        "[bright_cyan]Local CPU[/]",
+        "[bright_magenta]Local GPU[/]",
+        "Fully air-gapped research. Zero internet dependency. Maximum privacy.",
+        "[bold green][ACTIVE][/]" if active_label == "pure-local" else "[dim]inactive[/]"
     )
+    # Row 2: Edge-to-Cloud Hybrid
     mode_table.add_row(
-        "cloud",
-        "Cloud providers as primary, local tiers as fallback. Uses cloud APIs when keys available.",
-        "Optional",
-        "[green]Yes[/]",
-        "[bold green][ACTIVE][/]" if current_mode == "cloud" else "[dim]inactive[/]"
+        "Edge-to-Cloud Hybrid",
+        "[bright_cyan]Local CPU[/]",
+        "[bright_magenta]Cloud API[/]",
+        "Fast pre-screening on-device, deep reasoning via cloud. Best balance.",
+        "[bold green][ACTIVE][/]" if active_label == "edge-to-cloud" else "[dim]inactive[/]"
+    )
+    # Row 3: Cloud-to-Edge Hybrid
+    mode_table.add_row(
+        "Cloud-to-Edge Hybrid",
+        "[bright_cyan]Cloud API[/]",
+        "[bright_magenta]Local GPU[/]",
+        "Cloud-speed pre-screening with heavy reasoning kept local. Privacy for deep analysis.",
+        "[bold green][ACTIVE][/]" if active_label == "cloud-to-edge" else "[dim]inactive[/]"
+    )
+    # Row 4: Pure Cloud
+    mode_table.add_row(
+        "Pure Cloud",
+        "[bright_cyan]Cloud API[/]",
+        "[bright_magenta]Cloud API[/]",
+        "No local models required. Internet-dependent. Maximum speed with API keys.",
+        "[bold green][ACTIVE][/]" if active_label == "pure-cloud" else "[dim]inactive[/]"
     )
 
     console.print()
     console.print(mode_table)
-    console.print(f"\n  [dim]Current Execution Mode:[/] [bold cyan]{current_mode}[/]")
+    console.print(f"\n  [dim]Current: Fast Routing=[/][cyan]{current_fast}[/] "
+                  f"[dim]Heavy Routing=[/][magenta]{current_heavy}[/] "
+                  f"[dim]({active_label})[/]")
 
-    mode_map = {
-        "local (Air-Gapped)": "local",
-        "hybrid (Local + Cloud Fallback)": "hybrid",
-        "cloud (Cloud Priority)": "cloud",
-    }
-    choices = [questionary.Choice(title=k, value=v) for k, v in mode_map.items()]
-    choices.append(questionary.Separator())
-    choices.append(questionary.Choice(title="[Cancel / Return to Main Menu]", value="__cancel__"))
+    # -- Selection menu --
+    mode_choices = [
+        questionary.Choice(
+            title="Pure Local (Fast: Local CPU | Heavy: Local GPU)",
+            value="pure-local"
+        ),
+        questionary.Choice(
+            title="Edge-to-Cloud Hybrid (Fast: Local CPU | Heavy: Cloud API)",
+            value="edge-to-cloud"
+        ),
+        questionary.Choice(
+            title="Cloud-to-Edge Hybrid (Fast: Cloud API | Heavy: Local GPU)",
+            value="cloud-to-edge"
+        ),
+        questionary.Choice(
+            title="Pure Cloud (Fast: Cloud API | Heavy: Cloud API)",
+            value="pure-cloud"
+        ),
+        questionary.Separator(),
+        questionary.Choice(title="[Cancel / Return to Main Menu]", value="__cancel__"),
+    ]
 
     selected = questionary.select(
-        "Select execution mode:",
-        choices=choices,
+        "Select execution mode combination:",
+        choices=mode_choices,
         use_indicator=True,
     ).ask()
 
@@ -1128,38 +1170,100 @@ def select_execution_mode(env_path):
         console.input("\n[dim]Press Enter to continue...[/]")
         return
 
-    mode_value = selected
+    # -- Map selection to per-tier routing values --
+    routing_map = {
+        "pure-local":    {"fast": "local", "heavy": "local"},
+        "edge-to-cloud": {"fast": "local", "heavy": "cloud"},
+        "cloud-to-edge": {"fast": "cloud", "heavy": "local"},
+        "pure-cloud":    {"fast": "cloud", "heavy": "cloud"},
+    }
+    new_routing = routing_map[selected]
+    new_fast = new_routing["fast"]
+    new_heavy = new_routing["heavy"]
 
-    # -- Confirmation safety lock --
-    if not _confirm_setting_change(env_path, "TALOS_EXECUTION_MODE", current_mode, mode_value):
+    # -- Confirmation panel --
+    confirm_text = Text()
+    confirm_text.append("New Execution Mode Configuration:\n\n", style="bold white")
+    confirm_text.append(f"  Fast Edge Tier:      ", style="dim")
+    confirm_text.append(f"{new_fast.upper()} ", style="bold bright_cyan")
+    confirm_text.append(f"(was {current_fast.upper()})\n", style="dim")
+    confirm_text.append(f"  Heavy Reasoning Tier: ", style="dim")
+    confirm_text.append(f"{new_heavy.upper()} ", style="bold bright_magenta")
+    confirm_text.append(f"(was {current_heavy.upper()})\n\n", style="dim")
+    confirm_text.append(f"  Mode Label: [bold yellow]{selected}[/]", style="dim")
+
+    confirm_panel = Panel(
+        confirm_text,
+        title="[bold]Confirm Execution Mode Change[/bold]",
+        border_style="yellow",
+        box=box.ROUNDED,
+        padding=(1, 2),
+    )
+    console.print()
+    console.print(confirm_panel)
+
+    if not questionary.confirm("Apply this configuration?", default=True).ask():
+        console.print("  [dim][[CANCELLED]][/] No changes made.")
         console.input("\n[dim]Press Enter to continue...[/]")
         return
 
-    _set_key(env_path, "TALOS_EXECUTION_MODE", mode_value)
-    os.environ["TALOS_EXECUTION_MODE"] = mode_value
+    # -- Write new env variables --
+    _set_key(env_path, "TALOS_FAST_ROUTING", new_fast)
+    _set_key(env_path, "TALOS_HEAVY_ROUTING", new_heavy)
+    os.environ["TALOS_FAST_ROUTING"] = new_fast
+    os.environ["TALOS_HEAVY_ROUTING"] = new_heavy
 
-    # -- Update TALOS_USE_LOCAL and TALOS_ALLOW_CLOUD_FALLBACK for backward compat --
-    if mode_value == "local":
+    # -- Backward-compatible global mode --
+    if new_fast == "local" and new_heavy == "local":
+        mode_value = "local"
         _set_key(env_path, "TALOS_USE_LOCAL", "1")
         _set_key(env_path, "TALOS_ALLOW_CLOUD_FALLBACK", "0")
         os.environ["TALOS_USE_LOCAL"] = "1"
         os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "0"
-    elif mode_value == "hybrid":
-        _set_key(env_path, "TALOS_USE_LOCAL", "1")
-        _set_key(env_path, "TALOS_ALLOW_CLOUD_FALLBACK", "1")
-        os.environ["TALOS_USE_LOCAL"] = "1"
-        os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
-    elif mode_value == "cloud":
+    elif new_fast == "cloud" and new_heavy == "cloud":
+        mode_value = "cloud"
         _set_key(env_path, "TALOS_USE_LOCAL", "0")
         _set_key(env_path, "TALOS_ALLOW_CLOUD_FALLBACK", "1")
         os.environ["TALOS_USE_LOCAL"] = "0"
         os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
+    else:
+        mode_value = "hybrid"
+        _set_key(env_path, "TALOS_USE_LOCAL", "1")
+        _set_key(env_path, "TALOS_ALLOW_CLOUD_FALLBACK", "1")
+        os.environ["TALOS_USE_LOCAL"] = "1"
+        os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
 
-    console.print(f"\n  [bold green][[OK]][/] TALOS_EXECUTION_MODE set to: [cyan]{mode_value}[/]")
-    console.print(f"  [dim]TALOS_USE_LOCAL:[/] [cyan]{os.environ.get('TALOS_USE_LOCAL', '')}[/]")
-    console.print(f"  [dim]TALOS_ALLOW_CLOUD_FALLBACK:[/] [cyan]{os.environ.get('TALOS_ALLOW_CLOUD_FALLBACK', '')}[/]")
+    _set_key(env_path, "TALOS_EXECUTION_MODE", mode_value)
+    os.environ["TALOS_EXECUTION_MODE"] = mode_value
+
+    console.print(f"\n  [bold green][[OK]][/] Execution mode updated to: [bold yellow]{selected}[/]")
+    console.print(f"  [dim]TALOS_FAST_ROUTING:[/] [bright_cyan]{new_fast}[/]")
+    console.print(f"  [dim]TALOS_HEAVY_ROUTING:[/] [bright_magenta]{new_heavy}[/]")
+    console.print(f"  [dim]TALOS_EXECUTION_MODE (compat):[/] [cyan]{mode_value}[/]")
     console.print("  [dim]Restart TALOS for changes to take effect.[/]")
     console.input("\n[dim]Press Enter to continue...[/]")
+
+
+def _resolve_mode_label(fast_routing, heavy_routing):
+    """Resolve a human-readable mode label from per-tier routing values.
+
+    Args:
+        fast_routing (str): "local" or "cloud".
+        heavy_routing (str): "local" or "cloud".
+
+    Returns:
+        str: One of "pure-local", "edge-to-cloud", "cloud-to-edge", "pure-cloud".
+    """
+    if fast_routing == "local" and heavy_routing == "local":
+        return "pure-local"
+    elif fast_routing == "local" and heavy_routing == "cloud":
+        return "edge-to-cloud"
+    elif fast_routing == "cloud" and heavy_routing == "local":
+        return "cloud-to-edge"
+    elif fast_routing == "cloud" and heavy_routing == "cloud":
+        return "pure-cloud"
+    else:
+        return "unknown"
 
 
 def select_embedding_model(env_path):

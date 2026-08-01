@@ -1,8 +1,8 @@
-﻿# Changelog - Project TALOS
+# Changelog - Project TALOS
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
-## [v5.9.0] - 2026-08-01 -- Autonomous System Tester (RL-Driven, LLM-Judged)
+## [v5.9.3] - 2026-08-01 -- Autonomous System Tester (RL-Driven, LLM-Judged)
 
 ### Added
 - **Autonomous System Tester (RL-Driven Chaos Engineering)** (`src/ai/testing/autonomous_tester.py`, 390 lines): Non-Stationary Multi-Armed Bandit with Epsilon-Greedy (epsilon=0.2) and constant step-size Alpha (0.1). Stress-tests 4 TALOS system components (FastAPI Server, MCP Server, Daily Search, Citation Analyzer) via subprocess execution with 5-second timeout per cycle. If a target crashes, stderr is sent to the Fast Edge LLM (tier="fast") for a two-sentence diagnosis. Results visualized via Rich TUI (Spinners, red crash Panels, yellow AI Diagnosis Panels, green PASS confirmations, color-coded Q-Table). Q-table persisted as JSON at `data/tester_q_table.json`. Timestamped Markdown crash reports saved to `reports/autonomous_tester/CRASH_REPORT_{timestamp}.md`. Synapse event emitted on each test cycle via `synapse_client`. Reward signal: +50 for crash, -1 for pass. Standalone execution: `python src/ai/testing/autonomous_tester.py [cycles]`.
@@ -15,9 +15,9 @@ All notable changes to the TALOS project will be documented in this file. The pr
 - **FastAPI endpoint count**: 16 -> 18 (added `GET /api/v1/tester/status` and `GET /api/v1/tester/reports` via `app.include_router(tester_router)`).
 - **`talos.py` menu restructured**: 10-option -> 11-option. New Section "TESTING & CI/CD" with Option 6 (Autonomous System Tester). Options 7-11 shifted: Baseline Standard (7), Baseline Academic (8), DRL Status (9), Docs Generator (10), Exit (11).
 - **`run_talos.bat` and `run_talos.sh`**: 9-option -> 10-option. Autonomous System Tester as Option 8. Test Suite shifted to Option 9, Exit to Option 10.
-- **Version strings synced across 5 code files and 15 documentation files** to v5.9.0.
+- **Version strings synced across 5 code files and 15 documentation files** to v5.9.3.
 - **Descriptive naming enforcement**: "PYTHIA" references replaced with "Query Translator" in talos.py menu text. "Argus" references removed in favor of "Autonomous Tester".
-- **`test_multi_tier.py`**: `test_talos_version` assertion updated from "5.8.9" to "5.9.0".
+- **`test_multi_tier.py`**: `test_talos_version` assertion updated from "5.8.9" to "5.9.1".
 
 ### Verification
 - All 7 changed `.py` files pass `python -m py_compile`.

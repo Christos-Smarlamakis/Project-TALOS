@@ -156,7 +156,41 @@ def main():
             if key in config or 'query' in key or 'prompt' in key:
                 config[key] = value
                 count += 1
-        
+
+        # -- v5.9.1: LLM-based Active Focus Summarization --
+        # Uses the Fast Edge tier to summarize the research goal into a
+        # clean 6-10 word title for display in the TUI status table.
+        try:
+            print("\n--- Generating Active Focus Summary (Fast Edge LLM) ---")
+            summary_prompt = (
+                "Summarize the following research goal into a concise 6 to 10 word title. "
+                "Return ONLY the title text, nothing else:\n\n" + research_goal
+            )
+            focus_summary_raw = ai_manager._execute_request(
+                prompt=summary_prompt,
+                model_type='fast',
+                response_format='text',
+                tier='fast'
+            )
+            if focus_summary_raw and isinstance(focus_summary_raw, str):
+                focus_summary = focus_summary_raw.strip().strip('"').strip("'")
+                # Enforce 6-10 word limit by truncating if needed
+                words = focus_summary.split()
+                if len(words) > 10:
+                    focus_summary = " ".join(words[:10]) + "..."
+                elif len(words) < 3:
+                    # Too short -- use first 10 words of raw goal as fallback
+                    fallback_words = research_goal.strip().split()[:10]
+                    focus_summary = " ".join(fallback_words) + "..."
+                config['active_focus_summary'] = focus_summary
+                print(f"  Active Focus Summary: {focus_summary}")
+            else:
+                print("  [WARN] Focus summarizer returned no text. Using raw goal truncation.")
+                config['active_focus_summary'] = research_goal.strip()[:80] + "..."
+        except Exception as e:
+            print(f"  [WARN] Focus summarizer failed: {e}. Using raw goal truncation.")
+            config['active_focus_summary'] = research_goal.strip()[:80] + "..."
+
         save_config(config, config_path)
         print(f"\n✅ Ενημερώθηκαν {count} ρυθμίσεις στο config.json.")
     else:

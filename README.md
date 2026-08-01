@@ -1,4 +1,4 @@
-﻿# Project TALOS (v5.9.0)
+# Project TALOS (v5.9.2)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Takriko Praktoriko Systima Enorchistrosis Vivliografias)*
@@ -52,7 +52,7 @@ TALOS leitourgei os aftonomos "Research Architect," filtrarontas ton thoryvo kai
   - **Port 8001** (port 8000 reserved for SYNAPSE event bus)
   - Auto-generated interactive docs at `http://localhost:8001/docs`
   - Models saved at `models/dddqn_trained.pth` and `models/talos_drl.pth`
-- **Autonomous System Tester (RL-Driven Chaos Engineering)** (`src/ai/testing/autonomous_tester.py`) -- NEW in v5.9.0
+- **Autonomous System Tester (RL-Driven Chaos Engineering)** (`src/ai/testing/autonomous_tester.py`) -- NEW in v5.9.2
   - **Non-Stationary Multi-Armed Bandit** with Epsilon-Greedy (epsilon=0.2, alpha=0.1) stress-tests system components via subprocess
   - **LLM-as-a-Judge Diagnostics**: Crash stderr sent to Fast Edge LLM (Neutrino-8B) for two-sentence human-readable diagnosis
   - **Rich TUI Visualization**: Spinners, red crash Panels, yellow AI Diagnosis Panels, green PASS confirmations, color-coded Q-Table (Component Fragility)
@@ -95,7 +95,7 @@ TALOS leitourgei os aftonomos "Research Architect," filtrarontas ton thoryvo kai
 - **FastAPI REST API** (`src/api/main_api.py`) -- 18 endpoints sto `localhost:8001` (port 8000 gia SYNAPSE bus)
   - **Aftonomos Elegktis Systimatos** (`GET /api/v1/tester/status`, `GET /api/v1/tester/reports`) -- Katastasi Pinaka Q kai anaforwn katarrifseon
   - **SYNAPSE webhook** (`POST /api/v1/synapse/webhook`) gia dialeitourgikotita oikosystimatos ALEXANDRIA
-- **Aftonomos Elegktis Systimatos (RL-Driven Chaos Engineering)** (`src/ai/testing/autonomous_tester.py`) -- NEO stin v5.9.0
+- **Aftonomos Elegktis Systimatos (RL-Driven Chaos Engineering)** (`src/ai/testing/autonomous_tester.py`) -- NEO stin v5.9.2
   - **Mi Statheros Polyvrachionas Listis** me Epsilon-Greedy dokimazei yposystimata meso ypodiergasion
   - **LLM-as-a-Judge Diagnostika**: Stderr katarrifseon apostelletai sto Fast Edge LLM gia diagnostiki anafora
   - **Optikopoiisi Rich TUI**: Spinners, kokkina Panels katarrifseon, kitrina Panels Diagnosis AI, prasines epivevaioseis PASS
@@ -194,7 +194,7 @@ Apaiteitai **Ollama** gia na dynatai na trechei topika to montelo `gemma4`.
 This software is part of ongoing PhD research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.0, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.2, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -203,7 +203,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.9.0},
+  version = {v5.9.2},
   year = {2026}
 }
 ```
@@ -214,7 +214,7 @@ This software is part of ongoing PhD research. If you use **TALOS** in your work
 Ean chrisimopoiisete to TALOS stin erevna sas, parakaloume na to anaferete os exis:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.0, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.2, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -223,7 +223,7 @@ Ean chrisimopoiisete to TALOS stin erevna sas, parakaloume na to anaferete os ex
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.9.0},
+  version = {v5.9.2},
   year = {2026}
 }
 ```

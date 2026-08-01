@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.9.0
+Project: TALOS v5.9.3
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -85,6 +85,83 @@ from rich.align import Align
 console = Console()
 
 USE_LOCAL_MODEL = False
+
+# -- v5.9.2: Dynamic Focus Summarization --
+# If config.json lacks active_focus_summary but has queries/goal, an LLM
+# call generates a 6-10 word summary at startup and saves it.
+def _maybe_generate_focus_summary(config_path="config.json"):
+    """Generate a 6-10 word active_focus_summary via Fast Edge LLM if missing.
+
+    Reads config.json. If active_focus_summary is absent but either
+    user_research_goal or any *_query keys contain text, fires a Fast Edge
+    LLM call with a spinner to summarize the research focus into a concise
+    title, saves it back to config.json, and displays it.
+
+    Args:
+        config_path: Path to config.json.
+    """
+    import json as _json
+    try:
+        with open(config_path, "r", encoding="utf-8") as _f:
+            _cfg = _json.load(_f)
+    except Exception:
+        return
+
+    # -- Requirement: skip if summary already exists --
+    if _cfg.get("active_focus_summary", "").strip():
+        return
+
+    # -- Build context from existing goal or queries --
+    goal = (_cfg.get("user_research_goal") or
+            _cfg.get("phd_focus_system_prompt") or "").strip()
+    queries = []
+    for k, v in sorted(_cfg.items()):
+        if k.endswith("_query") and isinstance(v, str) and v.strip():
+            queries.append(f"{k.replace('_query','')}: {v[:120]}")
+    if not goal and not queries:
+        return  # Nothing to summarize -- skip
+
+    # -- Build a summary prompt --
+    context_bits = []
+    if goal:
+        context_bits.append(f"Research goal: {goal[:300]}")
+    if queries:
+        context_bits.append("Search queries: " + "; ".join(queries[:5]))
+    summary_prompt = (
+        "You are a research archivist. Summarize the following research project "
+        "into a single, concise title of 6 to 10 words. Return ONLY the title, "
+        "with no additional text, quotes, or formatting.\n\n" +
+        "\n".join(context_bits)
+    )
+
+    # -- Spinner + LLM call --
+    console.print("\n[cyan]Generating Research Focus Summary...[/cyan]", end="")
+    try:
+        from src.core.ai_manager import AIManager
+        mgr = AIManager({})
+        result = mgr._execute_request(
+            summary_prompt,
+            model_type="flash",
+            response_format="text",
+            tier="fast",
+        )
+        if result and isinstance(result, str):
+            title = result.strip().strip('"').strip("'")
+            # Sanitize: enforce 6-10 words, truncate if longer
+            words = title.split()
+            if len(words) > 10:
+                title = " ".join(words[:10])
+            if len(words) >= 3:  # Only accept if at least 3 words
+                _cfg["active_focus_summary"] = title
+                with open(config_path, "w", encoding="utf-8") as _f:
+                    _json.dump(_cfg, _f, indent=2, ensure_ascii=False)
+                console.print(f"\r[green]Research Focus: [bold bright_green]{title}[/bold bright_green][/green]")
+            else:
+                console.print("\r[dim]Focus summary too short -- skipping.[/dim]")
+        else:
+            console.print("\r[dim]Focus summary: LLM unavailable -- skipping.[/dim]")
+    except Exception:
+        console.print("\r[dim]Focus summary: LLM error -- skipping.[/dim]")
 
 # -- Script-name -> relative-path map (for run_script) -------------------------
 # Maps the script filename to its package subdirectory under src/.
@@ -569,8 +646,15 @@ def _build_status_table():
       - Active Tiers: Fast Edge, Heavy Reasoning, Cloud Provider
       - Active Research Focus (from config.json user_research_goal)
     """
-    # -- Detect Conda environment name --
-    conda_env = os.environ.get("CONDA_DEFAULT_ENV", "N/A")
+    # -- Detect Conda environment name (v5.9.3: sys.prefix fallback) --
+    conda_env = os.environ.get("CONDA_DEFAULT_ENV")
+    if not conda_env:
+        if "envs" in sys.prefix:
+            conda_env = os.path.basename(sys.prefix)
+        elif hasattr(sys, "real_prefix") or sys.base_prefix != sys.prefix:
+            conda_env = os.path.basename(sys.prefix)  # virtualenv fallback
+        else:
+            conda_env = "N/A"
 
     # -- Execution mode human-readable label --
     mode = os.environ.get("TALOS_EXECUTION_MODE", TALOS_EXECUTION_MODE)
@@ -616,17 +700,23 @@ def _build_status_table():
     table.add_row("Heavy Reasoning Tier", f"[bright_magenta]{heavy_model}[/bright_magenta]")
     table.add_row("Cloud Provider", f"[bright_blue]{cloud_display}[/bright_blue]")
     table.add_row("", "")
-    # -- Active Research Focus (from config.json) --
+    # -- Active Research Focus (from config.json, v5.9.1: LLM-summarized title) --
     focus_display = "[dim]Not configured[/dim]"
     try:
         import json as _json
         with open("config.json", "r", encoding="utf-8") as _f:
             _cfg = _json.load(_f)
-        goal = _cfg.get("user_research_goal") or _cfg.get("phd_focus_system_prompt", "")
-        if goal.strip():
-            if len(goal) > 65:
-                goal = goal[:65].rstrip() + "..."
-            focus_display = f"[bright_green]{goal}[/bright_green]"
+        # Prefer the LLM-generated summary (clean 6-10 word title)
+        summary = _cfg.get("active_focus_summary", "").strip()
+        if summary:
+            focus_display = f"[bold bright_green]{summary}[/bold bright_green]"
+        else:
+            # Fallback: raw goal truncated
+            goal = _cfg.get("user_research_goal") or _cfg.get("phd_focus_system_prompt", "")
+            if goal.strip():
+                if len(goal) > 65:
+                    goal = goal[:65].rstrip() + "..."
+                focus_display = f"[bright_green]{goal}[/bright_green]"
     except Exception:
         pass
     table.add_row("Active Research Focus", focus_display)
@@ -806,19 +896,18 @@ def main_menu():
     check_first_run(python_exe)
     time.sleep(1)
     global USE_LOCAL_MODEL
-    if not USE_LOCAL_MODEL:
-        c = safe_select("Where to run AI calls?", choices=["LOCAL (Ollama)", "CLOUD (Gemini+DeepSeek)"])
-        USE_LOCAL_MODEL = (c and "LOCAL" in c)
-        if USE_LOCAL_MODEL:
-            _verify_local_models()
-            fb = safe_select("Allow cloud fallback?", choices=["NO", "YES"])
-            if fb and "YES" in fb: os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
-        else:
-            fb = safe_select("Allow local fallback?", choices=["NO", "YES"])
-            if fb and "YES" in fb: os.environ["TALOS_ALLOW_LOCAL_FALLBACK"] = "1"
-            if os.getenv("HF_TOKEN"):
-                m = safe_select("HF model:", choices=["Mixtral-8x7B", "Llama-3.1-8B", "Qwen2.5-7B", "Mistral-7B", "Phi-3-mini", "Gemma-2-2b"])
-                if m: os.environ["HF_MODEL_NAME"] = m
+
+    # -- v5.9.2: Silent Initialization --
+    # TALOS now reads TALOS_USE_LOCAL from .env directly via config/settings.py
+    # and AIManager. The legacy interactive LOCAL/CLOUD prompt has been purged.
+    USE_LOCAL_MODEL = os.environ.get("TALOS_USE_LOCAL", "").lower() in ("1", "true", "yes")
+    if USE_LOCAL_MODEL:
+        _verify_local_models()
+
+    # -- v5.9.2: Dynamic Focus Summarization --
+    # If config.json lacks active_focus_summary but has queries/goal,
+    # automatically generate a 6-10 word title via Fast Edge LLM.
+    _maybe_generate_focus_summary()
 
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
