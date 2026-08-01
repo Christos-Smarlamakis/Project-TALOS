@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.9.3
+Project: TALOS v5.9.7
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -66,7 +66,8 @@ load_dotenv()
 
 import shutil
 
-from config.settings import TALOS_VERSION, TALOS_API_PORT, TALOS_EXECUTION_MODE
+from config.settings import TALOS_VERSION, TALOS_API_PORT
+from config.settings import TALOS_NETWORK_STRATEGY, TALOS_HARDWARE_STRATEGY, TALOS_EXECUTION_MODE
 from config.settings import FAST_EDGE_MODEL, HEAVY_REASONING_MODEL
 from config.settings import CLOUD_PROVIDER, GEMINI_FLASH_MODEL, DEEPSEEK_MODEL_CHAT
 from config.settings import SYNAPSE_BUS_URL
@@ -656,14 +657,23 @@ def _build_status_table():
         else:
             conda_env = "N/A"
 
-    # -- Execution mode human-readable label --
-    mode = os.environ.get("TALOS_EXECUTION_MODE", TALOS_EXECUTION_MODE)
-    mode_labels = {
-        "local":  "Air-Gapped Local",
-        "hybrid": "Hybrid (Local + Cloud Fallback)",
-        "cloud":  "Cloud Priority",
+    # -- v5.9.4: 2D Execution Matrix --
+    net_strat = os.environ.get("TALOS_NETWORK_STRATEGY", TALOS_NETWORK_STRATEGY)
+    hw_strat = os.environ.get("TALOS_HARDWARE_STRATEGY", TALOS_HARDWARE_STRATEGY)
+    network_labels = {
+        "strict_local": "Strict Local",
+        "local_first":  "Local-First",
+        "cloud_first":  "Cloud-First",
+        "strict_cloud": "Strict Cloud",
     }
-    mode_display = mode_labels.get(mode, mode)
+    hardware_labels = {
+        "cpu_only":       "CPU Only",
+        "gpu_only":       "GPU Only",
+        "cpu_gpu_split":  "CPU+GPU Split",
+    }
+    net_display = network_labels.get(net_strat, net_strat)
+    hw_display = hardware_labels.get(hw_strat, hw_strat)
+    mode_display = f"{net_display} / {hw_display}"
 
     # -- Fast Edge model: use raw configuration string directly --
     fast_edge = os.environ.get("FAST_EDGE_MODEL", FAST_EDGE_MODEL)
@@ -694,7 +704,7 @@ def _build_status_table():
     table.add_row("API Port", f"[bold green]{TALOS_API_PORT}[/bold green]")
     table.add_row("Synapse Bus", f"[dim green]{synapse_short}[/dim green]")
     table.add_row("", "")
-    table.add_row("Execution Mode", f"[bold yellow]{mode_display}[/bold yellow]")
+    table.add_row("Execution Mode", f"[bold yellow]{net_display} / {hw_display}[/bold yellow]")
     table.add_row("", "")
     table.add_row("Fast Edge Tier", f"[bright_cyan]{fast_edge}[/bright_cyan]")
     table.add_row("Heavy Reasoning Tier", f"[bright_magenta]{heavy_model}[/bright_magenta]")
@@ -921,6 +931,11 @@ def main_menu():
         title_text.append(f" v{TALOS_VERSION}", style="bold cyan")
         title_text.append(f"  |  Profile: [{ap}]", style="dim white")
 
+        # -- v5.9.7: IEEE Computer Society WEIGD Fund badge --
+        ieee_badge = Text()
+        ieee_badge.append(" IEEE CS ", style="bold white on #006699")
+        ieee_badge.append(" WEIGD FUND RECIPIENT 2026 ", style="bold white on #002855")
+
         # -- Database stats line --
         db_line = ""
         try:
@@ -946,6 +961,8 @@ def main_menu():
         header_content = Table(show_header=False, box=None, padding=(0, 0))
         header_content.add_column(justify="center")
         header_content.add_row(title_text)
+        header_content.add_row(ieee_badge)
+        header_content.add_row("")
         if db_line or vram_line:
             stats_parts = []
             if db_line: stats_parts.append(db_line)

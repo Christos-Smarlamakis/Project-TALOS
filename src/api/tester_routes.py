@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: tester_routes.py
-Project: TALOS v5.9.0
+Project: TALOS v5.9.6
 Description:
     FastAPI APIRouter exposing REST endpoints for the Autonomous System Tester
     (RL-Driven Chaos Engineering). Provides two endpoints:
@@ -46,15 +46,42 @@ if _PROJECT_ROOT:
 
 # -- Constants --
 Q_TABLE_PATH = os.path.join(_PROJECT_ROOT, "data", "tester_q_table.json")
-REPORTS_DIR = os.path.join(_PROJECT_ROOT, "reports", "autonomous_tester")
+REPORTS_DIR = os.path.join(_PROJECT_ROOT, "data", "reports", "autonomous_tester")
 
-# -- Target arms metadata (mirrors autonomous_tester.py) --
-TARGET_ARMS = [
-    {"index": 0, "name": "src/api/main_api.py (FastAPI Server)"},
-    {"index": 1, "name": "src/mcp_server.py (MCP Server)"},
-    {"index": 2, "name": "src/ingestion/daily_search.py (Daily Search)"},
-    {"index": 3, "name": "src/analysis/citation_analyzer.py (Citation Analyzer)"},
-]
+# -- Target arms metadata: dynamically discovered from src/ at runtime --
+def _discover_target_arms() -> List[Dict[str, object]]:
+    """Discover all .py files under src/ directories for the status endpoint.
+
+    Returns:
+        List of dicts with 'index' and 'name' keys for every discovered arm.
+    """
+    target_dirs = [
+        "src/analysis",
+        "src/ingestion",
+        "src/ai",
+        "src/utils",
+        "src/core",
+        "src/api",
+    ]
+    arms = []
+    idx = 0
+    for target_dir in target_dirs:
+        dir_path = os.path.join(_PROJECT_ROOT, target_dir)
+        if not os.path.isdir(dir_path):
+            continue
+        for root, dirs, files in os.walk(dir_path):
+            for file in sorted(files):
+                if file.endswith(".py") and file != "__init__.py":
+                    full_path = os.path.join(root, file)
+                    rel_path = os.path.relpath(full_path, _PROJECT_ROOT).replace("\\", "/")
+                    module_part = rel_path.replace("/", ".").replace(".py", "")
+                    display_name = f"{rel_path} ({module_part})"
+                    arms.append({"index": idx, "name": display_name})
+                    idx += 1
+    return arms
+
+
+TARGET_ARMS = _discover_target_arms()
 
 # -- Router definition --
 router = APIRouter(prefix="/api/v1/tester", tags=["autonomous_tester"])

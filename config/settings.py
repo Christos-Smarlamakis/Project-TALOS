@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.9.3
+Project: TALOS v5.9.7
 Description:
-    Canonical configuration hub for TALOS v5.8.8. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.9.7. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
@@ -12,8 +12,9 @@ Description:
     - Reads from environment variables with sensible defaults for air-gapped operation.
     - Supports three-tier LLM architecture: "fast" (edge/lightweight, CPU, port 11435),
       "heavy" (reasoning/large, GPU, port 11434), and "cloud" (Gemini/DeepSeek/HF).
-    - TALOS_EXECUTION_MODE controls system-wide routing: "local" (air-gapped),
-      "hybrid" (local primary, cloud fallback), or "cloud" (cloud primary, local fallback).
+    - v5.9.4: TALOS_EXECUTION_MODE is DEPRECATED and replaced by the 2D Execution
+      Matrix: TALOS_NETWORK_STRATEGY (strict_local, local_first, cloud_first,
+      strict_cloud) and TALOS_HARDWARE_STRATEGY (cpu_only, gpu_only, cpu_gpu_split).
     - Fast tier uses Neutrino-8B at a dedicated local endpoint (port 11435).
     - Heavy tier uses qwen2.5:14b at the standard Ollama endpoint (port 11434).
     - Cloud LLM providers (Gemini, DeepSeek, HuggingFace) are configured via
@@ -93,15 +94,43 @@ HF_MODEL_NAME = os.getenv("HF_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1
 # -- System Constants --
 # ------------------------------------------------------------------
 
-# -- System Execution Mode --
-# Controls how TALOS routes inference requests across tiers.
-#   "local"  : Air-gapped. All inference via local Ollama tiers only.
-#   "hybrid" : Local tiers as primary, cloud providers as fallback.
-#   "cloud"  : Cloud providers as primary, local tiers as fallback.
+# -- v5.9.4: 2D Execution Matrix (Network Strategy & Hardware Strategy) --
+# Network Strategy controls whether inference is local-only, cloud-only, or
+# mixed with transparent automatic fallback.
+#   "strict_local" : Air-gapped. All inference via local Ollama tiers only.
+#                    Cloud providers are NEVER called even if configured.
+#   "local_first"  : Local tiers as primary. If a local request throws a
+#                    ConnectionError, automatically fallback to cloud.
+#   "cloud_first"  : Cloud providers as primary. If cloud fails (auth error,
+#                    rate limit, timeout), automatically fallback to local.
+#   "strict_cloud" : Pure cloud. Local tiers are NEVER called. Requires valid
+#                    cloud API keys (Gemini, DeepSeek, or HuggingFace).
+TALOS_NETWORK_STRATEGY = os.getenv("TALOS_NETWORK_STRATEGY", "strict_local")
+
+# Hardware Strategy controls which local compute devices are used when
+# inference is routed locally (via any network strategy that permits local).
+#   "cpu_only"       : Force ALL local requests to the Fast Edge CPU endpoint
+#                      (FAST_EDGE_BASE_URL, port 11435). Even heavy-tier
+#                      requests run on CPU. No GPU utilization.
+#   "gpu_only"       : Force ALL local requests to the standard Ollama GPU
+#                      endpoint (OLLAMA_BASE_URL, port 11434). Even fast-tier
+#                      requests run on GPU.
+#   "cpu_gpu_split"  : Default split: fast requests on CPU (port 11435),
+#                      heavy requests on GPU (port 11434). Respects the
+#                      tier parameter of each request.
+TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
+
+# -- DEPRECATED (v5.9.4): TALOS_EXECUTION_MODE --
+# Replaced by TALOS_NETWORK_STRATEGY and TALOS_HARDWARE_STRATEGY.
+# Retained for backward compatibility; maps to the new strategies:
+#   "local"  -> network="strict_local",  hardware="cpu_gpu_split"
+#   "hybrid" -> network="local_first",   hardware="cpu_gpu_split"
+#   "cloud"  -> network="cloud_first",   hardware="cpu_gpu_split"
+# If TALOS_NETWORK_STRATEGY is explicitly set, this legacy key is ignored.
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.9.3"
+TALOS_VERSION = "5.9.7"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.

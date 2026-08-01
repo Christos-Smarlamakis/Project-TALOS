@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ===========================================================================
-# run_talos.sh -- Cross-Platform POSIX Launcher for Project TALOS v5.9.3
+# run_talos.sh -- Cross-Platform POSIX Launcher for Project TALOS v5.9.7
 #
 # Provides a 10-option structured menu with full parity to run_talos.bat:
 #   Section 1: REST API & FRONTEND
@@ -110,7 +110,7 @@ detect_and_activate_env() {
 print_banner() {
     clear
     echo "============================================="
-    echo "   Project TALOS v5.9.3"
+echo "   Project TALOS v5.9.7"
     echo "   Research Intelligence Platform"
     echo "   SYNAPSE Protocol Active (Bus :8000 / API :8001)"
     echo "============================================="
@@ -218,7 +218,7 @@ do_setup() {
 
     echo ""
     echo "============================================="
-    echo -e "   ${GREEN}Setup complete. TALOS v5.9.3 is ready.${NC}"
+echo -e "   ${GREEN}Setup complete. TALOS v5.9.7 is ready.${NC}"
     echo "============================================="
     echo ""
     echo "   TALOS API will start on port 8001."
@@ -237,7 +237,7 @@ do_setup() {
 do_server() {
     clear
     echo "============================================="
-    echo "   Starting TALOS FastAPI Server (v5.9.3)"
+echo "   Starting TALOS FastAPI Server (v5.9.7)"
     echo "   Port: 8001"
     echo "   API Docs: http://localhost:8001/docs"
     echo "   Health:   http://localhost:8001/api/v1/health"
@@ -274,7 +274,7 @@ do_server() {
 do_mcp_server() {
     clear
     echo "============================================="
-    echo "   Starting TALOS MCP Server (v5.9.3)"
+echo "   Starting TALOS MCP Server (v5.9.7)"
     echo "============================================="
     echo ""
     echo "   Launching MCP server as a detached background process..."
@@ -341,7 +341,7 @@ do_provision_ui() {
 do_cli() {
     clear
     echo "============================================="
-    echo "   TALOS Terminal CLI (v5.9.3)"
+echo "   TALOS Terminal CLI (v5.9.7)"
     echo "============================================="
     echo ""
     echo "   Launching the interactive TALOS command-line interface."
@@ -363,7 +363,7 @@ do_cli() {
 do_daemon() {
     clear
     echo "============================================="
-    echo "   Autonomous Research Daemon (v5.9.3)"
+    echo "   Autonomous Research Daemon (v5.9.7)"
     echo "   24/7 Background Research Service"
     echo "============================================="
     echo ""
@@ -388,7 +388,7 @@ do_daemon() {
 do_live_drl() {
     clear
     echo "============================================="
-    echo "   Live DRL Agent (v5.9.3)"
+    echo "   Live DRL Agent (v5.9.7)"
     echo "   Deep Reinforcement Learning Agent -- Verbose Mode"
     echo "============================================="
     echo ""
@@ -414,16 +414,16 @@ do_live_drl() {
 do_auto_tester() {
     clear
     echo "============================================="
-    echo "   Autonomous System Tester (v5.9.3)"
+    echo "   Autonomous System Tester (v5.9.7)"
     echo "   RL-Driven Chaos Engineering with LLM-as-a-Judge"
     echo "============================================="
     echo ""
     echo "   Stress-tests TALOS system components using a Non-Stationary"
     echo "   Epsilon-Greedy Multi-Armed Bandit. Diagnoses crashes with the"
-    echo "   Fast Edge LLM and saves Markdown reports in reports/autonomous_tester/."
-    echo ""
-    echo "   Target components: FastAPI Server, MCP Server, Daily Search,"
-    echo "   Citation Analyzer. Q-table saved to data/tester_q_table.json."
+    echo "   Fast Edge LLM and saves Markdown reports in data/reports/autonomous_tester/."
+echo ""
+echo "   Dynamic target discovery: all .py files under src/ are registered"
+echo "   as test arms (70+ targets). Q-table saved to data/tester_q_table.json."
     echo ""
     echo "   Press Ctrl+C to abort the test run early."
     echo ""
@@ -541,7 +541,7 @@ main() {
             10)
                 echo ""
                 echo "============================================="
-                echo "   Closing Project TALOS v5.9.3..."
+    echo "   Closing Project TALOS v5.9.7..."
                 echo "============================================="
                 exit 0
                 ;;

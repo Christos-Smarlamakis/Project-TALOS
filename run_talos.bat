@@ -1,9 +1,9 @@
 @echo off
-title Project TALOS v5.9.3 -- Automated Batch Runner
+title Project TALOS v5.9.7 -- Automated Batch Runner
 chcp 65001 >nul 2>&1
 
 REM ===========================================================================
-REM run_talos.bat -- Automated Batch Runner for Project TALOS v5.9.3
+REM run_talos.bat -- Automated Batch Runner for Project TALOS v5.9.7
 REM
 REM Provides a 10-option structured menu:
 REM   Section 1: REST API & FRONTEND
@@ -93,7 +93,7 @@ goto :EOF
 :TOP
 cls
 echo =============================================
-echo    Project TALOS v5.9.3
+echo    Project TALOS v5.9.7
 echo    Research Intelligence Platform
 echo    SYNAPSE Protocol Active (Bus :8000 / API :8001)
 echo =============================================
@@ -137,6 +137,8 @@ echo =============================================
 echo    Full Setup: Conda Environment + Pip Install + Frontend Provisioner
 echo =============================================
 echo.
+echo    TALOS v5.9.7 -- Data Directory Consolidation & Dynamic Target Discovery
+echo.
 
 echo [1/4] Checking for Conda...
 if defined CONDA_ACTIVATE_PATH (
@@ -179,7 +181,7 @@ IF ERRORLEVEL 1 (
 
 echo.
 echo =============================================
-echo    Setup complete. TALOS v5.9.3 is ready.
+echo    Setup complete. TALOS v5.9.7 is ready.
 echo =============================================
 echo.
 echo    TALOS API will start on port 8001.
@@ -194,7 +196,7 @@ REM ---------------------------------------------------------------------------
 :SERVER
 cls
 echo =============================================
-echo    Starting TALOS FastAPI Server (v5.9.3)
+echo    Starting TALOS FastAPI Server (v5.9.7)
 echo    Port: 8001
 echo    API Docs: http://localhost:8001/docs
 echo    Health:   http://localhost:8001/api/v1/health
@@ -228,7 +230,7 @@ REM ---------------------------------------------------------------------------
 :MCP_SERVER
 cls
 echo =============================================
-echo    Starting TALOS MCP Server (v5.9.3)
+echo    Starting TALOS MCP Server (v5.9.7)
 echo =============================================
 echo.
 echo    Launching MCP server in a separate minimized window...
@@ -291,7 +293,7 @@ REM ---------------------------------------------------------------------------
 :CLI
 cls
 echo =============================================
-echo    TALOS Terminal CLI (v5.9.3)
+echo    TALOS Terminal CLI (v5.9.7)
 echo =============================================
 echo.
 echo    Launching the interactive TALOS command-line interface.
@@ -311,7 +313,7 @@ REM ---------------------------------------------------------------------------
 :DAEMON
 cls
 echo =============================================
-echo    Autonomous Research Daemon (v5.9.3)
+echo    Autonomous Research Daemon (v5.9.7)
 echo    24/7 Background Research Service
 echo =============================================
 echo.
@@ -334,7 +336,7 @@ REM ---------------------------------------------------------------------------
 :LIVE_DRL
 cls
 echo =============================================
-echo    Live DRL Agent (v5.9.3)
+echo    Live DRL Agent (v5.9.7)
 echo    Deep Reinforcement Learning Agent -- Verbose Mode
 echo =============================================
 echo.
@@ -358,16 +360,16 @@ REM ---------------------------------------------------------------------------
 :AUTO_TESTER
 cls
 echo =============================================
-echo    Autonomous System Tester (v5.9.3)
+echo    Autonomous System Tester (v5.9.7)
 echo    RL-Driven Chaos Engineering with LLM-as-a-Judge
 echo =============================================
 echo.
 echo    Stress-tests TALOS system components using a Non-Stationary
 echo    Epsilon-Greedy Multi-Armed Bandit. Diagnoses crashes with the
-echo    Fast Edge LLM and saves Markdown reports in reports/autonomous_tester/.
+echo    Fast Edge LLM and saves Markdown reports in data/reports/autonomous_tester/.
 echo.
-echo    Target components: FastAPI Server, MCP Server, Daily Search,
-echo    Citation Analyzer. Q-table saved to data/tester_q_table.json.
+echo    Dynamic target discovery: all .py files under src/ are registered
+echo    as test arms (70+ targets). Q-table saved to data/tester_q_table.json.
 echo.
 echo    Press Ctrl+C to abort the test run early.
 echo.
@@ -454,6 +456,6 @@ REM ---------------------------------------------------------------------------
 :END
 echo.
 echo =============================================
-echo    Closing Project TALOS v5.9.3...
+echo    Closing Project TALOS v5.9.7...
 echo =============================================
 exit /b

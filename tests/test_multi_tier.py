@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_multi_tier.py
-Project: TALOS v5.8.8
+Project: TALOS v5.9.4
 Description:
     Unit tests for the multi-tier LLM routing architecture (v5.7.1). Tests cover:
     - Fast tier routing via HTTP POST to FAST_EDGE_BASE_URL with Neutrino-8B.
@@ -198,16 +198,18 @@ class TestMultiTierRouting:
         }
 
     def test_tier_fast_routes_to_fast_tier(self):
-        """Verify that tier='fast' calls _execute_fast_tier_request."""
+        """Verify that tier='fast' routes via _execute_local_strategy (v5.9.4 2D Matrix)."""
         from src.core.ai_manager import AIManager
-        # Block all cloud API keys so no providers initialize.
-        # v5.9.2: Explicitly set per-tier routing to "local" to ensure
-        # fast tier routes to the local edge endpoint.
+        # v5.9.4: 2D Execution Matrix uses _execute_local_strategy for strict_local.
+        # Set legacy vars plus the new network/hardware strategy vars to ensure
+        # fast tier routes through the local strategy path.
         with patch.dict('os.environ', {
             'GEMINI_API_KEY': '',
             'DEEPSEEK_API_KEY': '',
             'HF_TOKEN': '',
             'TALOS_USE_LOCAL': '',
+            'TALOS_NETWORK_STRATEGY': 'strict_local',
+            'TALOS_HARDWARE_STRATEGY': 'cpu_gpu_split',
             'TALOS_FAST_ROUTING': 'local',
             'TALOS_HEAVY_ROUTING': 'local',
         }, clear=False):
@@ -218,27 +220,33 @@ class TestMultiTierRouting:
 
             with patch.object(
                 mgr,
-                '_execute_fast_tier_request',
+                '_execute_local_strategy',
                 return_value="fast result",
-            ) as mock_fast:
+            ) as mock_local:
                 result = mgr._execute_request(
                     "test prompt",
                     model_type='pro',
                     response_format='text',
                     tier='fast',
                 )
-                mock_fast.assert_called_once_with("test prompt", 'text')
+                mock_local.assert_called_once_with(
+                    "test prompt", 'text', 'fast', 'cpu_gpu_split', allow_prompt=True
+                )
                 assert result == "fast result"
-                assert mgr.last_provider_used == 'fast_edge'
+                assert mgr.last_provider_used == 'local'
 
     def test_tier_fast_falls_back_to_providers(self):
-        """Verify that fast tier failure falls back to provider chain."""
+        """Verify that fast tier failure returns None when no cloud fallback is available."""
         from src.core.ai_manager import AIManager
+        # v5.9.4: With strict_local network strategy and no cloud providers,
+        # _execute_local_strategy returning None should cause overall None.
         with patch.dict('os.environ', {
             'GEMINI_API_KEY': '',
             'DEEPSEEK_API_KEY': '',
             'HF_TOKEN': '',
             'TALOS_USE_LOCAL': '',
+            'TALOS_NETWORK_STRATEGY': 'strict_local',
+            'TALOS_HARDWARE_STRATEGY': 'cpu_gpu_split',
         }, clear=False):
             mgr = AIManager({
                 "ai_provider_priority": [],
@@ -247,7 +255,7 @@ class TestMultiTierRouting:
 
             with patch.object(
                 mgr,
-                '_execute_fast_tier_request',
+                '_execute_local_strategy',
                 return_value=None,
             ):
                 result = mgr._execute_request(
@@ -259,13 +267,18 @@ class TestMultiTierRouting:
                 assert result is None
 
     def test_tier_heavy_skips_fast_tier(self):
-        """Verify that tier='heavy' does NOT call fast tier."""
+        """Verify that tier='heavy' routes via _execute_local_strategy (GPU) and does NOT call fast tier."""
         from src.core.ai_manager import AIManager
+        # v5.9.4: Set strict_local network strategy so it uses _execute_local_strategy.
+        # Mock _execute_local_strategy to return None (simulating no local models available)
+        # and verify _execute_fast_tier_request is not called.
         with patch.dict('os.environ', {
             'GEMINI_API_KEY': '',
             'DEEPSEEK_API_KEY': '',
             'HF_TOKEN': '',
             'TALOS_USE_LOCAL': '',
+            'TALOS_NETWORK_STRATEGY': 'strict_local',
+            'TALOS_HARDWARE_STRATEGY': 'cpu_gpu_split',
         }, clear=False):
             mgr = AIManager({
                 "ai_provider_priority": [],
@@ -276,12 +289,17 @@ class TestMultiTierRouting:
                 mgr,
                 '_execute_fast_tier_request',
             ) as mock_fast:
-                result = mgr._execute_request(
-                    "test prompt",
-                    model_type='pro',
-                    response_format='text',
-                    tier='heavy',
-                )
+                with patch.object(
+                    mgr,
+                    '_execute_local_strategy',
+                    return_value=None,
+                ):
+                    result = mgr._execute_request(
+                        "test prompt",
+                        model_type='pro',
+                        response_format='text',
+                        tier='heavy',
+                    )
                 mock_fast.assert_not_called()
                 assert result is None
 
@@ -319,9 +337,9 @@ class TestSettingsResolution:
         assert DEFAULT_TIER == "fast"
 
     def test_talos_version(self):
-        """Verify the TALOS_VERSION is v5.9.3."""
+        """Verify the TALOS_VERSION is v5.9.7."""
         from config.settings import TALOS_VERSION
-        assert TALOS_VERSION == "5.9.3"
+        assert TALOS_VERSION == "5.9.7"
 
     def test_talos_api_port(self):
         """Verify the default TALOS_API_PORT is 8001."""

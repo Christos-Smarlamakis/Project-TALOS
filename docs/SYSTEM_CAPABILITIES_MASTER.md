@@ -4,7 +4,9 @@
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol)
 > **Last Updated:** 01 August 2026
-> **Version:** v5.9.3 -- Dynamic Focus Summarization, Interactive Runtime Cloud Fallback, Exhaustive Capabilities Rewrite
+> **Version:** v5.9.7 -- IEEE Computer Society WEIGD Fund Badging, 15-File Sync
+
+[![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
 ---
 

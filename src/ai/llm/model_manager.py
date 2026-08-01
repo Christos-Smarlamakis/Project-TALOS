@@ -10,17 +10,19 @@
 #  For commercial licensing, please contact the author.
 """
 Module: model_manager.py
-Project: TALOS v5.8.6
+Project: TALOS v5.9.4
 Description:
     Interactive TUI for configuring all LLM tiers (Fast Edge CPU, Heavy Reasoning GPU,
-    Cloud API) and setting the system execution mode (air-gapped local, hybrid, or
-    full cloud). Supports Ollama model selection with quantization-aware sizing,
-    plus cloud provider configuration for Gemini, DeepSeek, and Hugging Face.
+    Cloud API) and setting the 2D Execution Matrix (Network Strategy & Hardware Strategy).
+    Supports Ollama model selection with quantization-aware sizing, plus cloud
+    provider configuration for Gemini, DeepSeek, and Hugging Face.
 
     Key design decisions:
     - Multi-tier architecture: Fast Edge Tier (port 11435, CPU-optimized), Heavy
       Reasoning Tier (port 11434, GPU-optimized), Cloud API Tier (Gemini/DeepSeek/HF).
-    - System Execution Mode selector writes TALOS_EXECUTION_MODE to .env.
+    - v5.9.4: 2D Execution Matrix replaces the old TALOS_EXECUTION_MODE with
+      TALOS_NETWORK_STRATEGY (strict_local, local_first, cloud_first, strict_cloud)
+      and TALOS_HARDWARE_STRATEGY (cpu_only, gpu_only, cpu_gpu_split).
     - All network-dependent operations check Ollama reachability first via
       check_ollama_alive() and degrade gracefully.
     - Zero-emojis protocol enforced: all status indicators use formal text badges.
@@ -1049,152 +1051,210 @@ def select_cloud_models(env_path):
 
 
 def select_execution_mode(env_path):
-    """Configure the system execution mode with independent per-tier routing.
+    """Configure the 2D Execution Matrix (Network Strategy & Hardware Strategy).
 
-    v5.9.1: Offers 4 distinct routing combinations via a Rich comparison table:
-      - Pure Local:        Fast (Local CPU) | Heavy (Local GPU)
-      - Edge-to-Cloud Hybrid:  Fast (Local CPU) | Heavy (Cloud API)
-      - Cloud-to-Edge Hybrid:  Fast (Cloud API) | Heavy (Local GPU)
-      - Pure Cloud:           Fast (Cloud API) | Heavy (Cloud API)
+    v5.9.4: Replaces the old 4-Way Execution Mode Matrix with a richer 2D model.
+    Step 1: Select Network Strategy (strict_local, local_first, cloud_first,
+            strict_cloud). These determine air-gapped vs. cloud dependency and
+            automatic cross-environment fallback behavior.
+    Step 2: If the Network Strategy involves local compute (not strict_cloud),
+            select a Hardware Strategy (cpu_only, gpu_only, cpu_gpu_split) that
+            controls how requests are distributed across CPU and GPU endpoints.
 
-    Sets TALOS_FAST_ROUTING and TALOS_HEAVY_ROUTING in .env independently,
-    plus backward-compatible TALOS_EXECUTION_MODE, TALOS_USE_LOCAL, and
-    TALOS_ALLOW_CLOUD_FALLBACK keys.
+    Sets TALOS_NETWORK_STRATEGY and TALOS_HARDWARE_STRATEGY in .env, plus
+    backward-compatible legacy keys (TALOS_EXECUTION_MODE, TALOS_USE_LOCAL,
+    TALOS_ALLOW_CLOUD_FALLBACK, TALOS_FAST_ROUTING, TALOS_HEAVY_ROUTING).
 
-    Displays an informational Rich Panel with a 4-row comparison table before
-    prompting. Implements explicit Cancel/Back navigation guardrails.
+    Displays an informational Rich Panel before each step and a summary
+    confirmation panel before writing.
 
     Args:
         env_path: Absolute path to the .env file.
     """
     os.system('cls' if os.name == 'nt' else 'clear')
-    panel = Panel(
-        "[bold]4-Way Execution Mode Matrix[/]\n"
-        "[dim]Independently controls Fast Edge and Heavy Reasoning routing per tier[/]",
+
+    # -- Header panel --
+    header_panel = Panel(
+        "[bold]2D Execution Matrix Configuration[/]\n"
+        "[dim]Network Strategy x Hardware Strategy -- Cross-Environment Fallback Routing[/]",
         border_style="blue",
         box=box.ROUNDED,
         padding=(1, 2),
     )
-    console.print(panel)
+    console.print(header_panel)
 
     values = dotenv_values(env_path)
-    current_fast = values.get("TALOS_FAST_ROUTING", "local")
-    current_heavy = values.get("TALOS_HEAVY_ROUTING", "local")
+    current_network = values.get("TALOS_NETWORK_STRATEGY", "strict_local")
+    current_hardware = values.get("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 
-    # -- Determine the active label from current .env state --
-    active_label = _resolve_mode_label(current_fast, current_heavy)
+    console.print(f"\n  [dim]Current Network Strategy:[/]  [cyan]{current_network}[/]")
+    console.print(f"  [dim]Current Hardware Strategy:[/] [cyan]{current_hardware}[/]")
 
-    # -- 4-Row Comparison Table --
-    mode_table = Table(
+    # -- Step 1: Network Strategy Selection --
+    network_table = Table(
         box=box.ROUNDED,
         show_header=True,
         header_style="bold white",
-        title="[bold bright_cyan]Execution Mode Routing Combinations[/bold bright_cyan]",
+        title="[bold bright_cyan]Step 1: Network Strategy[/bold bright_cyan]",
         title_justify="center",
     )
-    mode_table.add_column("Mode", style="cyan", no_wrap=True, width=22)
-    mode_table.add_column("Fast Edge Tier", style="bright_cyan", width=22)
-    mode_table.add_column("Heavy Reasoning Tier", style="bright_magenta", width=22)
-    mode_table.add_column("Use Case", style="white", width=30)
-    mode_table.add_column("Status", style="green", width=20)
+    network_table.add_column("#", style="dim", width=3, justify="right")
+    network_table.add_column("Strategy", style="cyan", no_wrap=True, width=18)
+    network_table.add_column("Description", style="white", width=40)
+    network_table.add_column("Fallback Behavior", style="green", width=30)
 
-    # Row 1: Pure Local
-    mode_table.add_row(
-        "Pure Local",
-        "[bright_cyan]Local CPU[/]",
-        "[bright_magenta]Local GPU[/]",
-        "Fully air-gapped research. Zero internet dependency. Maximum privacy.",
-        "[bold green][ACTIVE][/]" if active_label == "pure-local" else "[dim]inactive[/]"
-    )
-    # Row 2: Edge-to-Cloud Hybrid
-    mode_table.add_row(
-        "Edge-to-Cloud Hybrid",
-        "[bright_cyan]Local CPU[/]",
-        "[bright_magenta]Cloud API[/]",
-        "Fast pre-screening on-device, deep reasoning via cloud. Best balance.",
-        "[bold green][ACTIVE][/]" if active_label == "edge-to-cloud" else "[dim]inactive[/]"
-    )
-    # Row 3: Cloud-to-Edge Hybrid
-    mode_table.add_row(
-        "Cloud-to-Edge Hybrid",
-        "[bright_cyan]Cloud API[/]",
-        "[bright_magenta]Local GPU[/]",
-        "Cloud-speed pre-screening with heavy reasoning kept local. Privacy for deep analysis.",
-        "[bold green][ACTIVE][/]" if active_label == "cloud-to-edge" else "[dim]inactive[/]"
-    )
-    # Row 4: Pure Cloud
-    mode_table.add_row(
-        "Pure Cloud",
-        "[bright_cyan]Cloud API[/]",
-        "[bright_magenta]Cloud API[/]",
-        "No local models required. Internet-dependent. Maximum speed with API keys.",
-        "[bold green][ACTIVE][/]" if active_label == "pure-cloud" else "[dim]inactive[/]"
-    )
+    network_rows = [
+        ("1", "Strict Local", "Air-Gapped. Zero internet dependency. Maximum privacy.",
+         "None -- local only."),
+        ("2", "Local-First", "Local tiers primary. Cloud as safety net.",
+         "ConnectionError -> auto-reroute to Cloud."),
+        ("3", "Cloud-First", "Cloud providers primary. Local as fallback.",
+         "Auth/Rate/Timeout -> auto-reroute to Local."),
+        ("4", "Strict Cloud", "Pure cloud. No local models required.",
+         "None -- cloud only."),
+    ]
+    for row in network_rows:
+        network_table.add_row(*row)
 
     console.print()
-    console.print(mode_table)
-    console.print(f"\n  [dim]Current: Fast Routing=[/][cyan]{current_fast}[/] "
-                  f"[dim]Heavy Routing=[/][magenta]{current_heavy}[/] "
-                  f"[dim]({active_label})[/]")
+    console.print(network_table)
 
-    # -- Selection menu --
-    mode_choices = [
+    network_choices = [
         questionary.Choice(
-            title="Pure Local (Fast: Local CPU | Heavy: Local GPU)",
-            value="pure-local"
+            title="[1] Strict Local -- Air-Gapped (local only, never cloud)",
+            value="strict_local"
         ),
         questionary.Choice(
-            title="Edge-to-Cloud Hybrid (Fast: Local CPU | Heavy: Cloud API)",
-            value="edge-to-cloud"
+            title="[2] Local-First -- Local primary, auto-fallback to Cloud on ConnectionError",
+            value="local_first"
         ),
         questionary.Choice(
-            title="Cloud-to-Edge Hybrid (Fast: Cloud API | Heavy: Local GPU)",
-            value="cloud-to-edge"
+            title="[3] Cloud-First -- Cloud primary, auto-fallback to Local on auth/rate/timeout failure",
+            value="cloud_first"
         ),
         questionary.Choice(
-            title="Pure Cloud (Fast: Cloud API | Heavy: Cloud API)",
-            value="pure-cloud"
+            title="[4] Strict Cloud -- Cloud only, no local models",
+            value="strict_cloud"
         ),
         questionary.Separator(),
         questionary.Choice(title="[Cancel / Return to Main Menu]", value="__cancel__"),
     ]
 
-    selected = questionary.select(
-        "Select execution mode combination:",
-        choices=mode_choices,
+    selected_network = questionary.select(
+        "Select Network Strategy:",
+        choices=network_choices,
         use_indicator=True,
     ).ask()
 
-    if selected == "__cancel__" or selected is None:
+    if selected_network == "__cancel__" or selected_network is None:
         console.print("  [dim][[CANCELLED]][/] Returning to main menu.")
         console.input("\n[dim]Press Enter to continue...[/]")
         return
 
-    # -- Map selection to per-tier routing values --
-    routing_map = {
-        "pure-local":    {"fast": "local", "heavy": "local"},
-        "edge-to-cloud": {"fast": "local", "heavy": "cloud"},
-        "cloud-to-edge": {"fast": "cloud", "heavy": "local"},
-        "pure-cloud":    {"fast": "cloud", "heavy": "cloud"},
-    }
-    new_routing = routing_map[selected]
-    new_fast = new_routing["fast"]
-    new_heavy = new_routing["heavy"]
+    # -- Step 2: Hardware Strategy (only if network involves local compute) --
+    selected_hardware = current_hardware  # default: keep current
+    if selected_network != "strict_cloud":
+        hardware_table = Table(
+            box=box.ROUNDED,
+            show_header=True,
+            header_style="bold white",
+            title="[bold bright_magenta]Step 2: Hardware Strategy[/bold bright_magenta]",
+            title_justify="center",
+        )
+        hardware_table.add_column("#", style="dim", width=3, justify="right")
+        hardware_table.add_column("Strategy", style="magenta", no_wrap=True, width=18)
+        hardware_table.add_column("Description", style="white", width=40)
+        hardware_table.add_column("Routing Rule", style="yellow", width=30)
 
-    # -- Confirmation panel --
-    confirm_text = Text()
-    confirm_text.append("New Execution Mode Configuration:\n\n", style="bold white")
-    confirm_text.append(f"  Fast Edge Tier:      ", style="dim")
-    confirm_text.append(f"{new_fast.upper()} ", style="bold bright_cyan")
-    confirm_text.append(f"(was {current_fast.upper()})\n", style="dim")
-    confirm_text.append(f"  Heavy Reasoning Tier: ", style="dim")
-    confirm_text.append(f"{new_heavy.upper()} ", style="bold bright_magenta")
-    confirm_text.append(f"(was {current_heavy.upper()})\n\n", style="dim")
-    confirm_text.append(f"  Mode Label: [bold yellow]{selected}[/]", style="dim")
+        hardware_rows = [
+            ("1", "CPU Only", "All local inference on CPU (FAST_EDGE_BASE_URL, port 11435).",
+             "Fast and Heavy both -> CPU"),
+            ("2", "GPU Only", "All local inference on GPU (OLLAMA_BASE_URL, port 11434).",
+             "Fast and Heavy both -> GPU"),
+            ("3", "CPU-GPU Split", "Fast tier -> CPU (port 11435), Heavy tier -> GPU (port 11434).",
+             "Respects tier parameter."),
+        ]
+        for row in hardware_rows:
+            hardware_table.add_row(*row)
+
+        console.print()
+        console.print(hardware_table)
+
+        hardware_choices = [
+            questionary.Choice(
+                title="[1] CPU Only (Neutrino) -- All local requests on CPU endpoint",
+                value="cpu_only"
+            ),
+            questionary.Choice(
+                title="[2] GPU Only (Ollama) -- All local requests on GPU endpoint",
+                value="gpu_only"
+            ),
+            questionary.Choice(
+                title="[3] CPU+GPU Hybrid Split -- Fast on CPU, Heavy on GPU (default)",
+                value="cpu_gpu_split"
+            ),
+            questionary.Separator(),
+            questionary.Choice(title="[Cancel / Return to Main Menu]", value="__cancel__"),
+        ]
+
+        selected_hardware = questionary.select(
+            "Select Hardware Strategy:",
+            choices=hardware_choices,
+            use_indicator=True,
+        ).ask()
+
+        if selected_hardware == "__cancel__" or selected_hardware is None:
+            console.print("  [dim][[CANCELLED]][/] Returning to main menu.")
+            console.input("\n[dim]Press Enter to continue...[/]")
+            return
+    else:
+        # Strict Cloud: hardware strategy is irrelevant, force cpu_gpu_split (default)
+        selected_hardware = "cpu_gpu_split"
+
+    # -- Network strategy label map --
+    network_labels = {
+        "strict_local": "Strict Local (Air-Gapped)",
+        "local_first":  "Local-First (w/ Cloud Fallback)",
+        "cloud_first":  "Cloud-First (w/ Local Fallback)",
+        "strict_cloud": "Strict Cloud (Cloud-Only)",
+    }
+    hardware_labels = {
+        "cpu_only":      "CPU Only (Neutrino)",
+        "gpu_only":      "GPU Only (Ollama)",
+        "cpu_gpu_split": "CPU+GPU Hybrid Split",
+    }
+
+    # -- Build summary confirmation panel --
+    summary_text = Text()
+    summary_text.append("2D Execution Matrix -- Summary:\n\n", style="bold white underline")
+    summary_text.append(f"  Network Strategy:  ", style="dim")
+    summary_text.append(f"{network_labels.get(selected_network, selected_network)}\n", style="bold cyan")
+    summary_text.append(f"                     ", style="dim")
+    if selected_network == "strict_local":
+        summary_text.append("[All inference local. Zero internet. Maximum privacy.]\n", style="dim green")
+    elif selected_network == "local_first":
+        summary_text.append("[Local primary. Auto-fallback to cloud on ConnectionError.]\n", style="dim green")
+    elif selected_network == "cloud_first":
+        summary_text.append("[Cloud primary. Auto-fallback to local on auth/rate/timeout.]\n", style="dim green")
+    elif selected_network == "strict_cloud":
+        summary_text.append("[Cloud-only. No local models needed. Internet required.]\n", style="dim green")
+
+    summary_text.append(f"\n  Hardware Strategy: ", style="dim")
+    summary_text.append(f"{hardware_labels.get(selected_hardware, selected_hardware)}\n", style="bold magenta")
+    summary_text.append(f"                     ", style="dim")
+    if selected_hardware == "cpu_only":
+        summary_text.append("[ALL local requests -> CPU (port 11435). No GPU.]\n", style="dim yellow")
+    elif selected_hardware == "gpu_only":
+        summary_text.append("[ALL local requests -> GPU (port 11434). No CPU edge.]\n", style="dim yellow")
+    elif selected_hardware == "cpu_gpu_split":
+        summary_text.append("[Fast -> CPU (11435), Heavy -> GPU (11434).]\n", style="dim yellow")
+
+    summary_text.append(f"\n  Previous Network:  [dim]{network_labels.get(current_network, current_network)}[/dim]\n", style="")
+    summary_text.append(f"  Previous Hardware: [dim]{hardware_labels.get(current_hardware, current_hardware)}[/dim]\n", style="")
 
     confirm_panel = Panel(
-        confirm_text,
-        title="[bold]Confirm Execution Mode Change[/bold]",
+        summary_text,
+        title="[bold]Confirm 2D Execution Matrix Configuration[/bold]",
         border_style="yellow",
         box=box.ROUNDED,
         padding=(1, 2),
@@ -1208,62 +1268,58 @@ def select_execution_mode(env_path):
         return
 
     # -- Write new env variables --
-    _set_key(env_path, "TALOS_FAST_ROUTING", new_fast)
-    _set_key(env_path, "TALOS_HEAVY_ROUTING", new_heavy)
-    os.environ["TALOS_FAST_ROUTING"] = new_fast
-    os.environ["TALOS_HEAVY_ROUTING"] = new_heavy
+    _set_key(env_path, "TALOS_NETWORK_STRATEGY", selected_network)
+    _set_key(env_path, "TALOS_HARDWARE_STRATEGY", selected_hardware)
+    os.environ["TALOS_NETWORK_STRATEGY"] = selected_network
+    os.environ["TALOS_HARDWARE_STRATEGY"] = selected_hardware
 
-    # -- Backward-compatible global mode --
-    if new_fast == "local" and new_heavy == "local":
+    # -- Backward-compatible keys --
+    # Map network strategy to legacy per-tier routing for ai_manager.py v5.9.3 compat
+    if selected_network == "strict_local":
+        new_fast, new_heavy = "local", "local"
         mode_value = "local"
         _set_key(env_path, "TALOS_USE_LOCAL", "1")
         _set_key(env_path, "TALOS_ALLOW_CLOUD_FALLBACK", "0")
         os.environ["TALOS_USE_LOCAL"] = "1"
         os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "0"
-    elif new_fast == "cloud" and new_heavy == "cloud":
-        mode_value = "cloud"
-        _set_key(env_path, "TALOS_USE_LOCAL", "0")
-        _set_key(env_path, "TALOS_ALLOW_CLOUD_FALLBACK", "1")
-        os.environ["TALOS_USE_LOCAL"] = "0"
-        os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
-    else:
+    elif selected_network == "local_first":
+        new_fast, new_heavy = "local", "local"
         mode_value = "hybrid"
         _set_key(env_path, "TALOS_USE_LOCAL", "1")
         _set_key(env_path, "TALOS_ALLOW_CLOUD_FALLBACK", "1")
         os.environ["TALOS_USE_LOCAL"] = "1"
         os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
+    elif selected_network == "cloud_first":
+        new_fast, new_heavy = "cloud", "cloud"
+        mode_value = "hybrid"
+        _set_key(env_path, "TALOS_USE_LOCAL", "1")
+        _set_key(env_path, "TALOS_ALLOW_CLOUD_FALLBACK", "1")
+        os.environ["TALOS_USE_LOCAL"] = "1"
+        os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
+    else:  # strict_cloud
+        new_fast, new_heavy = "cloud", "cloud"
+        mode_value = "cloud"
+        _set_key(env_path, "TALOS_USE_LOCAL", "0")
+        _set_key(env_path, "TALOS_ALLOW_CLOUD_FALLBACK", "1")
+        os.environ["TALOS_USE_LOCAL"] = "0"
+        os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
 
+    _set_key(env_path, "TALOS_FAST_ROUTING", new_fast)
+    _set_key(env_path, "TALOS_HEAVY_ROUTING", new_heavy)
     _set_key(env_path, "TALOS_EXECUTION_MODE", mode_value)
+    os.environ["TALOS_FAST_ROUTING"] = new_fast
+    os.environ["TALOS_HEAVY_ROUTING"] = new_heavy
     os.environ["TALOS_EXECUTION_MODE"] = mode_value
 
-    console.print(f"\n  [bold green][[OK]][/] Execution mode updated to: [bold yellow]{selected}[/]")
-    console.print(f"  [dim]TALOS_FAST_ROUTING:[/] [bright_cyan]{new_fast}[/]")
-    console.print(f"  [dim]TALOS_HEAVY_ROUTING:[/] [bright_magenta]{new_heavy}[/]")
-    console.print(f"  [dim]TALOS_EXECUTION_MODE (compat):[/] [cyan]{mode_value}[/]")
+    console.print(f"\n  [bold green][[OK]][/] 2D Execution Matrix updated:")
+    console.print(f"  [dim]TALOS_NETWORK_STRATEGY:[/]  [bold cyan]{selected_network}[/] "
+                  f"({network_labels.get(selected_network, selected_network)})")
+    console.print(f"  [dim]TALOS_HARDWARE_STRATEGY:[/] [bold magenta]{selected_hardware}[/] "
+                  f"({hardware_labels.get(selected_hardware, selected_hardware)})")
+    console.print(f"  [dim]Legacy Compat:[/] TALOS_EXECUTION_MODE=[cyan]{mode_value}[/] "
+                  f"FAST=[cyan]{new_fast}[/] HEAVY=[cyan]{new_heavy}[/]")
     console.print("  [dim]Restart TALOS for changes to take effect.[/]")
     console.input("\n[dim]Press Enter to continue...[/]")
-
-
-def _resolve_mode_label(fast_routing, heavy_routing):
-    """Resolve a human-readable mode label from per-tier routing values.
-
-    Args:
-        fast_routing (str): "local" or "cloud".
-        heavy_routing (str): "local" or "cloud".
-
-    Returns:
-        str: One of "pure-local", "edge-to-cloud", "cloud-to-edge", "pure-cloud".
-    """
-    if fast_routing == "local" and heavy_routing == "local":
-        return "pure-local"
-    elif fast_routing == "local" and heavy_routing == "cloud":
-        return "edge-to-cloud"
-    elif fast_routing == "cloud" and heavy_routing == "local":
-        return "cloud-to-edge"
-    elif fast_routing == "cloud" and heavy_routing == "cloud":
-        return "pure-cloud"
-    else:
-        return "unknown"
 
 
 def select_embedding_model(env_path):
@@ -1398,7 +1454,7 @@ def main():
 
         # -- Main menu header panel --
         header_panel = Panel(
-            "[bold white]TALOS v5.8.6[/]\n[dim]Multi-Tier AI Model Management | Enterprise TUI | Safety Locks Active[/]",
+            "[bold white]TALOS v5.9.4[/]\n[dim]Multi-Tier AI Model Management | 2D Execution Matrix | Safety Locks Active[/]",
             border_style="bright_blue",
             box=box.ROUNDED,
             padding=(1, 2),
@@ -1413,7 +1469,15 @@ def main():
         status_table.add_column("Key", style="dim")
         status_table.add_column("Value", style="white")
         status_table.add_row("Ollama Status:", ollama_status)
-        status_table.add_row("Execution Mode:", values.get('TALOS_EXECUTION_MODE', 'local'))
+        net_strat = values.get('TALOS_NETWORK_STRATEGY', 'strict_local')
+        hw_strat = values.get('TALOS_HARDWARE_STRATEGY', 'cpu_gpu_split')
+        net_labels = {"strict_local": "Strict Local", "local_first": "Local-First",
+                      "cloud_first": "Cloud-First", "strict_cloud": "Strict Cloud"}
+        hw_labels = {"cpu_only": "CPU Only", "gpu_only": "GPU Only",
+                     "cpu_gpu_split": "CPU+GPU Split"}
+        status_table.add_row("Network Strategy:", f"{net_strat} ({net_labels.get(net_strat, net_strat)})")
+        status_table.add_row("Hardware Strategy:", f"{hw_strat} ({hw_labels.get(hw_strat, hw_strat)})")
+        status_table.add_row("Legacy Mode:", values.get('TALOS_EXECUTION_MODE', 'local'))
         status_table.add_row("Fast Edge Model:", values.get('FAST_EDGE_MODEL', 'fermionresearch/Neutrino-8B'))
         status_table.add_row("Fast Edge URL:", values.get('FAST_EDGE_BASE_URL', 'http://127.0.0.1:11435/v1'))
         status_table.add_row("Heavy Reasoning:", values.get('HEAVY_REASONING_MODEL', 'qwen2.5:14b'))
@@ -1431,7 +1495,7 @@ def main():
         console.print("  [bold cyan][1][/] Configure Fast Edge Tier (CPU / Port 11435)")
         console.print("  [bold magenta][2][/] Configure Heavy Reasoning Tier (GPU / Port 11434)")
         console.print("  [bold yellow][3][/] Configure Cloud API Tier (Gemini / DeepSeek / HF)")
-        console.print("  [bold blue][4][/] Select System Execution Mode (Air-Gapped Local / Hybrid / Full Cloud)")
+        console.print("  [bold blue][4][/] Select 2D Execution Matrix (Network x Hardware Strategies)")
         console.print("  [bold green][5][/] Select Local Embedding Model (Ollama)")
         console.print("  [bold white][6][/] Pull Ollama Model Manually")
         console.print("  [dim][7][/] Exit")
@@ -1442,7 +1506,7 @@ def main():
                 "1. Configure Fast Edge Tier (CPU / Port 11435)",
                 "2. Configure Heavy Reasoning Tier (GPU / Port 11434)",
                 "3. Configure Cloud API Tier (Gemini / DeepSeek / HF)",
-                "4. Select System Execution Mode (Air-Gapped Local / Hybrid / Full Cloud)",
+                "4. Select 2D Execution Matrix (Network x Hardware Strategies)",
                 "5. Select Local Embedding Model (Ollama)",
                 "6. Pull Ollama Model Manually",
                 "7. Exit",

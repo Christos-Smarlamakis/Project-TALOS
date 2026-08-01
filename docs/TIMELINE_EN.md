@@ -4,7 +4,7 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-01 (v5.9.3 -- Conda Env Detection Hotfix)
+> **Last Updated:** 2026-08-01 (v5.9.7 -- Data Directory Consolidation & Dynamic Target Discovery)
 
 ---
 
@@ -182,7 +182,38 @@
 
 ---
 
-## Phase 14: Distributed Ecosystem (Future -- v6.0.0+)
+## Phase 14: Advanced 2D Execution Matrix & Fallback Routing (v5.9.4)
+
+### Status: COMPLETED (2026-08-01)
+
+- [x] **v5.9.4 -- 2D Execution Matrix (Network x Hardware Strategies)** -- Replaced the legacy `TALOS_EXECUTION_MODE` with a richer 2D model. New `.env` variables: `TALOS_NETWORK_STRATEGY` (strict_local | local_first | cloud_first | strict_cloud) and `TALOS_HARDWARE_STRATEGY` (cpu_only | gpu_only | cpu_gpu_split). Network strategy controls air-gapped vs. cloud dependency and cross-environment fallback behavior. Hardware strategy controls CPU/GPU endpoint selection when running locally.
+- [x] **v5.9.4 -- Refactored TUI Execution Mode Wizard in model_manager.py** -- `select_execution_mode()` rewritten as a 2-step `questionary.select` wizard. Step 1: Network Strategy with Rich table comparing 4 options. Step 2: Hardware Strategy with Rich table comparing 3 options. Summary confirmation panel with explicit Cancel/Back guardrails on both steps.
+- [x] **v5.9.4 -- Overhauled AIManager Routing Logic** -- `_execute_request()` rewritten to use `_resolve_strategies()` for the 2D matrix. New methods: `_execute_local_strategy()` (hardware-aware: cpu_only/gpu_only/cpu_gpu_split), `_execute_ollama_http()` (unified local HTTP POST for CPU edge and GPU Ollama), `_execute_cloud_chain()` (cloud-only execution skipping local), `_execute_legacy_request()` (backward compat). Automatic cross-environment fallback: local_first catches ConnectionError and reroutes to cloud with [WARNING]; cloud_first reroutes to local on any cloud failure with [WARNING]. strict_local and strict_cloud never cross the boundary. Legacy `TALOS_FAST_ROUTING`/`TALOS_HEAVY_ROUTING` still respected as fallback.
+- [x] **v5.9.4 -- Updated TUI Status Table in talos.py** -- `_build_status_table()` now displays the 2D Execution Matrix as "Network Strategy / Hardware Strategy" (e.g., "Strict Local / CPU+GPU Split") using human-readable labels from `config/settings.py` constants.
+- [x] **v5.9.4 -- Force-Sync All 15 Documentation Files and 5 Code Files to v5.9.4** -- All version strings updated. Test assertion updated in `tests/test_multi_tier.py`.
+
+---
+
+## Phase 16: Data Directory Consolidation & Full-Repo Dynamic Target Discovery (v5.9.7)
+
+### Status: COMPLETED (2026-08-01)
+
+- [x] **Relocate REPORTS_DIR to data/reports/autonomous_tester/** -- Changed `REPORTS_DIR` from `reports/autonomous_tester/` (root) to `data/reports/autonomous_tester/` in `src/ai/testing/autonomous_tester.py` and `src/api/tester_routes.py`. All runtime-generated crash reports now reside under `data/`, ensuring a clean project root and proper Git exclusion via `.gitignore`.
+- [x] **Implement _discover_all_python_targets()** -- Replaced the hardcoded 4-target TARGET_ARMS list with a dynamic file scanner that walks `src/analysis/`, `src/ingestion/`, `src/ai/`, `src/utils/`, `src/core/`, and `src/api/`, discovering all non-`__init__.py` Python files as test arms. Each arm is invoked with `--help` for fast subprocess exit. The autonomous tester now scales from 4 to 70+ arms covering the entire `src/` codebase.
+- [x] **Q-Table reconciliation on launch** -- `run_autonomous_tester()` reconciles the persisted Q-table (if any) against the current arm count, preserving existing Q-values for arms that still exist and zero-initializing new arms.
+- [x] **Force-Sync All 15 Documentation Files and 5 Code Files to v5.9.7**
+
+## Phase 17: IEEE Computer Society WEIGD Fund Badging & v5.9.7 Release (2026-08-01)
+
+### Status: COMPLETED (2026-08-01)
+
+- [x] **Implement IEEE CS two-tone Rich color block badge in talos.py status header** -- Two-tone text badge using official IEEE brand colors (#006699 and #002855) displayed prominently at the top of the Rich terminal dashboard header panel.
+- [x] **Add IEEE CS Shields.io badge to README.md and SYSTEM_CAPABILITIES_MASTER.md** -- Official Shields.io badge linking to IEEE Computer Society website with IEEE logo.
+- [x] **Add styled CSS IEEE badge to SYSTEM_CAPABILITIES_MASTER.html** -- CSS pill badge with #006699 and #002855 background colors stating project support.
+- [x] **Update CITATION.cff with IEEE Computer Society grant metadata** -- Funding section with grant type, title, and message recognizing the WEIGD Student Support Fund (2026).
+- [x] **Force-sync all 15 documentation files and 5 code files to v5.9.7** -- Version strings updated in talos.py, run_talos.bat, run_talos.sh, config/settings.py, and src/api/main_api.py. All 15 canonical documentation files synchronized.
+
+## Phase 15: Distributed Ecosystem (Future -- v6.0.0+)
 
 - [ ] **v6.0.0 -- PostgreSQL + pgvector Migration** -- Replace SQLite with PostgreSQL for concurrent access and production-grade vector similarity search.
 - [ ] **v6.1.0 -- Local RAG Pipeline** -- Ollama + Chroma integration for chat-with-papers, PDF ingestion, and knowledge graph construction.

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: synapse_client.py
-Project: TALOS v5.7.0
+Project: TALOS v5.9.5
 Description:
     EventEmitter class for the SYNAPSE Event-Driven Protocol. This module
     provides a thread-safe, non-blocking client that pushes JSON-structured
@@ -83,7 +83,7 @@ class EventEmitter:
         bus_url: str = "http://localhost:8000/api/v1/events",
         source: str = "talos",
         timeout: float = 5.0,
-        max_retries: int = 2,
+        max_retries: int = 1,
     ):
         """
         Initialize the EventEmitter with connection parameters.
@@ -93,11 +93,14 @@ class EventEmitter:
             source: Identifier for this microservice in the ecosystem.
             timeout: HTTP request timeout in seconds.
             max_retries: Maximum retry attempts for transient HTTP errors.
+                         Default is 1 (one initial attempt, no retries on
+                         connection-refused errors) to keep the TUI clean.
         """
         self.bus_url = bus_url
         self.source = source
         self.timeout = timeout
-        self.max_retries = max_retries
+        # -- Cap retries at 1 for connection-refused scenarios (v5.9.5) --
+        self.max_retries = min(max_retries, 1)
 
         # -- Initialize HTTP session if requests is available --
         self._session = None
@@ -233,14 +236,13 @@ class EventEmitter:
                 if callback:
                     callback(True, None)
                 return
-            except requests.exceptions.ConnectionError as e:
-                last_error = f"Connection refused at {self.bus_url}: {e}"
+            except requests.exceptions.ConnectionError:
+                # -- Silent fallback (v5.9.5): single warning, no stack trace --
                 logger.warning(
-                    "SYNAPSE emission attempt %d/%d failed (connection): %s",
-                    attempt,
-                    self.max_retries + 1,
-                    e,
+                    "SYNAPSE bus unreachable (port 8000 offline). Event logged locally."
                 )
+                last_error = "Connection refused: Synapse bus offline"
+                break  # Do not retry on connection-refused
             except requests.exceptions.Timeout as e:
                 last_error = f"Request timed out after {self.timeout}s: {e}"
                 logger.warning(
@@ -273,14 +275,14 @@ class EventEmitter:
                     e,
                 )
 
-        # -- All attempts exhausted --
-        logger.error(
-            "SYNAPSE emission FAILED after %d attempts: type=%s, id=%s, error=%s",
-            self.max_retries + 1,
-            event["event_type"],
-            event["event_id"],
-            last_error,
-        )
+        # -- All attempts exhausted (v5.9.5: downgraded from error to warning) --
+        if last_error:
+            logger.warning(
+                "SYNAPSE emission skipped: type=%s, id=%s, reason=%s",
+                event["event_type"],
+                event["event_id"],
+                last_error,
+            )
         if callback:
             callback(False, last_error)
 

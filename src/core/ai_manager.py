@@ -5,8 +5,8 @@
 #  This program is free software...
 #
 """
-Module: ai_manager.py (v3.7 - Interactive Runtime Cloud Fallback)
-Project: TALOS v5.9.2
+Module: ai_manager.py (v3.8 - 2D Execution Matrix & Cross-Environment Fallback)
+Project: TALOS v5.9.4
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture
@@ -14,14 +14,24 @@ Description:
     interactions across four independent providers and embedding across three
     independent providers:
 
-    - Gemini (Google Generative AI) — primary cloud provider
-    - DeepSeek — fallback cloud provider via OpenAI-compatible API
-    - Hugging Face — free cloud inference via router.huggingface.co (text)
+    - Gemini (Google Generative AI) -- primary cloud provider
+    - DeepSeek -- fallback cloud provider via OpenAI-compatible API
+    - Hugging Face -- free cloud inference via router.huggingface.co (text)
                    and api-inference.huggingface.co (embeddings)
-    - Local (Ollama) — offline operation via OpenAI-compatible API
+    - Local (Ollama) -- offline operation via OpenAI-compatible API
 
     Supports JSON mode, text generation, and HYBRID embedding generation with
-    automatic failover across Ollama → HuggingFace → Gemini.
+    automatic failover across Ollama -> HuggingFace -> Gemini.
+
+    v5.9.4: Introduces the 2D Execution Matrix for routing:
+      - Network Strategy (strict_local | local_first | cloud_first | strict_cloud)
+        controls local-to-cloud fallback behavior.
+      - Hardware Strategy (cpu_only | gpu_only | cpu_gpu_split) controls how
+        local requests are distributed across CPU and GPU endpoints.
+      - Automatic cross-environment fallback: transparently reroutes failed
+        requests to the alternative environment with [WARNING] logging.
+    Falls back to legacy TALOS_EXECUTION_MODE / per-tier routing if the new
+    strategy variables are not set.
 """
 
 import os, json, re, requests, sys
@@ -85,7 +95,7 @@ class AIManager:
     and circuit breaker pattern.
 
     Embedding providers tried in order:
-        local (Ollama) → huggingface (free) → gemini
+        local (Ollama) -> huggingface (free) -> gemini
 
     The active embedding model name is stored in ``self.active_embedding_model``
     and returned alongside vectors so the database can tag each record.
@@ -104,10 +114,6 @@ class AIManager:
         self.providers = {}
         self.provider_priority = config.get("ai_provider_priority", ["gemini", "deepseek"])
         self.active_embedding_model = None  # set after first successful embedding generation
-        # v3.7 (Batch 1 audit fix): name of the provider that served the LAST
-        # successful text/JSON request. Consumers (e.g. the live DRL agent's
-        # provider-usage counters) read this to attribute calls correctly
-        # instead of blindly assuming "gemini".
         self.last_provider_used = None
 
         # --- Gemini Provider ---
@@ -167,7 +173,7 @@ class AIManager:
             self.provider_priority.insert(0, 'local')  # local first when enabled
 
         self.FAILURE_THRESHOLD = config.get("failure_threshold", 5)
-        print(f"INFO: AIManager v3.6 (Hybrid Multi-Provider Embeddings) initialized.")
+        print(f"INFO: AIManager v3.8 (2D Execution Matrix) initialized.")
 
     # --- JSON Cleaning ---
 
@@ -219,12 +225,6 @@ class AIManager:
     def analyze_generic_text(self, full_prompt: str) -> Union[str, None]:
         """Run an arbitrary text prompt through the multi-provider chain.
 
-        v3.8 (Batch 3 hotfix): This method was documented in PROJECT_MAP.md
-        and called by grey_literature_miner.py, but was never implemented —
-        causing AttributeError crashes. It is a thin wrapper around
-        _execute_request() so it inherits the circuit breaker, provider
-        fallback chain, and last_provider_used tracking.
-
         Args:
             full_prompt (str): Complete prompt text to send to the LLM.
 
@@ -233,13 +233,13 @@ class AIManager:
         """
         return self._execute_request(full_prompt, model_type='pro', response_format='text')
 
-    # ── Embeddings ─────────────────────────────────────────────────────────
+    # -- Embeddings --
 
     def generate_embeddings(self, texts: List[str]) -> Tuple[Union[List[List[float]], None], Union[str, None]]:
         """Generate embeddings with automatic fallback across providers.
 
         Provider order:
-            local (Ollama) → huggingface (free) → gemini (paid)
+            local (Ollama) -> huggingface (free) -> gemini (paid)
 
         Args:
             texts (List[str]): List of text strings to embed.
@@ -264,9 +264,7 @@ class AIManager:
             except Exception as e:
                 print(f"  >!> Local embedding error: {e}")
 
-        # HuggingFace embedding removed — DNS issues with api-inference endpoints
-
-        # Fallback to Gemini — with retry for rate limits (free tier: 100 RPM)
+        # Fallback to Gemini -- with retry for rate limits (free tier: 100 RPM)
         if 'gemini' in self.providers and not self.providers['gemini']['circuit_open']:
             import time as _time
             if _GENAI_V2:
@@ -298,9 +296,7 @@ class AIManager:
                     except Exception as e:
                         err_str = str(e)
                         is_rate_limit = "429" in err_str or "RESOURCE_EXHAUSTED" in err_str
-                        
                         if is_rate_limit:
-                            # Parse retry delay
                             wait = 60
                             try:
                                 m = re.search(r'retryDelay["\']:\s*["\'](\d+)s', err_str)
@@ -310,13 +306,10 @@ class AIManager:
                                 pass
                             print(f"  >!> Gemini rate limited (attempt {attempt+1}/{MAX_RETRIES}), waiting {wait}s...")
                             _time.sleep(wait)
-                            # Rate limits should NOT trip the circuit breaker
-                            # Only trip if we've tried many times
                             if attempt >= MAX_RETRIES - 2:
                                 self._handle_failure('gemini')
                                 return None, None
                         else:
-                            # Real error (not rate limit)
                             print(f"  >!> Gemini embedding error: {err_str[:200]}")
                             self._handle_failure('gemini')
                             return None, None
@@ -329,9 +322,6 @@ class AIManager:
     def _execute_huggingface_embedding(self, texts: List[str],
                                         hf_token: str) -> Union[List[List[float]], None]:
         """Generate embeddings using HuggingFace free Inference API.
-
-        Uses the sentence-transformers/all-MiniLM-L6-v2 model by default,
-        which produces 384-dimensional vectors.
 
         Args:
             texts (List[str]): List of texts to embed.
@@ -346,32 +336,26 @@ class AIManager:
             "Authorization": f"Bearer {hf_token}",
             "Content-Type": "application/json"
         }
-
         embeddings = []
         for text in texts:
             try:
                 response = requests.post(
-                    api_url,
-                    headers=headers,
+                    api_url, headers=headers,
                     json={"inputs": text, "options": {"wait_for_model": True}},
                     timeout=60
                 )
                 if response.status_code == 200:
                     data = response.json()
-                    # Handle both [[float]] and [float] response formats
                     if isinstance(data, list):
                         if len(data) > 0 and isinstance(data[0], list):
                             embeddings.append(data[0])
                         else:
                             embeddings.append(data)
                     else:
-                        print(f"  >!> Unexpected HF response format: {type(data)}")
                         return None
                 elif response.status_code == 503:
-                    print(f"  >!> HF model loading (503), retrying once after 10s...")
-                    time_out = 15
                     import time as _time
-                    _time.sleep(time_out)
+                    _time.sleep(15)
                     response2 = requests.post(
                         api_url, headers=headers,
                         json={"inputs": text, "options": {"wait_for_model": True}},
@@ -387,65 +371,329 @@ class AIManager:
                         else:
                             return None
                     else:
-                        print(f"  >!> HF embedding retry failed: {response2.status_code}")
                         return None
                 else:
-                    print(f"  >!> HF embedding status: {response.status_code}")
                     return None
-            except Exception as e:
-                print(f"  >!> HF embedding exception: {e}")
+            except Exception:
                 return None
-
         return embeddings if len(embeddings) == len(texts) else None
 
-    # --- Internal: Request Execution ---
+    # ==================================================================
+    # -- v5.9.4: 2D Execution Matrix Strategy Resolution --
+    # ==================================================================
+
+    def _resolve_strategies(self):
+        """Resolve the effective Network and Hardware strategies for routing.
+
+        Reads TALOS_NETWORK_STRATEGY and TALOS_HARDWARE_STRATEGY from the
+        environment. If either is not set, falls back to the legacy
+        TALOS_EXECUTION_MODE mapping.
+
+        Returns:
+            tuple[str, str]: (network_strategy, hardware_strategy)
+        """
+        network = os.getenv("TALOS_NETWORK_STRATEGY", "")
+        hardware = os.getenv("TALOS_HARDWARE_STRATEGY", "")
+
+        # -- If either is not set, resolve from legacy TALOS_EXECUTION_MODE --
+        if not network or not hardware:
+            legacy_mode = os.getenv("TALOS_EXECUTION_MODE", "local")
+            if not network:
+                if legacy_mode == "local":
+                    network = "strict_local"
+                elif legacy_mode == "hybrid":
+                    network = "local_first"
+                elif legacy_mode == "cloud":
+                    network = "cloud_first"
+                else:
+                    network = "strict_local"
+            if not hardware:
+                hardware = "cpu_gpu_split"
+
+        return network, hardware
+
+    # ==================================================================
+    # -- Master Request Dispatcher --
+    # ==================================================================
 
     def _execute_request(self, prompt: str, model_type: str,
                          response_format: str = 'text',
-                         tier: str = 'fast') -> Union[Dict[str, Any], str, None]:
-        """Execute a request across all enabled providers with fallback.
+                         tier: str = 'fast',
+                         allow_prompt: bool = True) -> Union[Dict[str, Any], str, None]:
+        """Execute a request with 2D Execution Matrix routing and auto-fallback.
 
-        Supports multi-tier routing (v5.7.1) with per-tier routing control
-        (v5.9.1): ``TALOS_FAST_ROUTING`` and ``TALOS_HEAVY_ROUTING`` .env
-        variables independently control whether each tier routes to local
-        Ollama or cloud API providers.
+        v5.9.4: Replaces legacy per-tier routing. The routing logic is:
 
-        Iterates through ``provider_priority``, attempting each non-open-circuit
-        provider. On success, resets the failure counter for that provider.
-        On failure, increments the counter and continues to the next provider.
+        Network Strategy controls WHERE (local vs. cloud) and fallback:
+          - strict_local:  Only local endpoints. Never call cloud.
+          - local_first:   Try local first. On ConnectionError, auto-fallback
+                           to cloud providers.
+          - cloud_first:   Try cloud providers first. On failure, auto-fallback
+                           to local.
+          - strict_cloud:  Only cloud providers. Never call local.
+
+        Hardware Strategy controls HOW local compute is used:
+          - cpu_only:       All local requests -> FAST_EDGE_BASE_URL (11435).
+          - gpu_only:       All local requests -> OLLAMA_BASE_URL (11434).
+          - cpu_gpu_split:  Fast tier -> CPU (11435), Heavy tier -> GPU (11434).
 
         Args:
-            prompt (str): Full prompt text to send.
-            model_type (str): ``'pro'`` or ``'flash'`` (Gemini only).
-            response_format (str): ``'json'`` or ``'text'``.
-            tier (str): ``'fast'`` for edge/lightweight model or ``'heavy'``
-                        for standard reasoning model (default: 'fast').
+            prompt: Full prompt text to send.
+            model_type: 'pro' or 'flash' (Gemini only).
+            response_format: 'json' or 'text'.
+            tier: 'fast' or 'heavy'.
+            allow_prompt: If False, auto-accepts cloud fallback without user input.
 
         Returns:
-            dict, str, or None: Parsed response, or None if all providers fail.
+            Parsed response, or None if all providers fail.
         """
-        # -- v5.9.1: Per-tier routing via TALOS_FAST_ROUTING / TALOS_HEAVY_ROUTING --
+        network_strategy, hardware_strategy = self._resolve_strategies()
+
+        # -- strict_local --
+        if network_strategy == "strict_local":
+            result = self._execute_local_strategy(
+                prompt, response_format, tier, hardware_strategy, allow_prompt=allow_prompt
+            )
+            if result is not None:
+                self.last_provider_used = 'local'
+                return result
+            print("  >!> Strict Local: local request failed. No cloud fallback configured.")
+            return None
+
+        # -- local_first --
+        if network_strategy == "local_first":
+            result = self._execute_local_strategy(
+                prompt, response_format, tier, hardware_strategy, allow_prompt=allow_prompt
+            )
+            if result is not None:
+                self.last_provider_used = 'local'
+                return result
+            # Auto-fallback to cloud
+            print("  [WARNING] Local-First: local request failed. "
+                  "Auto-fallback to cloud providers...")
+            cloud_result = self._execute_cloud_chain(prompt, model_type, response_format)
+            if cloud_result is not None:
+                return cloud_result
+            print("FATAL: All local and cloud providers failed (local_first).")
+            return None
+
+        # -- cloud_first --
+        if network_strategy == "cloud_first":
+            cloud_result = self._execute_cloud_chain(prompt, model_type, response_format)
+            if cloud_result is not None:
+                return cloud_result
+            # Auto-fallback to local
+            print("  [WARNING] Cloud-First: cloud request failed. "
+                  "Auto-fallback to local endpoints...")
+            result = self._execute_local_strategy(
+                prompt, response_format, tier, hardware_strategy, allow_prompt=allow_prompt
+            )
+            if result is not None:
+                self.last_provider_used = 'local'
+                return result
+            print("FATAL: All cloud and local providers failed (cloud_first).")
+            return None
+
+        # -- strict_cloud --
+        if network_strategy == "strict_cloud":
+            cloud_result = self._execute_cloud_chain(prompt, model_type, response_format)
+            if cloud_result is not None:
+                return cloud_result
+            print("  >!> Strict Cloud: cloud request failed. No local fallback configured.")
+            return None
+
+        # -- Fallback: legacy routing path --
+        print(f"  > Unknown network strategy '{network_strategy}'. Falling back to legacy routing.")
+        return self._execute_legacy_request(prompt, model_type, response_format, tier, allow_prompt=allow_prompt)
+
+    # ==================================================================
+    # -- v5.9.4: Local Strategy Execution (Hardware-Aware) --
+    # ==================================================================
+
+    def _execute_local_strategy(self, prompt: str, response_format: str,
+                                tier: str, hardware_strategy: str,
+                                allow_prompt: bool = True
+                                ) -> Union[Dict[str, Any], str, None]:
+        """Execute a local request respecting the Hardware Strategy.
+
+        Args:
+            prompt: Full prompt text.
+            response_format: 'json' or 'text'.
+            tier: 'fast' or 'heavy'.
+            hardware_strategy: 'cpu_only', 'gpu_only', or 'cpu_gpu_split'.
+            allow_prompt: If False, auto-accepts cloud fallback without user input.
+
+        Returns:
+            Parsed response, or None on failure.
+        """
+        if hardware_strategy == "cpu_only":
+            return self._execute_ollama_http(prompt, response_format, use_edge=True, allow_prompt=allow_prompt)
+        elif hardware_strategy == "gpu_only":
+            return self._execute_ollama_http(prompt, response_format, use_edge=False, allow_prompt=allow_prompt)
+        else:  # cpu_gpu_split
+            if tier == 'fast':
+                result = self._execute_ollama_http(prompt, response_format, use_edge=True, allow_prompt=allow_prompt)
+                if result is not None:
+                    return result
+                print("  >!> Fast (CPU) tier failed. Trying heavy (GPU) tier...")
+                return self._execute_ollama_http(prompt, response_format, use_edge=False, allow_prompt=allow_prompt)
+            else:  # heavy
+                return self._execute_ollama_http(prompt, response_format, use_edge=False, allow_prompt=allow_prompt)
+
+    def _execute_ollama_http(self, prompt: str, response_format: str,
+                             use_edge: bool = True,
+                             allow_prompt: bool = True
+                             ) -> Union[Dict[str, Any], str, None]:
+        """Execute a request against an Ollama HTTP endpoint.
+
+        Args:
+            prompt: Full prompt text.
+            response_format: 'json' or 'text'.
+            use_edge: If True, use FAST_EDGE_BASE_URL/FAST_EDGE_MODEL (CPU).
+                      If False, use OLLAMA_BASE_URL/LOCAL_MODEL_BASE_URL (GPU).
+            allow_prompt: If False, auto-accepts cloud fallback without user input.
+
+        Returns:
+            Parsed response, or None on failure.
+        """
+        if use_edge:
+            try:
+                from config.settings import FAST_EDGE_BASE_URL, FAST_EDGE_MODEL
+            except ImportError:
+                FAST_EDGE_BASE_URL = os.getenv("FAST_EDGE_BASE_URL", "http://127.0.0.1:11435/v1")
+                FAST_EDGE_MODEL = os.getenv("FAST_EDGE_MODEL", "fermionresearch/Neutrino-8B")
+            base_url = FAST_EDGE_BASE_URL
+            model = FAST_EDGE_MODEL
+            label = "CPU Edge"
+        else:
+            base_url = os.getenv("LOCAL_MODEL_BASE_URL", "http://localhost:11434/v1")
+            model = os.getenv("LOCAL_MODEL_NAME", "gemma3:12b")
+            label = "GPU Ollama"
+
+        final_prompt = prompt
+        if response_format == 'json':
+            final_prompt += (
+                "\n\nIMPORTANT: Your response MUST be a single, valid JSON object. "
+                "Do not include any text explanation before or after the JSON."
+            )
+
+        payload = {
+            "model": model,
+            "messages": [{"role": "user", "content": final_prompt}],
+            "temperature": 0.5,
+        }
+
+        try:
+            print(f"  > Attempting {label} request: {model} @ {base_url}")
+            response = requests.post(
+                f"{base_url}/chat/completions",
+                json=payload,
+                timeout=30,
+                headers={"Content-Type": "application/json"},
+            )
+            if response.status_code == 200:
+                data = response.json()
+                response_text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if not response_text:
+                    print(f"  >!> {label} returned empty response.")
+                    return None
+                if response_format == 'json':
+                    try:
+                        return json.loads(self._clean_json_string(response_text))
+                    except json.JSONDecodeError:
+                        print(f"  >!> {label} JSON decode failed.")
+                        return None
+                return response_text
+            else:
+                print(f"  >!> {label} HTTP {response.status_code}: {response.text[:200]}")
+                return None
+        except requests.exceptions.ConnectionError as e:
+            print(f"  [WARNING] {label} connection refused: {e}")
+            tier_label = "fast" if use_edge else "heavy"
+            return self._interactive_cloud_fallback(e, tier=tier_label, allow_prompt=allow_prompt)
+        except Exception as e:
+            print(f"  >!> {label} unexpected error: {e}")
+            return None
+
+    # ==================================================================
+    # -- v5.9.4: Cloud Provider Chain Execution --
+    # ==================================================================
+
+    def _execute_cloud_chain(self, prompt: str, model_type: str,
+                             response_format: str
+                             ) -> Union[Dict[str, Any], str, None]:
+        """Execute a request through the cloud provider chain.
+
+        Iterates through provider_priority, skipping 'local' and any
+        open-circuit providers. Used as the cloud execution arm for
+        cloud_first and strict_cloud network strategies.
+
+        Args:
+            prompt: Full prompt text.
+            model_type: 'pro' or 'flash' (Gemini only).
+            response_format: 'json' or 'text'.
+
+        Returns:
+            Parsed response, or None if all cloud providers fail.
+        """
+        for provider_name in self.provider_priority:
+            if provider_name == 'local':
+                continue  # Skip local in cloud chain
+            if provider_name in self.providers and not self.providers[provider_name]['circuit_open']:
+                print(f"  > Attempting cloud request with provider: {provider_name.upper()}")
+                result = None
+                if provider_name == 'gemini':
+                    result = self._execute_gemini_request(prompt, model_type, response_format)
+                elif provider_name == 'deepseek':
+                    result = self._execute_deepseek_request(prompt, response_format)
+                elif provider_name == 'huggingface':
+                    result = self._execute_openai_compatible(prompt, response_format, 'huggingface')
+                if result is not None:
+                    self.providers[provider_name]['consecutive_failures'] = 0
+                    self.last_provider_used = provider_name
+                    return result
+                else:
+                    print(f"  >!> Provider {provider_name.upper()} failed. Trying next provider...")
+                    continue
+        print("  >!> All cloud providers failed.")
+        return None
+
+    # ==================================================================
+    # -- Legacy Request Execution (backward compatibility) --
+    # ==================================================================
+
+    def _execute_legacy_request(self, prompt: str, model_type: str,
+                                response_format: str,
+                                tier: str,
+                                allow_prompt: bool = True) -> Union[Dict[str, Any], str, None]:
+        """Fallback to legacy per-tier routing when strategies are unknown.
+
+        Args:
+            prompt: Full prompt text.
+            model_type: 'pro' or 'flash'.
+            response_format: 'json' or 'text'.
+            tier: 'fast' or 'heavy'.
+            allow_prompt: If False, auto-accepts cloud fallback without user input.
+
+        Returns:
+            Parsed response, or None on failure.
+        """
         fast_routing = os.getenv("TALOS_FAST_ROUTING", "local")
         heavy_routing = os.getenv("TALOS_HEAVY_ROUTING", "local")
 
         if tier == 'fast':
             if fast_routing == "local":
-                result = self._execute_fast_tier_request(prompt, response_format)
+                result = self._execute_ollama_http(prompt, response_format, use_edge=True, allow_prompt=allow_prompt)
                 if result is not None:
                     self.last_provider_used = 'fast_edge'
                     return result
-                # Fall through to cloud if local fast tier fails
                 print("  >!> Fast tier (local) failed. Falling back to cloud providers...")
             else:
-                # Fast routing is "cloud": skip local, go directly to cloud chain
                 print("  > FAST_ROUTING=cloud: routing directly to cloud providers...")
 
         elif tier == 'heavy':
             if heavy_routing == "cloud":
-                # Heavy routing is "cloud": skip local chain, go directly to cloud
                 print("  > HEAVY_ROUTING=cloud: routing directly to cloud providers...")
-                # Jump directly to provider chain (which includes cloud providers)
-            # else heavy_routing == "local": standard provider chain (default)
 
         for provider_name in self.provider_priority:
             if provider_name in self.providers and not self.providers[provider_name]['circuit_open']:
@@ -461,7 +709,6 @@ class AIManager:
                     result = self._execute_openai_compatible(prompt, response_format, 'local')
                 if result is not None:
                     self.providers[provider_name]['consecutive_failures'] = 0
-                    # v3.7: record which provider actually served this request
                     self.last_provider_used = provider_name
                     return result
                 else:
@@ -470,74 +717,29 @@ class AIManager:
         print("FATAL: All AI providers failed.")
         return None
 
-    # ------------------------------------------------------------------
-    # -- v5.7.1: Fast Tier (Edge) Request Execution --
-    # ------------------------------------------------------------------
+    # ==================================================================
+    # -- v5.7.1: Fast Tier (Edge) Request (DEPRECATED wrapper) --
+    # ==================================================================
 
     def _execute_fast_tier_request(self, prompt: str,
                                    response_format: str = 'text') -> Union[Dict[str, Any], str, None]:
         """Execute a request against the fast edge tier (Neutrino-8B).
 
-        Uses the FAST_EDGE_BASE_URL and FAST_EDGE_MODEL from config/settings.py
-        (or environment variables). This is an OpenAI-compatible HTTP POST to
-        the dedicated edge endpoint.
+        DEPRECATED in v5.9.4: Use _execute_local_strategy() instead.
+        Retained for backward compatibility with tests and legacy callers.
 
         Args:
-            prompt (str): Full prompt text to send.
-            response_format (str): ``'json'`` or ``'text'``.
+            prompt: Full prompt text.
+            response_format: 'json' or 'text'.
 
         Returns:
-            dict, str, or None: Parsed response, or None on failure.
+            Parsed response, or None on failure.
         """
-        try:
-            from config.settings import FAST_EDGE_BASE_URL, FAST_EDGE_MODEL
-        except ImportError:
-            FAST_EDGE_BASE_URL = os.getenv("FAST_EDGE_BASE_URL", "http://127.0.0.1:11435/v1")
-            FAST_EDGE_MODEL = os.getenv("FAST_EDGE_MODEL", "fermionresearch/Neutrino-8B")
+        return self._execute_ollama_http(prompt, response_format, use_edge=True)
 
-        final_prompt = prompt
-        if response_format == 'json':
-            final_prompt += (
-                "\n\nIMPORTANT: Your response MUST be a single, valid JSON object. "
-                "Do not include any text explanation before or after the JSON."
-            )
-
-        payload = {
-            "model": FAST_EDGE_MODEL,
-            "messages": [{"role": "user", "content": final_prompt}],
-            "temperature": 0.5,
-        }
-
-        try:
-            print(f"  > Attempting fast-tier request: {FAST_EDGE_MODEL} @ {FAST_EDGE_BASE_URL}")
-            response = requests.post(
-                f"{FAST_EDGE_BASE_URL}/chat/completions",
-                json=payload,
-                timeout=30,
-                headers={"Content-Type": "application/json"},
-            )
-            if response.status_code == 200:
-                data = response.json()
-                response_text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-                if not response_text:
-                    print("  >!> Fast tier returned empty response.")
-                    return None
-                if response_format == 'json':
-                    try:
-                        return json.loads(self._clean_json_string(response_text))
-                    except json.JSONDecodeError:
-                        print("  >!> Fast tier JSON decode failed.")
-                        return None
-                return response_text
-            else:
-                print(f"  >!> Fast tier HTTP {response.status_code}: {response.text[:200]}")
-                return None
-        except requests.exceptions.ConnectionError as e:
-            print(f"  >!> Fast tier connection refused: {e}")
-            return self._interactive_cloud_fallback(e, tier="fast")
-        except Exception as e:
-            print(f"  >!> Fast tier unexpected error: {e}")
-            return None
+    # ==================================================================
+    # -- Provider-Specific Execution Methods --
+    # ==================================================================
 
     def _execute_gemini_request(self, prompt: str, model_type: str,
                                 response_format: str) -> Union[Dict[str, Any], str, None]:
@@ -603,28 +805,42 @@ class AIManager:
             print(f"  >!> {provider_name} execution error: {e}")
             return None
 
-    # ------------------------------------------------------------------
+    # ==================================================================
     # -- v5.9.2: Interactive Runtime Cloud Fallback --
-    # ------------------------------------------------------------------
-    def _interactive_cloud_fallback(self, error, tier="fast"):
-        """Prompt the user to fallback to cloud on local model connection failure.
+    # ==================================================================
 
-        If the session is interactive (``sys.stdin.isatty()``), uses questionary
-        to ask: "Local model connection failed. Switch to Cloud fallback for this
-        session?" If Yes, temporarily sets the environment variable to route this
-        tier to cloud and returns None (caller should retry with cloud routing).
-        If No or non-interactive, returns None.
+    def _interactive_cloud_fallback(self, error, tier="fast",
+                                     allow_prompt: bool = True):
+        """Handle cloud fallback on local model connection failure.
+
+        If `allow_prompt=True` and the session is interactive, prompts the user
+        via questionary. If `allow_prompt=False` or the session is non-interactive,
+        automatically switches the tier to cloud routing with a warning log.
 
         Args:
             error: The exception that triggered the fallback.
             tier: Which tier failed ('fast' or 'heavy').
+            allow_prompt: If False, auto-accepts cloud fallback without user input.
 
         Returns:
             None always. The caller should check env vars and retry.
         """
+        # -- Non-interactive session: log and skip (no interactive prompt possible) --
         if not sys.stdin.isatty():
             print(f"  >!> Non-interactive session -- cloud fallback not available for {tier} tier.")
             return None
+
+        # -- Auto-accept fallback (non-blocking mode) --
+        if not allow_prompt:
+            print(f"  [WARNING] Fast tier connection failed. Auto-switching to "
+                  f"cloud/standard fallback for automated task ({tier} tier).")
+            if tier == "fast":
+                os.environ["TALOS_FAST_ROUTING"] = "cloud"
+            elif tier == "heavy":
+                os.environ["TALOS_HEAVY_ROUTING"] = "cloud"
+            return None
+
+        # -- Interactive mode: prompt the user --
         try:
             import questionary
             answer = questionary.confirm(
@@ -645,7 +861,9 @@ class AIManager:
         except KeyboardInterrupt:
             return None
 
-    # --- Circuit Breaker ---
+    # ==================================================================
+    # -- Circuit Breaker --
+    # ==================================================================
 
     def _handle_failure(self, provider_name: str):
         """Increment failure counter and open circuit if threshold exceeded.
@@ -661,7 +879,9 @@ class AIManager:
                 self.providers[provider_name]['circuit_open'] = True
                 print(f"  >!> Circuit OPENED for {provider_name}. Skipping for rest of session.")
 
-    # ── Local Model Management ──────────────────────────────────────────
+    # ==================================================================
+    # -- Local Model Management --
+    # ==================================================================
 
     def _ensure_local_model(self):
         """Verify and auto-install required local models for Ollama."""
@@ -674,12 +894,10 @@ class AIManager:
                 return
             models = [m['name'] for m in resp.json().get('models', [])]
 
-            # Read user-configured model from .env, fallback to gemma3:12b
             local_model = os.getenv("LOCAL_MODEL_NAME", "gemma3:12b")
             local_embedding = os.getenv("LOCAL_EMBEDDING_MODEL", "nomic-embed-text")
 
             for model in [local_model, local_embedding]:
-                # Strip tag for detection (e.g. "gemma4:12b" may be listed as "gemma4:12b")
                 found = any(m == model or m.startswith(model) for m in models)
                 if not found:
                     print(f"  >> Pulling {model}...")

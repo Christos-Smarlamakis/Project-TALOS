@@ -2,6 +2,22 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.9.7] - 2026-08-01 -- Data Directory Consolidation & Dynamic Target Discovery
+
+### Changed
+- **REPORTS_DIR relocated to data/reports/autonomous_tester/** (`src/ai/testing/autonomous_tester.py`, `src/api/tester_routes.py`): Changed from `reports/autonomous_tester/` (project root) to `data/reports/autonomous_tester/`. All runtime-generated crash reports now reside under `data/`, ensuring a clean project root and proper Git exclusion via `.gitignore`.
+- **Dynamic target discovery (`_discover_all_python_targets()`)** (`src/ai/testing/autonomous_tester.py`): Replaced the hardcoded 4-target `TARGET_ARMS` list with a dynamic file scanner that walks `src/analysis/`, `src/ingestion/`, `src/ai/`, `src/utils/`, `src/core/`, and `src/api/`, discovering all non-`__init__.py` Python files as test arms. Each arm invoked with `--help` for fast subprocess exit. The autonomous tester scales from 4 to 70+ arms covering the entire `src/` codebase.
+- **Q-Table reconciliation on launch** (`run_autonomous_tester()`): Reconciles persisted Q-table against discovered arm count, preserving existing Q-values and zero-initializing new arms.
+- **Tester routes dynamic arm discovery** (`src/api/tester_routes.py`): `_discover_target_arms()` mirrors the same scanning logic for the `/api/v1/tester/status` endpoint, replacing the static 4-arm metadata list.
+- **Version strings synced across 5 code files and 15 documentation files** to v5.9.7.
+- **`tests/test_multi_tier.py`**: `test_talos_version` assertion updated from "5.9.5" to "5.9.6".
+- **Launcher updates** (`run_talos.bat`, `run_talos.sh`): Version strings, report directory paths, and tester descriptions updated to reflect v5.9.7 changes.
+
+### Verification
+- All changed `.py` files pass `python -m py_compile`.
+- Full test suite: 181 passed, 0 failed (`pytest -v`).
+- Zero emojis protocol enforced across all changed code and documentation.
+
 ## [v5.9.3] - 2026-08-01 -- Autonomous System Tester (RL-Driven, LLM-Judged)
 
 ### Added
