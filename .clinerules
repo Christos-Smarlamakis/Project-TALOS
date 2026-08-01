@@ -1,5 +1,5 @@
 # TALOS Project Instructions for AI Coding Agents
-# Version: v5.8.5
+# Version: v5.8.9
 
 ## CONSTITUTION v2.0 — The 8-Point Master Initialization Standard
 
@@ -267,5 +267,17 @@
 
 ---
 
-> **Last Updated:** 2026-08-01 (v5.8.7 -- Sub-script Path Audit, Config Resolution Fix, 17-File Refactoring, 15-File Sync)
-> **Project Version:** v5.8.7
+> **Last Updated:** 2026-08-01 (v5.8.9 -- SQLite Column Fix, Fermion Auto-Start, Active Focus TUI, Code Version Synchronicity Rule, Interactive Pivot Menu)
+> **Project Version:** v5.8.9
+
+---
+
+## CRITICAL: Code Version Synchronicity Rule
+- **During any version bump, the version string inside the core executable launchers and code entry points MUST be synchronized exactly to the target version.** The affected files are:
+  1. `talos.py` -- module docstring and printed banner
+  2. `run_talos.bat` -- window title, banner text, and all section headers
+  3. `run_talos.sh` -- script header comment, banner text, and all section headers
+  4. `config/settings.py` -- `TALOS_VERSION` constant and any metadata strings
+  5. `src/api/main_api.py` -- `app.version` FastAPI metadata string
+- **No legacy version strings are allowed to remain** in console prints, terminal headers, or metadata. Every user-facing string and every programmatic version identifier must match the canonical `config/settings.py:TALOS_VERSION`.
+- This rule is checked during every documentation sync audit -- stale version strings in any of these 5 files are treated as a sync failure and must be corrected immediately.

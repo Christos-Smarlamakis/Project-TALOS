@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ===========================================================================
-# run_talos.sh -- Cross-Platform POSIX Launcher for Project TALOS v5.8.3
+# run_talos.sh -- Cross-Platform POSIX Launcher for Project TALOS v5.8.9
 #
 # Provides a 9-option structured menu with full parity to run_talos.bat:
 #   Section 1: REST API & FRONTEND
@@ -18,11 +18,13 @@
 #
 # TALOS FastAPI runs on port 8001 (port 8000 is reserved for SYNAPSE bus).
 #
-# Features (v5.8.3):
+# Features (v5.8.9):
 #   - Auto-detects virtualenv (.venv/ or venv/) or Conda environments.
 #   - Background servers launched as detached POSIX daemons with output
 #     redirected to /dev/null.
 #   - Option 4 auto-starts the FastAPI backend chain before provisioning.
+#   - Automatic Fermion CPU server spawning when FAST_EDGE_MODEL contains
+#     Neutrino or is set to local mode.
 #
 # Usage:
 #   chmod +x run_talos.sh
@@ -49,7 +51,7 @@ if ! command -v python3 &>/dev/null; then
 fi
 
 # ===========================================================================
-# -- Auto-Environment Detection (v5.8.3) --
+# -- Auto-Environment Detection (v5.8.9) --
 # Scans for a local virtualenv (.venv/ or venv/) first, then falls back to
 # Conda if available. Activates the first valid environment found and exports
 # the path for all subsequent operations.
@@ -106,7 +108,7 @@ detect_and_activate_env() {
 print_banner() {
     clear
     echo "============================================="
-    echo "   Project TALOS v5.8.3"
+    echo "   Project TALOS v5.8.9"
     echo "   Research Intelligence Platform"
     echo "   SYNAPSE Protocol Active (Bus :8000 / API :8001)"
     echo "============================================="
@@ -213,7 +215,7 @@ do_setup() {
 
     echo ""
     echo "============================================="
-    echo -e "   ${GREEN}Setup complete. TALOS v5.8.3 is ready.${NC}"
+    echo -e "   ${GREEN}Setup complete. TALOS v5.8.9 is ready.${NC}"
     echo "============================================="
     echo ""
     echo "   TALOS API will start on port 8001."
@@ -232,7 +234,7 @@ do_setup() {
 do_server() {
     clear
     echo "============================================="
-    echo "   Starting TALOS FastAPI Server (v5.8.3)"
+    echo "   Starting TALOS FastAPI Server (v5.8.9)"
     echo "   Port: 8001"
     echo "   API Docs: http://localhost:8001/docs"
     echo "   Health:   http://localhost:8001/api/v1/health"
@@ -252,6 +254,10 @@ do_server() {
         > /dev/null 2>&1 &
     FASTAPI_PID=$!
     echo -e "${GREEN}[INFO]${NC} TALOS FastAPI server started (PID: $FASTAPI_PID)."
+
+    # -- v5.8.9: Auto-start Fermion CPU daemon if FAST_EDGE_MODEL is Neutrino/local --
+    check_fermion
+
     echo "[INFO] Wait a few seconds then visit http://localhost:8001/docs"
     echo ""
     echo "Press Enter to return to the main menu..."
@@ -265,7 +271,7 @@ do_server() {
 do_mcp_server() {
     clear
     echo "============================================="
-    echo "   Starting TALOS MCP Server (v5.8.3)"
+    echo "   Starting TALOS MCP Server (v5.8.9)"
     echo "============================================="
     echo ""
     echo "   Launching MCP server as a detached background process..."
@@ -332,7 +338,7 @@ do_provision_ui() {
 do_cli() {
     clear
     echo "============================================="
-    echo "   TALOS Terminal CLI (v5.8.3)"
+    echo "   TALOS Terminal CLI (v5.8.9)"
     echo "============================================="
     echo ""
     echo "   Launching the interactive TALOS command-line interface."
@@ -355,7 +361,7 @@ do_cli() {
 do_daemon() {
     clear
     echo "============================================="
-    echo "   Autonomous Research Daemon (v5.8.3)"
+    echo "   Autonomous Research Daemon (v5.8.9)"
     echo "   24/7 Background Research Service"
     echo "============================================="
     echo ""
@@ -380,7 +386,7 @@ do_daemon() {
 do_live_drl() {
     clear
     echo "============================================="
-    echo "   Live DRL Agent (v5.8.3)"
+    echo "   Live DRL Agent (v5.8.9)"
     echo "   Deep Reinforcement Learning Agent -- Verbose Mode"
     echo "============================================="
     echo ""
@@ -441,6 +447,46 @@ do_test() {
 }
 
 # ===========================================================================
+# -- Fermion Auto-Start Subroutine (v5.8.9) --
+# Reads .env for FAST_EDGE_MODEL; if it contains "Neutrino" or equals
+# "local", spawns fermion serve as a detached background daemon.
+# ===========================================================================
+
+check_fermion() {
+    # -- Parse .env file for FAST_EDGE_MODEL --
+    if [ ! -f "$SCRIPT_DIR/.env" ]; then
+        return 0
+    fi
+    FAST_EDGE=""
+    # shellcheck disable=SC2034
+    while IFS='=' read -r key value; do
+        case "$key" in
+            FAST_EDGE_MODEL) FAST_EDGE="$value" ;;
+        esac
+    done < "$SCRIPT_DIR/.env"
+
+    if [ -z "$FAST_EDGE" ]; then
+        return 0
+    fi
+
+    # -- Check if FAST_EDGE_MODEL contains "Neutrino" or "local" --
+    case "$FAST_EDGE" in
+        *[Nn]eutrino*|*local*)
+            echo ""
+            echo "[FERMION] Fast Edge model requires CPU accelerator -- starting fermion serve..."
+            echo "[FERMION] Model: $FAST_EDGE on port 11435"
+            fermion serve --port 11435 > /dev/null 2>&1 &
+            FERMION_PID=$!
+            echo "[FERMION] Background daemon launched (PID: $FERMION_PID)."
+            echo "[FERMION] Waiting 2 seconds for engine initialization..."
+            sleep 2
+            echo "[FERMION] Fast Edge engine ready on port 11435."
+            ;;
+    esac
+    return 0
+}
+
+# ===========================================================================
 # -- Main Loop --
 # ===========================================================================
 
@@ -463,7 +509,7 @@ main() {
             9)
                 echo ""
                 echo "============================================="
-                echo "   Closing Project TALOS v5.8.3..."
+                echo "   Closing Project TALOS v5.8.9..."
                 echo "============================================="
                 exit 0
                 ;;

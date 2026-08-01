@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.8.8
+Project: TALOS v5.8.9
 Description:
     Canonical configuration hub for TALOS v5.8.8. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
@@ -101,7 +101,7 @@ HF_MODEL_NAME = os.getenv("HF_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.8.8"
+TALOS_VERSION = "5.8.9"
 
 # TALOS FastAPI port (port 8000 is reserved for SYNAPSE event bus).
 TALOS_API_PORT = int(os.getenv("TALOS_API_PORT", "8001"))

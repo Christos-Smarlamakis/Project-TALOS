@@ -1,9 +1,9 @@
 @echo off
-title Project TALOS v5.8.3 -- Automated Batch Runner
+title Project TALOS v5.8.9 -- Automated Batch Runner
 chcp 65001 >nul 2>&1
 
 REM ===========================================================================
-REM run_talos.bat -- Automated Batch Runner for Project TALOS v5.8.3
+REM run_talos.bat -- Automated Batch Runner for Project TALOS v5.8.9
 REM
 REM Provides a 9-option structured menu:
 REM   Section 1: REST API & FRONTEND
@@ -20,11 +20,13 @@ REM     [8] Run Test Suite (pytest -v)
 REM     [9] Exit
 REM
 REM TALOS FastAPI runs on port 8001 (port 8000 is reserved for SYNAPSE bus).
-REM Features (v5.8.3): Auto-Conda path detection, background windows, auto-start chain.
+REM Features (v5.8.9): Auto-Conda path detection, background windows, auto-start
+REM chain, automatic Fermion CPU server spawning when FAST_EDGE_MODEL contains
+REM Neutrino or is set to local mode.
 REM ===========================================================================
 
 REM ---------------------------------------------------------------------------
-REM -- Auto-Conda Path Detection (v5.8.3) --
+REM -- Auto-Conda Path Detection (v5.8.9) --
 REM Scans common Miniconda/Anaconda installation directories for activate.bat.
 REM If found, the full path is stored in CONDA_ACTIVATE_PATH and used for all
 REM subsequent conda activation calls. Falls back to standard "conda" command
@@ -90,7 +92,7 @@ goto :EOF
 :TOP
 cls
 echo =============================================
-echo    Project TALOS v5.8.3
+echo    Project TALOS v5.8.9
 echo    Research Intelligence Platform
 echo    SYNAPSE Protocol Active (Bus :8000 / API :8001)
 echo =============================================
@@ -174,7 +176,7 @@ IF ERRORLEVEL 1 (
 
 echo.
 echo =============================================
-echo    Setup complete. TALOS v5.8.3 is ready.
+echo    Setup complete. TALOS v5.8.9 is ready.
 echo =============================================
 echo.
 echo    TALOS API will start on port 8001.
@@ -189,7 +191,7 @@ REM ---------------------------------------------------------------------------
 :SERVER
 cls
 echo =============================================
-echo    Starting TALOS FastAPI Server (v5.8.3)
+echo    Starting TALOS FastAPI Server (v5.8.9)
 echo    Port: 8001
 echo    API Docs: http://localhost:8001/docs
 echo    Health:   http://localhost:8001/api/v1/health
@@ -207,6 +209,10 @@ REM -- Launch uvicorn in a new minimized window --
 start "TALOS FastAPI Server" /min cmd /c "python -m uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001"
 echo.
 echo [INFO] TALOS FastAPI server launched in background window.
+
+REM -- v5.8.9: Auto-start Fermion CPU server if FAST_EDGE_MODEL is Neutrino/local --
+call :CHECK_FERMION
+
 echo [INFO] Wait a few seconds then visit http://localhost:8001/docs
 echo.
 echo Press any key to return to the main menu...
@@ -219,7 +225,7 @@ REM ---------------------------------------------------------------------------
 :MCP_SERVER
 cls
 echo =============================================
-echo    Starting TALOS MCP Server (v5.8.3)
+echo    Starting TALOS MCP Server (v5.8.9)
 echo =============================================
 echo.
 echo    Launching MCP server in a separate minimized window...
@@ -282,7 +288,7 @@ REM ---------------------------------------------------------------------------
 :CLI
 cls
 echo =============================================
-echo    TALOS Terminal CLI (v5.8.3)
+echo    TALOS Terminal CLI (v5.8.9)
 echo =============================================
 echo.
 echo    Launching the interactive TALOS command-line interface.
@@ -303,7 +309,7 @@ REM ---------------------------------------------------------------------------
 :DAEMON
 cls
 echo =============================================
-echo    Autonomous Research Daemon (v5.8.3)
+echo    Autonomous Research Daemon (v5.8.9)
 echo    24/7 Background Research Service
 echo =============================================
 echo.
@@ -326,7 +332,7 @@ REM ---------------------------------------------------------------------------
 :LIVE_DRL
 cls
 echo =============================================
-echo    Live DRL Agent (v5.8.3)
+echo    Live DRL Agent (v5.8.9)
 echo    Deep Reinforcement Learning Agent -- Verbose Mode
 echo =============================================
 echo.
@@ -384,12 +390,41 @@ echo.
 pause
 goto TOP
 
+REM ===========================================================================
+REM -- Fermion Auto-Start Subroutine (v5.8.9) --
+REM Reads .env for FAST_EDGE_MODEL; if it contains "Neutrino" or equals
+REM "local", spawns fermion serve in a background minimized window.
+REM ===========================================================================
+:CHECK_FERMION
+REM -- Parse .env file for FAST_EDGE_MODEL --
+if not exist ".env" goto :EOF
+for /f "tokens=1,2 delims==" %%a in ('type .env 2^>nul') do (
+    if "%%a"=="FAST_EDGE_MODEL" set "FAST_EDGE=%%b"
+)
+if not defined FAST_EDGE goto :EOF
+echo %FAST_EDGE% | findstr /i "Neutrino" >nul
+if %ERRORLEVEL% equ 0 goto :FERMION_START
+echo %FAST_EDGE% | findstr /i "local" >nul
+if %ERRORLEVEL% equ 0 goto :FERMION_START
+goto :EOF
+
+:FERMION_START
+echo.
+echo [FERMION] Fast Edge model requires CPU accelerator -- starting fermion serve...
+echo [FERMION] Model: %FAST_EDGE% on port 11435
+start "TALOS Fast Edge Server" /min cmd /c "fermion serve --port 11435"
+echo [FERMION] Background window launched (minimized).
+echo [FERMION] Waiting 2 seconds for engine initialization...
+timeout /t 2 /nobreak >nul
+echo [FERMION] Fast Edge engine ready on port 11435.
+goto :EOF
+
 REM ---------------------------------------------------------------------------
 REM Option 9: Exit
 REM ---------------------------------------------------------------------------
 :END
 echo.
 echo =============================================
-echo    Closing Project TALOS v5.8.3...
+echo    Closing Project TALOS v5.8.9...
 echo =============================================
 exit /b

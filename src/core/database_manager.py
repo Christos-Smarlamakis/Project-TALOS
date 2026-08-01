@@ -146,7 +146,7 @@ class DatabaseManager:
             evaluation_reasoning,evaluation_contribution,evaluation_utilization,
             suggested_tags,suggested_folder,suggested_discord_channel,
             in_zotero,processed_at,last_evaluated_at,enrichment_status)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0)"""
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
         params = (paper_data.get('doi'), paper_data.get('url'), paper_data.get('title'),
             paper_data.get('authors_str'), paper_data.get('publication_year'),
             paper_data.get('abstract'), paper_data.get('source'),
@@ -155,7 +155,7 @@ class DatabaseManager:
             evaluation_data.get('reasoning',''), evaluation_data.get('contribution',''),
             evaluation_data.get('utilization',''), tags_str,
             evaluation_data.get('folder',''), evaluation_data.get('discord_channel',''),
-            in_zotero, date.today().strftime('%Y-%m-%d'), datetime.now())
+            in_zotero, date.today().strftime('%Y-%m-%d'), datetime.now(), 0)
         paper_id = self.execute_query(sql, params, commit=True)
         if paper_id:
             print(f"  > ID:{paper_id} - Saved '{paper_data.get('title')}' with score: {overall_score:.2f}.")

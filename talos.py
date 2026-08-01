@@ -10,13 +10,21 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.8.5
+Project: TALOS v5.8.9
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
-    Conda environment, API port, Synapse bus, execution mode, and active
-    LLM tiers. 10-option menu with integrated Model Manager, CLI research
-    tools, and system diagnostics.
+    Conda environment, API port, Synapse bus, execution mode, active
+    LLM tiers, and the current active research focus from config.json.
+    10-option menu with integrated Model Manager, CLI research tools,
+    interactive View & Pivot Research Focus (PYTHIA), and system
+    diagnostics.
+
+    v5.8.9: Active Research Focus row in status table (reads
+    user_research_goal from config.json, truncated at 65 chars). Option 4
+    refactored into interactive View & Pivot Research Focus workflow with
+    inline Query Translator execution, raw goal preview panel, and
+    boolean query display.
 
     v5.8.5: Universal TUI Beautification -- all sub-menu launches, diagnostic
     outputs, and informational prompts wrapped in styled Rich Panels with
@@ -552,6 +560,7 @@ def _build_status_table():
       - Conda Environment / API Port / Synapse Bus
       - Active Execution Mode (Air-Gapped Local / Hybrid / Cloud)
       - Active Tiers: Fast Edge, Heavy Reasoning, Cloud Provider
+      - Active Research Focus (from config.json user_research_goal)
     """
     # -- Detect Conda environment name --
     conda_env = os.environ.get("CONDA_DEFAULT_ENV", "N/A")
@@ -599,8 +608,189 @@ def _build_status_table():
     table.add_row("Fast Edge Tier", f"[bright_cyan]{fast_edge}[/bright_cyan]")
     table.add_row("Heavy Reasoning Tier", f"[bright_magenta]{heavy_model}[/bright_magenta]")
     table.add_row("Cloud Provider", f"[bright_blue]{cloud_display}[/bright_blue]")
+    table.add_row("", "")
+    # -- Active Research Focus (from config.json) --
+    focus_display = "[dim]Not configured[/dim]"
+    try:
+        import json as _json
+        with open("config.json", "r", encoding="utf-8") as _f:
+            _cfg = _json.load(_f)
+        goal = _cfg.get("user_research_goal") or _cfg.get("phd_focus_system_prompt", "")
+        if goal.strip():
+            if len(goal) > 65:
+                goal = goal[:65].rstrip() + "..."
+            focus_display = f"[bright_green]{goal}[/bright_green]"
+    except Exception:
+        pass
+    table.add_row("Active Research Focus", focus_display)
 
     return table
+
+
+# ---------------------------------------------------------------------------
+# -- Interactive View & Pivot Research Focus (v5.8.9) --
+# ---------------------------------------------------------------------------
+
+def _view_and_pivot_research_focus(python_exe, project_root):
+    """Display current research goal and offer interactive pivot workflow.
+
+    Shows a cyan-bordered Panel with the raw research goal text from
+    config.json plus a preview of existing boolean queries (if any).
+    The user may then either pivot to a new goal (running Query Translator
+    in-place), view all 14 generated queries, or return to the main menu.
+
+    Args:
+        python_exe: Path to the Python executable.
+        project_root: Absolute path to the project root directory.
+    """
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+    # -- Read current goal and queries from config.json --
+    current_goal = ""
+    queries = {}
+    try:
+        import json as _json
+        with open("config.json", "r", encoding="utf-8") as _f:
+            _cfg = _json.load(_f)
+        current_goal = _cfg.get("user_research_goal") or _cfg.get("phd_focus_system_prompt", "")
+        # Collect any keys ending in _query as boolean queries
+        for k, v in _cfg.items():
+            if k.endswith("_query") and isinstance(v, str) and v.strip():
+                queries[k] = v
+    except Exception:
+        current_goal = "[Error reading config.json]"
+
+    # -- Build the goal preview panel --
+    goal_body = Text()
+    if current_goal.strip():
+        goal_body.append("Current Research Goal:\n\n", style="bold white")
+        goal_body.append(current_goal.strip(), style="bright_green")
+    else:
+        goal_body.append("No research goal configured.", style="dim yellow")
+
+    goal_panel = Panel(
+        goal_body,
+        title="[bold]Active Research Focus[/bold]",
+        border_style="cyan",
+        box=box.ROUNDED,
+        padding=(1, 2),
+    )
+    console.print(goal_panel)
+    console.print("")
+
+    # -- Show query preview if queries exist --
+    if queries:
+        query_text = Text()
+        query_text.append(f"Boolean Queries Defined: {len(queries)} of 14\n\n", style="bold bright_cyan")
+        for i, (k, v) in enumerate(sorted(queries.items())):
+            short_name = k.replace("_query", "")
+            short_val = v[:80] + ("..." if len(v) > 80 else "")
+            query_text.append(f"[dim]{short_name}:[/dim] {short_val}\n")
+            if i >= 4:  # Show first 5, then ...
+                remaining = len(queries) - i - 1
+                if remaining > 0:
+                    query_text.append(f"\n[dim]... and {remaining} more. Select 'View All Queries' below to see full list.[/dim]")
+                break
+        query_panel = Panel(
+            query_text,
+            title="[bold]Query Preview[/bold]",
+            border_style="bright_blue",
+            box=box.ROUNDED,
+            padding=(1, 2),
+        )
+        console.print(query_panel)
+        console.print("")
+
+    # -- Interactive menu --
+    pivot_choice = safe_select("View & Pivot Research Focus:", choices=[
+        "1. Pivot to New Research Goal (Run Query Translator)",
+        "2. View All 14 Generated Boolean Queries",
+        "3. Return to Main Menu",
+    ])
+
+    if pivot_choice is None or "3." in pivot_choice:
+        return
+
+    if "1." in pivot_choice:
+        # -- Prompt for new goal --
+        new_goal = questionary.text(
+            "Enter your new research goal (natural language):",
+            default=current_goal.strip() if current_goal.strip() else ""
+        ).ask()
+        if new_goal is None or not new_goal.strip():
+            console.print("\n[yellow]Pivot cancelled -- no goal provided.[/yellow]")
+            safe_pause()
+            return
+
+        # -- Update config.json with the new goal --
+        try:
+            import json as _json
+            with open("config.json", "r", encoding="utf-8") as _f:
+                _cfg = _json.load(_f)
+            _cfg["user_research_goal"] = new_goal.strip()
+            # Clear old queries so PYTHIA regenerates them fresh
+            for k in list(_cfg.keys()):
+                if k.endswith("_query"):
+                    _cfg[k] = ""
+            with open("config.json", "w", encoding="utf-8") as _f:
+                _json.dump(_cfg, _f, indent=2, ensure_ascii=False)
+            console.print("\n[green][SUCCESS][/green] Research goal updated. Launching PYTHIA Query Translator...\n")
+        except Exception as e:
+            console.print(f"\n[red]Error updating config.json: {e}[/red]")
+            safe_pause()
+            return
+
+        # -- Run Query Translator in-process (same as run_script but with
+        #    confirmation first) --
+        info = _build_info_panel(
+            "PYTHIA -- Query Translator",
+            "Translates your natural-language research goal into optimized\n"
+            "boolean search queries for all 14 academic APIs.\n"
+            "[dim]Uses the AI Manager with Research Architect persona.[/dim]",
+            border_style="bright_magenta",
+        )
+        console.print(info)
+        if questionary.confirm("Proceed with Query Translation?", default=True).ask():
+            run_script("query_translator.py", python_exe)
+            # -- Show success panel --
+            success = _build_info_panel(
+                "Research Focus Pivot Complete",
+                f"New goal set and queries regenerated.\n"
+                f"[bright_green]{new_goal.strip()[:100]}[/bright_green]",
+                border_style="green",
+            )
+            console.print(success)
+        safe_pause()
+
+    elif "2." in pivot_choice:
+        # -- View all generated boolean queries --
+        os.system('cls' if os.name == 'nt' else 'clear')
+        try:
+            import json as _json
+            with open("config.json", "r", encoding="utf-8") as _f:
+                _cfg = _json.load(_f)
+            q_table = Table(
+                title="[bold bright_cyan]All Generated Boolean Queries[/bold bright_cyan]",
+                box=box.ROUNDED,
+                border_style="cyan",
+                show_lines=True,
+                header_style="bold bright_cyan",
+            )
+            q_table.add_column("#", style="dim cyan", width=4, justify="right")
+            q_table.add_column("API Source", style="bright_magenta", width=20)
+            q_table.add_column("Boolean Query", style="white", width=60, overflow="fold")
+            count = 0
+            for k in sorted(_cfg.keys()):
+                if k.endswith("_query"):
+                    count += 1
+                    v = _cfg[k]
+                    q_table.add_row(str(count), k.replace("_query", ""), v if v else "[dim](empty)[/dim]")
+            if count == 0:
+                q_table.add_row("", "[dim yellow]No queries defined.[/dim yellow]", "")
+            console.print(q_table)
+        except Exception as e:
+            console.print(f"[red]Error reading config.json: {e}[/red]")
+        safe_pause()
 
 
 def main_menu():
@@ -685,7 +875,7 @@ def main_menu():
             " 2. CLI Research Search (Interactive)",
             questionary.Separator("  ENRICHMENT & ANALYSIS"),
             " 3. Metadata Enrichment",
-            " 4. Research Goal (Query Translator)",
+            " 4. View & Pivot Research Focus (Query Translator / PYTHIA)",
             questionary.Separator("  MODEL MANAGEMENT"),
             " 5. Model Manager (Legacy/Direct)",
             questionary.Separator("  SYSTEM DIAGNOSTICS"),
@@ -794,15 +984,8 @@ def main_menu():
             console.print(info)
             run_script("metadata_enricher.py", python_exe)
         elif "4." in choice:
-            info = _build_info_panel(
-                "Research Goal -- Query Translator (PYTHIA)",
-                "Translates a natural-language research goal into optimized\n"
-                "boolean search queries for all 14 academic APIs.\n"
-                "[dim]Uses the AI Manager with Research Architect persona.[/dim]",
-                border_style="bright_magenta",
-            )
-            console.print(info)
-            run_script("query_translator.py", python_exe)
+            # -- View & Pivot Research Focus (interactive workflow) --
+            _view_and_pivot_research_focus(python_exe, project_root)
         elif "5." in choice:
             run_script("model_manager.py", python_exe)
         elif "6." in choice:
