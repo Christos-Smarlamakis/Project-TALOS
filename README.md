@@ -123,7 +123,7 @@ Requires **Ollama** for running locally the `gemma4` model.
 
 ## 4. Citation & Academic Use
 
-This software is part of ongoing PhD research. If you use **TALOS** in your work, please cite it as follows:
+This software is part of ongoing research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
 > C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.13, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
@@ -154,8 +154,6 @@ This project is licensed under the **GNU Affero General Public License v3.0 (AGP
 ---
 
 ## 6. Acknowledgements & Support
-
-Project TALOS is developed as part of ongoing Ph.D. research at the **University of Peloponnese** (Business Intelligence & Analytics Laboratory).
 
 The Lead Architect and Author, **Christos Smarlamakis**, is an officially selected recipient of the **IEEE Computer Society WEIGD Student Support Fund (2026)**. We gratefully acknowledge the support and resources provided by the IEEE Computer Society and the enduring legacy of Dr. Grace C. N. Wei in empowering open-source, democratized research tools for the global scientific community.
 
@@ -267,7 +265,7 @@ python src/utils/generate_docs.py
 
 ### 4. Ακαδημαϊκή Αναφορά (Citation)
 
-Αυτό το λογισμικό αποτελεί μέρος εν εξελίξει διδακτορικής έρευνας. Εάν χρησιμοποιήσετε το **TALOS** στην εργασία σας, παρακαλούμε να το αναφέρετε ως εξής:
+Αυτό το λογισμικό αποτελεί μέρος εν εξελίξει έρευνας. Εάν χρησιμοποιήσετε το **TALOS** στην εργασία σας, παρακαλούμε να το αναφέρετε ως εξής:
 
 **IEEE Style:**
 > C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.13, Αύγουστος 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
@@ -294,8 +292,6 @@ python src/utils/generate_docs.py
 - **Επικοινωνία:** [christossmarlamakis@gmail.com](mailto:christossmarlamakis@gmail.com)
 
 ### 6. Ευχαριστίες & Υποστήριξη
-
-Το Project TALOS αναπτύσσεται στο πλαίσιο εν εξελίξει διδακτορικής έρευνας στο **Πανεπιστήμιο Πελοποννήσου** (Εργαστήριο Επιχειρηματικής Ευφυΐας & Αναλυτικής).
 
 Ο Κύριος Αρχιτέκτονας και Συγγραφέας, **Χρήστος Σμαρλαμάκης**, είναι επίσημα επιλεγμένος αποδέκτης του **IEEE Computer Society WEIGD Student Support Fund (2026)**. Εκφράζουμε την ευγνωμοσύνη μας για την υποστήριξη και τους πόρους που παρέχονται από την IEEE Computer Society και τη διαρκή κληρονομιά της Dr. Grace C. N. Wei στην ενδυνάμωση εργαλείων έρευνας ανοικτού κώδικα και εκδημοκρατισμένης πρόσβασης για την παγκόσμια επιστημονική κοινότητα.
 
