@@ -2,8 +2,8 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward.
 
-> **Current Version:** v5.9.7 (Data Directory Consolidation, Dynamic Target Discovery, 70+ Arms Sealed, 18 Endpoints, 11-Option TUI)
-> **Last Updated:** 2026-08-01
+> **Current Version:** v5.9.12 (Vendored Dependencies Hotfix, 18 Endpoints, 14-Option TUI)
+> **Last Updated:** 2026-08-02
 
 ---
 

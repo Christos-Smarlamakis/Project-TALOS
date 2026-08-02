@@ -1,4 +1,4 @@
-# Project TALOS (v5.9.7)
+# Project TALOS (v5.9.9)
 
 ### **Tactical Agentic Literature Orchestration System**
 *(Takriko Praktoriko Systima Enorchistrosis Vivliografias)*

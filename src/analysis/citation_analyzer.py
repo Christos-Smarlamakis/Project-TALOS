@@ -200,7 +200,7 @@ def main():
 
     print("\n[Ανάλυση 3/3] Δημιουργία γραφήματος δικτύου και σύνθεση τελικής αναφοράς...")
     safe_title = "".join(x for x in target_paper['title'][:50] if x.isalnum() or x in " _-").strip()
-    reports_dir = os.path.join(project_root, "reports", "citations")
+    reports_dir = os.path.join(project_root, "data", "reports", "citations")
     os.makedirs(reports_dir, exist_ok=True)
     
     graph_filename = f"graph_{safe_title}.html"

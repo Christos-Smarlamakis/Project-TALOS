@@ -65,7 +65,7 @@ class KnowledgePathGenerator:
         self.config = config
         self.db_manager = DatabaseManager()
         self.ai_manager = AIManager(config)
-        self.reports_dir = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')), "reports", "knowledge_paths")
+        self.reports_dir = os.path.join(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')), "data", "reports", "knowledge_paths")
         os.makedirs(self.reports_dir, exist_ok=True)
         print("INFO: Knowledge Path Generator initialized.")
     

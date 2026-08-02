@@ -1,8 +1,8 @@
-# TALOS v5.8.4 — Dependencies
+# TALOS v5.9.11 -- Dependencies
 # Install: pip install -r requirements.txt
 
 # === Core: API Framework & Networking ===
-fastapi                     # REST API framework (TALOS Facade — main_api.py)
+fastapi                     # REST API framework (TALOS Facade -- main_api.py)
 uvicorn[standard]           # ASGI server for FastAPI (port 8001)
 pydantic                    # Data validation & serialization (Pydantic v2 API models)
 httpx                       # Async HTTP client for external API calls
@@ -14,7 +14,7 @@ mcp                         # Model Context Protocol SDK
 
 # === Core: AI & LLM Providers ===
 google-generativeai         # Google Gemini API communication
-google-genai                # Google Gemini API (new SDK — Grey Literature)
+google-genai                # Google Gemini API (new SDK -- Grey Literature)
 openai                      # DeepSeek/OpenAI-compatible API communication
 
 # === Sources: Academic APIs & Integrations ===
@@ -29,6 +29,12 @@ numpy                       # Numerical operations & embedding calculations
 pandas>=2.1.0               # Data manipulation (DataFrames)
 scikit-learn                # Machine learning (clustering, TF-IDF)
 psutil                      # Process & system monitoring (daemon, VRAM queries)
+
+# === Graphify AST Knowledge Graph (vendor/graphify) ===
+tree-sitter                  # AST parsing library (required by vendored graphify)
+tree-sitter-python           # Python language grammar for Graphify AST (v5.9.11 hotfix)
+rapidfuzz                    # Fuzzy string matching for Graphify entity resolution (v5.9.11 hotfix)
+# tree-sitter-language-pack  # Language grammars (install manually if needed)
 
 # === Visualization & Scientometrics ===
 plotly>=5.18.0              # Interactive 3D visualizations (GWO Swarm Hunt)
@@ -52,7 +58,7 @@ tabulate                    # Markdown table formatting
 
 # === Deep Reinforcement Learning (DRL) ===
 gymnasium                   # RL environment standard (Gymnasium API)
-torch                       # Neural network framework (PyTorch — CPU or CUDA)
+torch                       # Neural network framework (PyTorch -- CPU or CUDA)
 
 # === Testing (v5.8.0+) ===
 pytest                      # Unit test framework

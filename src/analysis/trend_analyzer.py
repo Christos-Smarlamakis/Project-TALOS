@@ -44,7 +44,7 @@ DB_PATH = os.path.join(project_root, '_profiles', 'default', 'talos_research.db'
 if not os.path.exists(DB_PATH):
     DB_PATH = os.path.join(project_root, 'talos_research.db')
 
-REPORT_DIR = os.path.join(project_root, 'reports', 'trends')
+REPORT_DIR = os.path.join(project_root, 'data', 'reports', 'trends')
 os.makedirs(REPORT_DIR, exist_ok=True)
 
 class TrendAnalyzer:

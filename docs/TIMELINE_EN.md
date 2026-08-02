@@ -4,7 +4,57 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-01 (v5.9.7 -- Data Directory Consolidation & Dynamic Target Discovery)
+> **Last Updated:** 2026-08-02 (v5.9.13 -- Academic Print Theme Injection for AST Graphs)
+
+---
+
+## Phase 23: Academic Print Theme (Light Mode) Injection for AST Graphs (v5.9.13)
+
+### Status: COMPLETED (2026-08-02)
+
+- [x] **Implement HTML post-processing in graphify_adapter.py to inject Light/Dark toggle** -- Added `_inject_light_mode_toggle()` helper function that opens the generated `graph.html`, injects a full CSS block defining a `.light-mode` class override on `<body>` (white background, dark text, high-contrast nodes for academic print), and inserts a floating toggle button anchored to the top-right corner. Original dark mode is preserved as default; users toggle with a single click. All CSS uses `!important` to override Graphify's dynamically injected dark styles. Graceful degradation on I/O errors -- the pipeline never fails due to injection failure.
+- [x] **Force-sync all 15 documentation files and 5 code files to v5.9.13**
+
+---
+
+## Phase 22: Graphify Output Path Resolution & Auto-Clustering Fix (v5.9.12)
+
+### Status: COMPLETED (2026-08-02)
+
+- [x] **Fix graphify-out path resolution in graphify_adapter.py** -- Graphify outputs ``graphify-out/`` inside the target directory (e.g., ``src/graphify-out/``) rather than the project root. The adapter now resolves the correct source path by joining ``target_dir`` with ``graphify-out``, with a backward-compatible fallback to the project root.
+- [x] **Add auto-execution of cluster-only command for HTML/Markdown generation** -- After extraction succeeds, the adapter now automatically spawns a second subprocess running ``python -m graphify cluster-only <target_dir> --no-label``. The ``--no-label`` flag skips LLM community naming calls, preserving 100% air-gapped offline operation. This generates ``GRAPH_REPORT.md`` and assigns numeric community labels without requiring a separate manual command.
+- [x] **Force-sync all 15 documentation files and 5 code files to v5.9.12**
+
+---
+
+## Phase 21: Vendored Dependencies Hotfix (v5.9.11)
+
+### Status: COMPLETED (2026-08-02)
+
+- [x] **Add tree-sitter-python and rapidfuzz to requirements.txt** -- Graphify AST engine subprocess failed with `ModuleNotFoundError: No module named 'rapidfuzz'` and missing `tree_sitter_python`. Both added under the "Graphify AST Knowledge Graph" section.
+- [x] **Force-sync all 15 documentation files and 5 code files to v5.9.11**
+
+---
+
+## Phase 20: Vendored Graphify AST Integration & Rich Menu Reorganization (v5.9.10)
+
+### Status: COMPLETED (2026-08-02)
+
+- [x] **Add graphify dependencies (tree-sitter, networkx) to requirements.txt**
+- [x] **Create src/analysis/graphify_adapter.py referencing vendor/graphify**
+- [x] **Reorganize talos.py main menu into visual Rich groups**
+- [x] **Force-sync all 15 documentation files and 5 code files to v5.9.10**
+
+---
+
+## Phase 19: Report Path Consolidation & Data Directory Isolation (v5.9.9)
+
+### Status: COMPLETED (2026-08-02)
+
+- [x] **Redirect all reporting outputs in src/analysis/ and autonomous_tester.py to data/reports/**
+- [x] **Move existing root reports/ contents to data/reports/ and purge root reports/ directory**
+- [x] **Update tester_routes.py to read reports from data/reports/autonomous_tester/**
+- [x] **Force-sync all 15 documentation files and 5 code files to v5.9.9**
 
 ---
 
@@ -212,6 +262,16 @@
 - [x] **Add styled CSS IEEE badge to SYSTEM_CAPABILITIES_MASTER.html** -- CSS pill badge with #006699 and #002855 background colors stating project support.
 - [x] **Update CITATION.cff with IEEE Computer Society grant metadata** -- Funding section with grant type, title, and message recognizing the WEIGD Student Support Fund (2026).
 - [x] **Force-sync all 15 documentation files and 5 code files to v5.9.7** -- Version strings updated in talos.py, run_talos.bat, run_talos.sh, config/settings.py, and src/api/main_api.py. All 15 canonical documentation files synchronized.
+
+## Phase 18: Clickable Terminal Hyperlinks & Local-to-Local Fallback (v5.9.8)
+
+### Status: COMPLETED (2026-08-02)
+
+- [x] **Implement Rich [link=file:///...] hyperlinks in autonomous_tester.py and talos.py** -- `_make_clickable_path()` helper converts file paths to Rich terminal hyperlinks with forward slashes for CTRL+CLICK navigation. Crash report paths, Q-table paths, and reports directories are now clickable in the terminal.
+- [x] **Fix AIManager fast-tier fallback to attempt local Ollama (11434) before cloud** -- When the fast edge CPU tier (port 11435) fails with a ConnectionError, `_execute_ollama_http()` now automatically falls back to the local GPU Ollama endpoint (port 11434) FIRST, preserving air-gapped operation. Only if both local endpoints fail does it attempt cloud fallback. Logs `[WARNING] Fast tier (11435) offline. Falling back to local Ollama (11434)...` and `[RECOVERY]` on successful GPU fallback.
+- [x] **Force-sync all 15 documentation files and 5 code files to v5.9.8** -- Version strings updated in talos.py, run_talos.bat, run_talos.sh, config/settings.py, tests/test_multi_tier.py, and src/api/main_api.py.
+
+---
 
 ## Phase 15: Distributed Ecosystem (Future -- v6.0.0+)
 

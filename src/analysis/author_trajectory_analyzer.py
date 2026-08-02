@@ -45,7 +45,7 @@ class TrajectoryAnalyzer:
         self.ai_manager = AIManager(config)
         self.orcid_api_base = "https://pub.orcid.org/v3.0/"
         self.project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        self.reports_dir = os.path.join(self.project_root, "reports", "authors")
+        self.reports_dir = os.path.join(self.project_root, "data", "reports", "authors")
         os.makedirs(self.reports_dir, exist_ok=True)
         print("INFO: Trajectory Analyzer v3.2 (Unified Input) αρχικοποιήθηκε.")
 

@@ -49,7 +49,7 @@ class UnifiedProfiler:
         self.openalex_base_url = "https://api.openalex.org/authors/"
         self.ss_base_url = "https://api.semanticscholar.org/graph/v1/author/"
         self.project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-        self.reports_dir = os.path.join(self.project_root, "reports", "authors")
+        self.reports_dir = os.path.join(self.project_root, "data", "reports", "authors")
         os.makedirs(self.reports_dir, exist_ok=True)
         print("INFO: Unified Profiler v3.9 (Intelligent Input) αρχικοποιήθηκε.")
 

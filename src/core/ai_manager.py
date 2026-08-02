@@ -608,7 +608,23 @@ class AIManager:
                 print(f"  >!> {label} HTTP {response.status_code}: {response.text[:200]}")
                 return None
         except requests.exceptions.ConnectionError as e:
-            print(f"  [WARNING] {label} connection refused: {e}")
+            print(f"  [WARNING] {label} ({model}) connection refused: {e}")
+            # -- v5.9.8: Local-to-Local Fast-Tier Fallback --
+            # When the fast edge tier (CPU, port 11435) fails, automatically
+            # fall back to local Ollama GPU (port 11434) FIRST before attempting
+            # cloud fallback. This preserves air-gapped operation and avoids
+            # unnecessary cloud API calls when only the edge endpoint is down.
+            if use_edge:
+                print("  [WARNING] Fast tier (11435) offline. Falling back to local Ollama (11434)...")
+                # -- Try the GPU Ollama endpoint --
+                gpu_result = self._execute_ollama_http(
+                    prompt, response_format, use_edge=False, allow_prompt=allow_prompt
+                )
+                if gpu_result is not None:
+                    print("  [RECOVERY] Fast-tier fallback to local Ollama (GPU) succeeded.")
+                    return gpu_result
+                print("  [WARNING] Local Ollama (GPU) also unavailable.")
+                # -- Both local endpoints failed -- fall through to cloud fallback --
             tier_label = "fast" if use_edge else "heavy"
             return self._interactive_cloud_fallback(e, tier=tier_label, allow_prompt=allow_prompt)
         except Exception as e:

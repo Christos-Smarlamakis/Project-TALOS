@@ -2,6 +2,41 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.9.10] - 2026-08-02 -- Vendored Graphify AST Integration & Rich Menu Reorganization
+
+(Changes documented in Phase 20 timeline)
+
+## [v5.9.9] - 2026-08-02 -- Report Path Consolidation & Data Directory Isolation
+
+## [v5.9.12] - 2026-08-02 -- Vendored Dependencies Hotfix
+
+### Added
+- **`tree-sitter-python` to `requirements.txt`**: Python language grammar for the vendored Graphify AST Knowledge Graph engine. The subprocess was failing without this grammar in the "Full Setup" pipeline.
+- **`rapidfuzz` to `requirements.txt`**: Fuzzy string matching library required by Graphify for entity resolution during AST knowledge graph construction. Resolves `ModuleNotFoundError: No module named 'rapidfuzz'` during graph generation.
+
+### Changed
+- **Version strings synced across 5 code files and 15 documentation files** to v5.9.12.
+- **`tests/test_multi_tier.py`**: `test_talos_version` assertion updated from "5.9.10" to "5.9.12".
+
+### Verification
+- `python -m py_compile` passed on all changed `.py` files.
+- Full test suite: 181 passed, 0 failed (`pytest -v`).
+- Zero emojis protocol enforced across all changed code and documentation.
+
+
+### Changed
+- **Consolidated all report output paths to `data/reports/`** (8 analysis scripts + tester routes): All runtime-generated reports from `src/analysis/` scripts (`architecture_intelligence_report.py`, `generate_baseline_report.py`, `author_profiler.py`, `author_trajectory_analyzer.py`, `citation_analyzer.py`, `trend_analyzer.py`, `knowledge_path_generator.py`, `recommender.py`) now write to `data/reports/` subdirectories instead of root-level `reports/`. The autonomous tester (`src/ai/testing/autonomous_tester.py`) and its REST API (`src/api/tester_routes.py`) were already migrated in Phase 16.
+- **Migrated all existing root `reports/` contents to `data/reports/`**: 124 historical report files (audits, authors, citations, general, general_status_report, grey_literature, knowledge_paths, recommendations, snapshots, trends) moved to `data/reports/` with full directory structure preserved.
+- **Deleted root `reports/` directory**: Project root is now clean; all generated outputs reside under `data/` for proper `.gitignore` exclusion.
+- **Updated `generate_baseline_report.py` print statements**: Console output now reflects `data/reports/general_status_report/` instead of `reports/general_status_report/`.
+- **Version strings synced across 5 code files and 15 documentation files** to v5.9.9.
+- **`tests/test_multi_tier.py`**: `test_talos_version` assertion updated from "5.9.8" to "5.9.9".
+
+### Verification
+- `python -m py_compile` passed on all 13 changed `.py` files (8 analysis + autonomous_tester + tester_routes + config/settings + main_api + talos.py).
+- Full test suite: 181 passed, 0 failed (`pytest -v`).
+- Zero emojis protocol enforced across all changed code and documentation.
+
 ## [v5.9.7] - 2026-08-01 -- Data Directory Consolidation & Dynamic Target Discovery
 
 ### Changed

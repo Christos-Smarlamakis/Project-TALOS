@@ -56,7 +56,7 @@ class ReadingRecommender:
     def __init__(self, db_name="talos_research.db"):
         project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
         self.db_path = os.path.join(project_root, db_name)
-        self.reports_dir = os.path.join(project_root, "reports", "recommendations")
+        self.reports_dir = os.path.join(project_root, "data", "reports", "recommendations")
         os.makedirs(self.reports_dir, exist_ok=True)
         self.papers_df = self.load_papers_from_db()
         print(f"INFO: ReadingRecommender v4.1 αρχικοποιήθηκε με {len(self.papers_df)} άρθρα από τη βάση.")

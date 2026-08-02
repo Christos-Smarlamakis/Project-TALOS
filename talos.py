@@ -10,15 +10,20 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.9.7
+Project: TALOS v5.9.13
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
     Conda environment, API port, Synapse bus, execution mode, active
     LLM tiers, and the current active research focus from config.json.
-    11-option menu with integrated Model Manager, CLI research tools,
-    interactive View & Pivot Research Focus (Query Translator), system
-    diagnostics, and the Autonomous System Tester (RL Chaos Fuzzer).
+    14-option richly-grouped menu across five visual categories: Core & AI
+    Configuration, Search & Ingestion, Analysis & Topologies, Daemons &
+    CI/CD, and Diagnostics & Exit. Includes the new Vendored Graphify
+AST Knowledge Graph adapter (v5.9.12).
+
+    v5.9.12: Vendored Graphify AST Knowledge Graph integrated via
+    src/analysis/graphify_adapter.py. Main menu reorganized into five
+    visually-grouped Rich categories. Version bumped from 5.9.9.
 
     v5.9.0: Autonomous System Tester (RL-Driven Chaos Engineering) integrated
     as menu option 8. Runs a Non-Stationary Epsilon-Greedy Multi-Armed Bandit
@@ -50,6 +55,7 @@ Dependencies:
     - src.core.profile_manager: Profile switching and retrieval.
     - src.ai.llm.model_manager: Multi-tier AI model management TUI.
     - src.ai.testing.autonomous_tester: RL-driven chaos engineering daemon.
+    - src.analysis.graphify_adapter: Vendored Graphify AST knowledge graph.
     - rich: Terminal UI beautification (Console, Panel, Table, Box, Text).
     - questionary: Terminal UI interactive prompts.
     - python-dotenv: Environment variable loading.
@@ -67,6 +73,19 @@ load_dotenv()
 import shutil
 
 from config.settings import TALOS_VERSION, TALOS_API_PORT
+
+# -- v5.9.8: Clickable Terminal Hyperlinks --
+def _make_clickable_path(path_str: str) -> str:
+    """Convert a file path to a Rich terminal hyperlink for CTRL+CLICK navigation.
+
+    Args:
+        path_str: Absolute or relative file path.
+
+    Returns:
+        Rich [link=file:///...] formatted string with forward slashes.
+    """
+    abs_path = os.path.abspath(path_str).replace("\\", "/")
+    return f"[link=file:///{abs_path}]{path_str}[/link]"
 from config.settings import TALOS_NETWORK_STRATEGY, TALOS_HARDWARE_STRATEGY, TALOS_EXECUTION_MODE
 from config.settings import FAST_EDGE_MODEL, HEAVY_REASONING_MODEL
 from config.settings import CLOUD_PROVIDER, GEMINI_FLASH_MODEL, DEEPSEEK_MODEL_CHAT
@@ -200,6 +219,7 @@ _SCRIPT_MAP = {
     "recommender.py":             "analysis",
     "generate_baseline_report.py": "analysis",
     "generate_architecture_graph.py": "analysis",
+    "graphify_adapter.py":        "analysis",
     # -- Utils --
     "db_stats.py":                "utils",
     "recalculate_scores.py":      "utils",
@@ -980,32 +1000,34 @@ def main_menu():
 
         console.print(header_panel)
 
-        # -- Menu choices (11 options) --
+        # -- v5.9.12: Richly-grouped 14-option menu --
         choice = safe_select("Select operation:", choices=[
-            questionary.Separator("  CORE CONFIGURATION"),
-            " 1. Configure AI Models & Execution Modes (Model Manager)",
-            questionary.Separator("  SEARCH & DISCOVERY"),
-            " 2. CLI Research Search (Interactive)",
-            questionary.Separator("  ENRICHMENT & ANALYSIS"),
-            " 3. Metadata Enrichment",
-            " 4. View & Pivot Research Focus (Query Translator)",
-            questionary.Separator("  MODEL MANAGEMENT"),
-            " 5. Model Manager (Legacy/Direct)",
-            questionary.Separator("  TESTING & CI/CD"),
-            " 6. Autonomous System Tester (RL Chaos Fuzzer)",
-            questionary.Separator("  SYSTEM DIAGNOSTICS"),
-            " 7. Baseline Report (Standard)",
-            " 8. Baseline Report (Academic -- 600 DPI)",
-            " 9. DRL Agent Status",
-            "10. Codebase Docs Generator (18 Languages)",
+            questionary.Separator("  [ CORE & AI CONFIGURATION ]"),
+            "  1. Configure AI Models & Execution Modes (Model Manager)",
+            "  2. View & Pivot Research Focus (Query Translator)",
+            questionary.Separator("  [ SEARCH & INGESTION ]"),
+            "  3. CLI Research Search (Interactive)",
+            questionary.Separator("  [ ANALYSIS & TOPOLOGIES ]"),
+            "  4. Metadata Enrichment",
+            "  5. Legacy Architecture Graph (D3.js)",
+            "  6. Advanced AST Knowledge Graph (Graphify)",
+            questionary.Separator("  [ DAEMONS & CI/CD ]"),
+            "  7. Autonomous System Tester (RL Chaos Fuzzer)",
+            "  8. Live DRL Agent (Real API Orchestration)",
+            "  9. Autonomous Research Process (24/7 Service)",
+            questionary.Separator("  [ DIAGNOSTICS & EXIT ]"),
+            " 10. Baseline Report (Standard)",
+            " 11. Baseline Report (Academic -- 600 DPI)",
+            " 12. DRL Agent Status",
+            " 13. Codebase Docs Generator (18 Languages)",
             questionary.Separator(),
-            "11. Exit",
+            " 14. Exit",
         ])
         if choice is None or "Exit" in choice: break
         fm = "Press Enter to return..."
 
-        # -- Route menu choices --
-        if "1." in choice:
+        # -- Route menu choices (v5.9.12: reorganized into 5 groups) --
+        if " 1." in choice:
             # -- Model Manager: import and run main() in-process --
             console.print("\n[bold bright_cyan]Launching AI Model Manager...[/bold bright_cyan]\n")
             try:
@@ -1014,61 +1036,41 @@ def main_menu():
             except Exception as e:
                 console.print(f"[red]Error launching Model Manager: {e}[/red]")
                 safe_pause("\nPress Enter...")
-        elif "2." in choice:
+        elif " 2." in choice:
+            # -- View & Pivot Research Focus (interactive workflow) --
+            _view_and_pivot_research_focus(python_exe, project_root)
+        elif " 3." in choice:
             # -- CLI Research Search: open the full legacy search menu --
             choice2 = safe_select("CLI Research Search:", choices=[
                 questionary.Separator("  SEARCH & DISCOVERY"),
-                "2a. Daily Search (14 APIs)",
-                "2b. Historical Search (Deep Archive)",
-                "2c. Grey Literature / Web Horizon Scan",
-                questionary.Separator("  AI-POWERED SEARCH (DRL)"),
-                "2d. Live DRL Agent (Real API Orchestration)",
-                "2e. Autonomous Research Process (24/7)",
+                "3a. Daily Search (14 APIs)",
+                "3b. Historical Search (Deep Archive)",
+                "3c. Grey Literature / Web Horizon Scan",
                 questionary.Separator("  ANALYSIS & INSIGHTS"),
-                "2f. Knowledge Path Generator",
-                "2g. Citation Network Analyzer",
-                "2h. Strategic Reading Report",
-                "2i. Author Analysis Tools",
-                "2j. Interactive Dashboard",
-                "2k. DRL Training (API Orchestrator)",
-                "2l. Compare Baselines (Pre/Post DRL)",
+                "3d. Knowledge Path Generator",
+                "3e. Citation Network Analyzer",
+                "3f. Strategic Reading Report",
+                "3g. Author Analysis Tools",
+                "3h. Interactive Dashboard",
+                "3i. DRL Training (API Orchestrator)",
+                "3j. Compare Baselines (Pre/Post DRL)",
                 questionary.Separator(), "Back"
             ])
             if choice2 is None or "Back" in choice2: continue
-            if "2a" in choice2: run_script("daily_search.py", python_exe)
-            elif "2b" in choice2:
+            if "3a" in choice2: run_script("daily_search.py", python_exe)
+            elif "3b" in choice2:
                 if questionary.confirm("This may take a long time. Sure?", default=False).ask():
                     run_script("historic_search.py", python_exe)
-            elif "2c" in choice2: run_script("grey_literature_miner.py", python_exe)
-            elif "2d" in choice2:
-                info = _build_info_panel(
-                    "Live DRL Agent -- Real API Orchestration",
-                    "The trained DRL agent selects the optimal API source in real-time\n"
-                    "using the 14-source academic API environment.",
-                    border_style="cyan",
-                )
-                console.print(info)
-                if questionary.confirm("Start live agent? (Ctrl+C to stop)", default=True).ask():
-                    run_script("talos_live_agent.py", python_exe, args=["--verbose"])
-            elif "2e" in choice2:
-                info = _build_info_panel(
-                    "Autonomous Research Process -- 24/7 + DRL",
-                    "Runs INDEFINITELY. Uses the DRL agent to discover papers\n"
-                    "around the clock with periodic AI evaluation and reporting.",
-                    border_style="yellow",
-                )
-                console.print(info)
-                if questionary.confirm("Start autonomous process? (Ctrl+C to stop)", default=True).ask():
-                    run_script("talos_service.py", python_exe)
-            elif "2f" in choice2: run_script("knowledge_path_generator.py", python_exe)
-            elif "2g" in choice2: run_script("citation_analyzer.py", python_exe)
-            elif "2h" in choice2: run_script("recommender.py", python_exe)
-            elif "2i" in choice2: author_tools_menu(python_exe)
-            elif "2j" in choice2:
+            elif "3c" in choice2: run_script("grey_literature_miner.py", python_exe)
+            elif "3d" in choice2: run_script("knowledge_path_generator.py", python_exe)
+            elif "3e" in choice2: run_script("citation_analyzer.py", python_exe)
+            elif "3f" in choice2: run_script("recommender.py", python_exe)
+            elif "3g" in choice2: author_tools_menu(python_exe)
+            elif "3h" in choice2:
                 run_script("interactive_dashboard.py", python_exe)
                 fm = "Dashboard terminated. Press Enter..."
-            elif "2k" in choice2: run_script("drl_trainer.py", python_exe)
-            elif "2l" in choice2:
+            elif "3i" in choice2: run_script("drl_trainer.py", python_exe)
+            elif "3j" in choice2:
                 info = _build_info_panel(
                     "Compare Baselines -- Pre/Post DRL",
                     "Generates a new academic baseline report and compares it\n"
@@ -1089,7 +1091,7 @@ def main_menu():
                                 border_style="green",
                             )
                             console.print(comp)
-        elif "3." in choice:
+        elif " 4." in choice:
             info = _build_info_panel(
                 "Metadata Enrichment",
                 "Enriches paper records with metadata from OpenAlex,\n"
@@ -1098,12 +1100,41 @@ def main_menu():
             )
             console.print(info)
             run_script("metadata_enricher.py", python_exe)
-        elif "4." in choice:
-            # -- View & Pivot Research Focus (interactive workflow) --
-            _view_and_pivot_research_focus(python_exe, project_root)
-        elif "5." in choice:
-            run_script("model_manager.py", python_exe)
-        elif "6." in choice:
+        elif " 5." in choice:
+            # -- Legacy Architecture Graph --
+            import webbrowser, socket
+            port = 8765
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.settimeout(0.5)
+                if s.connect_ex(('127.0.0.1', port)) != 0:
+                    sd = os.path.join(project_root, "templates")
+                    subprocess.Popen([python_exe, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", sd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                s.close()
+            except Exception: pass
+            webbrowser.open(f"http://localhost:{port}/architecture_graph.html")
+        elif " 6." in choice:
+            # -- Advanced AST Knowledge Graph (Graphify) --
+            info = _build_info_panel(
+                "Advanced AST Knowledge Graph -- Graphify",
+                "Runs the vendored Graphify AST pipeline against the\n"
+                "TALOS src/ directory. Extracts structural nodes and\n"
+                "edges via tree-sitter, builds a knowledge graph,\n"
+                "and exports JSON + HTML + Markdown report to\n"
+                "data/reports/graphify_out/.",
+                border_style="bright_magenta",
+            )
+            console.print(info)
+            if questionary.confirm(
+                "Launch Graphify AST pipeline? (may take 30-120s)",
+                default=True
+            ).ask():
+                try:
+                    from src.analysis.graphify_adapter import generate_ast_knowledge_graph
+                    generate_ast_knowledge_graph()
+                except Exception as e:
+                    console.print(f"[red][ERROR] Graphify pipeline failed: {e}[/red]")
+            safe_pause()
+        elif " 7." in choice:
             # -- Autonomous System Tester (RL Chaos Fuzzer) --
             info = _build_info_panel(
                 "Autonomous System Tester (RL-Driven Chaos Engineering)",
@@ -1130,7 +1161,29 @@ def main_menu():
                     run_autonomous_tester(cycles=cycles)
                 except Exception as e:
                     console.print(f"[red]Error running Autonomous Tester: {e}[/red]")
-        elif "7." in choice:
+        elif " 8." in choice:
+            # -- Live DRL Agent --
+            info = _build_info_panel(
+                "Live DRL Agent -- Real API Orchestration",
+                "The trained DRL agent selects the optimal API source in real-time\n"
+                "using the 14-source academic API environment.",
+                border_style="cyan",
+            )
+            console.print(info)
+            if questionary.confirm("Start live agent? (Ctrl+C to stop)", default=True).ask():
+                run_script("talos_live_agent.py", python_exe, args=["--verbose"])
+        elif " 9." in choice:
+            # -- Autonomous Research Process (24/7 Service) --
+            info = _build_info_panel(
+                "Autonomous Research Process -- 24/7 + DRL",
+                "Runs INDEFINITELY. Uses the DRL agent to discover papers\n"
+                "around the clock with periodic AI evaluation and reporting.",
+                border_style="yellow",
+            )
+            console.print(info)
+            if questionary.confirm("Start autonomous process? (Ctrl+C to stop)", default=True).ask():
+                run_script("talos_service.py", python_exe)
+        elif "10." in choice:
             info = _build_info_panel(
                 "Baseline Report (Standard)",
                 "Generates a standard baseline report with score distribution,\n"
@@ -1139,7 +1192,7 @@ def main_menu():
             )
             console.print(info)
             run_script("generate_baseline_report.py", python_exe)
-        elif "8." in choice:
+        elif "11." in choice:
             info = _build_info_panel(
                 "Baseline Report (Academic -- 600 DPI)",
                 "Generates a publication-quality academic baseline report\n"
@@ -1149,7 +1202,7 @@ def main_menu():
             )
             console.print(info)
             run_script("generate_baseline_report.py", python_exe, args=["--academic"])
-        elif "9." in choice:
+        elif "12." in choice:
             # -- DRL Status: rich-powered display --
             mp = os.path.join(project_root, "models", "dddqn_trained.pth")
             gp = os.path.join(project_root, "models", "gwo_best_params.json")
@@ -1177,7 +1230,7 @@ def main_menu():
                 box=box.ROUNDED,
             )
             console.print(drl_panel)
-        elif "10." in choice:
+        elif "13." in choice:
             info = _build_info_panel(
                 "Codebase Documentation Generator (18 Languages)",
                 "Uses LOCAL Ollama -- zero cloud cost, full privacy.\n"

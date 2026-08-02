@@ -1,8 +1,10 @@
-﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.9.1
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.9.9
 
-> **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects — without re-reading all files.
+> **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
+>
+> **Last Updated:** 2026-08-02 (v5.9.9 -- Report Path Consolidation & Data Directory Isolation)
 
 ---
 
@@ -428,6 +430,14 @@ generate_docs.py → requests, dotenv, tqdm
 
 ---
 
-> **Last Updated:** 2026-08-01 (v5.9.1 — Autonomous System Tester, RL Chaos Fuzzer, LLM-as-a-Judge, Rich Q-Table, 18 Endpoints, 11-Option TUI)
-> **Project Version:** v5.9.1
-> **Total Files Covered:** 69 (58 src/ + 3 integration/ + 8 root entry/config/docs/tests)
+> **Last Updated:** 2026-08-02 (v5.9.9 -- Report Path Consolidation & Data Directory Isolation)
+> **Project Version:** v5.9.9
+> **Total Files Covered:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
+>
+> ### New in v5.9.9: Report Path Consolidation
+> - **All reports** now stored under **`data/reports/`** (no longer at root `reports/`).
+> - Report subsystems (`reports/audits/`, `reports/authors/`, `reports/citations/`, `reports/general/`, `reports/general_status_report/`, `reports/grey_literature/`, `reports/knowledge_paths/`, `reports/recommendations/`, `reports/trends/`) all moved to `data/reports/`.
+> - **8 analysis scripts** (`src/analysis/`) updated to write to `data/reports/`.
+> - **Autonomous Tester** writes to `data/reports/autonomous_tester/`.
+> - REST API tester routes reads from `data/reports/autonomous_tester/`.
+> - Root `reports/` directory deleted -- clean project root.

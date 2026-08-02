@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_multi_tier.py
-Project: TALOS v5.9.4
+Project: TALOS v5.9.13
 Description:
     Unit tests for the multi-tier LLM routing architecture (v5.7.1). Tests cover:
     - Fast tier routing via HTTP POST to FAST_EDGE_BASE_URL with Neutrino-8B.
@@ -198,9 +198,9 @@ class TestMultiTierRouting:
         }
 
     def test_tier_fast_routes_to_fast_tier(self):
-        """Verify that tier='fast' routes via _execute_local_strategy (v5.9.4 2D Matrix)."""
+        """Verify that tier='fast' routes via _execute_local_strategy (v5.9.10 2D Matrix)."""
         from src.core.ai_manager import AIManager
-        # v5.9.4: 2D Execution Matrix uses _execute_local_strategy for strict_local.
+        # v5.9.10: 2D Execution Matrix uses _execute_local_strategy for strict_local.
         # Set legacy vars plus the new network/hardware strategy vars to ensure
         # fast tier routes through the local strategy path.
         with patch.dict('os.environ', {
@@ -238,7 +238,7 @@ class TestMultiTierRouting:
     def test_tier_fast_falls_back_to_providers(self):
         """Verify that fast tier failure returns None when no cloud fallback is available."""
         from src.core.ai_manager import AIManager
-        # v5.9.4: With strict_local network strategy and no cloud providers,
+        # v5.9.10: With strict_local network strategy and no cloud providers,
         # _execute_local_strategy returning None should cause overall None.
         with patch.dict('os.environ', {
             'GEMINI_API_KEY': '',
@@ -269,7 +269,7 @@ class TestMultiTierRouting:
     def test_tier_heavy_skips_fast_tier(self):
         """Verify that tier='heavy' routes via _execute_local_strategy (GPU) and does NOT call fast tier."""
         from src.core.ai_manager import AIManager
-        # v5.9.4: Set strict_local network strategy so it uses _execute_local_strategy.
+        # v5.9.10: Set strict_local network strategy so it uses _execute_local_strategy.
         # Mock _execute_local_strategy to return None (simulating no local models available)
         # and verify _execute_fast_tier_request is not called.
         with patch.dict('os.environ', {
@@ -337,9 +337,9 @@ class TestSettingsResolution:
         assert DEFAULT_TIER == "fast"
 
     def test_talos_version(self):
-        """Verify the TALOS_VERSION is v5.9.7."""
+        """Verify the TALOS_VERSION is v5.9.12."""
         from config.settings import TALOS_VERSION
-        assert TALOS_VERSION == "5.9.7"
+        assert TALOS_VERSION == "5.9.13"
 
     def test_talos_api_port(self):
         """Verify the default TALOS_API_PORT is 8001."""

@@ -1,8 +1,10 @@
-﻿# PROJECT_MAP.md -- Pliris Chartis tou Project TALOS v5.9.1
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.9.9
 
-> **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται — χωρίς να ξαναδιαβάζει όλα τα αρχεία.
+> **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
+>
+> **Τελευταία Ενημέρωση:** 2026-08-02 (v5.9.9 -- Ενοποίηση Διαδρομών Αναφορών & Απομόνωση Καταλόγου Δεδομένων)
 
 ---
 
@@ -437,6 +439,14 @@ generate_docs.py → requests, dotenv, tqdm
 
 ---
 
-> **Teleutaia enimerosi:** 2026-08-01 (v5.9.1 -- LLM Focus Summarization, 4-Way Execution Mode Matrix, 100% Rich Sub-Menus, Per-Tier Routing, 18 Endpoints, 11-Option TUI)
-> **Ekdosi Project:** v5.9.1
-> **Συνολικά αρχεία που καλύπτονται:** 72 (61 src/ + 3 integration/ + 8 root entry/config/docs/tests)
+> **Τελευταία ενημέρωση:** 2026-08-02 (v5.9.9 -- Ενοποίηση Διαδρομών Αναφορών & Απομόνωση Καταλόγου Δεδομένων)
+> **Έκδοση Project:** v5.9.9
+> **Συνολικά αρχεία που καλύπτονται:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
+>
+> ### Νέο στην v5.9.9: Ενοποίηση Αναφορών
+> - **Όλες οι αναφορές** πλέον αποθηκεύονται στο **`data/reports/`** (όχι στη ρίζα `reports/`).
+> - Τα υποσυστήματα αναφορών (`reports/audits/`, `reports/authors/`, `reports/citations/`, `reports/general/`, `reports/general_status_report/`, `reports/grey_literature/`, `reports/knowledge_paths/`, `reports/recommendations/`, `reports/trends/`) μεταφέρθηκαν όλα στο `data/reports/`.
+> - **8 scripts ανάλυσης** (`src/analysis/`) ενημερώθηκαν για να γράφουν στο `data/reports/`.
+> - O **Αυτόνομος Ελεγκτής** (`autonomous_tester.py`) γράφει στο `data/reports/autonomous_tester/`.
+> - Το REST API tester routes διαβάζει από `data/reports/autonomous_tester/`.
+> - Ολόκληρος ο κατάλογος root `reports/` διαγράφηκε -- καθαρή ρίζα έργου.

@@ -2,6 +2,37 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.9.9] - 2026-08-02 -- Ενοποίηση Διαδρομών Αναφορών & Απομόνωση Καταλόγου Δεδομένων
+
+## [v5.9.12] - 2026-08-02 -- Hotfix Εξαρτήσεων Vendored Graphify
+
+### Προστέθηκε
+- **`tree-sitter-python` στο `requirements.txt`**: Γραμματική της γλώσσας Python για το vendored Graphify AST Knowledge Graph engine. Η υποδιεργασία απέτυχε χωρίς αυτήν τη γραμματική κατά την εκτέλεση του "Full Setup".
+- **`rapidfuzz` στο `requirements.txt`**: Βιβλιοθήκη ασαφούς αντιστοίχισης συμβολοσειρών που απαιτείται από το Graphify για την επίλυση οντοτήτων κατά την κατασκευή του γράφου γνώσης AST. Επιλύει το `ModuleNotFoundError: No module named 'rapidfuzz'` κατά τη δημιουργία του γράφου.
+
+### Άλλαξε
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5 αρχεία κώδικα και 15 αρχεία τεκμηρίωσης** σε v5.9.12.
+- **`tests/test_multi_tier.py`**: Ο ισχυρισμός `test_talos_version` ενημερώθηκε από "5.9.10" σε "5.9.12".
+
+### Επαλήθευση
+- Το `python -m py_compile` ολοκληρώθηκε με επιτυχία σε όλα τα τροποποιημένα αρχεία `.py`.
+- Πλήρης σουίτα δοκιμών: 181 επιτυχείς, 0 αποτυχίες (`pytest -v`).
+- Πρωτόκολλο μηδενικών emojis τηρείται σε όλο τον κώδικα και την τεκμηρίωση.
+
+
+### Άλλαξε
+- **Ενοποίηση όλων των διαδρομών εξόδου αναφορών στο `data/reports/`** (8 σενάρια ανάλυσης + tester routes): Όλες οι αναφορές που παράγονται κατά την εκτέλεση από τα σενάρια του `src/analysis/` (`architecture_intelligence_report.py`, `generate_baseline_report.py`, `author_profiler.py`, `author_trajectory_analyzer.py`, `citation_analyzer.py`, `trend_analyzer.py`, `knowledge_path_generator.py`, `recommender.py`) εγγράφουν πλέον στους υποκαταλόγους του `data/reports/` αντί του `reports/` επιπέδου ρίζας. Ο αυτόνομος ελεγκτής (`src/ai/testing/autonomous_tester.py`) και το REST API του (`src/api/tester_routes.py`) είχαν ήδη μεταφερθεί στη Φάση 16.
+- **Μεταφορά όλων των υπαρχόντων περιεχομένων του root `reports/` στο `data/reports/`**: 124 ιστορικά αρχεία αναφορών (audits, authors, citations, general, general_status_report, grey_literature, knowledge_paths, recommendations, snapshots, trends) μετακινήθηκαν στο `data/reports/` με πλήρη διατήρηση της δομής καταλόγων.
+- **Διαγραφή του καταλόγου root `reports/`**: Η ρίζα του έργου είναι πλέον καθαρή. Όλα τα παραγόμενα αποτελέσματα βρίσκονται υπό τον κατάλογο `data/` για σωστό αποκλεισμό μέσω `.gitignore`.
+- **Ενημέρωση των δηλώσεων `print` του `generate_baseline_report.py`**: Η έξοδος κονσόλας εμφανίζει πλέον `data/reports/general_status_report/` αντί για `reports/general_status_report/`.
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5 αρχεία κώδικα και 15 αρχεία τεκμηρίωσης** σε v5.9.9.
+- **`tests/test_multi_tier.py`**: Ο ισχυρισμός `test_talos_version` ενημερώθηκε από "5.9.8" σε "5.9.9".
+
+### Επαλήθευση
+- To `python -m py_compile` ολοκληρώθηκε με επιτυχία και στα 13 τροποποιημένα αρχεία `.py` (8 ανάλυσης + autonomous_tester + tester_routes + config/settings + main_api + talos.py).
+- Πλήρης σουίτα δοκιμών: 181 επιτυχείς, 0 αποτυχίες (`pytest -v`).
+- Πρωτόκολλο μηδενικών emojis τηρείται σε όλο τον κώδικα και την τεκμηρίωση.
+
 ## [v5.9.7] - 2026-08-01 -- Ενοποίηση Καταλόγου Δεδομένων & Δυναμική Ανακάλυψη Στόχων
 
 ### Άλλαξε

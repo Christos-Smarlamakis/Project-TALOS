@@ -34,9 +34,9 @@ from src.core.ai_manager import AIManager
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 PROJECT_MAP_PATH = PROJECT_ROOT / "PROJECT_MAP.md"
-AUDIT_JSON_PATH = PROJECT_ROOT / "reports" / "audits" / "dependency_audit.json"
+AUDIT_JSON_PATH = PROJECT_ROOT / "data" / "reports" / "audits" / "dependency_audit.json"
 GRAPH_JSON_PATH = PROJECT_ROOT / "templates" / "architecture_graph_data.json"
-REPORTS_DIR = PROJECT_ROOT / "reports"
+REPORTS_DIR = PROJECT_ROOT / "data" / "reports"
 
 # Timestamp-based filenames for history tracking
 _TIMESTAMP = datetime.now().strftime("%Y-%m-%d_%H-%M")

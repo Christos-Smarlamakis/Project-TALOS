@@ -596,13 +596,13 @@ def main():
     date_folder = now.strftime("%Y-%m-%d")
     report_base = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "reports", "general_status_report"
+        "data", "reports", "general_status_report"
     )
     outdir = os.path.join(report_base, date_folder)
     os.makedirs(outdir, exist_ok=True)
 
     print(f"\n  Database: {os.path.basename(db_path)}")
-    print(f"  Output:   reports/general_status_report/{date_folder}/")
+    print(f"  Output:   data/reports/general_status_report/{date_folder}/")
     if args.academic:
         print(f"  Style:    Academic (serif fonts, 600 DPI)")
     print()
@@ -662,7 +662,7 @@ def main():
     print("\n" + "=" * 65)
     print("  ✅ Baseline Report Complete")
     print("=" * 65)
-    print(f"\n  📁 Report directory: reports/general_status_report/{date_folder}/")
+    print(f"\n  📁 Report directory: data/reports/general_status_report/{date_folder}/")
     print(f"  📊 Total papers:      {metrics['total_papers']:,}")
     print(f"  ⭐ Elite (≥8):       {metrics['elite_count']:,} ({metrics['elite_pct']}%)")
     print(f"  📈 Average score:     {metrics['avg_score']:.2f} ± {metrics['std_dev_score']:.2f}")
