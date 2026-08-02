@@ -6,7 +6,7 @@
 > **An Autonomous Research Intelligence Platform -- Multi-Tier LLM Routing (CPU/GPU/Cloud), Headless FastAPI Backend with 18 REST Endpoints, SYNAPSE Event-Driven Protocol, RL-Driven Autonomous System Tester with LLM-as-a-Judge Diagnostics, React 18 + Tailwind CSS + Shadcn UI Frontend.**
 
 [![IEEE Computer Society](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund)
-![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
 ![License](https://img.shields.io/badge/License-AGPLv3-red)
 [![DOI](https://zenodo.org/badge/1191928488.svg)](https://doi.org/10.5281/zenodo.19224912)
 ![Status](https://img.shields.io/badge/Status-Active%20Research-green)
