@@ -1,4 +1,4 @@
-# Project TALOS (v5.9.13)
+# Project TALOS (v5.9.14)
 
 ### **Tactical Agentic Literature Orchestration System**
 
