@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.9.13
+Project: TALOS v5.9.14
 Description:
     Canonical configuration hub for TALOS v5.9.8. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
@@ -130,7 +130,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.9.13"
+TALOS_VERSION = "5.9.14"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.

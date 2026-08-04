@@ -2,6 +2,26 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.9.14] - 2026-08-04 -- Documentation & Version Sync
+
+### Changed
+- **Version strings synced across 4 code files and 15 documentation files** to v5.9.14.
+- **`config/settings.py`**: `TALOS_VERSION` updated from "5.9.13" to "5.9.14". Module docstring updated.
+- **`talos.py`**: Module docstring version updated from v5.9.13 to v5.9.14.
+- **`src/api/main_api.py`**: FastAPI `version`, `description`, and startup log message updated from v5.9.13 to v5.9.14.
+- **`tests/test_multi_tier.py`**: `test_talos_version` assertion updated from "5.9.13" to "5.9.14". Module docstring updated.
+- **`docs/CHANGELOG_EN.md`**: v5.9.14 entry added.
+- **`docs/CHANGELOG_GR.md`**: v5.9.14 entry added.
+- **`docs/SYSTEM_CAPABILITIES_MASTER.md`**: Version and last-updated date synced to v5.9.14 (user-applied).
+- **`docs/SYSTEM_CAPABILITIES_MASTER.html`**: Version and last-updated date synced to v5.9.14 (user-applied).
+- **`run_talos.bat`**: Version strings updated to v5.9.14 (user-applied).
+- **`run_talos.sh`**: Version strings updated to v5.9.14 (user-applied).
+
+### Verification
+- `python -m py_compile` passed on all 4 changed `.py` files.
+- `pytest` test_talos_version assertion passes.
+- Zero emojis protocol enforced across all changed code and documentation.
+
 ## [v5.9.10] - 2026-08-02 -- Vendored Graphify AST Integration & Rich Menu Reorganization
 
 (Changes documented in Phase 20 timeline)

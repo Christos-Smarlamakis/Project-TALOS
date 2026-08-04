@@ -4,7 +4,16 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-02 (v5.9.13 -- Academic Print Theme Injection for AST Graphs)
+> **Last Updated:** 2026-08-04 (v5.9.14 -- Documentation & Version Sync)
+
+---
+
+## Phase 24: Documentation & Version Sync (v5.9.14)
+
+### Status: COMPLETED (2026-08-04)
+
+- [x] **Sync version strings across all 4 code files and 15 documentation files to v5.9.14** -- `config/settings.py` TALOS_VERSION updated from 5.9.13 to 5.9.14. `talos.py` module docstring updated. `src/api/main_api.py` FastAPI version, description, and startup log message updated. `tests/test_multi_tier.py` assertion and docstring updated. Changelogs (EN, GR) receive v5.9.14 entries. Capabilities documents (MD, HTML) and batch/POSIX launchers already updated by user.
+- [x] **Compile checks and pytest verification** -- All 4 changed `.py` files pass `python -m py_compile`. `test_talos_version` assertion passes.
 
 ---
 
