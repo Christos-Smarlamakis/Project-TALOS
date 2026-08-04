@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.9
+# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.13
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
-> **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol)
-> **Last Updated:** 2026-08-02
-> **Version:** v5.9.9 -- Report Path Consolidation & Data Directory Isolation
+> **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
+> **Last Updated:** 2026-08-04
+> **Version:** v5.9.13 -- Academic Print Theme Injection for AST Graphs
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -14,7 +14,7 @@
 
 ### 1.1 Foundational Principle
 
-TALOS is an autonomous Research Intelligence Platform that ingests, evaluates, synthesizes, and visualizes scientific knowledge across 14 academic sources. It replaces manual systematic literature review workflows with an AI-driven, DRL-orchestrated pipeline that maintains a human-in-the-loop at every critical decision boundary. The system operates as a microservice within the broader ALEXANDRIA Ecosystem -- a distributed research intelligence mesh that communicates via the SYNAPSE Event-Driven Protocol.
+TALOS is an autonomous Research Intelligence Platform that ingests, evaluates, synthesizes, and visualizes scientific knowledge across 14 academic sources. It replaces manual systematic literature review workflows with an AI-driven, DRL-orchestrated pipeline that maintains a human-in-the-loop at every critical decision boundary. The system operates as a microservice within the broader ALEXANDRIA Ecosystem -- a distributed research intelligence mesh that communicates via the SYNAPSE Event-Driven Protocol. Starting in v5.9.10, TALOS also introspects its own codebase through a vendored Graphify AST Knowledge Graph engine, generating interactive dependency visualizations and architectural intelligence reports directly from source code.
 
 ### 1.2 Architectural Pillars
 
@@ -24,47 +24,52 @@ The system operates as a five-layer architecture:
 |-------|-----------|------|
 | **Frontend** | React 18 with Tailwind CSS and Shadcn UI | User-facing dashboard leveraging the REST API |
 | **Backend** | `src/api/main_api.py` (18 endpoints) | Headless FastAPI facade exposing all core capabilities |
-| **AI Core** | `src/core/ai_manager.py` (4 providers + circuit breaker) | Multi-provider LLM orchestration with interactive cloud fallback |
+| **AI Core** | `src/core/ai_manager.py` (4 providers + circuit breaker + 2D matrix) | Multi-provider LLM orchestration with hardware-aware routing and interactive cloud fallback |
 | **Persistence** | `src/core/database_manager.py` | SQLite + multi-model vector embeddings (Ollama + Gemini) |
-| **Integration** | `src/integration/synapse_client.py` + `src/mcp_server.py` | SYNAPSE Event Bus + MCP Tool Server for external tooling |
+| **Integration** | `src/integration/synapse_client.py` + `src/mcp_server.py` + `src/analysis/graphify_adapter.py` | SYNAPSE Event Bus + MCP Tool Server + AST Knowledge Graph Intelligence |
 
 ### 1.3 Data Flow
 
 ```
 User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py --> External APIs
-                         ^                                    |
-                         |                                    v
-                    SYNAPSE Bus (:8000)              data/talos_research.db
-                         |                          (SQLite + Embeddings)
-                    MCP Server (Cherry Studio)             ^
-                                                           |
-                    config.json + .env (Configuration + Secrets)
+                          ^                                    |
+                          |                                    v
+                     SYNAPSE Bus (:8000)              data/talos_research.db
+                          |                          (SQLite + Embeddings)
+                     MCP Server (Cherry Studio)             ^
+                          |                                 |
+              vendor/graphify/ --> AST KG --> data/reports/graphify_out/
+                          |                                 |
+                     config.json + .env (Configuration + Secrets)
 ```
 
 ### 1.4 Operational Modes
 
 - **Production:** Headless FastAPI listener on port 8001, React frontend consuming the API
 - **Development:** `uvicorn src.api.main_api:app --reload --port 8001`
-- **Background Services:** Scraping pipeline, GWO optimizer, DRL training -- all via FastAPI BackgroundTasks
-- **CLI:** `talos.py` retains full terminal-mode access for maintenance and diagnostics
+- **Background Services:** Scraping pipeline, GWO optimizer, DRL training, Autonomous System Tester -- all via FastAPI BackgroundTasks
+- **CLI:** `talos.py` (Rich-powered TUI, 11 options) retains full terminal-mode access for maintenance, diagnostics, and Graphify AST generation
 - **SYNAPSE Webhook:** `POST /api/v1/synapse/webhook` receives external commands from other ALEXANDRIA microservices
-- **MCP Server:** `src/mcp_server.py` exposes tools (database query, semantic search, paper evaluation, GWO trigger, scrape trigger) to MCP-compatible clients like Cherry Studio
+- **MCP Server:** `src/mcp_server.py` exposes 4 tools (system_status, semantic_search, paper_details, trigger_scrape) to MCP-compatible clients like Cherry Studio
+- **Graphify AST Pipeline:** `src/analysis/graphify_adapter.py` generates interactive D3.js AST knowledge graphs from the TALOS codebase via vendored Graphify engine, with academic print theme toggle
 
 ### 1.5 System Constants
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.9.3" | `config/settings.py` |
+| TALOS_VERSION | "5.9.13" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
 | FAST_EDGE_BASE_URL | http://127.0.0.1:11435/v1 | `config/settings.py` |
 | HEAVY_REASONING_MODEL | qwen2.5:14b | `config/settings.py` |
 | OLLAMA_BASE_URL | http://127.0.0.1:11434 | `config/settings.py` |
-| TALOS_EXECUTION_MODE | local | `config/settings.py` |
+| TALOS_NETWORK_STRATEGY | strict_local | `config/settings.py` |
+| TALOS_HARDWARE_STRATEGY | cpu_gpu_split | `config/settings.py` |
 | TALOS_FAST_ROUTING | local | `config/settings.py` |
 | TALOS_HEAVY_ROUTING | local | `config/settings.py` |
 | DEFAULT_TIER | fast | `config/settings.py` |
+| TALOS_CLOUD_PROVIDER | gemini | `config/settings.py` |
 
 ---
 
@@ -96,7 +101,7 @@ TALOS ingests academic literature from **14 independent APIs**, each implemented
 | Springer Nature | `src/ingestion/springer.py` | API key | Exponential backoff |
 | OpenAlex | `src/ingestion/openalex.py` | Public API | Polite crawl delay |
 | DBLP | `src/ingestion/dblp.py` | Public API | Basic rate limit |
-| Elsevier/Scopus | `src/ingestion/elsevier.py` | API key + institutional token | Exponential backoff |
+| Elsevier/Scopus | `src/ingestion/elsevier.py` | API key + institutional token (elsapy, graceful import degradation) | Exponential backoff |
 | CORE | `src/ingestion/core.py` | API key | Exponential backoff |
 | CrossRef | `src/ingestion/crossref.py` | Public API | Polite crawl delay |
 | OpenArchives | `src/ingestion/openarchives.py` | Public OAI-PMH | Polite crawl delay |
@@ -110,7 +115,7 @@ TALOS ingests academic literature from **14 independent APIs**, each implemented
 - **Daily Search** (`src/ingestion/daily_search.py`): Concurrent 14-source fetch with deduplication and two-stage AI evaluation (Flash pre-screen, Pro deep analysis)
 - **Historical Search** (`src/ingestion/historic_search.py`): Year-by-year backfill with epoch deduplication logic
 - **Grey Literature Miner** (`src/ingestion/grey_literature_miner.py`): DuckDuckGo web search for preprints, technical reports, and white papers
-- **PDF Downloader** (`src/ingestion/pdf_downloader.py`): ThreadPoolExecutor-batched Open Access PDF retrieval
+- **PDF Downloader** (`src/ingestion/pdf_downloader.py`): ThreadPoolExecutor-batched Open Access PDF retrieval (15 workers)
 - **Zotero Connector** (`src/ingestion/zotero_connector.py`): Bi-directional sync with Zotero cloud library (graceful pyzotero import degradation)
 - **Metadata Enricher** (`src/ingestion/metadata_enricher.py`): DOI resolution and metadata augmentation via OpenAlex, Crossref, DBLP, Semantic Scholar fallback chain
 - **Data Enricher** (`src/ingestion/data_enricher.py`): Unpaywall API integration for OA status and PDF links
@@ -119,7 +124,7 @@ TALOS ingests academic literature from **14 independent APIs**, each implemented
 
 ## Section 3: AI Provider System & Multi-Tier LLM Routing
 
-### 3.1 Provider Architecture (AIManager v3.7)
+### 3.1 Provider Architecture (AIManager v3.9+)
 
 The AI Manager (`src/core/ai_manager.py`) implements a multi-provider architecture with automatic fallback and circuit breaker pattern across four independent providers:
 
@@ -137,7 +142,7 @@ The AI Manager (`src/core/ai_manager.py`) implements a multi-provider architectu
 - On success: failure counter resets to 0
 - Rate limit errors (HTTP 429) counted separately -- only trip circuit after multiple consecutive rate limits
 
-### 3.3 Multi-Tier Routing Architecture (v5.7.1 + v5.9.1)
+### 3.3 Multi-Tier LLM Routing Architecture (v5.7.1 + v5.9.1)
 
 TALOS implements a three-tier LLM routing architecture with independent per-tier routing control:
 
@@ -147,9 +152,34 @@ TALOS implements a three-tier LLM routing architecture with independent per-tier
 | **Heavy Reasoning** | qwen2.5:14b | http://127.0.0.1:11434 | TALOS_HEAVY_ROUTING |
 | **Cloud Provider** | Gemini / DeepSeek / HF | API endpoints | TALOS_CLOUD_PROVIDER |
 
-### 3.4 4-Way Execution Mode Matrix (v5.9.1)
+### 3.4 Local-to-Local Fallback (v5.9.8)
 
-The system supports four distinct routing combinations via the `model_manager.py` selector:
+When the Fast Edge CPU tier (port 11435) fails with a `ConnectionError`, the system automatically falls back to the local GPU Ollama endpoint (port 11434) **first**, preserving air-gapped operation. Only if both local endpoints fail does it attempt cloud fallback (when network strategy permits).
+
+### 3.5 2D Execution Matrix (Network x Hardware Strategies) -- v5.9.4
+
+The legacy `TALOS_EXECUTION_MODE` is superseded by a richer 2D model controlling network dependency and hardware device independently:
+
+#### Network Strategy (TALOS_NETWORK_STRATEGY)
+
+| Strategy | Local Inference | Cloud Inference | Cross-Environment Fallback |
+|----------|----------------|-----------------|---------------------------|
+| **strict_local** | Required | Forbidden | Never |
+| **local_first** | Primary | Fallback | Local -> Cloud on ConnectionError |
+| **cloud_first** | Fallback | Primary | Cloud -> Local on any cloud failure |
+| **strict_cloud** | Forbidden | Required | Never |
+
+#### Hardware Strategy (TALOS_HARDWARE_STRATEGY)
+
+| Strategy | Fast Tier Endpoint | Heavy Tier Endpoint | 
+|----------|--------------------|---------------------|
+| **cpu_only** | Port 11435 (CPU) | Port 11435 (CPU) -- GPU endpoint unused |
+| **gpu_only** | Port 11434 (GPU) | Port 11434 (GPU) -- CPU endpoint unused |
+| **cpu_gpu_split** | Port 11435 (CPU, Neutrino-8B) | Port 11434 (GPU, Qwen-14B) |
+
+### 3.6 4-Way Execution Mode Matrix (v5.9.1)
+
+For backward compatibility, the system also supports four distinct routing combinations via the Model Manager TUI:
 
 | Mode | Fast Tier Routing | Heavy Tier Routing | Use Case |
 |------|-------------------|-------------------|----------|
@@ -158,15 +188,15 @@ The system supports four distinct routing combinations via the `model_manager.py
 | **3. Cloud-to-Edge Hybrid** | Cloud API (Gemini) | Local GPU (Qwen-14B) | Cloud pre-screening + local deep analysis |
 | **4. Pure Cloud** | Cloud API (Gemini) | Cloud API (Gemini) | Maximum throughput, no local compute |
 
-### 3.5 Interactive Runtime Cloud Fallback (v5.9.3)
+### 3.7 Interactive Runtime Cloud Fallback (v5.9.3)
 
-- On `ConnectionError` in `_execute_fast_tier_request`, the system checks `sys.stdin.isatty()`
+- On `ConnectionError` in Fast Edge tier requests, the system checks `sys.stdin.isatty()`
 - If interactive terminal: prompts via `questionary` -- "Local model connection failed. Switch to Cloud fallback?"
 - If Yes: sets `TALOS_FAST_ROUTING=cloud` in `os.environ` for the session
 - If No or non-interactive: fails gracefully with a log message
-- Heavy tier also supports the same mechanism via `_interactive_cloud_fallback(tier="heavy")`
+- Heavy tier also supports the same mechanism
 
-### 3.6 HYBRID Embedding Generation
+### 3.8 HYBRID Embedding Generation
 
 - **Primary:** Ollama native `/api/embed` (nomic-embed-text, 768 dimensions)
 - **Fallback:** Gemini `gemini-embedding-001` via `google-genai` SDK v2 (768 dimensions)
@@ -183,30 +213,44 @@ The TALOS DRL Agent (`src/ai/drl/`) employs a **Double Dueling Deep Q-Network wi
 
 | Component | Value |
 |-----------|-------|
-| Network Architecture | Double Dueling DQN with LSTM |
-| State Space | 14-source environment (one-hot encoded) |
-| Action Space | Selection of optimal API source |
-| Reward Signal | Paper quality score (strategic + operational + tactical + playground) |
+| Network Architecture | DuelingLSTM (3-layer LSTM 128->64->32 + LayerNorm + dueling V/A heads) |
+| State Space | Provider-aware: 1 + N_sources + 2 + 4 (providers) = 21 dimensions |
+| Action Space | N sources + 1 sleep (14+1 = 15 actions) |
+| Reward Signal | Paper quality score mapped via brackets: +20 (score >= 8.0), +5 (score >= 6.0), -10 (score < 6.0) |
 | Exploration | Epsilon-greedy with exponential decay |
-| Persistence | `models/dddqn_trained.pth` |
+| GWO-Optimized Hyperparameters | LR=3.361e-05, GAMMA=0.6983, EPS_DECAY=0.9202 |
+| Cooldown Mechanism | 5-step lockout for negative-reward actions with random override on sleep |
+| Persistence | `models/dddqn_trained.pth`, `models/dddqn_partial.pth`, `models/talos_drl.pth` |
 
-### 4.2 GWO Hyperparameter Optimization
+### 4.2 DRL Module Inventory
 
-The Grey Wolf Optimizer (`src/ai/optimizers/gwo_rl_optimizer.py`) tunes the DRL agent's hyperparameters via a bio-inspired swarm intelligence algorithm (Mirjalili 2014).
+| Module | Purpose |
+|--------|---------|
+| `src/ai/drl/talos_env.py` (v3.1) | Gymnasium-compliant N-source environment with provider-aware observation space, time-limit truncation fix |
+| `src/ai/drl/drl_networks.py` (v1.0) | Pluggable network architectures: DuelingLSTM with common (input_dim, output_dim) interface |
+| `src/ai/drl/drl_agent.py` (v2.3) | Double Dueling DQN with `network_class` dependency injection |
+| `src/ai/drl/drl_trainer.py` (v1.4) | Epsilon-greedy training with Ctrl+C graceful partial save |
+| `src/ai/drl/live_agent_sources.py` (v1.0) | Dynamic source discovery via module scanning |
+| `src/ai/drl/live_agent_orchestrator.py` (v1.1) | Main loop with cooldown, provider tracking, reward calculation |
+| `src/ai/drl/talos_live_agent.py` (v3.2) | CLI entry for live API-fetching DRL agent with argparse |
+| `src/ai/drl/talos_service.py` (v2.0) | 24/7 autonomous research daemon with Telegram/Discord/Email notifications |
+
+### 4.3 GWO Hyperparameter Optimization
+
+The Grey Wolf Optimizer (`src/ai/optimizers/gwo_rl_optimizer.py` v2.0) tunes the DRL agent's hyperparameters via a bio-inspired swarm intelligence algorithm (Mirjalili 2014). Each wolf trains a fresh DRL agent; the pack converges toward the alpha wolf's position in 3D parameter space.
 
 | Parameter | Optimized Value | Range |
 |-----------|----------------|-------|
 | Learning Rate | 3.361e-05 | [1e-6, 1e-2] |
 | Gamma (Discount) | 0.6983 | [0.5, 0.999] |
 | Epsilon Decay | 0.9202 | [0.8, 0.999] |
-| Best Fitness | From `models/gwo_best_params.json` | -- |
-| Best Avg Reward | From `models/gwo_best_params.json` | -- |
 
 - **GWO API:** `POST /api/v1/optimize/gwo` triggers optimization in background
 - **GWO History:** `GET /api/v1/optimize/gwo/history` returns iteration-by-iteration data for Recharts
 - **GWO Live Dashboard:** Dash-based 3D scatter plot at http://localhost:8050
+- **Model Artifacts:** `models/gwo_best_params.json`, `models/gwo_history.json`, `models/gwo_progress.json`
 
-### 4.3 Autonomous System Tester (RL-Driven Chaos Engineering) -- v5.9.0
+### 4.4 Autonomous System Tester (RL-Driven Chaos Engineering) -- v5.9.0 / v5.9.7
 
 The Autonomous System Tester (`src/ai/testing/autonomous_tester.py`) stress-tests TALOS components using a Non-Stationary Epsilon-Greedy Multi-Armed Bandit with LLM-as-a-Judge diagnostics.
 
@@ -215,13 +259,16 @@ The Autonomous System Tester (`src/ai/testing/autonomous_tester.py`) stress-test
 | Algorithm | Non-Stationary Epsilon-Greedy MAB |
 | Epsilon | 0.2 |
 | Learning Rate (Alpha) | 0.1 |
-| Target Components | FastAPI Server, MCP Server, Daily Search, Citation Analyzer |
-| Test Method | Subprocess launch with 5-second timeout |
+| Target Discovery | Dynamic scanner (`_discover_all_python_targets()`) -- 70+ arms across `src/` |
+| Test Method | Subprocess launch with `--help` flag for fast exit |
+| Timeout | 5 seconds per target cycle |
 | Rewards | +50 (crash detected), -1 (pass) |
 | Diagnostics | Fast Edge LLM (tier="fast") provides 2-sentence crash analysis |
-| Persistence | `data/tester_q_table.json` (Q-table) |
-| Reports | `reports/autonomous_tester/CRASH_REPORT_{timestamp}.md` |
+| Persistence | `data/tester_q_table.json` (Q-table with reconciliation on launch) |
+| Reports | `data/reports/autonomous_tester/CRASH_REPORT_{timestamp}.md` |
 | Fragility Labels | STABLE, LOW, MODERATE, HIGH_FRAGILITY |
+| Rich TUI | Spinners, red crash Panels, yellow AI Diagnosis Panels, green PASS confirmations, color-coded Q-Table |
+| Clickable Paths | Rich `[link=file:///...]` terminal hyperlinks for crash reports (v5.9.8) |
 | Synapse Integration | Emits events on each test cycle |
 | API Endpoints | `GET /api/v1/tester/status`, `GET /api/v1/tester/reports` |
 
@@ -281,8 +328,8 @@ TALOS participates in the ALEXANDRIA Ecosystem via the SYNAPSE Event-Driven Prot
 | ID | Method | Path | Description | Response Model |
 |----|--------|------|-------------|---------------|
 | E01 | GET | `/api/v1/health` | System health, DB stats, embedding coverage | `SystemHealth` |
-| E02 | GET | `/api/v1/papers` | Paginated paper list | `PaginatedPapers` |
-| E03 | GET | `/api/v1/papers/{paper_id}` | Full paper detail (all 28 columns) | `PaperDetail` |
+| E02 | GET | `/api/v1/papers` | Paginated paper list (sorted by overall_score) | `PaginatedPapers` |
+| E03 | GET | `/api/v1/papers/{paper_id}` | Full paper detail (all 28+ columns) | `PaperDetail` |
 | E04 | POST | `/api/v1/papers/{paper_id}/evaluate` | Single-paper AI evaluation (BgTasks) | `TaskStatus` |
 | E05 | POST | `/api/v1/search/semantic` | Natural-language semantic (vector) search | `SemanticSearchResponse` |
 | E06 | POST | `/api/v1/scrape/trigger` | Trigger daily scrape pipeline (BgTasks) | `TaskStatus` |
@@ -296,8 +343,8 @@ TALOS participates in the ALEXANDRIA Ecosystem via the SYNAPSE Event-Driven Prot
 | E14 | GET | `/api/v1/tasks` | List all background tasks | `List[TaskStatus]` |
 | E15 | GET | `/api/v1/capabilities` | Serve System Capabilities Master HTML | `HTMLResponse` |
 | E16 | POST | `/api/v1/synapse/webhook` | SYNAPSE protocol inbound command receiver | `SynapseWebhookResponse` |
-| E17 | GET | `/api/v1/tester/status` | Autonomous System Tester Q-table status | `TesterStatusResponse` |
-| E18 | GET | `/api/v1/tester/reports` | List crash report metadata | `List[CrashReport]` |
+| E17 | GET | `/api/v1/tester/status` | Autonomous System Tester Q-table status (70+ arms) | `TesterStatusResponse` |
+| E18 | GET | `/api/v1/tester/reports` | List crash report metadata from data/reports/ | `List[CrashReport]` |
 
 ### 6.2 Pydantic v2 Model Inventory
 
@@ -313,32 +360,36 @@ The API defines 16 Pydantic v2 models:
 - **Polling:** `GET /api/v1/tasks/{task_id}` for individual status, `GET /api/v1/tasks` for all tasks
 - **Long-Running Tasks:** Daily scrape (14 APIs), GWO optimization (minutes), Single-paper evaluation, Bulk score recalculation
 
+### 6.4 Interactive Documentation
+
+Auto-generated OpenAPI docs available at:
+- `http://localhost:8001/docs` (Swagger UI)
+- `http://localhost:8001/redoc` (ReDoc)
+
 ---
 
 ## Section 7: MCP Server Tools
 
 ### 7.1 MCP Server Architecture
 
-`src/mcp_server.py` implements a Model Context Protocol (MCP) server that exposes TALOS capabilities to MCP-compatible clients such as Cherry Studio, Claude Desktop, and other AI assistants.
+`src/mcp_server.py` (384 lines, v5.8.3) implements a Model Context Protocol (MCP) server using the official `MCPServer` from MCP SDK v2.0.0 with stdio transport. All tools delegate to the TALOS FastAPI backend via HTTP at the configurable `TALOS_API_BASE` (default: `http://127.0.0.1:8001/api/v1`). This decoupled architecture ensures clean separation of concerns -- the MCP server is a thin translation layer between MCP tool calls and the REST API.
 
-### 7.2 MCP Tool Inventory
+### 7.2 MCP Tool Inventory (4 Tools)
 
-| Tool Name | Description | Parameters |
-|-----------|-------------|------------|
-| `talos_query_database` | Query the TALOS research database with SQL | `{query: str}` |
-| `talos_semantic_search` | Perform semantic search across papers | `{query: str, top_k: int}` |
-| `talos_evaluate_paper` | Evaluate a paper abstract with AI | `{abstract: str, model_type: str}` |
-| `talos_trigger_gwo` | Trigger GWO hyperparameter optimization | `{wolves: int, iterations: int}` |
-| `talos_trigger_scrape` | Trigger daily search pipeline | `{source_filter: list}` |
-| `talos_get_health` | Get system health status | `{}` |
-| `talos_list_papers` | List papers with pagination | `{page: int, page_size: int}` |
-| `talos_translate_query` | Translate NL research goal to boolean queries | `{query: str}` |
+| Tool Name | Description | Parameters | Maps to Endpoint |
+|-----------|-------------|------------|------------------|
+| `talos_system_status` | Query system health, DB stats, and embedding model availability | `{}` | `GET /health` |
+| `talos_semantic_search` | Vector-based semantic search across all papers | `{query: str, top_k: int}` | `POST /search/semantic` |
+| `talos_get_paper_details` | Retrieve complete paper record with AI evaluation, classification, enrichment | `{paper_id: int}` | `GET /papers/{paper_id}` |
+| `talos_trigger_scrape` | Launch background academic scraping pipeline | `{sources: Optional[List[str]]}` | `POST /scrape/trigger` |
 
 ### 7.3 MCP Server Configuration
 
 - **Transport:** stdio (standard input/output)
 - **Auto-Config:** Cherry Studio MCP config generated by `src/utils/frontend_provisioner.py`
 - **Launch:** `python src/mcp_server.py` or via `run_talos.bat` Option 3
+- **Timeout:** `TALOS_MCP_TIMEOUT` env var (default: 30 seconds)
+- **Error Handling:** All tools return descriptive error strings rather than raising exceptions, ensuring LLM-friendly responses
 
 ---
 
@@ -348,29 +399,53 @@ The API defines 16 Pydantic v2 models:
 
 | Module | Path | Function |
 |--------|------|----------|
-| Citation Network Analyzer | `src/analysis/citation_analyzer.py` | Citation graph construction and analysis |
+| Citation Network Analyzer | `src/analysis/citation_analyzer.py` | Citation graph construction and analysis with pyvis interactive visualization |
 | Author Profiler | `src/analysis/author_profiler.py` | Author publication history and impact profiling |
 | Author Trajectory Analyzer | `src/analysis/author_trajectory_analyzer.py` | Career trajectory analysis via ORCID |
 | Trend Analyzer | `src/analysis/trend_analyzer.py` | Scientometrics and publication trend analysis |
-| Architecture Intelligence Report | `src/analysis/architecture_intelligence_report.py` | System architecture health and dependency analysis |
-| Knowledge Path Generator | `src/analysis/knowledge_path_generator.py` | Research path discovery and literature mapping |
-| Recommender | `src/analysis/recommender.py` | Strategic reading recommendations |
-| Baseline Report Generator | `src/analysis/generate_baseline_report.py` | Two-mode reports: Standard + Academic (600 DPI, serif fonts) |
-| Architecture Graph Generator | `src/analysis/generate_architecture_graph.py` | D3.js interactive dependency graph |
+| Architecture Intelligence Report | `src/analysis/architecture_intelligence_report.py` | System architecture health, dual-language (EN+GR) NATO CDE-compatible reports |
+| Knowledge Path Generator | `src/analysis/knowledge_path_generator.py` | Research path discovery and literature mapping with K-Means clustering |
+| Recommender | `src/analysis/recommender.py` | Strategic reading recommendations (reads SQLite directly) |
+| Baseline Report Generator | `src/analysis/generate_baseline_report.py` | Two-mode reports: Standard + Academic (600 DPI, serif fonts, publication-ready) |
+| Architecture Graph Generator | `src/analysis/generate_architecture_graph.py` | D3.js interactive dependency graph of codebase imports |
 
-### 8.2 Query Translator (PYTHIA)
+### 8.2 Graphify AST Knowledge Graph (NEW -- v5.9.10 to v5.9.13)
+
+`src/analysis/graphify_adapter.py` (606 lines) wraps a vendored Graphify AST engine at `vendor/graphify/` to generate interactive D3.js knowledge graphs directly from TALOS source code.
+
+| Phase | Version | Capability |
+|-------|---------|-----------|
+| v5.9.10 | Vendored Integration | Added `generate_ast_knowledge_graph()` function invoking Graphify as subprocess with `python -m graphify extract src/ --code-only` |
+| v5.9.11 | Dependency Hotfix | Added `tree-sitter-python` and `rapidfuzz` to requirements.txt for AST parsing and entity resolution |
+| v5.9.12 | Path Resolution + Auto-Clustering | Fixed graphify-out path resolution (output path varies by target directory); auto-executes `graphify cluster-only` with `--no-label` flag to generate `GRAPH_REPORT.md` and community labels without LLM calls, preserving 100% air-gapped operation |
+| v5.9.13 | Academic Print Theme | `_inject_light_mode_toggle()` injects a CSS light-mode toggle into generated `graph.html`, enabling both dark (default) and light (academic print) themes with a single click. Original dark mode preserved; all CSS overrides use `!important` for reliability. Graceful degradation on I/O errors |
+
+**Graphify Pipeline Output:**
+- `data/reports/graphify_out/graph.html` -- Interactive D3.js force-directed AST dependency graph
+- `data/reports/graphify_out/GRAPH_REPORT.md` -- Auto-generated clustering report with community labels
+- `data/reports/graphify_out/` -- Full Graphify output directory with node/edge JSON
+
+**Integration:** Launchable from `talos.py` Rich TUI menu under Analysis & Insights section
+
+### 8.3 Query Translator (PYTHIA)
 
 `src/ai/llm/query_translator.py` translates natural-language research goals into 14 optimized boolean search queries. Uses AIManager with "Research Architect" persona. Output saved to `config.json` as `*_query` keys.
 
-### 8.3 Model Manager
+### 8.4 Model Manager
 
-`src/ai/llm/model_manager.py` provides a Rich TUI for configuring:
-- Fast Edge Tier model and endpoint
-- Heavy Reasoning Tier model and endpoint
+`src/ai/llm/model_manager.py` (100% Rich TUI) provides a 7-option menu for configuring:
+- Fast Edge Tier model and endpoint (CPU, port 11435)
+- Heavy Reasoning Tier model and endpoint (GPU, port 11434)
 - Cloud Provider selection (Gemini/DeepSeek/HuggingFace)
-- Execution Mode selection (4-Way Matrix)
+- 2D Execution Matrix wizard: 2-step selection (Network Strategy + Hardware Strategy) with summary confirmation panels
 - Embedding model selection
-- VRAM-aware model size validation and fitness indicators
+- VRAM-aware model size validation and fitness indicators (`[FITS]`, `[TIGHT]`, `[TOO BIG]`)
+- Explicit Cancel/Back navigation guardrails in all sub-menus
+- `_confirm_setting_change()` helper with Rich Panel confirmation before any `.env` write
+
+### 8.5 Research Pivot
+
+`src/ai/llm/research_pivot.py` provides a 5-step guided wizard for changing research direction: reconfigures query translator parameters, re-evaluates the database against new criteria, and optionally retrains the DRL agent.
 
 ---
 
@@ -380,7 +455,7 @@ The API defines 16 Pydantic v2 models:
 
 | Table | Purpose | Key Columns |
 |-------|---------|-------------|
-| `papers` | Primary paper storage | id, doi, title, abstract, authors, source, publication_year, strategic_score, operational_score, tactical_score, playground_score, overall_score, evaluation_reasoning, enrichment_status, oa_pdf_url |
+| `papers` | Primary paper storage | id, doi, title, abstract, authors, source, publication_year, strategic_score, operational_score, tactical_score, playground_score, overall_score, evaluation_reasoning, evaluation_contribution, evaluation_utilization, suggested_tags, suggested_folder, suggested_discord_channel, enrichment_status, oa_pdf_url, embedding_model |
 | `embeddings` | Vector embeddings | paper_id, embedding (BLOB), model_name |
 | `enrichment_log` | Enrichment tracking | paper_id, source, timestamp, status |
 
@@ -393,13 +468,34 @@ The API defines 16 Pydantic v2 models:
 | Tactical | 30% | Immediate utility for current research goals |
 | Playground | 10% | Creative/exploratory potential |
 
+**Overall Score Formula:** `Overall = 0.30 * S + 0.30 * O + 0.30 * T + 0.10 * P`
+
 ### 9.3 Semantic Search
 
 - Cosine similarity computation against all stored embeddings
 - Model-aware filtering: `model_filter` parameter restricts to specific embedding model
 - Returns top_k results with full paper metadata
+- Supported embedding models: `nomic-embed-text` (Ollama, 768d), `gemini-embedding-001` (Gemini, 768d)
 
-### 9.4 Profile System
+### 9.4 Enrichment State Machine
+
+| Status | Value | Meaning |
+|--------|-------|---------|
+| Pending | 0 | Paper has not yet been enriched |
+| Enriched | 1 | Metadata + OA PDF successfully resolved |
+| Failed | 2 | Enrichment attempted but failed |
+
+### 9.5 XAI Reasoning Outputs
+
+For each evaluated paper, the AI generates:
+- `evaluation_reasoning`: Narrative explanation of the scores
+- `evaluation_contribution`: The paper's contribution to the field
+- `evaluation_utilization`: How the paper's findings can be applied
+- `suggested_tags`: Auto-generated keyword tags
+- `suggested_folder`: Recommended organizational folder
+- `suggested_discord_channel`: Relevant notification channel
+
+### 9.6 Profile System
 
 - Isolated profiles under `_profiles/<name>/` with independent `config.json` and `talos_research.db`
 - Profile switching via `src/core/profile_manager.py`
@@ -413,25 +509,37 @@ The API defines 16 Pydantic v2 models:
 | Entry Point | File | Type |
 |-------------|------|------|
 | TUI Dashboard | `talos.py` | Rich-powered interactive terminal (11 options) |
-| Batch Launcher (Win) | `run_talos.bat` | 10-option batch menu |
-| Batch Launcher (POSIX) | `run_talos.sh` | 10-option bash menu |
+| Batch Launcher (Win) | `run_talos.bat` | 10-option batch menu with auto-Conda detection |
+| Batch Launcher (POSIX) | `run_talos.sh` | 10-option bash menu with virtualenv/Conda detection |
 
-### 10.2 talos.py Features
+### 10.2 talos.py Rich TUI Features (v5.8.9+)
 
-- Dynamic status table: Conda environment, API port, Synapse bus, execution mode, active LLM tiers
-- Active Research Focus row: displays LLM-generated 6-10 word summary from `active_focus_summary` in config.json
-- Dynamic Focus Summarization: auto-generates summary via Fast Edge LLM on startup if missing
-- Silent initialization: reads TALOS_USE_LOCAL from .env directly (no interactive prompts)
-- 11-option menu with Model Manager integration, CLI research search, Autonomous System Tester, System diagnostics
+- **Dynamic Status Table:** Conda/virtualenv environment, API port (8001), Synapse bus (8000), 2D Execution Matrix (Network Strategy / Hardware Strategy with human-readable labels), active LLM tiers (full raw model names)
+- **IEEE CS Badge:** Two-tone Rich color block (#006699 / #002855) in header panel
+- **Active Research Focus:** LLM-generated 6-10 word summary from `active_focus_summary` in config.json, displayed in bold bright green
+- **Dynamic Focus Summarization:** Auto-generates summary via Fast Edge LLM on startup if missing (v5.9.3)
+- **Silent Initialization:** Reads TALOS_USE_LOCAL from .env directly (no interactive prompts)
+- **11-Option Menu** (organized in visual Rich groups):
+  - MODEL CONFIGURATION (Option 1: Model Manager)
+  - RESEARCH OPERATIONS (Options 2-4: CLI Research Search, Daily Search Pipeline, View & Pivot Research Focus)
+  - ANALYSIS & INSIGHTS (Options 5-7: Graphify AST Knowledge Graph, Autonomous System Tester, Baseline Reports)
+  - SYSTEM DIAGNOSTICS (Options 8-10: DRL Agent Status, Architecture Graph, Docs Generator)
+  - EXIT (Option 11)
+- **Rich Panels:** All sub-menu launches display contextual informational panels with color-coded borders
+- **Elite Papers:** Overall score >= 7 highlighted in gold in search results tables
+- **Clickable Hyperlinks:** Crash report paths, Q-table paths, and report directories are clickable Rich `[link=file:///...]` terminal hyperlinks (v5.9.8)
+- **Ctrl+C Safety:** `safe_pause()` and `safe_select()` helpers for graceful interrupt handling
 
-### 10.3 run_talos.bat/sh Features
+### 10.3 run_talos.bat / run_talos.sh Features
 
-- Section 1: REST API & FRONTEND (Full Setup, FastAPI server, MCP server, Cherry Studio UI)
-- Section 2: CLI & STANDALONE DAEMONS (TALOS CLI, Autonomous Research Daemon, Live DRL Agent)
-- Section 3: TESTING & SYSTEM (Autonomous System Tester, Pytest suite, Exit)
-- Auto-Conda path detection (Windows), virtualenv/Conda detection (POSIX)
-- Background minimized/spawned server windows
-- Fermion CPU accelerator auto-start for Neutrino-8B
+- **Section 1: REST API & FRONTEND** (Full Setup, FastAPI server on port 8001, MCP server, Cherry Studio UI)
+- **Section 2: CLI & STANDALONE DAEMONS** (TALOS TUI, Autonomous Research Daemon 24/7, Live DRL Agent)
+- **Section 3: TESTING & SYSTEM** (Autonomous System Tester, Pytest suite, Exit)
+- **Auto-Conda Path Detection** (Windows): scans 5 common Miniconda/Anaconda directories
+- **Auto-virtualenv/Conda Detection** (POSIX): `.venv/` -> `venv/` -> Conda `talosenv` -> system Python
+- **Background Minimized/Spawned Server Windows** (Windows)
+- **Detached Background Daemons** (POSIX, output to /dev/null)
+- **Fermion CPU Accelerator Auto-Start** for Neutrino-8B
 
 ---
 
@@ -441,20 +549,23 @@ The API defines 16 Pydantic v2 models:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| TALOS_USE_LOCAL | (unset) | Enable local-only Ollama mode |
+| TALOS_NETWORK_STRATEGY | strict_local | Network dependency: strict_local, local_first, cloud_first, strict_cloud |
+| TALOS_HARDWARE_STRATEGY | cpu_gpu_split | Hardware routing: cpu_only, gpu_only, cpu_gpu_split |
 | TALOS_FAST_ROUTING | local | Fast tier routing: "local" or "cloud" |
 | TALOS_HEAVY_ROUTING | local | Heavy tier routing: "local" or "cloud" |
-| TALOS_EXECUTION_MODE | local | System-wide mode: "local", "hybrid", "cloud" |
 | TALOS_CLOUD_PROVIDER | gemini | Default cloud provider |
-| TALOS_ALLOW_CLOUD_FALLBACK | (unset) | Enable cloud fallback for local mode |
-| TALOS_ALLOW_LOCAL_FALLBACK | (unset) | Enable local fallback for cloud mode |
-| GEMINI_API_KEY | (unset) | Gemini API key |
-| DEEPSEEK_API_KEY | (unset) | DeepSeek API key |
-| HF_TOKEN | (unset) | HuggingFace API token |
+| TALOS_ALLOW_CLOUD_FALLBACK | (unset) | Enable cloud fallback for local mode (legacy) |
+| TALOS_ALLOW_LOCAL_FALLBACK | (unset) | Enable local fallback for cloud mode (legacy) |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | Fast edge model name |
 | FAST_EDGE_BASE_URL | http://127.0.0.1:11435/v1 | Fast edge endpoint |
 | HEAVY_REASONING_MODEL | qwen2.5:14b | Heavy reasoning model name |
-| OLLAMA_BASE_URL | http://127.0.0.1:11434 | Standard Ollama endpoint |
+| OLLAMA_BASE_URL | http://127.0.0.1:11434 | Standard Ollama GPU endpoint |
+| GEMINI_API_KEY | (unset) | Gemini API key |
+| DEEPSEEK_API_KEY | (unset) | DeepSeek API key |
+| HF_TOKEN | (unset) | HuggingFace API token |
+| LOCAL_MODEL_NAME | gemma3:12b | Fallback local chat model |
+| LOCAL_EMBEDDING_MODEL | nomic-embed-text | Local embedding model |
+| TALOS_DEFAULT_TIER | fast | Default tier for requests |
 
 ### 11.2 config.json Keys
 
@@ -466,12 +577,42 @@ The API defines 16 Pydantic v2 models:
 - `*_query` (14 keys): Boolean search queries for each academic source
 - `ai_provider_priority`: Ordered list of provider names
 - `failure_threshold`: Circuit breaker failure threshold
+- `provider_limits`: Per-provider rate limits (rpm, rpd, tpm)
+- `gemini_tier`: Gemini API tier (free, tier1, tier2)
 
 ---
 
-## Section 12: Documentation Canon (15-File Sync)
+## Section 12: Deployment & Infrastructure
 
-### 12.1 The 15 Canonical Files
+### 12.1 Deployment Options
+
+| Mode | Components | Command |
+|------|-----------|---------|
+| Development | FastAPI with reload | `uvicorn src.api.main_api:app --reload --port 8001` |
+| Production | FastAPI on port 8001 | `uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001` |
+| Docker | Containerized with GPU passthrough | `docker-compose up --build` |
+| Kubernetes | Cluster with Ollama sidecar | `kubectl apply -f k8s/` |
+
+### 12.2 Hardware Requirements
+
+| Tier | GPU | VRAM | Capability |
+|------|-----|------|-----------|
+| Minimum | CPU only | N/A | Ingestion + evaluation (cloud LLMs only) |
+| Recommended | RTX 3060+ | 12 GB | Local nomic-embed-text + light chat models |
+| Optimal | RTX 4070+ | 16 GB | Full local DRL training + embedding generation + dual-tier (CPU+GPU split) |
+
+### 12.3 Docker Support
+
+- `Dockerfile`: Multi-stage Python 3.11 build with CUDA 12.1 support
+- `docker-compose.yml`: FastAPI service (port 8001) + Ollama services with shared volumes
+- `restart: unless-stopped` for production resilience
+- `HEALTHCHECK` at `/api/v1/health`
+
+---
+
+## Section 13: Documentation Canon (15-File Sync)
+
+### 13.1 The 15 Canonical Files
 
 | # | File | Language | Purpose |
 |---|------|----------|---------|
@@ -487,11 +628,11 @@ The API defines 16 Pydantic v2 models:
 | 10 | `docs/internal/API_HANDOVER_FOTIS.md` | EN | API handover reference |
 | 11 | `docs/internal/UX_UI_BLUEPRINT_FOTIS.md` | EN | UX/UI blueprint |
 | 12 | `docs/internal/IP_PROTECTION_STRATEGY.md` | EN | IP protection strategy |
-| 13 | `docs/SYSTEM_CAPABILITIES_MASTER.md` | EN | Capabilities reference (Markdown) |
+| 13 | `docs/SYSTEM_CAPABILITIES_MASTER.md` | EN | Capabilities reference (Markdown) -- this file |
 | 14 | `docs/SYSTEM_CAPABILITIES_MASTER.html` | EN | Capabilities reference (HTML) |
 | 15 | `docs/TECH_RADAR.md` | EN | Technology radar and stack choices |
 
-### 12.2 Code Version Synchronicity (5 Files)
+### 13.2 Code Version Synchronicity (5 Files)
 
 | # | File | Version String Location |
 |---|------|------------------------|
@@ -503,33 +644,72 @@ The API defines 16 Pydantic v2 models:
 
 ---
 
-## Section 13: v5.9.3 New Capabilities
+## Section 14: Test Suite
 
-### 13.1 Purged Legacy Prompts
+### 14.1 Test Inventory
 
-- Removed interactive `questionary` prompts "Where to run AI calls? LOCAL/CLOUD" from `talos.py`
-- TALOS now reads `TALOS_USE_LOCAL` from `.env` directly -- silent initialization
+| Test File | Tests | Coverage |
+|-----------|-------|----------|
+| `tests/test_smoke.py` | 78 health checks | System health, database, configuration |
+| `tests/test_synapse.py` | 21 tests | EventEmitter + webhook route coverage |
+| `tests/test_multi_tier.py` | 20 tests | Fast vs. heavy LLM routing logic, version assertion |
+| `tests/test_provisioner.py` | 23 tests | Frontend provisioner OS detection and config generation |
+| `tests/test_mcp_server.py` | 27 tests | MCP server tool registration and HTTP mocking |
+| `tests/test_model_manager.py` | 29 tests | Ollama connectivity, VRAM fitness indicators, env key handling |
+| **Total** | **198+ tests** | Full system coverage |
 
-### 13.2 Dynamic Focus Summarization
+### 14.2 Verification Gates
 
-- New function `_maybe_generate_focus_summary()` in `talos.py`
-- Automatically generates 6-10 word research focus title via Fast Edge LLM on startup
-- Saves to `active_focus_summary` in `config.json`
-- Displayed in TUI header in bold bright green
+1. `python -m py_compile <file>` (syntax)
+2. `python scripts/verify_dependency_map.py` (imports)
+3. `python scripts/db_stats.py` (database, if schema changed)
+4. `python tests/test_smoke.py` (runtime health)
 
-### 13.3 Interactive Runtime Cloud Fallback
+---
 
-- New method `_interactive_cloud_fallback()` in `AIManager`
-- Catches `ConnectionError` in Fast Edge tier requests
-- Uses `sys.stdin.isatty()` for interactivity check
-- Prompts with `questionary` for cloud fallback in interactive sessions
-- Graceful degradation for non-interactive sessions
+## Section 15: v5.9.10 to v5.9.13 New Capabilities
 
-### 13.4 Exhaustive Capabilities Sync Rule
+### 15.1 Vendored Graphify AST Integration (v5.9.10 to v5.9.13)
 
-- New `CRITICAL` rule in `.clinerules` (Section VII in Constitution)
-- Mandates complete rewrite of `SYSTEM_CAPABILITIES_MASTER.md` and `.html` during every version bump
-- Covers 100% of endpoints, agents, routing matrices, MCP tools, Synapse events, and RL components
+- `src/analysis/graphify_adapter.py` -- adapter wrapping vendored `vendor/graphify/` AST engine
+- Generates interactive D3.js knowledge graphs from TALOS source code via subprocess invocation
+- Auto-executes `cluster-only` command with `--no-label` flag (100% air-gapped, no LLM keys required)
+- Outputs to `data/reports/graphify_out/` (graph.html, GRAPH_REPORT.md, JSON artifacts)
+- Academic Print Theme: `_inject_light_mode_toggle()` injects CSS light-mode toggle into generated graph.html (v5.9.13)
+- Path resolution with backward-compatible fallback for varying Graphify output locations (v5.9.12)
+- Dependencies: `tree-sitter-python`, `rapidfuzz`, `tree-sitter`, `networkx`
+
+### 15.2 Rich Menu Reorganization (v5.9.10)
+
+- talos.py 11-option menu organized into visual Rich groups with Panel separators
+- Graphify AST Knowledge Graph option under Analysis & Insights section
+
+### 15.3 Data Directory Isolation (v5.9.9)
+
+- All runtime-generated reports consolidated under `data/reports/`
+- Root `reports/` directory deleted -- clean project root
+- 8 analysis scripts + autonomous tester + tester routes updated
+
+### 15.4 Clickable Terminal Hyperlinks (v5.9.8)
+
+- `_make_clickable_path()` helper converts file paths to Rich `[link=file:///...]` terminal hyperlinks
+- Crash report paths, Q-table paths, and reports directories are CTRL+CLICK navigable
+
+### 15.5 Fast-Tier Local-to-Local Fallback (v5.9.8)
+
+- When fast edge CPU tier (port 11435) fails, automatically falls back to local GPU Ollama (port 11434) FIRST
+- Preserves air-gapped operation before attempting cloud fallback
+
+### 15.6 Dynamic Target Discovery (v5.9.7)
+
+- Autonomous System Tester scales from 4 hardcoded targets to 70+ dynamically discovered arms
+- Q-table reconciliation on launch preserves existing Q-values
+
+### 15.7 2D Execution Matrix (v5.9.4)
+
+- Network Strategy (4 modes) x Hardware Strategy (3 modes) = 12 combinations
+- Backward-compatible with legacy TALOS_EXECUTION_MODE
+- Cross-environment automatic fallback with transparent routing
 
 ---
 

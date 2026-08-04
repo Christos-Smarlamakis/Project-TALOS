@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.2</title>
+<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.13</title>
 <style>
   /* ===========================================================================
-     Dark Academic Theme — Slate/Zinc palette, monospace code, sticky ToC
+     Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
      ======================================================================= */
   :root {
     --bg: #0f1117;
@@ -46,8 +46,8 @@
   nav#toc {
     position: sticky;
     top: 0;
-    width: 280px;
-    min-width: 280px;
+    width: 300px;
+    min-width: 300px;
     height: 100vh;
     overflow-y: auto;
     background: var(--bg-sidebar);
@@ -85,7 +85,7 @@
   /* --- Main Content --- */
   main {
     flex: 1;
-    max-width: 960px;
+    max-width: 1000px;
     padding: 2.5rem 3rem;
     overflow-y: auto;
   }
@@ -114,6 +114,8 @@
   main a { color: var(--accent); text-decoration: none; }
   main a:hover { color: var(--link-hover); text-decoration: underline; }
   main strong { color: var(--header-text); }
+  main ul, main ol { margin: 0.5rem 0 0.85rem 1.5rem; }
+  main li { margin-bottom: 0.3rem; }
 
   /* --- Metadata block --- */
   .meta-block {
@@ -214,19 +216,78 @@
 <nav id="toc">
   <h2>Table of Contents</h2>
   <a href="#s1" class="section-link">1. System Vision & Core Architecture</a>
+  <a href="#s1-1" class="sub-link">1.1 Foundational Principle</a>
+  <a href="#s1-2" class="sub-link">1.2 Architectural Pillars</a>
+  <a href="#s1-3" class="sub-link">1.3 Data Flow</a>
+  <a href="#s1-4" class="sub-link">1.4 Operational Modes</a>
+  <a href="#s1-5" class="sub-link">1.5 System Constants</a>
   <a href="#s2" class="section-link">2. Multi-Source Ingestion Engine</a>
-  <a href="#s3" class="section-link">3. Deep Reinforcement Learning & Optimization</a>
-  <a href="#s4" class="section-link">4. Advanced Semantic & Graph Intelligence</a>
-  <a href="#s5" class="section-link">5. Multi-Agent & Autonomous Swarms</a>
-  <a href="#s6" class="section-link">6. Automated Literature Review & XAI</a>
-  <a href="#s7" class="section-link">7. Edge-Cloud & Deployment Ecosystem</a>
-  <a href="#s8" class="section-link">8. Dashboards & User Interfaces</a>
-  <a href="#s9" class="section-link">9. Complete REST API Reference</a>
+  <a href="#s2-1" class="sub-link">2.1 Standardized Output Format</a>
+  <a href="#s2-2" class="sub-link">2.2 Source Agent Inventory (14 APIs)</a>
+  <a href="#s2-3" class="sub-link">2.3 Ingestion Pipelines</a>
+  <a href="#s3" class="section-link">3. AI Provider System & Multi-Tier LLM Routing</a>
+  <a href="#s3-1" class="sub-link">3.1 Provider Architecture</a>
+  <a href="#s3-2" class="sub-link">3.2 Circuit Breaker Pattern</a>
+  <a href="#s3-3" class="sub-link">3.3 Multi-Tier Routing</a>
+  <a href="#s3-4" class="sub-link">3.4 Local-to-Local Fallback (v5.9.8)</a>
+  <a href="#s3-5" class="sub-link">3.5 2D Execution Matrix (v5.9.4)</a>
+  <a href="#s3-6" class="sub-link">3.6 4-Way Execution Mode Matrix</a>
+  <a href="#s3-7" class="sub-link">3.7 Interactive Runtime Cloud Fallback</a>
+  <a href="#s3-8" class="sub-link">3.8 HYBRID Embedding Generation</a>
+  <a href="#s4" class="section-link">4. Deep RL & Optimization (DDDQN + GWO)</a>
+  <a href="#s4-1" class="sub-link">4.1 DRL Agent Architecture</a>
+  <a href="#s4-2" class="sub-link">4.2 DRL Module Inventory</a>
+  <a href="#s4-3" class="sub-link">4.3 GWO Hyperparameter Optimization</a>
+  <a href="#s4-4" class="sub-link">4.4 Autonomous System Tester</a>
+  <a href="#s5" class="section-link">5. SYNAPSE Event-Driven Protocol</a>
+  <a href="#s5-1" class="sub-link">5.1 Architecture</a>
+  <a href="#s5-2" class="sub-link">5.2 Outbound Event Types</a>
+  <a href="#s5-3" class="sub-link">5.3 Event Schema</a>
+  <a href="#s5-4" class="sub-link">5.4 Inbound Commands (Webhook)</a>
+  <a href="#s6" class="section-link">6. REST API Reference (18 Endpoints)</a>
+  <a href="#s6-1" class="sub-link">6.1 Endpoint Catalog</a>
+  <a href="#s6-2" class="sub-link">6.2 Pydantic v2 Model Inventory</a>
+  <a href="#s6-3" class="sub-link">6.3 Background Task System</a>
+  <a href="#s7" class="section-link">7. MCP Server Tools (4 Tools)</a>
+  <a href="#s7-1" class="sub-link">7.1 Architecture</a>
+  <a href="#s7-2" class="sub-link">7.2 Tool Inventory</a>
+  <a href="#s7-3" class="sub-link">7.3 Configuration</a>
+  <a href="#s8" class="section-link">8. Analysis & Reporting Modules</a>
+  <a href="#s8-1" class="sub-link">8.1 Analysis Module Inventory</a>
+  <a href="#s8-2" class="sub-link">8.2 Graphify AST Knowledge Graph</a>
+  <a href="#s8-3" class="sub-link">8.3 Query Translator (PYTHIA)</a>
+  <a href="#s8-4" class="sub-link">8.4 Model Manager</a>
+  <a href="#s8-5" class="sub-link">8.5 Research Pivot</a>
+  <a href="#s9" class="section-link">9. Database & Persistence</a>
+  <a href="#s9-1" class="sub-link">9.1 Database Schema</a>
+  <a href="#s9-2" class="sub-link">9.2 Scoring Framework</a>
+  <a href="#s9-3" class="sub-link">9.3 Semantic Search</a>
+  <a href="#s9-4" class="sub-link">9.4 Enrichment State Machine</a>
+  <a href="#s9-5" class="sub-link">9.5 XAI Reasoning Outputs</a>
+  <a href="#s9-6" class="sub-link">9.6 Profile System</a>
+  <a href="#s10" class="section-link">10. TUI & CLI Reference</a>
+  <a href="#s10-1" class="sub-link">10.1 Entry Points</a>
+  <a href="#s10-2" class="sub-link">10.2 talos.py Rich TUI Features</a>
+  <a href="#s10-3" class="sub-link">10.3 run_talos.bat / run_talos.sh</a>
+  <a href="#s11" class="section-link">11. Configuration & Environment</a>
+  <a href="#s11-1" class="sub-link">11.1 Environment Variables</a>
+  <a href="#s11-2" class="sub-link">11.2 config.json Keys</a>
+  <a href="#s12" class="section-link">12. Deployment & Infrastructure</a>
+  <a href="#s12-1" class="sub-link">12.1 Deployment Options</a>
+  <a href="#s12-2" class="sub-link">12.2 Hardware Requirements</a>
+  <a href="#s12-3" class="sub-link">12.3 Docker Support</a>
+  <a href="#s13" class="section-link">13. Documentation Canon (15-File Sync)</a>
+  <a href="#s13-1" class="sub-link">13.1 The 15 Canonical Files</a>
+  <a href="#s13-2" class="sub-link">13.2 Code Version Synchronicity</a>
+  <a href="#s14" class="section-link">14. Test Suite</a>
+  <a href="#s14-1" class="sub-link">14.1 Test Inventory</a>
+  <a href="#s14-2" class="sub-link">14.2 Verification Gates</a>
+  <a href="#s15" class="section-link">15. v5.9.10 to v5.9.13 New Capabilities</a>
 </nav>
 
 <main>
 
-<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.7</h1>
+<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.13</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -239,54 +300,84 @@
 <div class="meta-block">
   <strong>Document ID:</strong> TALOS-SYS-CAP-001 &nbsp;|&nbsp;
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
-  <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend) &nbsp;|&nbsp;
-  <strong>Last Updated:</strong> 29 July 2026
+  <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
+  <strong>Last Updated:</strong> 2026-08-04 &nbsp;|&nbsp;
+  <strong>Version:</strong> v5.9.13 -- Academic Print Theme Injection for AST Graphs
 </div>
 
-<!-- =========================================================================== -->
+<!-- ===================================================================== -->
 <h2 id="s1">Section 1: System Vision & Core Architecture</h2>
 
-<h3>1.1 Foundational Principle</h3>
+<h3 id="s1-1">1.1 Foundational Principle</h3>
 
-<p>TALOS is an autonomous Research Intelligence Platform that ingests, evaluates, synthesizes, and visualizes scientific knowledge across 14 academic sources. It replaces manual systematic literature review workflows with an AI-driven, DRL-orchestrated pipeline that maintains a human-in-the-loop at every critical decision boundary.</p>
+<p>TALOS is an autonomous Research Intelligence Platform that ingests, evaluates, synthesizes, and visualizes scientific knowledge across 14 academic sources. It replaces manual systematic literature review workflows with an AI-driven, DRL-orchestrated pipeline that maintains a human-in-the-loop at every critical decision boundary. The system operates as a microservice within the broader ALEXANDRIA Ecosystem -- a distributed research intelligence mesh that communicates via the SYNAPSE Event-Driven Protocol. Starting in v5.9.10, TALOS also introspects its own codebase through a vendored Graphify AST Knowledge Graph engine, generating interactive dependency visualizations and architectural intelligence reports directly from source code.</p>
 
-<h3>1.2 Architectural Pillars</h3>
+<h3 id="s1-2">1.2 Architectural Pillars</h3>
 
-<p>The system operates as a three-layer architecture:</p>
+<p>The system operates as a five-layer architecture:</p>
 
 <table>
   <thead><tr><th>Layer</th><th>Component</th><th>Role</th></tr></thead>
   <tbody>
     <tr><td><strong>Frontend</strong></td><td>React 18 with Tailwind CSS and Shadcn UI</td><td>User-facing dashboard leveraging the REST API</td></tr>
-    <tr><td><strong>Backend</strong></td><td><code>src/api/main_api.py</code> (14 endpoints)</td><td>Headless FastAPI facade exposing all core capabilities</td></tr>
+    <tr><td><strong>Backend</strong></td><td><code>src/api/main_api.py</code> (18 endpoints)</td><td>Headless FastAPI facade exposing all core capabilities</td></tr>
+    <tr><td><strong>AI Core</strong></td><td><code>src/core/ai_manager.py</code> (4 providers + circuit breaker + 2D matrix)</td><td>Multi-provider LLM orchestration with hardware-aware routing and interactive cloud fallback</td></tr>
     <tr><td><strong>Persistence</strong></td><td><code>src/core/database_manager.py</code></td><td>SQLite + multi-model vector embeddings (Ollama + Gemini)</td></tr>
+    <tr><td><strong>Integration</strong></td><td><code>src/integration/synapse_client.py</code> + <code>src/mcp_server.py</code> + <code>src/analysis/graphify_adapter.py</code></td><td>SYNAPSE Event Bus + MCP Tool Server + AST Knowledge Graph Intelligence</td></tr>
   </tbody>
 </table>
 
-<h3>1.3 Data Flow</h3>
+<h3 id="s1-3">1.3 Data Flow</h3>
 
-<pre><code>User (React UI) --> FastAPI (:8000) --> src/core/*.py --> src/ingestion/*.py --> External APIs
-                                               ^
-                                               | --> src/ai/*.py --> DRL Agent + GWO + PYTHIA
-                                                              |
-                                               data/talos_research.db (SQLite + Embeddings)
-                                                              |
-                                               config.json + .env (Configuration + Secrets)</code></pre>
+<pre><code>User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py --> External APIs
+                          ^                                    |
+                          |                                    v
+                     SYNAPSE Bus (:8000)              data/talos_research.db
+                          |                          (SQLite + Embeddings)
+                     MCP Server (Cherry Studio)             ^
+                          |                                 |
+              vendor/graphify/ --> AST KG --> data/reports/graphify_out/
+                          |                                 |
+                     config.json + .env (Configuration + Secrets)</code></pre>
 
-<h3>1.4 Operational Modes</h3>
+<h3 id="s1-4">1.4 Operational Modes</h3>
 <ul>
-  <li><strong>Production:</strong> Headless FastAPI listener on port 8000, React frontend consuming the API</li>
-  <li><strong>Development:</strong> <code>uvicorn src.api.main_api:app --reload --port 8000</code></li>
-  <li><strong>Background Services:</strong> Scraping pipeline, GWO optimizer, DRL training -- all via FastAPI BackgroundTasks</li>
-  <li><strong>CLI:</strong> <code>talos.py</code> retains full terminal-mode access for maintenance and diagnostics</li>
+  <li><strong>Production:</strong> Headless FastAPI listener on port 8001, React frontend consuming the API</li>
+  <li><strong>Development:</strong> <code>uvicorn src.api.main_api:app --reload --port 8001</code></li>
+  <li><strong>Background Services:</strong> Scraping pipeline, GWO optimizer, DRL training, Autonomous System Tester -- all via FastAPI BackgroundTasks</li>
+  <li><strong>CLI:</strong> <code>talos.py</code> (Rich-powered TUI, 11 options) retains full terminal-mode access for maintenance, diagnostics, and Graphify AST generation</li>
+  <li><strong>SYNAPSE Webhook:</strong> <code>POST /api/v1/synapse/webhook</code> receives external commands from other ALEXANDRIA microservices</li>
+  <li><strong>MCP Server:</strong> <code>src/mcp_server.py</code> exposes 4 tools to MCP-compatible clients like Cherry Studio</li>
+  <li><strong>Graphify AST Pipeline:</strong> Generates interactive D3.js AST knowledge graphs from the TALOS codebase with academic print theme toggle</li>
 </ul>
 
-<!-- =========================================================================== -->
+<h3 id="s1-5">1.5 System Constants</h3>
+
+<table>
+  <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
+  <tbody>
+    <tr><td>TALOS_VERSION</td><td>"5.9.13"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>FAST_EDGE_BASE_URL</td><td>http://127.0.0.1:11435/v1</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>HEAVY_REASONING_MODEL</td><td>qwen2.5:14b</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>OLLAMA_BASE_URL</td><td>http://127.0.0.1:11434</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_NETWORK_STRATEGY</td><td>strict_local</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_HARDWARE_STRATEGY</td><td>cpu_gpu_split</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_FAST_ROUTING</td><td>local</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_HEAVY_ROUTING</td><td>local</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>DEFAULT_TIER</td><td>fast</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_CLOUD_PROVIDER</td><td>gemini</td><td><code>config/settings.py</code></td></tr>
+  </tbody>
+</table>
+
+<!-- ===================================================================== -->
 <h2 id="s2">Section 2: Multi-Source Ingestion Engine</h2>
 
-<h3>2.1 The "Genesis" Operation</h3>
+<h3 id="s2-1">2.1 Standardized Output Format</h3>
 
-<p>TALOS ingests academic literature from <strong>14 independent APIs</strong>, each implemented as a standalone source agent under <code>src/ingestion/</code>. Every agent conforms to a standardized output format:</p>
+<p>TALOS ingests academic literature from <strong>14 independent APIs</strong>, each implemented as a standalone source agent under <code>src/ingestion/</code>. Every agent conforms to:</p>
 
 <pre><code>{
   "doi": "string or null",
@@ -298,7 +389,7 @@
   "source": "string"
 }</code></pre>
 
-<h3>2.2 Source Agent Inventory</h3>
+<h3 id="s2-2">2.2 Source Agent Inventory (14 APIs)</h3>
 
 <table>
   <thead><tr><th>Source</th><th>Module</th><th>Auth Model</th><th>Rate Limit Handling</th></tr></thead>
@@ -309,7 +400,7 @@
     <tr><td>Springer Nature</td><td><code>src/ingestion/springer.py</code></td><td>API key</td><td>Exponential backoff</td></tr>
     <tr><td>OpenAlex</td><td><code>src/ingestion/openalex.py</code></td><td>Public API</td><td>Polite crawl delay</td></tr>
     <tr><td>DBLP</td><td><code>src/ingestion/dblp.py</code></td><td>Public API</td><td>Basic rate limit</td></tr>
-    <tr><td>Elsevier/Scopus</td><td><code>src/ingestion/elsevier.py</code></td><td>API key + institutional token</td><td>Exponential backoff</td></tr>
+    <tr><td>Elsevier/Scopus</td><td><code>src/ingestion/elsevier.py</code></td><td>API key + institutional token (elsapy, graceful import degradation)</td><td>Exponential backoff</td></tr>
     <tr><td>CORE</td><td><code>src/ingestion/core.py</code></td><td>API key</td><td>Exponential backoff</td></tr>
     <tr><td>CrossRef</td><td><code>src/ingestion/crossref.py</code></td><td>Public API</td><td>Polite crawl delay</td></tr>
     <tr><td>OpenArchives</td><td><code>src/ingestion/openarchives.py</code></td><td>Public OAI-PMH</td><td>Polite crawl delay</td></tr>
@@ -320,168 +411,398 @@
   </tbody>
 </table>
 
-<h3>2.3 Ingestion Pipelines</h3>
+<h3 id="s2-3">2.3 Ingestion Pipelines</h3>
 <ul>
   <li><strong>Daily Search</strong> (<code>src/ingestion/daily_search.py</code>): Concurrent 14-source fetch with deduplication and two-stage AI evaluation (Flash pre-screen, Pro deep analysis)</li>
   <li><strong>Historical Search</strong> (<code>src/ingestion/historic_search.py</code>): Year-by-year backfill with epoch deduplication logic</li>
   <li><strong>Grey Literature Miner</strong> (<code>src/ingestion/grey_literature_miner.py</code>): DuckDuckGo web search for preprints, technical reports, and white papers</li>
-  <li><strong>PDF Downloader</strong> (<code>src/ingestion/pdf_downloader.py</code>): ThreadPoolExecutor-batched Open Access PDF retrieval</li>
-  <li><strong>Zotero Connector</strong> (<code>src/ingestion/zotero_connector.py</code>): Bi-directional sync with Zotero cloud library</li>
-  <li><strong>Metadata Enricher</strong> (<code>src/ingestion/metadata_enricher.py</code>): DOI resolution and metadata augmentation</li>
+  <li><strong>PDF Downloader</strong> (<code>src/ingestion/pdf_downloader.py</code>): ThreadPoolExecutor-batched Open Access PDF retrieval (15 workers)</li>
+  <li><strong>Zotero Connector</strong> (<code>src/ingestion/zotero_connector.py</code>): Bi-directional sync with Zotero cloud library (graceful pyzotero import degradation)</li>
+  <li><strong>Metadata Enricher</strong> (<code>src/ingestion/metadata_enricher.py</code>): DOI resolution and metadata augmentation via OpenAlex, Crossref, DBLP, Semantic Scholar fallback chain</li>
   <li><strong>Data Enricher</strong> (<code>src/ingestion/data_enricher.py</code>): Unpaywall API integration for OA status and PDF links</li>
 </ul>
 
-<!-- =========================================================================== -->
-<h2 id="s3">Section 3: Deep Reinforcement Learning & Optimization (DDDQN + GWO)</h2>
+<!-- ===================================================================== -->
+<h2 id="s3">Section 3: AI Provider System & Multi-Tier LLM Routing</h2>
 
-<h3>3.1 DRL Agent Architecture</h3>
+<h3 id="s3-1">3.1 Provider Architecture (AIManager v3.9+)</h3>
 
-<p>The TALOS DRL Agent (<code>src/ai/drl/</code>) employs a <strong>Double Dueling Deep Q-Network with 3-layer LSTM</strong> trained on 3,849 real paper scores.</p>
+<p>The AI Manager (<code>src/core/ai_manager.py</code>) implements a multi-provider architecture with automatic fallback and circuit breaker pattern across four independent providers:</p>
 
 <table>
-  <thead><tr><th>Component</th><th>File</th><th>Purpose</th></tr></thead>
+  <thead><tr><th>Provider</th><th>Type</th><th>SDK</th><th>Authentication</th><th>Use Case</th></tr></thead>
   <tbody>
-    <tr><td>RL Environment</td><td><code>src/ai/drl/talos_env.py</code></td><td>Gymnasium-compliant N-source observation space with provider-aware state (1+N+2+4 dimensions)</td></tr>
-    <tr><td>Network Architectures</td><td><code>src/ai/drl/drl_networks.py</code></td><td>DuelingLSTM, DuelingMLP, and supporting value/advantage heads</td></tr>
-    <tr><td>Training Loop</td><td><code>src/ai/drl/drl_trainer.py</code></td><td>Epsilon-greedy training with prioritized experience replay</td></tr>
-    <tr><td>Live Orchestrator</td><td><code>src/ai/drl/live_agent_orchestrator.py</code></td><td>Main loop with cooldown mechanism, provider tracking, and reward calculation</td></tr>
-    <tr><td>Autonomous Service</td><td><code>src/ai/drl/talos_service.py</code></td><td>24/7 background agent with Telegram/Discord/Email notifications</td></tr>
-    <tr><td>Live Agent Entry</td><td><code>src/ai/drl/talos_live_agent.py</code></td><td>CLI entry point for live API-fetching agent</td></tr>
-    <tr><td>Source Discovery</td><td><code>src/ai/drl/live_agent_sources.py</code></td><td>Dynamic source class import from config.json</td></tr>
+    <tr><td>Gemini</td><td>Cloud</td><td>google-generativeai</td><td>GEMINI_API_KEY</td><td>Primary cloud text generation + embedding fallback</td></tr>
+    <tr><td>DeepSeek</td><td>Cloud</td><td>OpenAI-compatible API</td><td>DEEPSEEK_API_KEY</td><td>Fallback cloud provider</td></tr>
+    <tr><td>HuggingFace</td><td>Cloud (free)</td><td>OpenAI-compatible API</td><td>HF_TOKEN</td><td>Free cloud inference via router.huggingface.co</td></tr>
+    <tr><td>Local/Ollama</td><td>Local</td><td>OpenAI-compatible API</td><td>TALOS_USE_LOCAL=1</td><td>Offline-first operation</td></tr>
   </tbody>
 </table>
 
-<h3>3.2 Action Space</h3>
+<h3 id="s3-2">3.2 Circuit Breaker Pattern</h3>
 <ul>
-  <li>Actions 0..N-1: Query the corresponding academic source</li>
-  <li>Action N: Sleep (cooldown/reset)</li>
-  <li>Environment dynamically adjusts N based on configured sources</li>
+  <li>Failure threshold: 5 consecutive failures</li>
+  <li>On threshold exceeded: circuit opens, provider skipped for rest of session</li>
+  <li>On success: failure counter resets to 0</li>
+  <li>Rate limit errors (HTTP 429) counted separately -- only trip circuit after multiple consecutive rate limits</li>
 </ul>
 
-<h3>3.3 Reward Function</h3>
+<h3 id="s3-3">3.3 Multi-Tier LLM Routing Architecture (v5.7.1 + v5.9.1)</h3>
+
+<p>TALOS implements a three-tier LLM routing architecture with independent per-tier routing control:</p>
 
 <table>
-  <thead><tr><th>Score Range</th><th>Reward</th></tr></thead>
+  <thead><tr><th>Tier</th><th>Default Model</th><th>Default Endpoint</th><th>Routing Env Var</th></tr></thead>
   <tbody>
-    <tr><td>score >= 8.0</td><td>+20 (elite paper)</td></tr>
-    <tr><td>score >= 6.0</td><td>+5 (good paper)</td></tr>
-    <tr><td>score < 6.0</td><td>-10 (low-value paper)</td></tr>
+    <tr><td><strong>Fast Edge</strong></td><td>fermionresearch/Neutrino-8B</td><td>http://127.0.0.1:11435/v1</td><td>TALOS_FAST_ROUTING</td></tr>
+    <tr><td><strong>Heavy Reasoning</strong></td><td>qwen2.5:14b</td><td>http://127.0.0.1:11434</td><td>TALOS_HEAVY_ROUTING</td></tr>
+    <tr><td><strong>Cloud Provider</strong></td><td>Gemini / DeepSeek / HF</td><td>API endpoints</td><td>TALOS_CLOUD_PROVIDER</td></tr>
   </tbody>
 </table>
 
-<h3>3.4 Grey Wolf Optimizer (GWO)</h3>
+<h3 id="s3-4">3.4 Local-to-Local Fallback (v5.9.8)</h3>
 
-<p>The GWO (<code>src/ai/optimizers/gwo_rl_optimizer.py</code>) tunes three hyperparameters:</p>
+<p>When the Fast Edge CPU tier (port 11435) fails with a <code>ConnectionError</code>, the system automatically falls back to the local GPU Ollama endpoint (port 11434) <strong>first</strong>, preserving air-gapped operation. Only if both local endpoints fail does it attempt cloud fallback (when network strategy permits).</p>
+
+<h3 id="s3-5">3.5 2D Execution Matrix (Network x Hardware Strategies) -- v5.9.4</h3>
+
+<p>The legacy <code>TALOS_EXECUTION_MODE</code> is superseded by a richer 2D model.</p>
+
+<h4>Network Strategy (TALOS_NETWORK_STRATEGY)</h4>
+<table>
+  <thead><tr><th>Strategy</th><th>Local Inference</th><th>Cloud Inference</th><th>Cross-Environment Fallback</th></tr></thead>
+  <tbody>
+    <tr><td><strong>strict_local</strong></td><td>Required</td><td>Forbidden</td><td>Never</td></tr>
+    <tr><td><strong>local_first</strong></td><td>Primary</td><td>Fallback</td><td>Local to Cloud on ConnectionError</td></tr>
+    <tr><td><strong>cloud_first</strong></td><td>Fallback</td><td>Primary</td><td>Cloud to Local on any cloud failure</td></tr>
+    <tr><td><strong>strict_cloud</strong></td><td>Forbidden</td><td>Required</td><td>Never</td></tr>
+  </tbody>
+</table>
+
+<h4>Hardware Strategy (TALOS_HARDWARE_STRATEGY)</h4>
+<table>
+  <thead><tr><th>Strategy</th><th>Fast Tier Endpoint</th><th>Heavy Tier Endpoint</th></tr></thead>
+  <tbody>
+    <tr><td><strong>cpu_only</strong></td><td>Port 11435 (CPU)</td><td>Port 11435 (CPU) -- GPU endpoint unused</td></tr>
+    <tr><td><strong>gpu_only</strong></td><td>Port 11434 (GPU)</td><td>Port 11434 (GPU) -- CPU endpoint unused</td></tr>
+    <tr><td><strong>cpu_gpu_split</strong></td><td>Port 11435 (CPU, Neutrino-8B)</td><td>Port 11434 (GPU, Qwen-14B)</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s3-6">3.6 4-Way Execution Mode Matrix (v5.9.1 -- Legacy Compatibility)</h3>
+
+<table>
+  <thead><tr><th>Mode</th><th>Fast Tier Routing</th><th>Heavy Tier Routing</th><th>Use Case</th></tr></thead>
+  <tbody>
+    <tr><td><strong>1. Pure Local</strong></td><td>Local CPU (Neutrino-8B)</td><td>Local GPU (Qwen-14B)</td><td>Air-gapped operation</td></tr>
+    <tr><td><strong>2. Edge-to-Cloud Hybrid</strong></td><td>Local CPU (Neutrino-8B)</td><td>Cloud API (Gemini)</td><td>Fast screening + deep cloud analysis</td></tr>
+    <tr><td><strong>3. Cloud-to-Edge Hybrid</strong></td><td>Cloud API (Gemini)</td><td>Local GPU (Qwen-14B)</td><td>Cloud pre-screening + local deep analysis</td></tr>
+    <tr><td><strong>4. Pure Cloud</strong></td><td>Cloud API (Gemini)</td><td>Cloud API (Gemini)</td><td>Maximum throughput, no local compute</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s3-7">3.7 Interactive Runtime Cloud Fallback (v5.9.3)</h3>
 <ul>
-  <li><strong>Learning Rate</strong> (log scale): Controls DQN update magnitude</li>
-  <li><strong>Gamma</strong> (discount factor): Balances immediate vs. future rewards</li>
-  <li><strong>Epsilon Decay</strong>: Governs exploration-exploitation tradeoff</li>
+  <li>On <code>ConnectionError</code> in Fast Edge tier: checks <code>sys.stdin.isatty()</code></li>
+  <li>If interactive: prompts via <code>questionary</code> -- "Switch to Cloud fallback?"</li>
+  <li>If Yes: sets <code>TALOS_FAST_ROUTING=cloud</code> for the session</li>
+  <li>If No or non-interactive: fails gracefully with log message</li>
 </ul>
 
-<p>Each wolf trains a fresh DRL agent for <em>N</em> episodes per iteration. The pack converges toward the alpha wolf's position in 3D parameter space. A companion Dash dashboard (<code>gwo_live_dashboard.py</code>) renders the 3D swarm hunt in real-time at <code>localhost:8050</code>.</p>
-
-<h3>3.5 Model Artifacts</h3>
+<h3 id="s3-8">3.8 HYBRID Embedding Generation</h3>
 <ul>
-  <li><code>models/dddqn_trained.pth</code>: Trained DDDQN model weights (PyTorch)</li>
-  <li><code>models/dddqn_partial.pth</code>: Partial training checkpoint</li>
-  <li><code>models/talos_drl.pth</code>: Bundled agent state (network + optimizer)</li>
-  <li><code>models/gwo_best_params.json</code>: Converged hyperparameters</li>
-  <li><code>models/gwo_history.json</code>: Per-iteration wolf pack positions</li>
-  <li><code>models/gwo_progress.json</code>: Real-time progress file</li>
+  <li><strong>Primary:</strong> Ollama native <code>/api/embed</code> (nomic-embed-text, 768 dimensions)</li>
+  <li><strong>Fallback:</strong> Gemini <code>gemini-embedding-001</code> via google-genai SDK v2 (768 dimensions)</li>
+  <li><strong>Deprecated:</strong> HuggingFace embedding</li>
+  <li><strong>Result:</strong> <code>(List[List[float]], model_name)</code> tuple for model-tagging in database</li>
 </ul>
 
-<!-- =========================================================================== -->
-<h2 id="s4">Section 4: Advanced Semantic & Graph Intelligence (ST-GAT)</h2>
+<!-- ===================================================================== -->
+<h2 id="s4">Section 4: Deep Reinforcement Learning & Optimization (DDDQN + GWO)</h2>
 
-<h3>4.1 Multi-Provider Hybrid Embeddings</h3>
+<h3 id="s4-1">4.1 DRL Agent Architecture</h3>
 
-<p>TALOS implements a <strong>dual-provider embedding architecture</strong> stored in the <code>embeddings</code> table:</p>
+<p>The TALOS DRL Agent employs a <strong>Double Dueling Deep Q-Network with 3-layer LSTM</strong> (DuelingLSTM architecture).</p>
 
 <table>
-  <thead><tr><th>Provider</th><th>Model</th><th>Dimensions</th><th>Cost</th><th>Latency</th></tr></thead>
+  <thead><tr><th>Component</th><th>Value</th></tr></thead>
   <tbody>
-    <tr><td>Ollama (local)</td><td><code>nomic-embed-text</code></td><td>768</td><td>Free</td><td>~50ms</td></tr>
-    <tr><td>Gemini (cloud)</td><td><code>gemini-embedding-001</code></td><td>768</td><td>Paid</td><td>~500ms</td></tr>
+    <tr><td>Network Architecture</td><td>DuelingLSTM (3-layer LSTM 128->64->32 + LayerNorm + dueling V/A heads)</td></tr>
+    <tr><td>State Space</td><td>Provider-aware: 1 + N_sources + 2 + 4 (providers) = 21 dimensions</td></tr>
+    <tr><td>Action Space</td><td>N sources + 1 sleep (14+1 = 15 actions)</td></tr>
+    <tr><td>Reward Signal</td><td>+20 (score >= 8.0), +5 (score >= 6.0), -10 (score < 6.0)</td></tr>
+    <tr><td>Exploration</td><td>Epsilon-greedy with exponential decay</td></tr>
+    <tr><td>GWO-Optimized Hyperparameters</td><td>LR=3.361e-05, GAMMA=0.6983, EPS_DECAY=0.9202</td></tr>
+    <tr><td>Cooldown Mechanism</td><td>5-step lockout for negative-reward actions with random override</td></tr>
+    <tr><td>Persistence</td><td><code>models/dddqn_trained.pth</code>, <code>models/dddqn_partial.pth</code>, <code>models/talos_drl.pth</code></td></tr>
   </tbody>
 </table>
 
-<h3>4.2 Semantic Search Pipeline</h3>
-<ol>
-  <li><strong>Embed the query</strong> via <code>AIManager.generate_embeddings()</code> with fallback chain (Ollama -> Gemini)</li>
-  <li><strong>Compute cosine similarity</strong> against all stored vectors filtered by model</li>
-  <li><strong>Rank and return</strong> the top-k papers with full metadata</li>
-  <li><strong>Model filtering</strong> ensures vectors from different providers are never compared</li>
-</ol>
+<h3 id="s4-2">4.2 DRL Module Inventory</h3>
 
-<h3>4.3 Architecture Graph Intelligence</h3>
-<p>The Architecture Dependency Graph (<code>templates/architecture_graph.html</code>) provides:</p>
+<table>
+  <thead><tr><th>Module</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td><code>src/ai/drl/talos_env.py</code> (v3.1)</td><td>Gymnasium-compliant N-source environment with provider-aware observation space</td></tr>
+    <tr><td><code>src/ai/drl/drl_networks.py</code> (v1.0)</td><td>Pluggable network architectures: DuelingLSTM with common interface</td></tr>
+    <tr><td><code>src/ai/drl/drl_agent.py</code> (v2.3)</td><td>Double Dueling DQN with <code>network_class</code> dependency injection</td></tr>
+    <tr><td><code>src/ai/drl/drl_trainer.py</code> (v1.4)</td><td>Epsilon-greedy training with Ctrl+C graceful partial save</td></tr>
+    <tr><td><code>src/ai/drl/live_agent_sources.py</code> (v1.0)</td><td>Dynamic source discovery via module scanning</td></tr>
+    <tr><td><code>src/ai/drl/live_agent_orchestrator.py</code> (v1.1)</td><td>Main loop with cooldown, provider tracking, reward calculation</td></tr>
+    <tr><td><code>src/ai/drl/talos_live_agent.py</code> (v3.2)</td><td>CLI entry for live API-fetching DRL agent with argparse</td></tr>
+    <tr><td><code>src/ai/drl/talos_service.py</code> (v2.0)</td><td>24/7 autonomous research daemon with Telegram/Discord/Email notifications</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s4-3">4.3 GWO Hyperparameter Optimization</h3>
+
+<p>The Grey Wolf Optimizer (<code>src/ai/optimizers/gwo_rl_optimizer.py</code> v2.0) tunes the DRL agent's hyperparameters via a bio-inspired swarm intelligence algorithm (Mirjalili 2014).</p>
+
+<table>
+  <thead><tr><th>Parameter</th><th>Optimized Value</th><th>Range</th></tr></thead>
+  <tbody>
+    <tr><td>Learning Rate</td><td>3.361e-05</td><td>[1e-6, 1e-2]</td></tr>
+    <tr><td>Gamma (Discount)</td><td>0.6983</td><td>[0.5, 0.999]</td></tr>
+    <tr><td>Epsilon Decay</td><td>0.9202</td><td>[0.8, 0.999]</td></tr>
+  </tbody>
+</table>
+
 <ul>
-  <li>Interactive D3.js force-directed visualization of the codebase</li>
-  <li>Node coloring by module role (core, ingestion, analysis, AI, API, utils)</li>
-  <li>Edge connections representing import dependencies</li>
-  <li>Tooltip exposure of function signatures and module descriptions</li>
+  <li><strong>GWO API:</strong> <code>POST /api/v1/optimize/gwo</code></li>
+  <li><strong>GWO History:</strong> <code>GET /api/v1/optimize/gwo/history</code> for Recharts</li>
+  <li><strong>GWO Live Dashboard:</strong> Dash 3D scatter at localhost:8050</li>
+  <li><strong>Model Artifacts:</strong> <code>models/gwo_best_params.json</code>, <code>models/gwo_history.json</code>, <code>models/gwo_progress.json</code></li>
 </ul>
 
-<h3>4.4 Knowledge Path Generation</h3>
-<p><code>src/analysis/knowledge_path_generator.py</code> constructs directed knowledge paths from seed papers through citation networks, identifying the evolution of ideas across publication years.</p>
+<h3 id="s4-4">4.4 Autonomous System Tester (RL-Driven Chaos Engineering) -- v5.9.0 / v5.9.7</h3>
 
-<!-- =========================================================================== -->
-<h2 id="s5">Section 5: Multi-Agent & Autonomous Swarms (PYTHIA, Swarm Commander, HMADRL)</h2>
-
-<h3>5.1 PYTHIA -- The AI Reasoning Engine</h3>
-
-<p>PYTHIA (<code>src/ai/llm/</code>) provides multi-model AI reasoning with circuit breaker resilience:</p>
+<p>The Autonomous System Tester (<code>src/ai/testing/autonomous_tester.py</code>) stress-tests TALOS components using a Non-Stationary Epsilon-Greedy Multi-Armed Bandit with LLM-as-a-Judge diagnostics.</p>
 
 <table>
-  <thead><tr><th>Provider</th><th>Models</th><th>Role</th></tr></thead>
+  <thead><tr><th>Component</th><th>Value</th></tr></thead>
   <tbody>
-    <tr><td>Gemini</td><td><code>gemini-2.5-pro</code>, <code>gemini-2.5-flash</code></td><td>Primary deep analysis + pre-screening</td></tr>
-    <tr><td>DeepSeek</td><td><code>deepseek-chat</code>, <code>deepseek-reasoner</code></td><td>First fallback</td></tr>
-    <tr><td>HuggingFace</td><td><code>Mixtral-8x7B</code>, <code>Llama-3.1-8B</code></td><td>Free cloud fallback</td></tr>
-    <tr><td>Ollama (local)</td><td><code>gemma3:12b</code></td><td>Offline fallback, zero-cost</td></tr>
+    <tr><td>Algorithm</td><td>Non-Stationary Epsilon-Greedy MAB</td></tr>
+    <tr><td>Epsilon</td><td>0.2</td></tr>
+    <tr><td>Learning Rate (Alpha)</td><td>0.1</td></tr>
+    <tr><td>Target Discovery</td><td>Dynamic scanner -- 70+ arms across <code>src/</code></td></tr>
+    <tr><td>Test Method</td><td>Subprocess with <code>--help</code> flag for fast exit</td></tr>
+    <tr><td>Timeout</td><td>5 seconds per target</td></tr>
+    <tr><td>Rewards</td><td>+50 (crash), -1 (pass)</td></tr>
+    <tr><td>Diagnostics</td><td>Fast Edge LLM 2-sentence crash analysis</td></tr>
+    <tr><td>Persistence</td><td><code>data/tester_q_table.json</code> (with launch reconciliation)</td></tr>
+    <tr><td>Reports</td><td><code>data/reports/autonomous_tester/CRASH_REPORT_{timestamp}.md</code></td></tr>
+    <tr><td>Fragility Labels</td><td>STABLE, LOW, MODERATE, HIGH_FRAGILITY</td></tr>
+    <tr><td>Clickable Paths</td><td>Rich <code>[link=file:///...]</code> terminal hyperlinks (v5.9.8)</td></tr>
+    <tr><td>API Endpoints</td><td><code>GET /api/v1/tester/status</code>, <code>GET /api/v1/tester/reports</code></td></tr>
   </tbody>
 </table>
 
-<h3>5.2 Circuit Breaker Pattern</h3>
-<p>Each provider tracks consecutive failures. After <strong>3 consecutive failures</strong>, the circuit opens and that provider is skipped for subsequent requests. The circuit resets on the next successful request from any provider.</p>
+<!-- ===================================================================== -->
+<h2 id="s5">Section 5: SYNAPSE Event-Driven Protocol (v5.7.0)</h2>
 
-<h3>5.3 Query Translator (Research Architect)</h3>
-<p><code>src/ai/llm/query_translator.py</code> transforms natural-language research goals into optimized boolean queries for all 14 sources simultaneously. It uses a dedicated system prompt override that instructs the LLM to act as a "Research Architect" rather than the default "PhD Advisor" role.</p>
-
-<h3>5.4 Research Pivot</h3>
-<p><code>src/ai/llm/research_pivot.py</code> provides a guided wizard for changing research direction: reconfigures query translator parameters, re-evaluates the database against new criteria, and optionally retrains the DRL agent.</p>
-
-<h3>5.5 Autonomous Swarm Commander (Roadmap)</h3>
-<p>Planned HMADRL (Heterogeneous Multi-Agent DRL) architecture for coordinating multiple specialized agents (scraper, evaluator, summarizer, reviewer) in parallel research workflows.</p>
-
-<!-- =========================================================================== -->
-<h2 id="s6">Section 6: Automated Literature Review & XAI (Quad-Layer Scoring, NATO CDE Procedural Hooks)</h2>
-
-<h3>6.1 Quad-Layer Evaluation Framework</h3>
-
-<p>Every paper ingested by TALOS is scored across four orthogonal dimensions:</p>
+<h3 id="s5-1">5.1 Architecture</h3>
 
 <table>
-  <thead><tr><th>Layer</th><th>Weight</th><th>Focus</th><th>Example Criteria</th></tr></thead>
+  <thead><tr><th>Module</th><th>Role</th><th>Port</th></tr></thead>
   <tbody>
-    <tr><td><strong>Strategic</strong></td><td>30%</td><td>Theoretical framework, high-level decision making</td><td>Novelty, field impact, paradigm shift</td></tr>
-    <tr><td><strong>Operational</strong></td><td>30%</td><td>Resource allocation, coordination mechanisms</td><td>Task allocation, auctions, consensus</td></tr>
-    <tr><td><strong>Tactical</strong></td><td>30%</td><td>Algorithmic implementation, neural policies</td><td>DRL architectures, training methodology</td></tr>
-    <tr><td><strong>Playground</strong></td><td>10%</td><td>Simulation environments, datasets, benchmarks</td><td>Gymnasium envs, real-world datasets</td></tr>
+    <tr><td><code>src/integration/synapse_client.py</code></td><td>EventEmitter -- pushes JSON events OUT</td><td>Dest: localhost:8000</td></tr>
+    <tr><td><code>src/api/synapse_routes.py</code></td><td>Webhook Receiver -- accepts commands IN</td><td>Listen: :8001/api/v1/synapse/webhook</td></tr>
   </tbody>
 </table>
 
-<p>Overall Score Formula:</p>
+<h3 id="s5-2">5.2 Outbound Event Types</h3>
 
-<pre><code>Overall = 0.30 * S + 0.30 * O + 0.30 * T + 0.10 * P</code></pre>
+<table>
+  <thead><tr><th>Event Type</th><th>Trigger</th><th>Payload</th></tr></thead>
+  <tbody>
+    <tr><td><code>paper_discovered</code></td><td>New paper found during scrape</td><td>DOI, title, source, score</td></tr>
+    <tr><td><code>paper_evaluated</code></td><td>AI evaluation complete</td><td>Paper ID, scores, reasoning</td></tr>
+    <tr><td><code>search_completed</code></td><td>Search pipeline finishes</td><td>Source count, total papers, duration</td></tr>
+    <tr><td><code>gwo_optimized</code></td><td>GWO run complete</td><td>Best params, best reward, iterations</td></tr>
+    <tr><td><code>agent_step</code></td><td>DRL agent takes an action</td><td>Episode, step, action, reward</td></tr>
+    <tr><td><code>agent_episode_end</code></td><td>DRL episode terminates</td><td>Episode, total reward, epsilon</td></tr>
+  </tbody>
+</table>
 
-<h3>6.2 Two-Stage AI Evaluation</h3>
-<ol>
-  <li><strong>Pre-Screening (Flash model):</strong> Rapid triage of all new papers using the <code>pre_screening_prompt</code></li>
-  <li><strong>Deep Analysis (Pro model):</strong> Thorough evaluation of papers passing pre-screening using the <code>phd_focus_system_prompt</code></li>
-</ol>
+<h3 id="s5-3">5.3 Event Schema (Mandatory Fields)</h3>
 
-<h3>6.3 Enrichment State Machine</h3>
+<pre><code>{
+  "event_id": "UUID4",
+  "timestamp": "ISO 8601",
+  "event_type": "paper_discovered | paper_evaluated | search_completed | gwo_optimized | agent_step | agent_episode_end",
+  "source": "talos",
+  "payload": {}
+}</code></pre>
+
+<h3 id="s5-4">5.4 Inbound Commands (Webhook)</h3>
+
+<p><code>POST /api/v1/synapse/webhook</code> accepts:</p>
+
+<table>
+  <thead><tr><th>Command</th><th>Parameters</th><th>Action</th></tr></thead>
+  <tbody>
+    <tr><td><code>trigger_search</code></td><td><code>{source_filter: [...]}</code></td><td>Triggers daily search pipeline</td></tr>
+    <tr><td><code>trigger_evaluation</code></td><td><code>{paper_id: int}</code></td><td>Evaluates a specific paper</td></tr>
+    <tr><td><code>get_status</code></td><td><code>{}</code></td><td>Returns system health</td></tr>
+    <tr><td><code>shutdown</code></td><td><code>{}</code></td><td>Graceful process shutdown</td></tr>
+  </tbody>
+</table>
+
+<!-- ===================================================================== -->
+<h2 id="s6">Section 6: REST API Reference (18 Endpoints)</h2>
+
+<h3 id="s6-1">6.1 Endpoint Catalog</h3>
+
+<table>
+  <thead><tr><th>#</th><th>Method</th><th>Path</th><th>Description</th><th>Response Model</th></tr></thead>
+  <tbody>
+    <tr><td>E01</td><td><code>GET</code></td><td><code>/api/v1/health</code></td><td>System health, DB stats, embedding coverage</td><td><code>SystemHealth</code></td></tr>
+    <tr><td>E02</td><td><code>GET</code></td><td><code>/api/v1/papers</code></td><td>Paginated paper list (sorted by overall_score)</td><td><code>PaginatedPapers</code></td></tr>
+    <tr><td>E03</td><td><code>GET</code></td><td><code>/api/v1/papers/{paper_id}</code></td><td>Full paper detail (all 28+ columns)</td><td><code>PaperDetail</code></td></tr>
+    <tr><td>E04</td><td><code>POST</code></td><td><code>/api/v1/papers/{paper_id}/evaluate</code></td><td>Single-paper AI evaluation (BgTasks)</td><td><code>TaskStatus</code></td></tr>
+    <tr><td>E05</td><td><code>POST</code></td><td><code>/api/v1/search/semantic</code></td><td>Natural-language semantic vector search</td><td><code>SemanticSearchResponse</code></td></tr>
+    <tr><td>E06</td><td><code>POST</code></td><td><code>/api/v1/scrape/trigger</code></td><td>Trigger daily scrape pipeline (BgTasks)</td><td><code>TaskStatus</code></td></tr>
+    <tr><td>E07</td><td><code>POST</code></td><td><code>/api/v1/optimize/gwo</code></td><td>Trigger GWO hyperparameter optimization (BgTasks)</td><td><code>TaskStatus</code></td></tr>
+    <tr><td>E08</td><td><code>GET</code></td><td><code>/api/v1/optimize/gwo/history</code></td><td>GWO optimization history for Recharts</td><td><code>List[dict]</code></td></tr>
+    <tr><td>E09</td><td><code>GET</code></td><td><code>/api/v1/graph/view</code></td><td>Serve architecture dependency graph HTML</td><td><code>FileResponse</code></td></tr>
+    <tr><td>E10</td><td><code>POST</code></td><td><code>/api/v1/ai/translate-query</code></td><td>Natural-language to boolean query translation</td><td><code>TranslateQueryResponse</code></td></tr>
+    <tr><td>E11</td><td><code>GET</code></td><td><code>/api/v1/analysis/authors</code></td><td>Top authors from database (for BarChart)</td><td><code>List[AuthorSummary]</code></td></tr>
+    <tr><td>E12</td><td><code>POST</code></td><td><code>/api/v1/db/recalculate-scores</code></td><td>Bulk overall_score recalculation (BgTasks)</td><td><code>TaskStatus</code></td></tr>
+    <tr><td>E13</td><td><code>GET</code></td><td><code>/api/v1/tasks/{task_id}</code></td><td>Background task status</td><td><code>TaskStatus</code></td></tr>
+    <tr><td>E14</td><td><code>GET</code></td><td><code>/api/v1/tasks</code></td><td>List all background tasks</td><td><code>List[TaskStatus]</code></td></tr>
+    <tr><td>E15</td><td><code>GET</code></td><td><code>/api/v1/capabilities</code></td><td>Serve System Capabilities Master HTML</td><td><code>HTMLResponse</code></td></tr>
+    <tr><td>E16</td><td><code>POST</code></td><td><code>/api/v1/synapse/webhook</code></td><td>SYNAPSE protocol inbound command receiver</td><td><code>SynapseWebhookResponse</code></td></tr>
+    <tr><td>E17</td><td><code>GET</code></td><td><code>/api/v1/tester/status</code></td><td>Autonomous System Tester Q-table status (70+ arms)</td><td><code>TesterStatusResponse</code></td></tr>
+    <tr><td>E18</td><td><code>GET</code></td><td><code>/api/v1/tester/reports</code></td><td>List crash report metadata from data/reports/</td><td><code>List[CrashReport]</code></td></tr>
+  </tbody>
+</table>
+
+<h3 id="s6-2">6.2 Pydantic v2 Model Inventory</h3>
+
+<p>The API defines 16 Pydantic v2 models: <code>PaperSummary</code>, <code>PaperDetail</code>, <code>PaginatedPapers</code>, <code>SemanticSearchRequest</code>, <code>SemanticSearchResponse</code>, <code>ScrapeRequest</code>, <code>GWORunRequest</code>, <code>GWOResult</code>, <code>TaskStatus</code>, <code>SystemHealth</code>, <code>TranslateQueryRequest</code>, <code>TranslateQueryResponse</code>, <code>AuthorSummary</code>, <code>EvaluatePaperRequest</code>, <code>TesterStatusResponse</code>, <code>CrashReport</code>.</p>
+
+<h3 id="s6-3">6.3 Background Task System</h3>
+<ul>
+  <li><strong>Task Store:</strong> Thread-safe <code>_task_store</code> dict with locking</li>
+  <li><strong>Task Lifecycle:</strong> <code>queued -> running -> completed|failed</code></li>
+  <li><strong>Task ID:</strong> 8-character hex UUID prefix</li>
+  <li><strong>Polling:</strong> <code>GET /api/v1/tasks/{task_id}</code> for individual status, <code>GET /api/v1/tasks</code> for all</li>
+  <li><strong>Long-Running Tasks:</strong> Daily scrape (14 APIs), GWO optimization (minutes), Single-paper evaluation, Bulk score recalculation</li>
+</ul>
+
+<p>Auto-generated OpenAPI docs at <code>http://localhost:8001/docs</code> (Swagger UI) and <code>http://localhost:8001/redoc</code> (ReDoc).</p>
+
+<!-- ===================================================================== -->
+<h2 id="s7">Section 7: MCP Server Tools (4 Tools)</h2>
+
+<h3 id="s7-1">7.1 Architecture</h3>
+
+<p><code>src/mcp_server.py</code> (384 lines) implements a Model Context Protocol (MCP) server using the official <code>MCPServer</code> from MCP SDK v2.0.0 with stdio transport. All tools delegate to the TALOS FastAPI backend via HTTP at the configurable <code>TALOS_API_BASE</code> (default: <code>http://127.0.0.1:8001/api/v1</code>).</p>
+
+<h3 id="s7-2">7.2 Tool Inventory</h3>
+
+<table>
+  <thead><tr><th>Tool Name</th><th>Description</th><th>Parameters</th><th>Maps to Endpoint</th></tr></thead>
+  <tbody>
+    <tr><td><code>talos_system_status</code></td><td>Query system health, DB stats, and embedding models</td><td><code>{}</code></td><td><code>GET /health</code></td></tr>
+    <tr><td><code>talos_semantic_search</code></td><td>Vector-based semantic search across all papers</td><td><code>{query: str, top_k: int}</code></td><td><code>POST /search/semantic</code></td></tr>
+    <tr><td><code>talos_get_paper_details</code></td><td>Complete paper record with AI evaluation and enrichment</td><td><code>{paper_id: int}</code></td><td><code>GET /papers/{paper_id}</code></td></tr>
+    <tr><td><code>talos_trigger_scrape</code></td><td>Launch background academic scraping pipeline</td><td><code>{sources: Optional[List[str]]}</code></td><td><code>POST /scrape/trigger</code></td></tr>
+  </tbody>
+</table>
+
+<h3 id="s7-3">7.3 Configuration</h3>
+<ul>
+  <li><strong>Transport:</strong> stdio (standard input/output)</li>
+  <li><strong>Auto-Config:</strong> Cherry Studio MCP config via <code>src/utils/frontend_provisioner.py</code></li>
+  <li><strong>Launch:</strong> <code>python src/mcp_server.py</code> or <code>run_talos.bat</code> Option 3</li>
+  <li><strong>Timeout:</strong> <code>TALOS_MCP_TIMEOUT</code> env var (default: 30 seconds)</li>
+  <li><strong>Error Handling:</strong> All tools return descriptive error strings (LLM-friendly)</li>
+</ul>
+
+<!-- ===================================================================== -->
+<h2 id="s8">Section 8: Analysis & Reporting Modules</h2>
+
+<h3 id="s8-1">8.1 Analysis Module Inventory</h3>
+
+<table>
+  <thead><tr><th>Module</th><th>Path</th><th>Function</th></tr></thead>
+  <tbody>
+    <tr><td>Citation Network Analyzer</td><td><code>src/analysis/citation_analyzer.py</code></td><td>Citation graph with pyvis interactive visualization</td></tr>
+    <tr><td>Author Profiler</td><td><code>src/analysis/author_profiler.py</code></td><td>Author publication history and impact profiling</td></tr>
+    <tr><td>Author Trajectory Analyzer</td><td><code>src/analysis/author_trajectory_analyzer.py</code></td><td>Career trajectory analysis via ORCID</td></tr>
+    <tr><td>Trend Analyzer</td><td><code>src/analysis/trend_analyzer.py</code></td><td>Scientometrics and publication trend analysis</td></tr>
+    <tr><td>Architecture Intelligence Report</td><td><code>src/analysis/architecture_intelligence_report.py</code></td><td>Dual-language (EN+GR) NATO CDE-compatible reports</td></tr>
+    <tr><td>Knowledge Path Generator</td><td><code>src/analysis/knowledge_path_generator.py</code></td><td>Research path discovery with K-Means clustering</td></tr>
+    <tr><td>Recommender</td><td><code>src/analysis/recommender.py</code></td><td>Strategic reading recommendations</td></tr>
+    <tr><td>Baseline Report Generator</td><td><code>src/analysis/generate_baseline_report.py</code></td><td>Standard + Academic (600 DPI, serif) modes</td></tr>
+    <tr><td>Architecture Graph Generator</td><td><code>src/analysis/generate_architecture_graph.py</code></td><td>D3.js interactive dependency graph</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s8-2">8.2 Graphify AST Knowledge Graph (NEW -- v5.9.10 to v5.9.13)</h3>
+
+<p><code>src/analysis/graphify_adapter.py</code> (606 lines) wraps a vendored Graphify AST engine to generate interactive D3.js knowledge graphs from TALOS source code.</p>
+
+<table>
+  <thead><tr><th>Phase</th><th>Version</th><th>Capability</th></tr></thead>
+  <tbody>
+    <tr><td>Vendored Integration</td><td>v5.9.10</td><td><code>generate_ast_knowledge_graph()</code> invokes Graphify as subprocess with <code>extract src/ --code-only</code></td></tr>
+    <tr><td>Dependency Hotfix</td><td>v5.9.11</td><td>Added <code>tree-sitter-python</code> and <code>rapidfuzz</code> to requirements.txt</td></tr>
+    <tr><td>Path Resolution + Auto-Clustering</td><td>v5.9.12</td><td>Fixed graphify-out path; auto-executes <code>cluster-only --no-label</code> (100% air-gapped)</td></tr>
+    <tr><td>Academic Print Theme</td><td>v5.9.13</td><td><code>_inject_light_mode_toggle()</code> injects CSS light-mode toggle with graceful degradation</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Output:</strong> <code>data/reports/graphify_out/graph.html</code> (interactive D3.js), <code>GRAPH_REPORT.md</code> (clustering report), node/edge JSON artifacts.</p>
+
+<h3 id="s8-3">8.3 Query Translator (PYTHIA)</h3>
+
+<p><code>src/ai/llm/query_translator.py</code> translates natural-language research goals into 14 optimized boolean search queries using AIManager with "Research Architect" persona.</p>
+
+<h3 id="s8-4">8.4 Model Manager</h3>
+
+<p><code>src/ai/llm/model_manager.py</code> (100% Rich TUI, 7-option menu) configures Fast Edge Tier, Heavy Reasoning Tier, Cloud Provider, 2D Execution Matrix wizard, Embedding model selection, with VRAM-aware size validation and Cancel/Back navigation guardrails.</p>
+
+<h3 id="s8-5">8.5 Research Pivot</h3>
+
+<p><code>src/ai/llm/research_pivot.py</code> provides a 5-step guided wizard for changing research direction.</p>
+
+<!-- ===================================================================== -->
+<h2 id="s9">Section 9: Database & Persistence</h2>
+
+<h3 id="s9-1">9.1 Database Schema</h3>
+
+<table>
+  <thead><tr><th>Table</th><th>Purpose</th><th>Key Columns</th></tr></thead>
+  <tbody>
+    <tr><td><code>papers</code></td><td>Primary paper storage</td><td>id, doi, title, abstract, authors, source, publication_year, strategic/operational/tactical/playground/overall_score, evaluation_reasoning, evaluation_contribution, evaluation_utilization, suggested_tags/folder/discord_channel, enrichment_status, oa_pdf_url, embedding_model</td></tr>
+    <tr><td><code>embeddings</code></td><td>Vector embeddings</td><td>paper_id, embedding (BLOB), model_name</td></tr>
+    <tr><td><code>enrichment_log</code></td><td>Enrichment tracking</td><td>paper_id, source, timestamp, status</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s9-2">9.2 Scoring Framework (4-Layer Invariant)</h3>
+
+<table>
+  <thead><tr><th>Layer</th><th>Weight</th><th>Description</th></tr></thead>
+  <tbody>
+    <tr><td>Strategic</td><td>30%</td><td>Long-term research alignment and field impact</td></tr>
+    <tr><td>Operational</td><td>30%</td><td>Methodological rigor and reproducibility</td></tr>
+    <tr><td>Tactical</td><td>30%</td><td>Immediate utility for current research goals</td></tr>
+    <tr><td>Playground</td><td>10%</td><td>Creative/exploratory potential</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Overall Score Formula:</strong> <code>Overall = 0.30 * S + 0.30 * O + 0.30 * T + 0.10 * P</code></p>
+
+<h3 id="s9-3">9.3 Semantic Search</h3>
+<ul>
+  <li>Cosine similarity against all stored embeddings with model-aware filtering</li>
+  <li>Supported embedding models: <code>nomic-embed-text</code> (Ollama, 768d), <code>gemini-embedding-001</code> (Gemini, 768d)</li>
+</ul>
+
+<h3 id="s9-4">9.4 Enrichment State Machine</h3>
 
 <table>
   <thead><tr><th>Status</th><th>Value</th><th>Meaning</th></tr></thead>
@@ -492,162 +813,206 @@
   </tbody>
 </table>
 
-<h3>6.4 XAI Reasoning Outputs</h3>
-<p>For each evaluated paper, the AI generates:</p>
+<h3 id="s9-5">9.5 XAI Reasoning Outputs</h3>
+<p>For each evaluated paper: <code>evaluation_reasoning</code>, <code>evaluation_contribution</code>, <code>evaluation_utilization</code>, <code>suggested_tags</code>, <code>suggested_folder</code>, <code>suggested_discord_channel</code>.</p>
+
+<h3 id="s9-6">9.6 Profile System</h3>
+<p>Isolated profiles under <code>_profiles/<name>/</code> with independent <code>config.json</code> and <code>talos_research.db</code>.</p>
+
+<!-- ===================================================================== -->
+<h2 id="s10">Section 10: TUI & CLI Reference</h2>
+
+<h3 id="s10-1">10.1 Entry Points</h3>
+
+<table>
+  <thead><tr><th>Entry Point</th><th>File</th><th>Type</th></tr></thead>
+  <tbody>
+    <tr><td>TUI Dashboard</td><td><code>talos.py</code></td><td>Rich-powered interactive terminal (11 options)</td></tr>
+    <tr><td>Batch Launcher (Win)</td><td><code>run_talos.bat</code></td><td>10-option batch menu with auto-Conda detection</td></tr>
+    <tr><td>Batch Launcher (POSIX)</td><td><code>run_talos.sh</code></td><td>10-option bash menu with virtualenv/Conda detection</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s10-2">10.2 talos.py Rich TUI Features (v5.8.9+)</h3>
 <ul>
-  <li><code>evaluation_reasoning</code>: Narrative explanation of the scores</li>
-  <li><code>evaluation_contribution</code>: The paper's contribution to the field</li>
-  <li><code>evaluation_utilization</code>: How the paper's findings can be applied</li>
-  <li><code>suggested_tags</code>: Auto-generated keyword tags</li>
-  <li><code>suggested_folder</code>: Recommended organizational folder</li>
-  <li><code>suggested_discord_channel</code>: Relevant notification channel</li>
+  <li><strong>Dynamic Status Table:</strong> Conda/virtualenv env, API port (8001), Synapse bus (8000), 2D Execution Matrix, active LLM tiers (full model names), Active Research Focus (LLM-generated 6-10 word summary)</li>
+  <li><strong>IEEE CS Badge:</strong> Two-tone Rich color block (#006699 / #002855)</li>
+  <li><strong>11-Option Menu</strong> in visual Rich groups: Model Configuration, Research Operations, Analysis & Insights, System Diagnostics, Exit</li>
+  <li><strong>Elite Papers:</strong> Overall score >= 7 highlighted in gold</li>
+  <li><strong>Clickable Hyperlinks:</strong> Rich <code>[link=file:///...]</code> terminal hyperlinks for reports and Q-tables</li>
+  <li><strong>Ctrl+C Safety:</strong> <code>safe_pause()</code> and <code>safe_select()</code> helpers</li>
 </ul>
 
-<h3>6.5 NATO CDE Procedural Hooks</h3>
-<p>The Architecture Intelligence Report (<code>src/analysis/architecture_intelligence_report.py</code>) generates dual-language (EN + GR) reports compatible with NATO CDE (Concept Development & Experimentation) procedural documentation standards.</p>
+<h3 id="s10-3">10.3 run_talos.bat / run_talos.sh Features</h3>
+<ul>
+  <li>Section 1: REST API & FRONTEND (Full Setup, FastAPI, MCP, Cherry Studio)</li>
+  <li>Section 2: CLI & DAEMONS (TALOS TUI, Autonomous Research Daemon 24/7, Live DRL Agent)</li>
+  <li>Section 3: TESTING & SYSTEM (Autonomous System Tester, Pytest suite, Exit)</li>
+  <li>Auto-Conda/Virtualenv detection, background server spawning, Fermion CPU auto-start</li>
+</ul>
 
-<!-- =========================================================================== -->
-<h2 id="s7">Section 7: Edge-Cloud & Deployment Ecosystem</h2>
+<!-- ===================================================================== -->
+<h2 id="s11">Section 11: Configuration & Environment</h2>
 
-<h3>7.1 Deployment Options</h3>
+<h3 id="s11-1">11.1 Environment Variables</h3>
+
+<table>
+  <thead><tr><th>Variable</th><th>Default</th><th>Purpose</th></tr></thead>
+  <tbody>
+    <tr><td>TALOS_NETWORK_STRATEGY</td><td>strict_local</td><td>Network dependency: strict_local, local_first, cloud_first, strict_cloud</td></tr>
+    <tr><td>TALOS_HARDWARE_STRATEGY</td><td>cpu_gpu_split</td><td>Hardware routing: cpu_only, gpu_only, cpu_gpu_split</td></tr>
+    <tr><td>TALOS_FAST_ROUTING</td><td>local</td><td>Fast tier routing: "local" or "cloud"</td></tr>
+    <tr><td>TALOS_HEAVY_ROUTING</td><td>local</td><td>Heavy tier routing: "local" or "cloud"</td></tr>
+    <tr><td>TALOS_CLOUD_PROVIDER</td><td>gemini</td><td>Default cloud provider</td></tr>
+    <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td>Fast edge model name</td></tr>
+    <tr><td>FAST_EDGE_BASE_URL</td><td>http://127.0.0.1:11435/v1</td><td>Fast edge endpoint</td></tr>
+    <tr><td>HEAVY_REASONING_MODEL</td><td>qwen2.5:14b</td><td>Heavy reasoning model name</td></tr>
+    <tr><td>OLLAMA_BASE_URL</td><td>http://127.0.0.1:11434</td><td>Standard Ollama GPU endpoint</td></tr>
+    <tr><td>GEMINI_API_KEY</td><td>(unset)</td><td>Gemini API key</td></tr>
+    <tr><td>DEEPSEEK_API_KEY</td><td>(unset)</td><td>DeepSeek API key</td></tr>
+    <tr><td>HF_TOKEN</td><td>(unset)</td><td>HuggingFace API token</td></tr>
+    <tr><td>LOCAL_MODEL_NAME</td><td>gemma3:12b</td><td>Fallback local chat model</td></tr>
+    <tr><td>LOCAL_EMBEDDING_MODEL</td><td>nomic-embed-text</td><td>Local embedding model</td></tr>
+    <tr><td>TALOS_DEFAULT_TIER</td><td>fast</td><td>Default tier for requests</td></tr>
+  </tbody>
+</table>
+
+<h3 id="s11-2">11.2 config.json Keys</h3>
+<ul>
+  <li><code>active_focus_summary</code>: 6-10 word LLM-generated research focus title</li>
+  <li><code>user_research_goal</code>, <code>phd_focus_system_prompt</code>, <code>pre_screening_prompt</code></li>
+  <li><code>*_query</code> (14 keys): Boolean search queries for each source</li>
+  <li><code>ai_provider_priority</code>, <code>failure_threshold</code>, <code>provider_limits</code>, <code>gemini_tier</code></li>
+</ul>
+
+<!-- ===================================================================== -->
+<h2 id="s12">Section 12: Deployment & Infrastructure</h2>
+
+<h3 id="s12-1">12.1 Deployment Options</h3>
 
 <table>
   <thead><tr><th>Mode</th><th>Components</th><th>Command</th></tr></thead>
   <tbody>
-    <tr><td>Development</td><td>FastAPI with reload</td><td><code>uvicorn src.api.main_api:app --reload</code></td></tr>
-    <tr><td>Production</td><td>FastAPI on port 8000</td><td><code>uvicorn src.api.main_api:app --host 0.0.0.0 --port 8000</code></td></tr>
+    <tr><td>Development</td><td>FastAPI with reload</td><td><code>uvicorn src.api.main_api:app --reload --port 8001</code></td></tr>
+    <tr><td>Production</td><td>FastAPI on port 8001</td><td><code>uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001</code></td></tr>
     <tr><td>Docker</td><td>Containerized with GPU passthrough</td><td><code>docker-compose up --build</code></td></tr>
-    <tr><td>Kubernetes</td><td>Cluster with Ollama sidecar</td><td><code>kubectl apply -f k8s/</code></td></tr>
   </tbody>
 </table>
 
-<h3>7.2 Hardware Requirements</h3>
+<h3 id="s12-2">12.2 Hardware Requirements</h3>
 
 <table>
   <thead><tr><th>Tier</th><th>GPU</th><th>VRAM</th><th>Capability</th></tr></thead>
   <tbody>
     <tr><td>Minimum</td><td>CPU only</td><td>N/A</td><td>Ingestion + evaluation (cloud LLMs only)</td></tr>
     <tr><td>Recommended</td><td>RTX 3060+</td><td>12 GB</td><td>Local nomic-embed-text + light chat models</td></tr>
-    <tr><td>Optimal</td><td>RTX 4070+</td><td>16 GB</td><td>Full local DRL training + embedding generation</td></tr>
+    <tr><td>Optimal</td><td>RTX 4070+</td><td>16 GB</td><td>Full local DRL training + embedding + dual-tier split</td></tr>
   </tbody>
 </table>
 
-<h3>7.3 Environment Configuration</h3>
+<h3 id="s12-3">12.3 Docker Support</h3>
 <ul>
-  <li><strong><code>.env</code></strong>: API keys for all providers (Gemini, DeepSeek, HuggingFace, Discord, Telegram, Zotero, Unpaywall, ORCID)</li>
-  <li><strong><code>config.json</code></strong>: Query strings, system prompts, source configuration</li>
-  <li><strong><code>config.template.json</code></strong>: Reference template with placeholder values</li>
-  <li><strong>Profiles</strong>: <code>_profiles/<name>/</code> directories with isolated config.json + talos_research.db per research topic</li>
+  <li><code>Dockerfile</code>: Multi-stage Python 3.11 with CUDA 12.1</li>
+  <li><code>docker-compose.yml</code>: FastAPI + Ollama services, HEALTHCHECK at /api/v1/health</li>
+  <li><code>restart: unless-stopped</code> for production resilience</li>
 </ul>
 
-<h3>7.4 Docker Support</h3>
-<ul>
-  <li><code>Dockerfile</code>: Multi-stage Python 3.11 build with CUDA 12.1 support</li>
-  <li><code>docker-compose.yml</code>: FastAPI + Ollama services with shared volumes for models and data</li>
-</ul>
+<!-- ===================================================================== -->
+<h2 id="s13">Section 13: Documentation Canon (15-File Sync)</h2>
 
-<!-- =========================================================================== -->
-<h2 id="s8">Section 8: Dashboards & User Interfaces</h2>
-
-<h3>8.1 React 18 Frontend (Primary)</h3>
-
-<p>The production user interface is a <strong>React 18 Single Page Application</strong> built with:</p>
-<ul>
-  <li><strong>Tailwind CSS</strong>: Utility-first CSS framework for responsive design</li>
-  <li><strong>Shadcn UI</strong>: Headless component primitives for accessible, composable UI</li>
-  <li><strong>Recharts</strong>: Composable charting library for data visualization</li>
-</ul>
-
-<p>The React frontend consumes the FastAPI REST API at port 8000 and provides:</p>
-<ul>
-  <li>Interactive paper library with semantic search, filtering, and pagination</li>
-  <li>DRL agent dashboard with live status and training controls</li>
-  <li>GWO optimization history visualizations (LineChart, 3D Scatter)</li>
-  <li>Author publication statistics (BarChart)</li>
-  <li>Architecture dependency graph embedding</li>
-  <li>Background task monitoring and management</li>
-</ul>
-
-<h3>8.2 Flask Dashboard (Legacy/Embedded)</h3>
-<p><code>templates/dashboard.html</code> serves a Tabulator.js-based interactive table at port 5000 for direct database browsing. This remains available as a lightweight alternative when the React frontend is not deployed.</p>
-
-<h3>8.3 CLI Interface</h3>
-<p><code>talos.py</code> retains a full-featured text-based interface via <code>questionary</code> prompts:</p>
-<ul>
-  <li>Search & Discovery operations</li>
-  <li>Paper evaluation</li>
-  <li>Analysis & insights generation</li>
-  <li>Database maintenance (statistics, enrichment, embedding generation)</li>
-  <li>Diagnostics (code integrity check, dependency map verification)</li>
-  <li>DRL training and GWO optimization</li>
-  <li>Profile management</li>
-</ul>
-
-<h3>8.4 Architecture Graph</h3>
-<p><code>templates/architecture_graph.html</code> is an interactive D3.js force-directed graph served both via the API (<code>/api/v1/graph/view</code>) and as a standalone HTML document. Node colors encode module roles, edges show import dependencies, and tooltips expose function-level detail.</p>
-
-<!-- =========================================================================== -->
-<h2 id="s9">Section 9: Complete REST API Reference (14 Endpoints)</h2>
-
-<h3>9.1 Base URL</h3>
-<pre><code>http://localhost:8000/api/v1</code></pre>
-
-<h3>9.2 Interactive Documentation</h3>
-<p>Auto-generated OpenAPI docs at:</p>
-<ul>
-  <li><a href="http://localhost:8000/docs">http://localhost:8000/docs</a> (Swagger UI)</li>
-  <li><a href="http://localhost:8000/redoc">http://localhost:8000/redoc</a> (ReDoc)</li>
-</ul>
-
-<h3>9.3 Endpoint Catalog</h3>
+<h3 id="s13-1">13.1 The 15 Canonical Files</h3>
 
 <table>
-  <thead><tr><th>#</th><th>Method</th><th>Path</th><th>Description</th><th>Response</th></tr></thead>
+  <thead><tr><th>#</th><th>File</th><th>Language</th><th>Purpose</th></tr></thead>
   <tbody>
-    <tr><td>1</td><td><code>GET</code></td><td><code>/health</code></td><td>System health, DB stats, embedding coverage</td><td><code>SystemHealth</code></td></tr>
-    <tr><td>2</td><td><code>GET</code></td><td><code>/papers</code></td><td>Paginated paper list (sorted by overall_score)</td><td><code>PaginatedPapers</code></td></tr>
-    <tr><td>3</td><td><code>GET</code></td><td><code>/papers/{paper_id}</code></td><td>Full paper detail with all 25 fields</td><td><code>PaperDetail</code></td></tr>
-    <tr><td>4</td><td><code>POST</code></td><td><code>/papers/{paper_id}/evaluate</code></td><td>Single-paper AI evaluation (BackgroundTasks)</td><td><code>TaskStatus</code> (202)</td></tr>
-    <tr><td>5</td><td><code>POST</code></td><td><code>/search/semantic</code></td><td>Natural-language semantic vector search</td><td><code>SemanticSearchResponse</code></td></tr>
-    <tr><td>6</td><td><code>POST</code></td><td><code>/scrape/trigger</code></td><td>Trigger daily scrape pipeline (BackgroundTasks)</td><td><code>TaskStatus</code> (202)</td></tr>
-    <tr><td>7</td><td><code>POST</code></td><td><code>/optimize/gwo</code></td><td>Trigger GWO hyperparameter optimization (BackgroundTasks)</td><td><code>TaskStatus</code> (202)</td></tr>
-    <tr><td>8</td><td><code>GET</code></td><td><code>/optimize/gwo/history</code></td><td>GWO optimization history for Recharts</td><td><code>List[dict]</code></td></tr>
-    <tr><td>9</td><td><code>GET</code></td><td><code>/graph/view</code></td><td>Serve architecture dependency graph HTML</td><td><code>HTML</code> (FileResponse)</td></tr>
-    <tr><td>10</td><td><code>POST</code></td><td><code>/ai/translate-query</code></td><td>Natural-language to boolean query translation</td><td><code>TranslateQueryResponse</code></td></tr>
-    <tr><td>11</td><td><code>GET</code></td><td><code>/analysis/authors</code></td><td>Top authors ranked by publication count</td><td><code>List[AuthorSummary]</code></td></tr>
-    <tr><td>12</td><td><code>POST</code></td><td><code>/db/recalculate-scores</code></td><td>Bulk overall_score recalculation (BackgroundTasks)</td><td><code>TaskStatus</code> (202)</td></tr>
-    <tr><td>13</td><td><code>GET</code></td><td><code>/tasks/{task_id}</code></td><td>Background task status</td><td><code>TaskStatus</code></td></tr>
-    <tr><td>14</td><td><code>GET</code></td><td><code>/tasks</code></td><td>List all background tasks (newest first)</td><td><code>List[TaskStatus]</code></td></tr>
+    <tr><td>1</td><td><code>.clinerules</code></td><td>EN</td><td>Constitution v2.0 + AI agent instructions</td></tr>
+    <tr><td>2</td><td><code>README.md</code></td><td>EN</td><td>Project overview and quickstart</td></tr>
+    <tr><td>3</td><td><code>docs/ROADMAP.md</code></td><td>EN</td><td>Strategic roadmap and version history</td></tr>
+    <tr><td>4</td><td><code>docs/CHANGELOG_EN.md</code></td><td>EN</td><td>Detailed changelog (English)</td></tr>
+    <tr><td>5</td><td><code>docs/CHANGELOG_GR.md</code></td><td>GR</td><td>Detailed changelog (Greek)</td></tr>
+    <tr><td>6</td><td><code>docs/PROJECT_MAP.md</code></td><td>GR</td><td>Complete project map (Greek master)</td></tr>
+    <tr><td>7</td><td><code>docs/PROJECT_MAP_EN.md</code></td><td>EN</td><td>Complete project map (English)</td></tr>
+    <tr><td>8</td><td><code>docs/TIMELINE_EN.md</code></td><td>EN</td><td>Historical timeline (English)</td></tr>
+    <tr><td>9</td><td><code>docs/TIMELINE_GR.md</code></td><td>GR</td><td>Historical timeline (Greek)</td></tr>
+    <tr><td>10</td><td><code>docs/internal/API_HANDOVER_FOTIS.md</code></td><td>EN</td><td>API handover reference</td></tr>
+    <tr><td>11</td><td><code>docs/internal/UX_UI_BLUEPRINT_FOTIS.md</code></td><td>EN</td><td>UX/UI blueprint</td></tr>
+    <tr><td>12</td><td><code>docs/internal/IP_PROTECTION_STRATEGY.md</code></td><td>EN</td><td>IP protection strategy</td></tr>
+    <tr><td>13</td><td><code>docs/SYSTEM_CAPABILITIES_MASTER.md</code></td><td>EN</td><td>Capabilities reference (Markdown)</td></tr>
+    <tr><td>14</td><td><code>docs/SYSTEM_CAPABILITIES_MASTER.html</code></td><td>EN</td><td>Capabilities reference (HTML) -- this file</td></tr>
+    <tr><td>15</td><td><code>docs/TECH_RADAR.md</code></td><td>EN</td><td>Technology radar and stack choices</td></tr>
   </tbody>
 </table>
 
-<h3>9.4 Additional System Endpoint</h3>
+<h3 id="s13-2">13.2 Code Version Synchronicity (5 Files)</h3>
 
 <table>
-  <thead><tr><th>#</th><th>Method</th><th>Path</th><th>Description</th><th>Response</th></tr></thead>
+  <thead><tr><th>#</th><th>File</th><th>Version String Location</th></tr></thead>
   <tbody>
-    <tr><td>15</td><td><code>GET</code></td><td><code>/capabilities</code></td><td>Serve the System Capabilities Master Reference</td><td><code>HTMLResponse</code></td></tr>
+    <tr><td>1</td><td><code>talos.py</code></td><td>Module docstring + printed banner</td></tr>
+    <tr><td>2</td><td><code>run_talos.bat</code></td><td>Window title, banner text, section headers</td></tr>
+    <tr><td>3</td><td><code>run_talos.sh</code></td><td>Script header comment, banner text, section headers</td></tr>
+    <tr><td>4</td><td><code>config/settings.py</code></td><td><code>TALOS_VERSION</code> constant</td></tr>
+    <tr><td>5</td><td><code>src/api/main_api.py</code></td><td><code>app.version</code> FastAPI metadata string</td></tr>
   </tbody>
 </table>
 
-<h3>9.5 Authentication</h3>
-<p>Endpoints are currently unauthenticated (development mode). Production deployment should add JWT-based authentication via FastAPI middleware.</p>
+<!-- ===================================================================== -->
+<h2 id="s14">Section 14: Test Suite</h2>
 
-<h3>9.6 Rate Limiting</h3>
-<p>Background task endpoints (<code>/scrape/trigger</code>, <code>/optimize/gwo</code>, <code>/db/recalculate-scores</code>, <code>/papers/{id}/evaluate</code>) are designed for single-concurrent-task operation. Starting a new task while one is running does not queue -- it creates an independent task. Future versions will implement a proper job queue with concurrent task limits.</p>
+<h3 id="s14-1">14.1 Test Inventory</h3>
 
-<h3>9.7 CORS Configuration</h3>
-<p>CORS is configured with <code>allow_origins=["*"]</code> for development. Production must restrict this to the React frontend origin.</p>
+<table>
+  <thead><tr><th>Test File</th><th>Tests</th><th>Coverage</th></tr></thead>
+  <tbody>
+    <tr><td><code>tests/test_smoke.py</code></td><td>78</td><td>System health, database, configuration</td></tr>
+    <tr><td><code>tests/test_synapse.py</code></td><td>21</td><td>EventEmitter + webhook route coverage</td></tr>
+    <tr><td><code>tests/test_multi_tier.py</code></td><td>20</td><td>Fast vs. heavy LLM routing logic, version assertion</td></tr>
+    <tr><td><code>tests/test_provisioner.py</code></td><td>23</td><td>Frontend provisioner OS detection and config generation</td></tr>
+    <tr><td><code>tests/test_mcp_server.py</code></td><td>27</td><td>MCP server tool registration and HTTP mocking</td></tr>
+    <tr><td><code>tests/test_model_manager.py</code></td><td>29</td><td>Ollama connectivity, VRAM fitness indicators, env key handling</td></tr>
+    <tr><td><strong>Total</strong></td><td><strong>198+</strong></td><td><strong>Full system coverage</strong></td></tr>
+  </tbody>
+</table>
+
+<h3 id="s14-2">14.2 Verification Gates</h3>
+<ol>
+  <li><code>python -m py_compile <file></code> (syntax)</li>
+  <li><code>python scripts/verify_dependency_map.py</code> (imports)</li>
+  <li><code>python scripts/db_stats.py</code> (database, if schema changed)</li>
+  <li><code>python tests/test_smoke.py</code> (runtime health)</li>
+</ol>
+
+<!-- ===================================================================== -->
+<h2 id="s15">Section 15: v5.9.10 to v5.9.13 New Capabilities</h2>
+
+<h3>15.1 Vendored Graphify AST Integration (v5.9.10 -- v5.9.13)</h3>
+<ul>
+  <li><strong>v5.9.10:</strong> <code>generate_ast_knowledge_graph()</code> adapter function invoking vendored Graphify engine as subprocess</li>
+  <li><strong>v5.9.11:</strong> Added <code>tree-sitter-python</code> and <code>rapidfuzz</code> to requirements.txt</li>
+  <li><strong>v5.9.12:</strong> Fixed graphify-out path resolution; auto-executes <code>cluster-only --no-label</code> (100% air-gapped, zero LLM keys required)</li>
+  <li><strong>v5.9.13:</strong> <code>_inject_light_mode_toggle()</code> injects CSS light-mode toggle into generated graph.html with academic print theme</li>
+</ul>
+
+<h3>15.2 Additional v5.9.x Capabilities</h3>
+<ul>
+  <li><strong>Rich Menu Reorganization</strong> (v5.9.10): talos.py 11-option menu organized into visual Rich groups</li>
+  <li><strong>Data Directory Isolation</strong> (v5.9.9): All reports under <code>data/reports/</code>; root <code>reports/</code> purged</li>
+  <li><strong>Clickable Terminal Hyperlinks</strong> (v5.9.8): Rich <code>[link=file:///...]</code> for crash reports and Q-tables</li>
+  <li><strong>Local-to-Local Fallback</strong> (v5.9.8): CPU tier failure -> GPU Ollama (port 11434) before cloud</li>
+  <li><strong>Dynamic Target Discovery</strong> (v5.9.7): Autonomous tester scales from 4 to 70+ dynamically discovered arms</li>
+  <li><strong>2D Execution Matrix</strong> (v5.9.4): Network Strategy (4 modes) x Hardware Strategy (3 modes) = 12 combinations</li>
+</ul>
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.2</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.13</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>
 
 <script>
   /* --- Intersection Observer for sticky ToC active link --- */
   (function() {
-    const sections = document.querySelectorAll('main h2[id]');
+    const sections = document.querySelectorAll('main h2[id], main h3[id]');
     const links = document.querySelectorAll('nav#toc a');
     const observer = new IntersectionObserver(
       function(entries) {

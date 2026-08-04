@@ -1,120 +1,125 @@
 @echo off
-title Project TALOS v5.9.13 -- Automated Batch Runner
+setlocal EnableDelayedExpansion
+title Project TALOS v5.9.14 -- Research Intelligence Dashboard
+
+REM ---------------------------------------------------------------------------
+REM [ INIT ] Enforce Terminal Viewport Dimensions
+REM Width: 105, Height: 32. Ensures NO SCROLLBAR appears and logo stays at top.
+REM ---------------------------------------------------------------------------
+mode con: cols=105 lines=32
+
 chcp 65001 >nul 2>&1
 
 REM ===========================================================================
-REM run_talos.bat -- Automated Batch Runner for Project TALOS v5.9.13
-REM
-REM Provides a 10-option structured menu:
-REM   Section 1: REST API & FRONTEND
-REM     [1] Full Setup (Conda env + pip install + Frontend Provisioner)
-REM     [2] Start FastAPI Server (uvicorn, port 8001) -- background window
-REM     [3] Start MCP Server (python src/mcp_server.py) -- background window
-REM     [4] Launch Interim UI (Cherry Studio)
-REM   Section 2: CLI & STANDALONE DAEMONS
-REM     [5] TALOS Terminal CLI (python talos.py)
-REM     [6] Autonomous Research Daemon (python src/ai/drl/talos_service.py)
-REM     [7] Live DRL Agent (python src/ai/drl/talos_live_agent.py --verbose)
-REM   Section 3: TESTING & SYSTEM
-REM     [8] Autonomous System Tester (RL Chaos Fuzzer)
-REM     [9] Run Test Suite (pytest -v)
-REM     [10] Exit
-REM
-REM TALOS FastAPI runs on port 8001 (port 8000 is reserved for SYNAPSE bus).
-REM Features (v5.9.3): Autonomous System Tester (RL-Driven Chaos Engineering with
-REM LLM-as-a-Judge diagnostics), Auto-Conda path detection, background windows,
-REM auto-start chain, automatic Fermion CPU server spawning.
+REM script         : run_talos.bat
+REM version        : v5.9.14 (Sealed Architecture)
+REM description    : Advanced System Dashboard and Execution Matrix for Project TALOS.
+REM                  Implements Two-Column UI, IEEE WEIGD standard telemetry,
+REM                  defensive error handling, solid-block Unicode rendering,
+REM                  and Automated Zero-Click Miniconda Provisioning.
 REM ===========================================================================
 
 REM ---------------------------------------------------------------------------
-REM -- Auto-Conda Path Detection (v5.8.9) --
-REM Scans common Miniconda/Anaconda installation directories for activate.bat.
-REM If found, the full path is stored in CONDA_ACTIVATE_PATH and used for all
-REM subsequent conda activation calls. Falls back to standard "conda" command
-REM if no activate.bat is found at any known location.
+REM [ INIT ] ANSI Escape Character Generator for True Color Support
+REM ---------------------------------------------------------------------------
+for /F %%a in ('echo prompt $E ^| cmd') do set "ESC=%%a"
+
+REM ---------------------------------------------------------------------------
+REM [ INIT ] Color Palette Definition (IEEE WEIGD Compliance)
+REM ---------------------------------------------------------------------------
+set "C_RESET=%ESC%[0m"
+set "C_IEEE_LIGHT=%ESC%[38;2;0;102;153m"
+set "C_IEEE_DARK=%ESC%[38;2;0;28;85m"
+set "C_GREEN=%ESC%[38;2;40;167;69m"
+set "C_RED=%ESC%[38;2;220;53;69m"
+set "C_YELLOW=%ESC%[38;2;255;193;7m"
+set "C_CYAN=%ESC%[38;2;23;162;184m"
+
+REM ---------------------------------------------------------------------------
+REM [ INIT ] Dynamic Conda Environment Discovery
 REM ---------------------------------------------------------------------------
 set "CONDA_ACTIVATE_PATH="
+set "CONDA_PATHS=%USERPROFILE%\miniconda3 %USERPROFILE%\anaconda3 C:\ProgramData\miniconda3 C:\ProgramData\anaconda3 %LOCALAPPDATA%\Continuum\anaconda3"
 
-REM -- Scan for activate.bat in priority order --
-if exist "%USERPROFILE%\miniconda3\Scripts\activate.bat" (
-    set "CONDA_ACTIVATE_PATH=%USERPROFILE%\miniconda3\Scripts\activate.bat"
-    goto :CONDA_FOUND
+for %%p in (%CONDA_PATHS%) do (
+    if exist "%%p\Scripts\activate.bat" (
+        set "CONDA_ACTIVATE_PATH=%%p\Scripts\activate.bat"
+        goto :CONDA_FOUND
+    )
 )
-if exist "%USERPROFILE%\anaconda3\Scripts\activate.bat" (
-    set "CONDA_ACTIVATE_PATH=%USERPROFILE%\anaconda3\Scripts\activate.bat"
-    goto :CONDA_FOUND
-)
-if exist "C:\ProgramData\miniconda3\Scripts\activate.bat" (
-    set "CONDA_ACTIVATE_PATH=C:\ProgramData\miniconda3\Scripts\activate.bat"
-    goto :CONDA_FOUND
-)
-if exist "C:\ProgramData\anaconda3\Scripts\activate.bat" (
-    set "CONDA_ACTIVATE_PATH=C:\ProgramData\anaconda3\Scripts\activate.bat"
-    goto :CONDA_FOUND
-)
-if exist "%LOCALAPPDATA%\Continuum\anaconda3\Scripts\activate.bat" (
-    set "CONDA_ACTIVATE_PATH=%LOCALAPPDATA%\Continuum\anaconda3\Scripts\activate.bat"
-    goto :CONDA_FOUND
-)
-
-REM -- Fallback: rely on conda being on PATH --
-echo [INFO] Auto-Conda detection: no activate.bat found at known paths.
-echo [INFO] Falling back to standard 'conda' command on PATH.
-goto :CONDA_DETECT_DONE
-
 :CONDA_FOUND
-echo [INFO] Auto-Conda detection: found activate.bat at "%CONDA_ACTIVATE_PATH%"
-goto :CONDA_DETECT_DONE
 
-:CONDA_DETECT_DONE
+REM Jump to main loop to bypass subroutines during initialization
+goto :MAIN_MENU
 
 REM ===========================================================================
-REM -- Subroutine: Activate the talosenv Conda environment --
-REM Uses the detected activate.bat path if available; falls back to
-REM standard 'call conda activate talosenv' otherwise.
+REM SYSTEM SUBROUTINES
 REM ===========================================================================
-goto :TOP
+
+:LOG_INFO
+echo %C_CYAN%[%time:~0,8%] [ INFO ]%C_RESET% %~1
+goto :EOF
+
+:LOG_SUCCESS
+echo %C_GREEN%[%time:~0,8%] [ SUCCESS ]%C_RESET% %~1
+goto :EOF
+
+:LOG_WARN
+echo %C_YELLOW%[%time:~0,8%] [ WARNING ]%C_RESET% %~1
+goto :EOF
+
+:LOG_ERROR
+echo %C_RED%[%time:~0,8%] [ ERROR ]%C_RESET% %~1
+goto :EOF
 
 :ACTIVATE_CONDA
 if defined CONDA_ACTIVATE_PATH (
     call "%CONDA_ACTIVATE_PATH%" talosenv >nul 2>&1
-    IF ERRORLEVEL 1 (
-        echo [WARNING] Could not activate conda env via "%CONDA_ACTIVATE_PATH%". Trying fallback...
-        call conda activate talosenv >nul 2>&1
-    )
+    if %ERRORLEVEL% neq 0 call conda activate talosenv >nul 2>&1
 ) else (
     call conda activate talosenv >nul 2>&1
-    IF ERRORLEVEL 1 (
-        echo [WARNING] Could not activate conda env. Using system Python.
-    )
 )
 goto :EOF
 
-:TOP
+:CHECK_PORT_SILENT
+netstat -ano | findstr "LISTENING" | findstr ":%~1" >nul
+if %ERRORLEVEL% equ 0 ( set "%~2=%C_GREEN%ONLINE%C_RESET%" ) else ( set "%~2=%C_RED%OFFLINE%C_RESET%" )
+goto :EOF
+
+REM ===========================================================================
+REM MAIN DASHBOARD (Two-Column User Interface)
+REM ===========================================================================
+:MAIN_MENU
 cls
-echo =============================================
-echo    Project TALOS v5.9.13
-echo    Research Intelligence Platform
-echo    SYNAPSE Protocol Active (Bus :8000 / API :8001)
-echo =============================================
+REM -- Live Port Status Telemetry --
+call :CHECK_PORT_SILENT 8001 API_STATUS
+call :CHECK_PORT_SILENT 8000 SYNAPSE_STATUS
+call :CHECK_PORT_SILENT 11435 EDGE_STATUS
+
+echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
+echo %C_IEEE_LIGHT%          ████████  █████  ██       ██████  ██████ %C_RESET%
+echo %C_IEEE_LIGHT%             ██    ██   ██ ██      ██    ██ ██      %C_RESET%
+echo %C_IEEE_LIGHT%             ██    ███████ ██      ██    ██ ██████  %C_RESET%
+echo %C_IEEE_LIGHT%             ██    ██   ██ ██      ██    ██     ██  %C_RESET%
+echo %C_IEEE_LIGHT%             ██    ██   ██ ███████  ██████  ██████  %C_RESET%
+echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
+echo  %C_CYAN%Project TALOS v5.9.14 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)%C_RESET%
+echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
+echo  [ SYSTEM TELEMETRY ]    API (8001): %API_STATUS%   ^|   BUS (8000): %SYNAPSE_STATUS%   ^|   EDGE (11435): %EDGE_STATUS%
+echo %C_IEEE_DARK%-----------------------------------------------------------------------------------------------------%C_RESET%
+echo  %C_IEEE_LIGHT%[ INFRASTRUCTURE ^& UI ]%C_RESET%                       %C_IEEE_LIGHT%[ REASONING AGENTS ]%C_RESET%
+echo  [1] Full Setup (Auto-Conda + Pip + UI)       [5] TALOS Console (Interactive CLI)
+echo  [2] Start FastAPI Server (Background)        [6] Autonomous Research Daemon (24/7)
+echo  [3] Start MCP Server (Background)            [7] Live DRL Agent (Verbose Output)
+echo  [4] Launch UI (Cherry Studio Provisioner)
 echo.
-echo    -- Section 1: REST API and FRONTEND --
-echo    [1] Full Setup (Conda + Pip + Frontend Provisioner)
-echo    [2] Start FastAPI Server (uvicorn, port 8001 -- background)
-echo    [3] Start MCP Server (python src/mcp_server.py -- background)
-echo    [4] Launch Interim UI (Cherry Studio)
+echo  %C_IEEE_LIGHT%[ TESTING ^& MAINTENANCE ]%C_RESET%
+echo  [8] Autonomous System Tester (RL Chaos)      [10] Terminate Session
+echo  [9] Execute Test Framework (Pytest Suite)
+echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
 echo.
-echo    -- Section 2: CLI and STANDALONE DAEMONS --
-echo    [5] TALOS Terminal CLI (python talos.py)
-echo    [6] Autonomous Research Daemon (24/7 Service)
-echo    [7] Live DRL Agent (python src/ai/drl/talos_live_agent.py --verbose)
-echo.
-echo    -- Section 3: TESTING and SYSTEM --
-echo    [8] Autonomous System Tester (RL Chaos Fuzzer)
-echo    [9] Run Test Suite (pytest -v)
-echo    [10] Exit
-echo.
-set /p choice="    Select mode [1-10]: "
+
+set /p choice="  %C_CYAN%Select Operational Directive [1-10]:%C_RESET% "
 
 if "%choice%"=="1" goto SETUP
 if "%choice%"=="2" goto SERVER
@@ -125,337 +130,167 @@ if "%choice%"=="6" goto DAEMON
 if "%choice%"=="7" goto LIVE_DRL
 if "%choice%"=="8" goto AUTO_TESTER
 if "%choice%"=="9" goto TEST
-if "%choice%"=="10" goto END
-goto TOP
+if "%choice%"=="10" exit /b
+goto MAIN_MENU
 
-REM ---------------------------------------------------------------------------
-REM Option 1: Full Setup (Conda, Pip, Frontend Provisioner)
-REM ---------------------------------------------------------------------------
+REM ===========================================================================
+REM EXECUTION MATRICES
+REM ===========================================================================
+
 :SETUP
 cls
-echo =============================================
-echo    Full Setup: Conda Environment + Pip Install + Frontend Provisioner
-echo =============================================
-echo.
-echo    TALOS v5.9.13 -- Academic Print Theme Injection for AST Graphs
-echo.
-
-echo [1/4] Checking for Conda...
-if defined CONDA_ACTIVATE_PATH (
-    echo Conda found at: "%CONDA_ACTIVATE_PATH%"
-) else (
-    where conda >nul 2>&1
-    IF ERRORLEVEL 1 (
-        echo [ERROR] Conda not found on PATH.
-        echo Please install Miniconda from: https://docs.conda.io/en/latest/miniconda.html
+call :LOG_INFO "Initiating Global Setup Sequence..."
+call :LOG_INFO "Validating Conda environment paths..."
+where conda >nul 2>&1
+if %ERRORLEVEL% neq 0 if not defined CONDA_ACTIVATE_PATH (
+    call :LOG_WARN "Conda distribution not found on system PATH."
+    call :LOG_INFO "Initiating Automated Zero-Click Miniconda3 Deployment..."
+    
+    REM Auto-Download Miniconda
+    call :LOG_INFO "Downloading Miniconda3 installer. Please wait..."
+    curl -# -k -o miniconda_installer.exe https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe
+    if %ERRORLEVEL% neq 0 (
+        call :LOG_ERROR "Network failure during download. Please check internet connection."
         pause
-        goto TOP
+        goto MAIN_MENU
     )
-    echo Conda found on PATH.
+    
+    REM Silent Installation
+    call :LOG_INFO "Executing silent background installation to %USERPROFILE%\miniconda3..."
+    start /wait "" miniconda_installer.exe /InstallationType=JustMe /RegisterPython=0 /S /D=%USERPROFILE%\miniconda3
+    
+    REM Environment Assignment & Cleanup
+    set "CONDA_ACTIVATE_PATH=%USERPROFILE%\miniconda3\Scripts\activate.bat"
+    del miniconda_installer.exe >nul 2>&1
+    call :LOG_SUCCESS "Miniconda3 subsystem successfully installed."
 )
 
-echo [2/4] Creating/Updating conda environment 'talosenv'...
+call :LOG_INFO "Provisioning 'talosenv' runtime (Python 3.11)..."
 if defined CONDA_ACTIVATE_PATH (
-    call "%CONDA_ACTIVATE_PATH%" && conda create -n talosenv python=3.11 -y 2>nul
+    call "%CONDA_ACTIVATE_PATH%" && conda create -n talosenv python=3.11 -y >nul 2>&1
 ) else (
-    call conda create -n talosenv python=3.11 -y 2>nul
+    call conda create -n talosenv python=3.11 -y >nul 2>&1
 )
 call :ACTIVATE_CONDA
-echo Conda environment 'talosenv' is active.
 
-echo [3/4] Installing Python dependencies...
-pip install -r requirements.txt
-IF ERRORLEVEL 1 (
-    echo [WARNING] Some packages failed to install. Check the output above.
-) ELSE (
-    echo All dependencies installed successfully.
+call :LOG_INFO "Resolving and installing Python dependencies..."
+pip install -r requirements.txt >nul
+if %ERRORLEVEL% neq 0 (
+    call :LOG_ERROR "Dependency resolution failed. Halting setup."
+    pause
+    goto MAIN_MENU
 )
+call :LOG_SUCCESS "All dependencies successfully integrated."
 
-echo [4/4] Running Frontend Provisioner...
+call :LOG_INFO "Triggering Frontend Provisioner..."
 python src/utils/frontend_provisioner.py
-IF ERRORLEVEL 1 (
-    echo [WARNING] Frontend provisioner exited with errors. Check the output above.
-) ELSE (
-    echo Frontend provisioner completed successfully.
-)
-
-echo.
-echo =============================================
-echo    Setup complete. TALOS v5.9.13 is ready.
-echo =============================================
-echo.
-echo    TALOS API will start on port 8001.
-echo    SYNAPSE bus is expected on port 8000.
-echo.
+call :LOG_SUCCESS "TALOS v5.9.13 deployment finalized."
 pause
-goto TOP
+goto MAIN_MENU
 
-REM ---------------------------------------------------------------------------
-REM Option 2: Start FastAPI Server (port 8001) -- Background Minimized Window
-REM ---------------------------------------------------------------------------
 :SERVER
 cls
-echo =============================================
-echo    Starting TALOS FastAPI Server (v5.9.13)
-echo    Port: 8001
-echo    API Docs: http://localhost:8001/docs
-echo    Health:   http://localhost:8001/api/v1/health
-echo    Synapse:  http://localhost:8001/api/v1/synapse/webhook
-echo =============================================
-echo.
-echo    Launching FastAPI server in a separate minimized window...
-echo    Close the background window or press Ctrl+C there to stop.
-echo.
-
-REM -- Activate conda environment first --
+netstat -ano | findstr "LISTENING" | findstr ":8001" >nul
+if %ERRORLEVEL% equ 0 (
+    call :LOG_WARN "Port 8001 is engaged. FastAPI Server is already operational."
+    pause
+    goto MAIN_MENU
+)
+call :LOG_INFO "Bootstrapping FastAPI Microservice..."
 call :ACTIVATE_CONDA
-
-REM -- Launch uvicorn in a new minimized window --
-start "TALOS FastAPI Server" /min cmd /c "python -m uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001"
-echo.
-echo [INFO] TALOS FastAPI server launched in background window.
-
-REM -- Auto-start Fermion CPU server if FAST_EDGE_MODEL is Neutrino/local --
+start "TALOS FastAPI Server (8001)" /min cmd /c "python -m uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001"
+call :LOG_SUCCESS "Microservice dispatched to background (Port: 8001)."
 call :CHECK_FERMION
-
-echo [INFO] Wait a few seconds then visit http://localhost:8001/docs
-echo.
-echo Press any key to return to the main menu...
 pause >nul
-goto TOP
+goto MAIN_MENU
 
-REM ---------------------------------------------------------------------------
-REM Option 3: Start MCP Server -- Background Minimized Window
-REM ---------------------------------------------------------------------------
 :MCP_SERVER
 cls
-echo =============================================
-echo    Starting TALOS MCP Server (v5.9.13)
-echo =============================================
-echo.
-echo    Launching MCP server in a separate minimized window...
-echo    Close the background window or press Ctrl+C there to stop.
-echo.
-
-REM -- Activate conda environment first --
+call :LOG_INFO "Bootstrapping MCP Server..."
 call :ACTIVATE_CONDA
-
-REM -- Launch MCP server in a new minimized window --
 start "TALOS MCP Server" /min cmd /c "python src/mcp_server.py"
-echo.
-echo [INFO] TALOS MCP server launched in background window.
-echo.
-echo Press any key to return to the main menu...
+call :LOG_SUCCESS "MCP Server operational in background."
 pause >nul
-goto TOP
+goto MAIN_MENU
 
-REM ---------------------------------------------------------------------------
-REM Option 4: Launch Interim UI (Cherry Studio) -- Auto-Start Backend Chain
-REM ---------------------------------------------------------------------------
 :PROVISION_UI
 cls
-echo =============================================
-echo    Interim UI Provisioner (Cherry Studio)
-echo    Auto-Start Chain: FastAPI Backend -> UI
-echo =============================================
-echo.
-
-REM -- Activate conda environment first --
+call :LOG_INFO "Validating Backend Data Stream..."
+netstat -ano | findstr "LISTENING" | findstr ":8001" >nul
+if %ERRORLEVEL% equ 0 (
+    call :LOG_SUCCESS "FastAPI Server detected."
+) else (
+    call :LOG_INFO "FastAPI offline. Auto-starting backend..."
+    call :ACTIVATE_CONDA
+    start "TALOS FastAPI Server (8001)" /min cmd /c "python -m uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001"
+    timeout /t 2 /nobreak >nul
+)
+call :LOG_INFO "Deploying React User Interface..."
 call :ACTIVATE_CONDA
-
-REM -- Step 1: Start FastAPI server in a background minimized window --
-echo [1/3] Starting TALOS FastAPI server in background (port 8001)...
-start "TALOS FastAPI Server" /min cmd /c "python -m uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001"
-echo [INFO] FastAPI server launched in background window.
-
-REM -- Step 2: Wait for server to initialize --
-echo [2/3] Waiting 2 seconds for server to initialize...
-timeout /t 2 /nobreak >nul
-echo [INFO] Wait complete.
-
-REM -- Step 3: Run the frontend provisioner --
-echo [3/3] Running Frontend Provisioner...
 python src/utils/frontend_provisioner.py %*
-
-echo.
-echo =============================================
-echo    Provisioning complete.
-echo    FastAPI server running in background on port 8001.
-echo    See cherry_ui_isolated/LAUNCH_INSTRUCTIONS.txt
-echo =============================================
-echo.
 pause
-goto TOP
+goto MAIN_MENU
 
-REM ---------------------------------------------------------------------------
-REM Option 5: TALOS Terminal CLI
-REM ---------------------------------------------------------------------------
 :CLI
 cls
-echo =============================================
-echo    TALOS Terminal CLI (v5.9.13)
-echo =============================================
-echo.
-echo    Launching the interactive TALOS command-line interface.
-echo    Press Ctrl+C to exit back to this menu.
-echo.
-
-REM -- Activate conda environment first --
+call :LOG_INFO "Initializing Terminal Interactive Mode..."
 call :ACTIVATE_CONDA
-
-REM -- Launch talos.py CLI --
 python talos.py
-goto TOP
+goto MAIN_MENU
 
-REM ---------------------------------------------------------------------------
-REM Option 6: Autonomous Research Daemon (24/7 Service)
-REM ---------------------------------------------------------------------------
 :DAEMON
 cls
-echo =============================================
-echo    Autonomous Research Daemon (v5.9.13)
-echo    24/7 Background Research Service
-echo =============================================
-echo.
-echo    This daemon continuously discovers, evaluates, and enriches
-echo    research papers in the background. It runs until interrupted.
-echo.
-echo    Press Ctrl+C to stop the daemon and return to this menu.
-echo.
-
-REM -- Activate conda environment first --
+call :LOG_INFO "Engaging Autonomous Research Daemon..."
 call :ACTIVATE_CONDA
-
-REM -- Launch talos_service.py --
 python src/ai/drl/talos_service.py
-goto TOP
+goto MAIN_MENU
 
-REM ---------------------------------------------------------------------------
-REM Option 7: Live DRL Agent
-REM ---------------------------------------------------------------------------
 :LIVE_DRL
 cls
-echo =============================================
-echo    Live DRL Agent (v5.9.13)
-echo    Deep Reinforcement Learning Agent -- Verbose Mode
-echo =============================================
-echo.
-echo    The Live DRL Agent interacts with the environment in real-time,
-echo    making decisions about paper discovery, evaluation, and enrichment.
-echo    Verbose mode is enabled for detailed step-by-step output.
-echo.
-echo    Press Ctrl+C to stop the agent and return to this menu.
-echo.
-
-REM -- Activate conda environment first --
+call :LOG_INFO "Engaging Deep Reinforcement Learning Agent..."
 call :ACTIVATE_CONDA
-
-REM -- Launch talos_live_agent.py with verbose flag --
 python src/ai/drl/talos_live_agent.py --verbose
-goto TOP
+goto MAIN_MENU
 
-REM ---------------------------------------------------------------------------
-REM Option 8: Autonomous System Tester (RL Chaos Fuzzer)
-REM ---------------------------------------------------------------------------
 :AUTO_TESTER
 cls
-echo =============================================
-echo    Autonomous System Tester (v5.9.13)
-echo    RL-Driven Chaos Engineering with LLM-as-a-Judge
-echo =============================================
-echo.
-echo    Stress-tests TALOS system components using a Non-Stationary
-echo    Epsilon-Greedy Multi-Armed Bandit. Diagnoses crashes with the
-echo    Fast Edge LLM and saves Markdown reports in data/reports/autonomous_tester/.
-echo.
-echo    Dynamic target discovery: all .py files under src/ are registered
-echo    as test arms (70+ targets). Q-table saved to data/tester_q_table.json.
-echo.
-echo    Press Ctrl+C to abort the test run early.
-echo.
-
-REM -- Activate conda environment first --
+call :LOG_INFO "Deploying Autonomous Chaos Fuzzer..."
 call :ACTIVATE_CONDA
-
-REM -- Launch autonomous tester --
 python src/ai/testing/autonomous_tester.py %*
-goto TOP
+pause
+goto MAIN_MENU
 
-REM ---------------------------------------------------------------------------
-REM Option 9: Run Test Suite
-REM ---------------------------------------------------------------------------
 :TEST
 cls
-echo =============================================
-echo    Running TALOS Test Suite (pytest)
-echo =============================================
-echo.
-
-REM -- Activate conda environment first --
+call :LOG_INFO "Executing Comprehensive Pytest Suite..."
 call :ACTIVATE_CONDA
-
-REM -- Check if pytest is installed --
 python -m pytest --version >nul 2>&1
-IF ERRORLEVEL 1 (
-    echo [WARNING] pytest not found. Installing...
+if %ERRORLEVEL% neq 0 (
+    call :LOG_WARN "Pytest framework absent. Initializing installation..."
     pip install pytest >nul 2>&1
 )
-
-echo Running tests...
-echo.
 python -m pytest -v --tb=short 2>&1
-
-IF ERRORLEVEL 1 (
-    echo.
-    echo =============================================
-    echo    Some tests FAILED. Review output above.
-    echo =============================================
-) ELSE (
-    echo.
-    echo =============================================
-    echo    All tests PASSED.
-    echo =============================================
+if %ERRORLEVEL% equ 0 (
+    call :LOG_SUCCESS "System validation passed. Zero errors detected."
+) else (
+    call :LOG_ERROR "System validation failed. Refer to stack trace above."
 )
-
-echo.
 pause
-goto TOP
+goto MAIN_MENU
 
-REM ===========================================================================
-REM -- Fermion Auto-Start Subroutine --
-REM Reads .env for FAST_EDGE_MODEL; if it contains "Neutrino" or equals
-REM "local", spawns fermion serve in a background minimized window.
-REM ===========================================================================
 :CHECK_FERMION
-REM -- Parse .env file for FAST_EDGE_MODEL --
 if not exist ".env" goto :EOF
 for /f "tokens=1,2 delims==" %%a in ('type .env 2^>nul') do (
     if "%%a"=="FAST_EDGE_MODEL" set "FAST_EDGE=%%b"
 )
 if not defined FAST_EDGE goto :EOF
-echo %FAST_EDGE% | findstr /i "Neutrino" >nul
-if %ERRORLEVEL% equ 0 goto :FERMION_START
-echo %FAST_EDGE% | findstr /i "local" >nul
-if %ERRORLEVEL% equ 0 goto :FERMION_START
-goto :EOF
+echo %FAST_EDGE% | findstr /i "Neutrino local" >nul
+if %ERRORLEVEL% neq 0 goto :EOF
 
-:FERMION_START
-echo.
-echo [FERMION] Fast Edge model requires CPU accelerator -- starting fermion serve...
-echo [FERMION] Model: %FAST_EDGE% on port 11435
-start "TALOS Fast Edge Server" /min cmd /c "fermion serve --port 11435"
-echo [FERMION] Background window launched (minimized).
-echo [FERMION] Waiting 2 seconds for engine initialization...
-timeout /t 2 /nobreak >nul
-echo [FERMION] Fast Edge engine ready on port 11435.
+netstat -ano | findstr "LISTENING" | findstr ":11435" >nul
+if %ERRORLEVEL% neq 0 (
+    call :LOG_INFO "Bootstrapping Fermion CPU Edge Accelerator..."
+    start "TALOS Fast Edge Server" /min cmd /c "fermion serve --port 11435"
+    timeout /t 2 /nobreak >nul
+)
 goto :EOF
-
-REM ---------------------------------------------------------------------------
-REM Option 10: Exit
-REM ---------------------------------------------------------------------------
-:END
-echo.
-echo =============================================
-echo    Closing Project TALOS v5.9.13...
-echo =============================================
-exit /b
