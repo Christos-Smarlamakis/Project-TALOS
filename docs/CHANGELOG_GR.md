@@ -2,6 +2,26 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.10.2] - 2026-08-14 -- Υποπράκτορας Δρομολογητή LLM, Διεπίπεδη Διαμόρφωση Ανταμοιβής GWO & Διαδραστικό TUI Πλαισίων Επιλογής 16 Πηγών
+
+### Προστέθηκε
+- **Υποπράκτορας Δρομολογητή LLM (`src/ai/drl/llm_router_subagent.py`)**: Νέα κλάση `LLMRouterSubAgent` που επιλέγει τον βέλτιστο ενεργό πάροχο για ένα αίτημα συμπερασμού. Φορτώνει βάρη ανταμοιβής από το `models/gwo_llm_router_reward_weights.json` (με εφεδρεία στα προεπιλεγμένα βάρη Pareto), αξιολογεί το μήκος των tokens του προτρέποντος, την κατάσταση rate-limit του παρόχου και την καθυστέρηση έναντι ενός στατικού πίνακα προφίλ παρόχων, και επιστρέφει τον πάροχο που μεγιστοποιεί το `R = w_quality * QualityScore - w_latency * LatencyRatio - w_cost * CostRatio - w_penalty * RateLimitPenalty`. Ενσωματώθηκε στον `AIManager` ώστε η επιλογή παρόχου cloud/legacy να ανατίθεται στον υποπράκτορα.
+- **Διαμορφωτής Ανταμοιβής Δρομολογητή LLM με GWO (`src/ai/optimizers/gwo_llm_router_reward_shaper.py`)**: Νέα κλάση `GWOLLMRouterRewardShaper` που υλοποιεί Διεπίπεδη Βελτιστοποίηση Ανταμοιβής Πολλαπλών Στόχων με κανονικό GWO (Mirjalili 2014). Ο εξωτερικός βρόχος εκτελεί αγέλη λύκων (άλφα/βήτα/δέλτα) στον συνεχή υπερκύβο 4 διαστάσεων, προβάλλοντας κάθε υποψήφιο στο simplex (`sum(w) == 1.0`, `w_i >= 0.0`). Ο εσωτερικός βρόχος αξιολογεί τον Δρομολογητή LLM υπό τη συνάρτηση διαμόρφωσης ανταμοιβής `R = w_quality * QualityScore - w_latency * LatencyRatio - w_cost * CostRatio - w_penalty * RateLimitPenalty`. Εξάγει βελτιστοποιημένα βάρη, τροχιά σύγκλισης και τρία προφίλ Pareto (Βαθιά Έρευνα, Γρήγορη Διαλογή, Τοπικό Απομονωμένο) στο `models/gwo_llm_router_reward_weights.json`. Αυτόνομο CLI: `python src/ai/optimizers/gwo_llm_router_reward_shaper.py [--wolves 10] [--iterations 30]`.
+- **Διαδραστικό TUI Πλαισίων Επιλογής 16 Πηγών (`talos.py`)**: Οι επιλογές 3α (Ημερήσια Αναζήτηση) και 3β (Ιστορική Αναζήτηση) εμφανίζουν πλέον `questionary.checkbox()` με όλες τις 16 καταγεγραμμένες ακαδημαϊκές πηγές (`arxiv`, `ieee`, `semantic_scholar`, `springer`, `openalex`, `dblp`, `elsevier`, `core`, `crossref`, `openarchives`, `pubmed`, `scigov`, `osti`, `plos`, `openreview`, `openaire`), όλες προεπιλεγμένες. Οι επιλεγμένες πηγές μεταβιβάζονται στα σενάρια αναζήτησης μέσω `--sources`.
+- **Φιλτράρισμα πηγών (`daily_search.py` / `historic_search.py`)**: Προστέθηκαν κανονικό `SOURCE_REGISTRY` + `ALL_SOURCE_NAMES` και βοηθός `build_sources(config, selected)`. Και τα δύο σενάρια δέχονται `--sources arxiv ieee ...` (χωρισμένες με κενό) για εκτέλεση μόνο των καθορισμένων πηγών.
+- **Απομονωμένες δοκιμές (`tests/test_gwo_llm_router_reward_shaper.py`)**: Έξι δοκιμές με χρήση mock που καλύπτουν την προβολή simplex, την ντετερμινιστική σπορά και την εξαγωγή JSON.
+
+### Άλλαξε
+- **Μετονομασία `src/ai/optimizers/gwo_rl_optimizer.py` σε `src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py`**: Προστέθηκε η κλάση `GWOForagingHyperparameterTuner` με διατήρηση των `run_gwo()` και `DEFAULT_RL_EPISODES` για την παρασκηνιακή εργασία GWO του FastAPI. Η εξαγωγή καλύτερων παραμέτρων μετονομάστηκε από `models/gwo_best_params.json` σε `models/gwo_foraging_hyperparameters.json`.
+- **`src/api/main_api.py`**: Η εισαγωγή GWO ενημερώθηκε σε `gwo_foraging_hyperparameter_tuner`· το `_run_scrape_background` μεταβιβάζει πλέον το `source_filter` στο `daily_search.main(source_filter)`· οι παραχημένες αναφορές «14 πηγών» διορθώθηκαν σε «16».
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 6 αρχεία κώδικα και 15 αρχεία τεκμηρίωσης** σε v5.10.2.
+
+### Επαλήθευση
+- Το `python -m compileall src config tests talos.py` ολοκληρώθηκε με μηδέν σφάλματα.
+- Η πλήρης σουίτα δοκιμών (συμπεριλαμβανομένων των νέων δοκιμών του Διαμορφωτή Ανταμοιβής GWO) και η δοκιμή smoke περνούν με επιτυχία.
+- Πρωτόκολλο μηδενικών emojis τηρείται αυστηρά· διατηρείται καθαρό ελληνικό unicode σε όλα τα αρχεία `_GR.md`.
+
+
 ## [v5.10.1] - 2026-08-14 -- Κλιμάκωση Περιβάλλοντος DRL & Επανεκπαίδευση (Χώρος Δράσης 17)
 
 ### Προστέθηκε

@@ -4,9 +4,22 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-14 (v5.10.1 -- DRL Environment Scaling & Retraining: 17 Action Space)
+> **Last Updated:** 2026-08-14 (v5.10.2 -- LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI)
 
 ---
+
+## Phase 32: LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI (v5.10.2)
+
+### Status: COMPLETED (2026-08-14)
+
+- [x] **LLM Router Sub-Agent (`src/ai/drl/llm_router_subagent.py`)** -- `LLMRouterSubAgent` selects the optimal active provider from `models/gwo_llm_router_reward_weights.json` weights (Pareto fallback), scoring quality/latency/cost/rate-limit signals; `AIManager` delegates cloud/legacy provider selection to it.
+- [x] **GWO LLM Router Reward Shaper (`src/ai/optimizers/gwo_llm_router_reward_shaper.py`)** -- `GWOLLMRouterRewardShaper` class for Bi-Level Multi-Objective Reward Optimization via canonical GWO; simplex-projected 4D weight vector, inner router evaluation under `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`; exports `models/gwo_llm_router_reward_weights.json`.
+- [x] **GWO tuner rename** -- `gwo_rl_optimizer.py` to `gwo_foraging_hyperparameter_tuner.py`; added `GWOForagingHyperparameterTuner` facade; export renamed to `models/gwo_foraging_hyperparameters.json`.
+- [x] **Interactive 16-Source Checkbox TUI** -- `questionary.checkbox()` in `talos.py` Options 3a/3b over all 16 sources (pre-selected), passed via `--sources`.
+- [x] **Source filtering** -- `SOURCE_REGISTRY` + `build_sources()` + `--sources` argparse in `daily_search.py` / `historic_search.py`.
+- [x] **Hermetic tests** -- `tests/test_gwo_llm_router_reward_shaper.py` (6 tests).
+- [x] **Sync all 6 code files and 15 documentation files to v5.10.2**.
+
 
 ## Phase 31: DRL Environment Scaling & Action Space Expansion (v5.10.1)
 

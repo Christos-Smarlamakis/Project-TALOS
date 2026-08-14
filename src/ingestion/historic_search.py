@@ -31,6 +31,7 @@ import os
 import time
 import json
 from dotenv import load_dotenv
+import argparse
 
 from src.ingestion.arxiv_source import ArxivSource
 from src.ingestion.elsevier_source import ElsevierSource
@@ -51,6 +52,48 @@ from src.ingestion.openaire import OpenAIRESource
 
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
+
+
+# -- v5.10.2: Canonical 16-source registry for the checkbox TUI and --sources --
+SOURCE_REGISTRY = [
+    ("arxiv", ArxivSource),
+    ("ieee", IEEEXploreSource),
+    ("semantic_scholar", SemanticScholarSource),
+    ("springer", SpringerNatureSource),
+    ("openalex", OpenAlexSource),
+    ("dblp", DBLPSource),
+    ("elsevier", ElsevierSource),
+    ("core", CORESource),
+    ("crossref", CrossrefSource),
+    ("openarchives", OpenArchivesSource),
+    ("pubmed", PubMedSource),
+    ("scigov", ScienceGovSource),
+    ("osti", OSTISource),
+    ("plos", PLOSSource),
+    ("openreview", OpenReviewSource),
+    ("openaire", OpenAIRESource),
+]
+ALL_SOURCE_NAMES = [name for name, _ in SOURCE_REGISTRY]
+
+
+def build_sources(config, selected=None):
+    """Build the ordered source list, filtered by name when requested.
+
+    Args:
+        config (dict): Configuration dictionary passed to each source agent.
+        selected (list of str | None): Optional source names to run. When None,
+            all 16 registered sources are returned.
+
+    Returns:
+        list: Instantiated source agents in canonical order.
+    """
+    if selected:
+        requested = set(selected)
+        unknown = requested - set(ALL_SOURCE_NAMES)
+        if unknown:
+            print(f"WARNING: Unknown source names ignored: {sorted(unknown)}")
+        return [cls(config) for name, cls in SOURCE_REGISTRY if name in requested]
+    return [cls(config) for name, cls in SOURCE_REGISTRY]
 
 
 def load_configuration():
@@ -78,8 +121,13 @@ def load_configuration():
         sys.exit(1)
 
 
-def main():
-    """Run the historical search pipeline: fetch all sources, deduplicate, evaluate, store."""
+def main(sources=None):
+    """Run the historical search pipeline: fetch all sources, deduplicate, evaluate, store.
+
+    Args:
+        sources (list of str | None): Optional source names to run. When None,
+            all 16 registered sources are executed.
+    """
     print("--- HISTORICAL SEARCH STARTED (v5.5 - Quad-Layer) ---")
 
     config = load_configuration()
@@ -91,24 +139,7 @@ def main():
     historic_config["days_to_search_daily"] = days_historic
     print(f"INFO: Search configured for the last {days_historic} days.\n")
 
-    sources_to_search = [
-        ArxivSource(historic_config),
-        ElsevierSource(historic_config),
-        SemanticScholarSource(historic_config),
-        IEEEXploreSource(historic_config),
-        SpringerNatureSource(historic_config),
-        OpenAlexSource(historic_config),
-        DBLPSource(historic_config),
-        CrossrefSource(historic_config),
-        OpenArchivesSource(historic_config),
-        PubMedSource(historic_config),
-        ScienceGovSource(historic_config),
-        OSTISource(historic_config),
-        PLOSSource(historic_config),
-        CORESource(historic_config),
-        OpenReviewSource(historic_config),
-        OpenAIRESource(historic_config)
-    ]
+    sources_to_search = build_sources(historic_config, selected=sources)
 
     import logging
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -188,4 +219,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="TALOS Historical Search")
+    parser.add_argument("--sources", nargs="+", default=None,
+                        help="Space-separated source names to run (default: all 16).")
+    args = parser.parse_args()
+    main(sources=args.sources)

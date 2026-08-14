@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.1</title>
+<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.2</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -580,7 +580,7 @@
   <li><strong>GWO API:</strong> <code>POST /api/v1/optimize/gwo</code></li>
   <li><strong>GWO History:</strong> <code>GET /api/v1/optimize/gwo/history</code> for Recharts</li>
   <li><strong>GWO Live Dashboard:</strong> Dash 3D scatter at localhost:8050</li>
-  <li><strong>Model Artifacts:</strong> <code>models/gwo_best_params.json</code>, <code>models/gwo_history.json</code>, <code>models/gwo_progress.json</code></li>
+  <li><strong>Model Artifacts:</strong> <code>models/gwo_foraging_hyperparameters.json</code>, <code>models/gwo_history.json</code>, <code>models/gwo_progress.json</code>, <code>models/gwo_llm_router_reward_weights.json</code></li>
 </ul>
 
 <h3 id="s4-4">4.4 Autonomous Red Tester (RL-Driven Chaos Engineering) -- v5.9.0 / v5.9.7 / v5.9.16</h3>
@@ -1045,8 +1045,17 @@
   <li><strong>2D Execution Matrix</strong> (v5.9.4): Network Strategy (4 modes) x Hardware Strategy (3 modes) = 12 combinations</li>
 </ul>
 
+<h3 id="s15-8">15.8 LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI (v5.10.2)</h3>
+<ul>
+  <li><strong><code>src/ai/drl/llm_router_subagent.py</code></strong> -- <code>LLMRouterSubAgent</code> selects the optimal active provider from <code>models/gwo_llm_router_reward_weights.json</code> weights (Pareto fallback), scoring quality/latency/cost/rate-limit signals; <code>AIManager</code> delegates cloud/legacy provider selection to it via <code>_get_router_ordered_providers</code>.</li>
+  <li><strong><code>src/ai/optimizers/gwo_llm_router_reward_shaper.py</code></strong> -- <code>GWOLLMRouterRewardShaper</code> bi-level multi-objective optimizer (canonical GWO outer loop + inner LLM Router evaluation under <code>R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty</code>); simplex-projected weights, exports <code>models/gwo_llm_router_reward_weights.json</code> with convergence trajectory and three Pareto profiles.</li>
+  <li><strong>GWO tuner rename</strong> -- <code>gwo_rl_optimizer.py</code> to <code>gwo_foraging_hyperparameter_tuner.py</code> (class <code>GWOForagingHyperparameterTuner</code>); export renamed to <code>models/gwo_foraging_hyperparameters.json</code>.</li>
+  <li><strong>Interactive 16-Source Checkbox TUI</strong> -- <code>talos.py</code> Options 3a/3b prompt a <code>questionary.checkbox()</code> over all 16 sources (pre-selected) passed via <code>--sources</code>.</li>
+  <li><strong>Source filtering</strong> -- <code>SOURCE_REGISTRY</code> + <code>build_sources()</code> + <code>--sources</code> argparse in <code>daily_search.py</code> / <code>historic_search.py</code>.</li>
+</ul>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.1</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.2</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

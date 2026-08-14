@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.1
+﻿# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.2
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-08-14
-> **Version:** v5.10.1 -- DRL Environment Scaling & Retraining: 17 Action Space
+> **Version:** v5.10.2 -- LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.10.0" | `config/settings.py` |
+| TALOS_VERSION | "5.10.2" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -247,7 +247,7 @@ The TALOS DRL Agent (`src/ai/drl/`) employs a **Double Dueling Deep Q-Network wi
 
 ### 4.3 GWO Hyperparameter Optimization
 
-The Grey Wolf Optimizer (`src/ai/optimizers/gwo_rl_optimizer.py` v2.0) tunes the DRL agent's hyperparameters via a bio-inspired swarm intelligence algorithm (Mirjalili 2014). Each wolf trains a fresh DRL agent; the pack converges toward the alpha wolf's position in 3D parameter space.
+The Grey Wolf Optimizer (`src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py` v2.1) tunes the DRL agent's hyperparameters via a bio-inspired swarm intelligence algorithm (Mirjalili 2014). Each wolf trains a fresh DRL agent; the pack converges toward the alpha wolf's position in 3D parameter space.
 
 | Parameter | Optimized Value | Range |
 |-----------|----------------|-------|
@@ -258,7 +258,7 @@ The Grey Wolf Optimizer (`src/ai/optimizers/gwo_rl_optimizer.py` v2.0) tunes the
 - **GWO API:** `POST /api/v1/optimize/gwo` triggers optimization in background
 - **GWO History:** `GET /api/v1/optimize/gwo/history` returns iteration-by-iteration data for Recharts
 - **GWO Live Dashboard:** Dash-based 3D scatter plot at http://localhost:8050
-- **Model Artifacts:** `models/gwo_best_params.json`, `models/gwo_history.json`, `models/gwo_progress.json`
+- **Model Artifacts:** `models/gwo_foraging_hyperparameters.json`, `models/gwo_history.json`, `models/gwo_progress.json`, `models/gwo_llm_router_reward_weights.json`
 
 ### 4.4 Autonomous Red Tester (RL-Driven Chaos Engineering) -- v5.9.0 / v5.9.7 / v5.9.16
 
@@ -751,6 +751,14 @@ For each evaluated paper, the AI generates:
 - Network Strategy (4 modes) x Hardware Strategy (3 modes) = 12 combinations
 - Backward-compatible with legacy TALOS_EXECUTION_MODE
 - Cross-environment automatic fallback with transparent routing
+
+### 15.8 LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI (v5.10.2)
+
+- `src/ai/drl/llm_router_subagent.py` -- `LLMRouterSubAgent` selects the optimal active provider from `models/gwo_llm_router_reward_weights.json` weights (Pareto fallback), scoring quality/latency/cost/rate-limit signals; `AIManager` delegates cloud/legacy provider selection to it via `_get_router_ordered_providers`.
+- `src/ai/optimizers/gwo_llm_router_reward_shaper.py` -- `GWOLLMRouterRewardShaper` bi-level multi-objective optimizer: canonical GWO outer loop over a simplex-projected 4D weight vector `[w_quality, w_latency, w_cost, w_penalty]` plus an inner LLM Router evaluation under `R = w_quality*QualityScore - w_latency*LatencyRatio - w_cost*CostRatio - w_penalty*RateLimitPenalty`. Exports `models/gwo_llm_router_reward_weights.json` with convergence trajectory and three Pareto profiles (Deep Research, Fast Screening, Air-Gapped Local).
+- `gwo_rl_optimizer.py` renamed to `gwo_foraging_hyperparameter_tuner.py` (class `GWOForagingHyperparameterTuner`); best-parameters export renamed to `models/gwo_foraging_hyperparameters.json`.
+- `talos.py` Options 3a/3b now prompt a `questionary.checkbox()` over all 16 academic sources (all pre-selected) passed to the search scripts via `--sources`.
+- `daily_search.py` / `historic_search.py` gain a canonical `SOURCE_REGISTRY`, `ALL_SOURCE_NAMES`, and `build_sources()` helper with `--sources` argparse filtering.
 
 ---
 

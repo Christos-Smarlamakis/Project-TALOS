@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.1
+﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.2
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-14 (v5.10.1 -- DRL Environment Scaling & Retraining: 17 Action Space)
+> **Last Updated:** 2026-08-14 (v5.10.2 -- LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI)
 
 ---
 
@@ -256,10 +256,20 @@ Batch script for launching Streamlit GUI.
 #### `scripts/drl_trainer.py` (v1.3 — Batch 2 TUI hardening)
 **Purpose:** Training script with GWO-optimized hyperparameters. **v1.1:** `EPS_DECAY=0.9415` (GWO), saves as `dddqn_trained.pth`. **v1.2:** Fixed fatal `NameError` (`args.episodes` → `episodes` in interactive mode); stores `done=terminated` only (truncation still bootstraps). **v1.3 (Batch 2, presentation only):** Ctrl+C mid-training → saves partial model to `models/dddqn_partial.pth` + clean exit(0); single-line `\r` progress ticker between 50-episode summaries; Ctrl+C guards at prompt and top level.
 
-#### `scripts/gwo_rl_optimizer.py` (v2.0 — Real Fitness + Canonical GWO)
-**Purpose:** GWO hyperparameter tuning. **v2.0 (Batch 1 audit):** (1) `calculate_fitness()` now ACTUALLY trains the agent (store + learn + decayed epsilon) and measures fitness in a separate greedy evaluation phase (`EVAL_EPISODES=5`) — previously fitness was pure noise (eps=1.0, no learn()). (2) `update_wolf_position()` follows canonical GWO (Mirjalili 2014): fresh r1/r2/A/C per alpha/beta/delta term. (3) Fitness values cached per iteration — `_build_history_entry()` receives `fitness_values` instead of re-evaluating.
-**Functions:** `main()` — 700 episodes, simulated scores, provider-aware state (dim=21).
+#### `scripts/gwo_foraging_hyperparameter_tuner.py` (v2.1 — GWOForagingHyperparameterTuner)
+**Purpose:** GWO hyperparameter tuning (renamed from `gwo_rl_optimizer.py` in v5.10.2). **v2.0 (Batch 1 audit):** (1) `calculate_fitness()` now ACTUALLY trains the agent (store + learn + decayed epsilon) and measures fitness in a separate greedy evaluation phase (`EVAL_EPISODES=5`) — previously fitness was pure noise (eps=1.0, no learn()). (2) `update_wolf_position()` follows canonical GWO (Mirjalili 2014): fresh r1/r2/A/C per alpha/beta/delta term. (3) Fitness values cached per iteration — `_build_history_entry()` receives `fitness_values` instead of re-evaluating. **v2.1:** added `GWOForagingHyperparameterTuner` class facade; export renamed to `models/gwo_foraging_hyperparameters.json`.
+**Functions:** `main()`, `run_gwo()`, `calculate_fitness()`, `find_best_three_wolves()`, `update_wolf_position()`, `GWOForagingHyperparameterTuner.optimize()`.
 **Imports:** `core.talos_env.TalosEnv`, `core.drl_agent`
+
+#### `src/ai/drl/llm_router_subagent.py` (v5.10.2 — LLM Router Sub-Agent)
+**Purpose:** `LLMRouterSubAgent` selects the optimal active provider for an inference request. Loads reward weights from `models/gwo_llm_router_reward_weights.json` (Pareto fallback), evaluates prompt token length, rate-limit status, and latency against a static `PROVIDER_PROFILES` table, and returns the provider maximizing `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Integrated into `AIManager`.
+**Functions:** `LLMRouterSubAgent` (`select_provider()`, `estimate_signals()`, `score_provider()`, `load_weights()`, `set_weights()`).
+**Imports:** `numpy`, `json`
+
+#### `src/ai/optimizers/gwo_llm_router_reward_shaper.py` (v5.10.2 — Bi-Level Reward Shaping)
+**Purpose:** `GWOLLMRouterRewardShaper` bi-level multi-objective optimizer for the LLM Router reward weights `[w_quality, w_latency, w_cost, w_penalty]` (simplex-projected). Outer GWO loop + inner router evaluation under `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Exports `models/gwo_llm_router_reward_weights.json`.
+**Functions:** `GWOLLMRouterRewardShaper` (`optimize()`, `_evaluate_router()`, `_update_position()`, `export()`, `run()`), `main()`.
+**Imports:** `numpy`, `json`, `argparse`
 
 #### `scripts/talos_live_agent.py` (v3.2 — Batch 2 TUI hardening)
 **Purpose:** Thin entry point. **v3.1:** epsilon=0.05, 5-step cooldown for negative-reward actions, ASCII output. Delegates to `core.live_agent_orchestrator.run_live_loop()`. **v3.2:** argparse (`--verbose`, `--help`) replaces ad-hoc sys.argv scanning; formatted startup summary table; top-level KeyboardInterrupt guard (clean exit(0) on Ctrl+C during startup).
@@ -358,7 +368,8 @@ active_profile.txt
 
 ```
 src/core/ai_manager.py (Universal Cloud Mesh, v5.9.18)
-  └── config.settings
+  ├── config.settings
+  └── src.ai.drl.llm_router_subagent
 
 talos.py (Rich TUI Master)
   ├── src.ai.llm.model_manager
@@ -383,9 +394,16 @@ src/ai/drl/drl_trainer.py
   ├── src.ai.drl.talos_env
   └── src.ai.drl.drl_agent
 
-src/ai/optimizers/gwo_rl_optimizer.py
+src/ai/drl/llm_router_subagent.py
+  └── numpy
+
+src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py
   ├── src.ai.drl.talos_env
   └── src.ai.drl.drl_agent
+
+src/ai/optimizers/gwo_llm_router_reward_shaper.py
+  ├── src.ai.drl.llm_router_subagent
+  └── numpy
 
 src/ingestion/daily_search.py / historic_search.py
   ├── src.core.database_manager
@@ -461,8 +479,8 @@ src/utils/logger.py (Enterprise Logging)
 
 ---
 
-> **Last Updated:** 2026-08-14 (v5.10.1 -- DRL Environment Scaling & Retraining: 17 Action Space)
-> **Project Version:** v5.10.1
+> **Last Updated:** 2026-08-14 (v5.10.2 -- LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI)
+> **Project Version:** v5.10.2
 > **Total Files Covered:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### New in v5.9.9: Report Path Consolidation

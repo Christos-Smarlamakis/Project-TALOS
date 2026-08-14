@@ -1,5 +1,5 @@
-# TALOS Project Instructions for AI Coding Agents
-# Version: v5.10.1
+﻿# TALOS Project Instructions for AI Coding Agents
+# Version: v5.10.2
 
 ## CONSTITUTION v2.0 — The 8-Point Master Initialization Standard
 
@@ -280,8 +280,8 @@
 
 ---
 
-> **Last Updated:** 2026-08-14 (v5.10.1 -- DRL Environment Scaling & Retraining: 17 Action Space)
-> **Project Version:** v5.10.1
+> **Last Updated:** 2026-08-14 (v5.10.2 -- LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI)
+> **Project Version:** v5.10.2
 
 ---
 

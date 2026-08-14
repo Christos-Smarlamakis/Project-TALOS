@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.1
+﻿# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.2
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.10.1 -- Κλιμάκωση Περιβάλλοντος DRL & Επανεκπαίδευση: Χώρος Δράσης 17)
+> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.10.2 -- Υποπράκτορας Δρομολογητή LLM, Διεπίπεδη Διαμόρφωση Ανταμοιβής GWO & Διαδραστικό TUI Πλαισίων Επιλογής 16 Πηγών)
 
 ---
 
@@ -22,7 +22,7 @@
 │                    src/ SRV PACKAGES (55 αρχεία)                 │
 │  src/ai/drl/   (9 files) — DRL agent, networks, env, trainer,   │
 │                            live agent, service                   │
-│  src/ai/optimizers/ (2)  — GWO optimizer + live dashboard       │
+│  src/ai/optimizers/ (3)  — GWO tuner + reward shaper + dashboard │
 │  src/ai/embeddings/  (2) — embedding_generator, db upgrade      │
 │  src/ai/llm/         (3) — PYTHIA, model_manager, research_pivot│
 │  src/analysis/       (9) — citation_analyzer, author_profiler,  │
@@ -259,10 +259,20 @@ Batch script για εκκίνηση του TALOS CLI.
 #### `scripts/drl_trainer.py` (v1.3 — Batch 2 TUI hardening)
 **Σκοπός:** Training script με GWO-optimized hyperparameters. **v1.1:** `EPS_DECAY=0.9415` (GWO), saves as `dddqn_trained.pth`. **v1.2:** Fix fatal `NameError` (`args.episodes` → `episodes` σε interactive mode)· αποθηκεύει `done=terminated` μόνο (truncation bootstrap). **v1.3 (Batch 2, μόνο presentation):** Ctrl+C μεσα στην εκπαίδευση → αποθήκευση partial model σε `models/dddqn_partial.pth` + clean exit(0)· single-line progress ticker (`\r`) ανάμεσα στα 50-episode summaries· Ctrl+C guards σε prompt και top-level.
 
-#### `scripts/gwo_rl_optimizer.py` (v2.0 — Real Fitness + Canonical GWO)
-**Σκοπός:** GWO hyperparameter tuning. **v2.0 (Batch 1 audit):** (1) `calculate_fitness()` εκπαιδεύει ΠΡΑΓΜΑΤΙΚΑ τον agent (store + learn + decayed epsilon) και μετρά fitness σε ξεχωριστή greedy evaluation phase (`EVAL_EPISODES=5`) — πριν, το fitness ήταν καθαρός θόρυβος (eps=1.0, χωρίς learn()). (2) `update_wolf_position()` = canonical GWO (Mirjalili 2014): fresh r1/r2/A/C ανά alpha/beta/delta term. (3) Fitness values cached ανά iteration — το `_build_history_entry()` δέχεται `fitness_values` αντί να επανα-υπολογίζει.
-**Συναρτήσεις:** `main()` — 700 episodes, simulated scores, provider-aware state (dim=21).
+#### `scripts/gwo_foraging_hyperparameter_tuner.py` (v2.1 — GWOForagingHyperparameterTuner)
+**Σκοπός:** GWO hyperparameter tuning (μετονομάστηκε από `gwo_rl_optimizer.py` στην v5.10.2). **v2.0 (Batch 1 audit):** (1) `calculate_fitness()` εκπαιδεύει ΠΡΑΓΜΑΤΙΚΑ τον agent (store + learn + decayed epsilon) και μετρά fitness σε ξεχωριστή greedy evaluation phase (`EVAL_EPISODES=5`) — πριν, το fitness ήταν καθαρός θόρυβος (eps=1.0, χωρίς learn()). (2) `update_wolf_position()` = canonical GWO (Mirjalili 2014): fresh r1/r2/A/C ανά alpha/beta/delta term. (3) Fitness values cached ανά iteration — το `_build_history_entry()` δέχεται `fitness_values` αντί να επανα-υπολογίζει. **v2.1:** προστέθηκε κλάση `GWOForagingHyperparameterTuner`· η εξαγωγή μετονομάστηκε σε `models/gwo_foraging_hyperparameters.json`.
+**Συναρτήσεις:** `main()`, `run_gwo()`, `calculate_fitness()`, `find_best_three_wolves()`, `update_wolf_position()`, `GWOForagingHyperparameterTuner.optimize()`.
 **Imports:** `core.talos_env.TalosEnv`, `core.drl_agent`
+
+#### `src/ai/drl/llm_router_subagent.py` (v5.10.2 — LLM Router Sub-Agent)
+**Σκοπός:** Ο `LLMRouterSubAgent` επιλέγει τον βέλτιστο ενεργό πάροχο για ένα αίτημα συμπερασμού. Φορτώνει βάρη ανταμοιβής από το `models/gwo_llm_router_reward_weights.json` (με εφεδρεία Pareto), αξιολογεί μήκος tokens, κατάσταση rate-limit και καθυστέρηση έναντι στατικού πίνακα `PROVIDER_PROFILES`, και επιστρέφει τον πάροχο που μεγιστοποιεί το `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Ενσωματώθηκε στον `AIManager`.
+**Συναρτήσεις:** `LLMRouterSubAgent` (`select_provider()`, `estimate_signals()`, `score_provider()`, `load_weights()`, `set_weights()`).
+**Imports:** `numpy`, `json`
+
+#### `src/ai/optimizers/gwo_llm_router_reward_shaper.py` (v5.10.2 — Bi-Level Reward Shaping)
+**Σκοπός:** Κλάση `GWOLLMRouterRewardShaper` για Διεπίπεδη Βελτιστοποίηση Ανταμοιβής Πολλαπλών Στόχων στα βάρη ανταμοιβής του Δρομολογητή LLM `[w_quality, w_latency, w_cost, w_penalty]` (προβολή simplex). Εξωτερικός βρόχος GWO + εσωτερική αξιολόγηση δρομολογητή υπό `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Εξάγει `models/gwo_llm_router_reward_weights.json`.
+**Συναρτήσεις:** `GWOLLMRouterRewardShaper` (`optimize()`, `_evaluate_router()`, `_update_position()`, `export()`, `run()`), `main()`.
+**Imports:** `numpy`, `json`, `argparse`
 
 #### `scripts/talos_live_agent.py` (v3.2 — Batch 2 TUI hardening)
 **Σκοπός:** Thin entry point. **v3.1:** epsilon=0.05, 5-step cooldown για negative-reward actions, ASCII output. Delegates to `core.live_agent_orchestrator.run_live_loop()`. **v3.2:** argparse (`--verbose`, `--help`) αντί για ad-hoc sys.argv· formatted startup summary table· top-level KeyboardInterrupt guard (clean exit(0) σε Ctrl+C κατά το startup).
@@ -361,7 +371,8 @@ active_profile.txt
 
 ```
 src/core/ai_manager.py (Universal Cloud Mesh, v5.9.18)
-  └── config.settings
+  ├── config.settings
+  └── src.ai.drl.llm_router_subagent
 
 talos.py (Rich TUI Master)
   ├── src.ai.llm.model_manager
@@ -386,9 +397,16 @@ src/ai/drl/drl_trainer.py
   ├── src.ai.drl.talos_env
   └── src.ai.drl.drl_agent
 
-src/ai/optimizers/gwo_rl_optimizer.py
+src/ai/drl/llm_router_subagent.py
+  └── numpy
+
+src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py
   ├── src.ai.drl.talos_env
   └── src.ai.drl.drl_agent
+
+src/ai/optimizers/gwo_llm_router_reward_shaper.py
+  ├── src.ai.drl.llm_router_subagent
+  └── numpy
 
 src/ingestion/daily_search.py / historic_search.py
   ├── src.core.database_manager
@@ -467,8 +485,8 @@ src/utils/logger.py (Enterprise Logging)
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-08-14 (v5.10.1 -- Κλιμάκωση Περιβάλλοντος DRL & Επανεκπαίδευση: Χώρος Δράσης 17)
-> **Έκδοση Project:** v5.10.1
+> **Τελευταία ενημέρωση:** 2026-08-14 (v5.10.2 -- Υποπράκτορας Δρομολογητή LLM, Διεπίπεδη Διαμόρφωση Ανταμοιβής GWO & Διαδραστικό TUI Πλαισίων Επιλογής 16 Πηγών)
+> **Έκδοση Project:** v5.10.2
 > **Συνολικά αρχεία που καλύπτονται:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### Νέο στην v5.9.9: Ενοποίηση Αναφορών

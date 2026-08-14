@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: gwo_rl_optimizer.py (v2.0 — Real Fitness + Canonical GWO)
-Project: TALOS v5.10.0
+Module: gwo_foraging_hyperparameter_tuner.py (v2.1 — GWOForagingHyperparameterTuner)
+Project: TALOS v5.10.2
 Description:
     Grey Wolf Optimizer (GWO) for TALOS DRL hyperparameter tuning.
     v1.1 adds: --live flag for real-time GUI progress, _write_live_progress(),
@@ -19,11 +19,15 @@ Description:
     - Fitness values are computed ONCE per iteration and cached — they are
       passed into _build_history_entry() instead of being re-evaluated
       (mandatory now that each fitness eval trains a full agent).
+    v2.1 (v5.10.2): Renamed from gwo_rl_optimizer.py to
+    gwo_foraging_hyperparameter_tuner.py. Best parameters export renamed to
+    models/gwo_foraging_hyperparameters.json. Added the
+    GWOForagingHyperparameterTuner class facade.
 
     Usage:
-        python scripts/gwo_rl_optimizer.py              # default: 15 wolves, 50 iters
-        python scripts/gwo_rl_optimizer.py --wolves 20 --iters 100
-        python scripts/gwo_rl_optimizer.py --live       # writes gwo_progress.json
+        python src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py
+        python src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py --wolves 20 --iters 100
+        python src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py --live
 """
 import os
 import sys
@@ -252,12 +256,12 @@ def run_gwo(wolves_number=DEFAULT_WOLVES, max_iterations=DEFAULT_ITERS, live=Fal
     print(f"  Iterations: {iteration}")
     print("=" * 65)
 
-    json_path = _os.path.join(models_dir, "gwo_best_params.json")
+    json_path = _os.path.join(models_dir, "gwo_foraging_hyperparameters.json")
     params = {"learning_rate": best_lr, "gamma": best_gamma, "epsilon_decay": best_eps,
               "best_fitness": best_wolves[0][1], "best_avg_reward": best_reward,
               "iterations": iteration, "gwo_time_seconds": round(elapsed, 1)}
     with open(json_path, "w", encoding="utf-8") as f: _json.dump(params, f, indent=2)
-    print(f"\n  Best parameters saved to: models/gwo_best_params.json")
+    print(f"\n  Best parameters saved to: models/gwo_foraging_hyperparameters.json")
 
     print(f"  GWO history saved to: models/gwo_history.json")
     print(f"     {len(gwo_history)} iterations, {wolves_number} wolves each (already written live)")
@@ -269,6 +273,51 @@ def run_gwo(wolves_number=DEFAULT_WOLVES, max_iterations=DEFAULT_ITERS, live=Fal
             "best_reward": best_reward, "iterations": iteration, "gwo_time": elapsed}
 
 
+class GWOForagingHyperparameterTuner:
+    """Class-based facade for the GWO DRL hyperparameter tuner.
+
+    Wraps the module-level ``run_gwo`` orchestration so the tuner can be
+    instantiated and invoked in an object-oriented fashion. The module-level
+    ``run_gwo`` and ``DEFAULT_RL_EPISODES`` are retained for backward
+    compatibility with the FastAPI background GWO task.
+
+    Attributes:
+        wolves (int): Wolf pack population size.
+        iterations (int): Maximum GWO iterations.
+        rl_episodes (int): DRL episodes per fitness evaluation.
+        live (bool): Write per-iteration progress to gwo_progress.json.
+    """
+
+    def __init__(self, wolves=DEFAULT_WOLVES, iterations=DEFAULT_ITERS,
+                 rl_episodes=DEFAULT_RL_EPISODES, live=False):
+        """Initialize the tuner.
+
+        Args:
+            wolves (int): Wolf pack size. Defaults to DEFAULT_WOLVES.
+            iterations (int): Maximum GWO iterations. Defaults to DEFAULT_ITERS.
+            rl_episodes (int): DRL episodes per fitness evaluation.
+            live (bool): Enable live progress file output.
+        """
+        self.wolves = wolves
+        self.iterations = iterations
+        self.rl_episodes = rl_episodes
+        self.live = live
+
+    def optimize(self):
+        """Run the GWO hyperparameter optimization.
+
+        Returns:
+            dict: Best hyperparameters, best reward, iteration count, and time.
+        """
+        global DEFAULT_RL_EPISODES
+        previous = DEFAULT_RL_EPISODES
+        DEFAULT_RL_EPISODES = self.rl_episodes
+        try:
+            return run_gwo(self.wolves, self.iterations, live=self.live)
+        finally:
+            DEFAULT_RL_EPISODES = previous
+
+
 def main():
     parser = argparse.ArgumentParser(description='GWO Hyperparameter Optimizer for TALOS DRL Agent')
     parser.add_argument('--wolves', type=int, default=DEFAULT_WOLVES)
@@ -277,7 +326,7 @@ def main():
     parser.add_argument('--live', action='store_true',
                         help='Write per-iteration progress to models/gwo_progress.json for GUI')
     args = parser.parse_args()
-    import src.ai.optimizers.gwo_rl_optimizer as _self
+    import src.ai.optimizers.gwo_foraging_hyperparameter_tuner as _self
     _self.DEFAULT_RL_EPISODES = args.rl_episodes
     run_gwo(args.wolves, args.iters, live=args.live)
 

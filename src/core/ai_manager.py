@@ -188,6 +188,8 @@ class AIManager:
         self.provider_priority = config.get("ai_provider_priority", ["gemini", "deepseek"])
         self.active_embedding_model = None  # set after first successful embedding generation
         self.last_provider_used = None
+        # -- v5.10.2: LLM Router Sub-Agent (provider selection delegate) --
+        self.router = self._init_router()
 
         # --- Gemini Provider ---
         gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -240,6 +242,68 @@ class AIManager:
 
         self.FAILURE_THRESHOLD = config.get("failure_threshold", 5)
         print(f"INFO: AIManager v3.8 (2D Execution Matrix) initialized.")
+
+    # ==================================================================
+    # -- v5.10.2: LLM Router Sub-Agent integration --
+    # ==================================================================
+
+    def _init_router(self):
+        """Instantiate the LLM Router Sub-Agent, or None if unavailable.
+
+        Returns:
+            LLMRouterSubAgent | None: The router instance, or None on import or
+                weights-loading failure.
+        """
+        try:
+            from src.ai.drl.llm_router_subagent import LLMRouterSubAgent
+            return LLMRouterSubAgent()
+        except Exception:
+            return None
+
+    @staticmethod
+    def _task_type(model_type):
+        """Map a model_type string to a router task type.
+
+        Args:
+            model_type (str): 'pro'/'heavy' or 'flash'/'fast'.
+
+        Returns:
+            str: Router task type key.
+        """
+        if model_type in ("pro", "heavy"):
+            return "deep_research"
+        if model_type in ("flash", "fast"):
+            return "fast_screening"
+        return "default"
+
+    def _get_router_ordered_providers(self, prompt, task_type):
+        """Return provider names with the router's preferred provider first.
+
+        The router is consulted only over the active (configured, circuit-closed)
+        providers, so this method never introduces a provider the caller would
+        not otherwise have tried.
+
+        Args:
+            prompt (str): Prompt text (used to estimate token length).
+            task_type (str): Routing task type.
+
+        Returns:
+            list: Provider names from provider_priority, with the preferred
+                active provider moved to the front.
+        """
+        if self.router is None:
+            return list(self.provider_priority)
+        active = [p for p in self.provider_priority
+                  if p in self.providers and not self.providers[p]['circuit_open']]
+        if not active:
+            return list(self.provider_priority)
+        prompt_length = max(1, len(prompt) // 4)
+        preferred = self.router.select_provider(prompt_length, task_type, active)
+        ordered = list(self.provider_priority)
+        if preferred and preferred in ordered:
+            ordered.remove(preferred)
+            ordered.insert(0, preferred)
+        return ordered
 
     # --- JSON Cleaning ---
 
@@ -718,7 +782,8 @@ class AIManager:
         Returns:
             Parsed response, or None if all cloud providers fail.
         """
-        for provider_name in self.provider_priority:
+        ordered = self._get_router_ordered_providers(prompt, self._task_type(model_type))
+        for provider_name in ordered:
             if provider_name == 'local':
                 continue  # Skip local in cloud chain
             if provider_name not in self.providers:
@@ -776,7 +841,8 @@ class AIManager:
             if heavy_routing == "cloud":
                 print("  > HEAVY_ROUTING=cloud: routing directly to cloud providers...")
 
-        for provider_name in self.provider_priority:
+        ordered = self._get_router_ordered_providers(prompt, self._task_type(model_type))
+        for provider_name in ordered:
             if provider_name in self.providers and not self.providers[provider_name]['circuit_open']:
                 print(f"  > Attempting request with provider: {provider_name.upper()}")
                 if provider_name == 'gemini':

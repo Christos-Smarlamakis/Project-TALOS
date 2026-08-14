@@ -1,4 +1,4 @@
-# TALOS -- Docker Usage Guide
+﻿# TALOS -- Docker Usage Guide
 
 This document describes how to build, run, and operate Project TALOS with Docker.
 The container runs the headless FastAPI server on port 8001 and connects to a
@@ -70,7 +70,7 @@ to the host's `data/` directory.
 
 ```bash
 # Build the image
-docker build -t talos:5.10.1 .
+docker build -t talos:5.10.2 .
 
 # Run the API server
 docker run --rm -p 8001:8001 \
@@ -81,7 +81,7 @@ docker run --rm -p 8001:8001 \
   -v "$(pwd)/_profiles:/app/_profiles" \
   --env-file .env \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  talos:5.10.1
+  talos:5.10.2
 
 # Run the interactive TUI instead
 docker run --rm -it \
@@ -92,7 +92,7 @@ docker run --rm -it \
   -v "$(pwd)/_profiles:/app/_profiles" \
   --env-file .env \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  talos:5.10.1 python talos.py
+  talos:5.10.2 python talos.py
 ```
 
 On Windows PowerShell, replace `"$(pwd)/data:/app/data"` with

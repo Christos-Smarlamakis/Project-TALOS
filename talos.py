@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.10.1
+Project: TALOS v5.10.2
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -25,6 +25,12 @@ AST Knowledge Graph adapter (v5.9.12).
     environment scaled to a 23-dimensional state space (16 source usage
     ratios + 2 streaks + 4 provider ratios) and a 17-action space (16 sources
     + sleep). DDDQN auto-reconstructs networks for the new dimensions.
+
+    v5.10.2: LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive
+    16-Source Checkbox TUI -- added the LLMRouterSubAgent provider-selection
+    delegate, the GWOLLMRouterRewardShaper optimizer, and renamed
+    gwo_rl_optimizer.py to gwo_foraging_hyperparameter_tuner.py. Options 3a/3b
+    now prompt a questionary checkbox over all 16 academic sources.
 
     v5.10.0: Academic Ingestion Expansion -- OpenReview and OpenAIRE source
     agents added (16-source ingestion). OpenReview peer-review decisions and
@@ -218,7 +224,7 @@ _SCRIPT_MAP = {
     "talos_live_agent.py":        "ai/drl",
     "talos_service.py":           "ai/drl",
     # -- Optimizers --
-    "gwo_rl_optimizer.py":        "ai/optimizers",
+    "gwo_foraging_hyperparameter_tuner.py": "ai/optimizers",
     "gwo_live_dashboard.py":      "ai/optimizers",
     # -- Embeddings --
     "embedding_generator.py":     "ai/embeddings",
@@ -274,6 +280,29 @@ def safe_pause(msg="Press Enter to return..."):
         console.input(msg)
     except (KeyboardInterrupt, EOFError):
         console.print()
+
+# -- v5.10.2: Canonical 16-source list for the interactive checkbox TUI --
+ALL_ACADEMIC_SOURCES = [
+    "arxiv", "ieee", "semantic_scholar", "springer", "openalex", "dblp",
+    "elsevier", "core", "crossref", "openarchives", "pubmed", "scigov",
+    "osti", "plos", "openreview", "openaire",
+]
+
+
+def prompt_source_selection():
+    """Prompt the user to select academic sources via a checkbox.
+
+    Returns:
+        list of str | None: Selected source names, or None if cancelled.
+    """
+    try:
+        return questionary.checkbox(
+            "Select academic sources to search (all pre-selected):",
+            choices=[questionary.Choice(name, checked=True)
+                     for name in ALL_ACADEMIC_SOURCES],
+        ).ask()
+    except KeyboardInterrupt:
+        return None
 
 def _resolve_script_path(script_name):
     """Resolve a script filename to its full path inside src/<subdir>/.
@@ -548,12 +577,12 @@ def system_health_menu(python_exe):
         webbrowser.open("http://localhost:8050")
         logger.info("Dashboard opened in browser.")
         logger.info("NOTE: Run GWO first from another terminal with --live flag.")
-        logger.info("  python src/ai/optimizers/gwo_rl_optimizer.py --live")
+        logger.info("  python src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py --live")
     elif choice.startswith("6."): run_script("generate_baseline_report.py", python_exe)
     elif choice.startswith("7."): run_script("generate_baseline_report.py", python_exe, args=["--academic"])
     elif choice.startswith("8."):
         mp = os.path.join(project_root, "models", "dddqn_trained.pth")
-        gp = os.path.join(project_root, "models", "gwo_best_params.json")
+        gp = os.path.join(project_root, "models", "gwo_foraging_hyperparameters.json")
         try:
             c = Console(); t = Table(show_header=False, box=None)
             t.add_column("K"); t.add_column("V")
@@ -1085,10 +1114,25 @@ def main_menu():
                 questionary.Separator(), "Back"
             ])
             if choice2 is None or "Back" in choice2: continue
-            if "3a" in choice2: run_script("daily_search.py", python_exe)
+            if "3a" in choice2:
+                selected = prompt_source_selection()
+                if selected is None:
+                    console.print("[dim]Source selection cancelled.[/dim]")
+                elif not selected:
+                    console.print("[yellow]No sources selected -- skipping.[/yellow]")
+                else:
+                    run_script("daily_search.py", python_exe,
+                               args=["--sources"] + selected)
             elif "3b" in choice2:
                 if questionary.confirm("This may take a long time. Sure?", default=False).ask():
-                    run_script("historic_search.py", python_exe)
+                    selected = prompt_source_selection()
+                    if selected is None:
+                        console.print("[dim]Source selection cancelled.[/dim]")
+                    elif not selected:
+                        console.print("[yellow]No sources selected -- skipping.[/yellow]")
+                    else:
+                        run_script("historic_search.py", python_exe,
+                                   args=["--sources"] + selected)
             elif "3c" in choice2: run_script("grey_literature_miner.py", python_exe)
             elif "3d" in choice2: run_script("knowledge_path_generator.py", python_exe)
             elif "3e" in choice2: run_script("citation_analyzer.py", python_exe)
@@ -1233,7 +1277,7 @@ def main_menu():
         elif "12." in choice:
             # -- DRL Status: rich-powered display --
             mp = os.path.join(project_root, "models", "dddqn_trained.pth")
-            gp = os.path.join(project_root, "models", "gwo_best_params.json")
+            gp = os.path.join(project_root, "models", "gwo_foraging_hyperparameters.json")
             t = Table(show_header=False, box=box.SIMPLE, border_style="cyan")
             t.add_column("Parameter", style="dim cyan")
             t.add_column("Value", style="white")

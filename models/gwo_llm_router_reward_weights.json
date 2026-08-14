@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-08-15T01:33:29",
+  "version": "5.10.2",
+  "optimizer": "GWOLLMRouterRewardShaper",
+  "parameters": {
+    "wolves": 3,
+    "iterations": 2,
+    "eval_episodes": 3,
+    "seed": 1
+  },
+  "best_weights": {
+    "w_quality": 0.231913,
+    "w_latency": 0.243297,
+    "w_cost": 0.306335,
+    "w_penalty": 0.218455
+  },
+  "sum_check": 1.0,
+  "best_shaped_reward": 0.013582,
+  "elapsed_seconds": 0.01,
+  "convergence_trajectory": [
+    {
+      "iteration": 0,
+      "alpha_reward": 0.1257858264205468,
+      "a_factor": 2.0
+    },
+    {
+      "iteration": 1,
+      "alpha_reward": 0.10054024830255874,
+      "a_factor": 1.0
+    },
+    {
+      "iteration": 2,
+      "alpha_reward": 0.03796941134024229,
+      "a_factor": 0.0
+    }
+  ],
+  "pareto_profiles": {
+    "Deep Research": {
+      "weights": {
+        "w_quality": 0.6,
+        "w_latency": 0.1,
+        "w_cost": 0.1,
+        "w_penalty": 0.2
+      },
+      "shaped_reward": 0.371414
+    },
+    "Fast Screening": {
+      "weights": {
+        "w_quality": 0.25,
+        "w_latency": 0.55,
+        "w_cost": 0.1,
+        "w_penalty": 0.1
+      },
+      "shaped_reward": 0.071744
+    },
+    "Air-Gapped Local": {
+      "weights": {
+        "w_quality": 0.45,
+        "w_latency": 0.1,
+        "w_cost": 0.4,
+        "w_penalty": 0.05
+      },
+      "shaped_reward": 0.208247
+    }
+  }
+}

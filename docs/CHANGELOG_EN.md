@@ -2,6 +2,26 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.2] - 2026-08-14 -- LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI
+
+### Added
+- **LLM Router Sub-Agent (`src/ai/drl/llm_router_subagent.py`)**: New `LLMRouterSubAgent` class that selects the optimal active provider for an inference request. Loads reward weights from `models/gwo_llm_router_reward_weights.json` (with fallback to default Pareto weights), evaluates prompt token length, provider rate-limit status, and latency against a static provider profile table, and returns the provider maximizing `R = w_quality * QualityScore - w_latency * LatencyRatio - w_cost * CostRatio - w_penalty * RateLimitPenalty`. Integrated into `AIManager` so cloud/legacy provider selection delegates to the sub-agent.
+- **GWO LLM Router Reward Shaper (`src/ai/optimizers/gwo_llm_router_reward_shaper.py`)**: New `GWOLLMRouterRewardShaper` class implementing Bi-Level Multi-Objective Reward Optimization using canonical GWO (Mirjalili 2014). The outer loop runs a wolf pack (alpha/beta/delta) over the continuous 4D hypercube, projecting every candidate onto the simplex (`sum(w) == 1.0`, `w_i >= 0.0`); the inner loop evaluates the LLM Router under the reward shaping function `R = w_quality * QualityScore - w_latency * LatencyRatio - w_cost * CostRatio - w_penalty * RateLimitPenalty`. Exports optimized weights, convergence trajectory, and three Pareto profiles (Deep Research, Fast Screening, Air-Gapped Local) to `models/gwo_llm_router_reward_weights.json`. Standalone CLI: `python src/ai/optimizers/gwo_llm_router_reward_shaper.py [--wolves 10] [--iterations 30]`.
+- **Interactive 16-Source Checkbox TUI (`talos.py`)**: Options 3a (Daily Search) and 3b (Historic Search) now prompt a `questionary.checkbox()` listing all 16 registered academic sources (`arxiv`, `ieee`, `semantic_scholar`, `springer`, `openalex`, `dblp`, `elsevier`, `core`, `crossref`, `openarchives`, `pubmed`, `scigov`, `osti`, `plos`, `openreview`, `openaire`), all pre-selected by default. Selected sources are passed to the search scripts via `--sources`.
+- **Source filtering (`daily_search.py` / `historic_search.py`)**: Added a canonical `SOURCE_REGISTRY` + `ALL_SOURCE_NAMES` and a `build_sources(config, selected)` helper. Both scripts accept `--sources arxiv ieee ...` (space-separated) to run only the specified sources.
+- **Hermetic tests (`tests/test_gwo_llm_router_reward_shaper.py`)**: Six mock-first tests covering simplex projection, deterministic seeding, and JSON export.
+
+### Changed
+- **`src/ai/optimizers/gwo_rl_optimizer.py` renamed to `src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py`**: Added the `GWOForagingHyperparameterTuner` class facade while retaining module-level `run_gwo()` and `DEFAULT_RL_EPISODES` for the FastAPI background GWO task. Best-parameters export renamed from `models/gwo_best_params.json` to `models/gwo_foraging_hyperparameters.json`.
+- **`src/api/main_api.py`**: GWO import updated to `gwo_foraging_hyperparameter_tuner`; `_run_scrape_background` now forwards `source_filter` into `daily_search.main(source_filter)`; stale "14 sources" references corrected to "16".
+- **Version strings synced across 6 code files and 15 documentation files** to v5.10.2.
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- Full test suite (including the new GWO reward shaper tests) and smoke test pass.
+- Zero emojis protocol strictly enforced; pure Greek unicode maintained in all `_GR.md` files.
+
+
 ## [v5.10.1] - 2026-08-14 -- DRL Environment Scaling & Retraining (17 Action Space)
 
 ### Added

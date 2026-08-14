@@ -34,6 +34,7 @@ from datetime import datetime
 import time
 import requests
 from dotenv import load_dotenv
+import argparse
 
 from src.ingestion.arxiv_source import ArxivSource
 from src.ingestion.elsevier_source import ElsevierSource
@@ -54,6 +55,48 @@ from src.ingestion.openaire import OpenAIRESource
 
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
+
+
+# -- v5.10.2: Canonical 16-source registry for the checkbox TUI and --sources --
+SOURCE_REGISTRY = [
+    ("arxiv", ArxivSource),
+    ("ieee", IEEEXploreSource),
+    ("semantic_scholar", SemanticScholarSource),
+    ("springer", SpringerNatureSource),
+    ("openalex", OpenAlexSource),
+    ("dblp", DBLPSource),
+    ("elsevier", ElsevierSource),
+    ("core", CORESource),
+    ("crossref", CrossrefSource),
+    ("openarchives", OpenArchivesSource),
+    ("pubmed", PubMedSource),
+    ("scigov", ScienceGovSource),
+    ("osti", OSTISource),
+    ("plos", PLOSSource),
+    ("openreview", OpenReviewSource),
+    ("openaire", OpenAIRESource),
+]
+ALL_SOURCE_NAMES = [name for name, _ in SOURCE_REGISTRY]
+
+
+def build_sources(config, selected=None):
+    """Build the ordered source list, filtered by name when requested.
+
+    Args:
+        config (dict): Configuration dictionary passed to each source agent.
+        selected (list of str | None): Optional source names to run. When None,
+            all 16 registered sources are returned.
+
+    Returns:
+        list: Instantiated source agents in canonical order.
+    """
+    if selected:
+        requested = set(selected)
+        unknown = requested - set(ALL_SOURCE_NAMES)
+        if unknown:
+            print(f"WARNING: Unknown source names ignored: {sorted(unknown)}")
+        return [cls(config) for name, cls in SOURCE_REGISTRY if name in requested]
+    return [cls(config) for name, cls in SOURCE_REGISTRY]
 
 
 def generate_markdown_report(report_data: list) -> str:
@@ -137,8 +180,13 @@ def load_configuration():
         sys.exit(1)
 
 
-def main():
-    """Run the daily search pipeline: fetch, filter, evaluate, report."""
+def main(sources=None):
+    """Run the daily search pipeline: fetch, filter, evaluate, report.
+
+    Args:
+        sources (list of str | None): Optional source names to run. When None,
+            all 16 registered sources are executed.
+    """
     print("--- DAILY SEARCH (Quad-Layer & Rate Limit Safe) ---")
     config = load_configuration()
     print("SUCCESS: Configuration loaded.\n")
@@ -147,24 +195,7 @@ def main():
     db_manager.create_table()
 
     print("\n--- PHASE 2: Fetching & Filtering ---")
-    sources_to_search = [
-        ArxivSource(config),
-        ElsevierSource(config),
-        SemanticScholarSource(config),
-        IEEEXploreSource(config),
-        SpringerNatureSource(config),
-        OpenAlexSource(config),
-        DBLPSource(config),
-        CrossrefSource(config),
-        OpenArchivesSource(config),
-        PubMedSource(config),
-        OSTISource(config),
-        ScienceGovSource(config),
-        PLOSSource(config),
-        CORESource(config),
-        OpenReviewSource(config),
-        OpenAIRESource(config)
-    ]
+    sources_to_search = build_sources(config, selected=sources)
     import logging
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     logger = logging.getLogger(__name__)
@@ -278,4 +309,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="TALOS Daily Search")
+    parser.add_argument("--sources", nargs="+", default=None,
+                        help="Space-separated source names to run (default: all 16).")
+    args = parser.parse_args()
+    main(sources=args.sources)
