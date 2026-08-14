@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: red_tester_routes.py
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 Description:
     FastAPI APIRouter exposing REST endpoints for the Autonomous Red Tester
     (RL-Driven Chaos Engineering). Provides two endpoints:

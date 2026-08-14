@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.9.17
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.9.18
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.9.17 -- Καθολικό Rich TUI, Αναβάθμιση Επιχειρησιακής Καταγραφής & Καθολική Ενημέρωση Κεφαλίδων)
+> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.9.18 -- Καθολικό Πλέγμα Νέφους & Επέκταση Πολυπαρόχου Εφεδρείας)
 
 ---
 
@@ -92,26 +92,34 @@ Data Flow:
 | `get_default_state_space` | `() -> int` | v3.0: 1 + N + 2 + 4. |
 | `get_default_action_space` | `() -> int` | N + 1 sleep. |
 
-### 2.1 `core/ai_manager.py` — Κλάση `AIManager` (v3.8)
+### 2.1 `core/ai_manager.py` — Κλάση `AIManager` (v3.9)
 
 **v3.7 (Batch 1 audit):** Νέο attribute `last_provider_used` — ενημερώνεται σε κάθε επιτυχημένο `_execute_request()` με το όνομα του provider που εξυπηρέτησε το request. Χρησιμοποιείται από τον live orchestrator για σωστό provider attribution.
 **v3.8 (Batch 3 hotfix):** Υλοποιήθηκε η `analyze_generic_text(full_prompt) -> str|None` — ήταν τεκμηριωμένη στον χάρτη και καλούνταν από το grey_literature_miner.py, αλλά ΔΕΝ υπήρχε στον κώδικα (AttributeError). Thin wrapper γύρω από `_execute_request(model_type='pro', response_format='text')`.
 
-**Ρόλος:** Multi-provider LLM interface με circuit breaker pattern. Διαχειρίζεται 4 providers: Gemini (πρωτεύων cloud), DeepSeek (fallback), HuggingFace (δωρεάν cloud), Local/Ollama (offline).
+**Ρόλος:** Multi-provider LLM interface με circuit breaker pattern. Διαχειρίζεται 9 providers μέσω Καθολικού Πλέγματος Νέφους (v5.9.18): Gemini (Google GenAI SDK, μη-OpenAI) + 8 συμβατοί με OpenAI πάροχοι εφεδρείας (NVIDIA NIM, Groq, Cerebras, GitHub Models, Mistral, OpenRouter, DeepSeek, HuggingFace) + Local/Ollama (offline).
 
 | Μέθοδος | Υπογραφή | Περιγραφή |
 |---------|----------|-----------|
-| `__init__` | `(self, config: Dict[str, Any])` | Αρχικοποιεί όλους τους providers από config + .env. Θέτει provider_priority, FAILURE_THRESHOLD. |
+| `__init__` | `(self, config: Dict[str, Any])` | Αρχικοποιεί όλους τους providers από config + .env μέσω του `OPENAI_COMPATIBLE_REGISTRY`. Θέτει provider_priority, FAILURE_THRESHOLD. |
 | `_clean_json_string` | `(self, text: str) -> str` | Εξάγει καθαρό JSON από LLM response. |
 | `evaluate_paper_json` | `(self, paper_content: str, model_type: str = 'pro', system_prompt_override: str = None) -> Union[Dict, None]` | Αξιολογεί paper με AI, structured JSON. |
 | `analyze_generic_text` | `(self, full_prompt: str) -> str` | Αναλύει arbitrary text. |
-| `_execute_request` | `(self, prompt: str, model_type: str, response_format: str = 'text') -> Union[Dict, str, None]` | Multi-provider request με circuit breaker. |
-| `_handle_failure` | `(self, provider_name: str)` | Αυξάνει failure counter, ανοίγει circuit στα 3+. |
+| `_execute_request` | `(self, prompt: str, model_type: str, response_format: str = 'text') -> Union[Dict, str, None]` | Multi-provider request με 2D Execution Matrix routing. |
+| `_execute_cloud_chain` | `(self, prompt: str, model_type: str, response_format: str) -> Union[Dict, str, None]` | Δρομολογεί μέσω `provider_priority` (Universal Cloud Mesh), παρακάμπτοντας unconfigured/open-circuit providers. |
+| `_execute_openai_compatible_request` | `(self, provider_name: str, prompt: str, model_type: str, response_format: str) -> Union[Dict, str, None]` | Ενοποιημένος χειριστής OpenAI-compatible providers με circuit breaker. |
+| `_handle_failure` | `(self, provider_name: str)` | Αυξάνει failure counter, ανοίγει circuit στα 5+. |
 
 **Providers:**
-- `gemini`: flash_model (pre-screening), pro_model (deep analysis)
-- `deepseek`: OpenAI client, model: deepseek-chat
-- `huggingface`: OpenAI client, free inference
+- `gemini`: Google GenAI SDK, flash_model (pre-screening), pro_model (deep analysis)
+- `nvidia`: OpenAI-compatible, model: nvidia/nemotron-3-ultra
+- `groq`: OpenAI-compatible, model: llama-3.3-70b-versatile
+- `cerebras`: OpenAI-compatible, model: llama-3.1-70b
+- `github`: OpenAI-compatible, model: gpt-4o-mini
+- `mistral`: OpenAI-compatible, model: mistral-small-latest
+- `openrouter`: OpenAI-compatible, model: meta-llama/llama-3.3-70b-instruct:free
+- `deepseek`: OpenAI-compatible, model: deepseek-chat
+- `huggingface`: OpenAI-compatible, model: meta-llama/Llama-3.3-70B-Instruct
 - `local`: Ollama OpenAI-compatible, model: gemma3:12b
 
 ---
@@ -306,7 +314,7 @@ Interactive Research Pivot Wizard.
 ### 6.1 `config.json` Schema (v5.3.1)
 ```json
 {
-  "ai_provider_priority": ["gemini", "deepseek", "huggingface", "local"],
+  "ai_provider_priority": ["local", "nvidia", "groq", "cerebras", "github", "gemini", "deepseek", "mistral", "openrouter", "huggingface"],
   "gemini_tier": "free",
   "provider_limits": {
     "gemini": {
@@ -318,7 +326,7 @@ Interactive Research Pivot Wizard.
     "huggingface":  { "rpm": 30,  "rpd": 500 },
     "local":        { "rpm": 9999,"rpd": 99999 }
   },
-  "failure_threshold": 3,
+  "failure_threshold": 5,
   "model_for_daily_search": "gemini-2.5-pro",
   "pre_screening_model": "gemini-2.5-flash",
   "min_pre_screening_score": 6,
@@ -331,6 +339,7 @@ Interactive Research Pivot Wizard.
 
 ### 6.2 `.env` Keys
 - **Premium AI:** `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `HF_TOKEN`
+- **Universal Cloud Mesh (v5.9.18):** `NVIDIA_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`, `GITHUB_TOKEN`, `MISTRAL_API_KEY`, `OPENROUTER_API_KEY`
 - **Academic:** `SEMANTIC_SCHOLAR_API_KEY`, `IEEE_API_KEY`, `ELSEVIER_API_KEY`, `SPRINGER_API_KEY`, `CORE_API_KEY`, `OPENARCHIVES_API_KEY`
 - **Local:** `LOCAL_MODEL_NAME`, `LOCAL_EMBEDDING_MODEL`
 
@@ -346,9 +355,12 @@ active_profile.txt
 
 ---
 
-## 7. Dependency Graph (v5.9.17 DDD Layout)
+## 7. Dependency Graph (v5.9.18 DDD Layout)
 
 ```
+src/core/ai_manager.py (Universal Cloud Mesh, v5.9.18)
+  └── config.settings
+
 talos.py (Rich TUI Master)
   ├── src.ai.llm.model_manager
   ├── src.analysis.graphify_adapter
@@ -441,7 +453,7 @@ src/utils/logger.py (Enterprise Logging)
 3. **`daily_search.py` και `historic_search.py`** πρέπει να συγχρονίζονται για dedup
 4. **4-layer framework** (strategic, operational, tactical, playground) είναι INVARIANT
 5. **`recommender.py`** διαβάζει SQLite απευθείας, όχι μέσω DatabaseManager
-6. **Circuit breaker** στα 3+ failures
+6. **Circuit breaker** στα 5+ failures
 7. **Profile-aware**: DatabaseManager δέχεται `db_path`
 8. **Questionary stdin piping** μέσω `TALOS_GUI_STDIN` + `_gui_runner.py`
 9. **Subprocess env propagation**: `run_script()` προωθεί TALOS_* vars
@@ -453,8 +465,8 @@ src/utils/logger.py (Enterprise Logging)
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-08-14 (v5.9.17 -- Καθολικό Rich TUI, Αναβάθμιση Επιχειρησιακής Καταγραφής & Καθολική Ενημέρωση Κεφαλίδων)
-> **Έκδοση Project:** v5.9.17
+> **Τελευταία ενημέρωση:** 2026-08-14 (v5.9.18 -- Καθολικό Πλέγμα Νέφους & Επέκταση Πολυπαρόχου Εφεδρείας)
+> **Έκδοση Project:** v5.9.18
 > **Συνολικά αρχεία που καλύπτονται:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### Νέο στην v5.9.9: Ενοποίηση Αναφορών

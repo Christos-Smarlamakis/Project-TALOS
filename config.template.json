@@ -25,7 +25,7 @@
 
   "execution_mode": "local",
 
-  "ai_provider_priority": ["gemini", "deepseek"],
+  "ai_provider_priority": ["local", "nvidia", "groq", "cerebras", "github", "gemini", "deepseek", "mistral", "openrouter", "huggingface"],
   "failure_threshold": 3,
 
   "min_pre_screening_score": 6,

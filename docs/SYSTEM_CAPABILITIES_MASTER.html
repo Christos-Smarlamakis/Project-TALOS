@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.17</title>
+<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.18</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.17</h1>
+<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.18</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-08-14 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.9.17 -- Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep
+  <strong>Version:</strong> v5.9.18 -- Universal Cloud Mesh & Multi-Provider Redundancy Expansion
 </div>
 
 <!-- ===================================================================== -->
@@ -428,15 +428,21 @@
 
 <h3 id="s3-1">3.1 Provider Architecture (AIManager v3.9+)</h3>
 
-<p>The AI Manager (<code>src/core/ai_manager.py</code>) implements a multi-provider architecture with automatic fallback and circuit breaker pattern across four independent providers:</p>
+<p>The AI Manager (<code>src/core/ai_manager.py</code>) implements a nine-provider Universal Cloud Mesh (v5.9.18) with automatic fallback and independent per-provider circuit breakers. Gemini remains the primary non-OpenAI-compatible path via the Google Generative AI SDK, while eight OpenAI-compatible redundancy providers are driven by a unified dictionary registry (<code>OPENAI_COMPATIBLE_REGISTRY</code>) and a single request handler (<code>_execute_openai_compatible_request</code>):</p>
 
 <table>
   <thead><tr><th>Provider</th><th>Type</th><th>SDK</th><th>Authentication</th><th>Use Case</th></tr></thead>
   <tbody>
-    <tr><td>Gemini</td><td>Cloud</td><td>google-generativeai</td><td>GEMINI_API_KEY</td><td>Primary cloud text generation + embedding fallback</td></tr>
-    <tr><td>DeepSeek</td><td>Cloud</td><td>OpenAI-compatible API</td><td>DEEPSEEK_API_KEY</td><td>Fallback cloud provider</td></tr>
-    <tr><td>HuggingFace</td><td>Cloud (free)</td><td>OpenAI-compatible API</td><td>HF_TOKEN</td><td>Free cloud inference via router.huggingface.co</td></tr>
-    <tr><td>Local/Ollama</td><td>Local</td><td>OpenAI-compatible API</td><td>TALOS_USE_LOCAL=1</td><td>Offline-first operation</td></tr>
+    <tr><td>Gemini</td><td>Cloud</td><td>google-genai SDK</td><td>GEMINI_API_KEY</td><td>Primary cloud text generation + embedding fallback</td></tr>
+    <tr><td>NVIDIA NIM</td><td>Cloud</td><td>OpenAI-compatible</td><td>NVIDIA_API_KEY</td><td>nvidia/nemotron-3-ultra (integrate.api.nvidia.com/v1)</td></tr>
+    <tr><td>Groq</td><td>Cloud</td><td>OpenAI-compatible</td><td>GROQ_API_KEY</td><td>llama-3.3-70b-versatile (api.groq.com)</td></tr>
+    <tr><td>Cerebras</td><td>Cloud</td><td>OpenAI-compatible</td><td>CEREBRAS_API_KEY</td><td>llama-3.1-70b (api.cerebras.ai)</td></tr>
+    <tr><td>GitHub Models</td><td>Cloud</td><td>OpenAI-compatible</td><td>GITHUB_TOKEN</td><td>gpt-4o-mini (models.inference.ai.azure.com)</td></tr>
+    <tr><td>Mistral</td><td>Cloud</td><td>OpenAI-compatible</td><td>MISTRAL_API_KEY</td><td>mistral-small-latest (api.mistral.ai)</td></tr>
+    <tr><td>OpenRouter</td><td>Cloud</td><td>OpenAI-compatible</td><td>OPENROUTER_API_KEY</td><td>meta-llama/llama-3.3-70b-instruct:free (openrouter.ai)</td></tr>
+    <tr><td>DeepSeek</td><td>Cloud</td><td>OpenAI-compatible</td><td>DEEPSEEK_API_KEY</td><td>deepseek-chat (api.deepseek.com)</td></tr>
+    <tr><td>HuggingFace</td><td>Cloud</td><td>OpenAI-compatible</td><td>HF_TOKEN</td><td>meta-llama/Llama-3.3-70B-Instruct (router.huggingface.co)</td></tr>
+    <tr><td>Local/Ollama</td><td>Local</td><td>OpenAI-compatible</td><td>TALOS_USE_LOCAL=1</td><td>Offline-first operation</td></tr>
   </tbody>
 </table>
 
@@ -457,7 +463,7 @@
   <tbody>
     <tr><td><strong>Fast Edge</strong></td><td>fermionresearch/Neutrino-8B</td><td>http://127.0.0.1:11435/v1</td><td>TALOS_FAST_ROUTING</td></tr>
     <tr><td><strong>Heavy Reasoning</strong></td><td>qwen2.5:14b</td><td>http://127.0.0.1:11434</td><td>TALOS_HEAVY_ROUTING</td></tr>
-    <tr><td><strong>Cloud Provider</strong></td><td>Gemini / DeepSeek / HF</td><td>API endpoints</td><td>TALOS_CLOUD_PROVIDER</td></tr>
+    <tr><td><strong>Cloud Provider</strong></td><td>Universal Cloud Mesh (9 providers)</td><td>API endpoints</td><td>TALOS_CLOUD_PROVIDER</td></tr>
   </tbody>
 </table>
 
@@ -868,6 +874,14 @@
   <li><strong>Universal Rich TUI enforcement</strong> -- interactive modules use Rich Console/Panel, <code>questionary</code> prompts, logger diagnostics, zero emojis, no raw <code>input()</code>.</li>
 </ul>
 
+<h3 id="s10-5">10.5 Universal Cloud Mesh & Multi-Provider Redundancy Expansion (v5.9.18)</h3>
+<ul>
+  <li><strong><code>config/settings.py</code></strong> -- expanded the cloud tier to a nine-provider mesh: Gemini (Google GenAI SDK) plus 8 OpenAI-compatible redundancy providers (NVIDIA NIM, Groq, Cerebras, GitHub Models, Mistral, OpenRouter, DeepSeek, HuggingFace). Added <code>TALOS_CLOUD_PROVIDERS</code> canonical list.</li>
+  <li><strong><code>src/core/ai_manager.py</code></strong> -- <code>OPENAI_COMPATIBLE_REGISTRY</code> (dictionary-driven init), unified <code>_execute_openai_compatible_request()</code>, independent 5-failure circuit breakers, registry-driven <code>_execute_cloud_chain()</code>.</li>
+  <li><strong><code>src/ai/llm/model_manager.py</code></strong> -- Cloud Configuration TUI renders a Rich table of all 9 providers (Provider Name, Env Key, Status, Default Model, Base URL) via <code>CLOUD_PROVIDER_CATALOG</code> and <code>get_cloud_provider_rows()</code>.</li>
+  <li><strong>Config & env templates</strong> -- <code>ai_provider_priority</code> updated to the 10-item local-first list; 6 new API-key template entries; <code>failure_threshold</code> = 5.</li>
+</ul>
+
 <!-- ===================================================================== -->
 <h2 id="s11">Section 11: Configuration & Environment</h2>
 
@@ -1023,7 +1037,7 @@
 </ul>
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.17</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.18</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

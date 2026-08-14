@@ -11,7 +11,7 @@
 
 """
 Module: ieee_source.py
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 
 Description:
     Search agent for the IEEE Xplore API. Fetches papers matching the configured

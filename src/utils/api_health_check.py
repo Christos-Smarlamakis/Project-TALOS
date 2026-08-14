@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: api_health_check.py (v1.1)
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 Description:
     Lightweight API diagnostics tool. Pings each configured API to verify
     key validity and returns structured status results. Supports all TALOS

@@ -11,7 +11,7 @@
 
 """
 Module: semantic_scholar_source.py
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 
 Description:
     Search agent for the Semantic Scholar Academic Graph API (api.semanticscholar.org).

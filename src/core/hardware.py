@@ -3,7 +3,7 @@
 #  Copyright (C) 2026 Christos Smarlamakis
 """
 Module: hardware.py
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 
 Description:
     Auto-detects GPU VRAM via nvidia-smi and recommends the best local

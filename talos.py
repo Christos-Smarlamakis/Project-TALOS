@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -20,6 +20,11 @@ Description:
     Configuration, Search & Ingestion, Analysis & Topologies, Daemons &
     CI/CD, and Diagnostics & Exit. Includes the new Vendored Graphify
 AST Knowledge Graph adapter (v5.9.12).
+
+    v5.9.18: Universal Cloud Mesh -- Model Manager Cloud Configuration expanded
+    to a nine-provider registry (Gemini primary + 8-provider OpenAI-compatible
+    redundancy cascade: NVIDIA NIM, Groq, Cerebras, GitHub Models, Mistral,
+    OpenRouter, DeepSeek, Hugging Face).
 
     v5.9.12: Vendored Graphify AST Knowledge Graph integrated via
     src/analysis/graphify_adapter.py. Main menu reorganized into five

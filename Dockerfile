@@ -1,4 +1,4 @@
-# TALOS v5.9.17 — Docker image
+# TALOS v5.9.18 — Docker image
 # Multi-tier LLM routing with FastAPI on port 8001.
 FROM python:3.11-slim
 

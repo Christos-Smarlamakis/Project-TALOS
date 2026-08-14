@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: db_embedding_upgrade.py (v2.0)
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 Description:
     Phase 0: Database schema upgrade for Multi-Provider Hybrid Embeddings.
 

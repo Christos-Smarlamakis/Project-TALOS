@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_model_manager.py
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 Description:
     Unit tests for the TUI model manager helper functions (model_manager.py).
     Tests cover: Ollama connectivity checks, quantization tag categorization,
@@ -489,6 +489,61 @@ class TestSubMenuCancellation(unittest.TestCase):
             select_embedding_model("/fake/.env")
 
         # Should not raise -- graceful return
+
+
+class TestCloudProviderCatalog(unittest.TestCase):
+    """Tests for the Universal Cloud Mesh provider catalog (v5.9.18)."""
+
+    CLOUD_KEYS = {
+        "GEMINI_API_KEY": "", "NVIDIA_API_KEY": "", "GROQ_API_KEY": "",
+        "CEREBRAS_API_KEY": "", "GITHUB_TOKEN": "", "MISTRAL_API_KEY": "",
+        "OPENROUTER_API_KEY": "", "DEEPSEEK_API_KEY": "", "HF_TOKEN": "",
+    }
+
+    def test_catalog_has_nine_providers(self):
+        """CLOUD_PROVIDER_CATALOG should list all nine cloud providers."""
+        from src.ai.llm.model_manager import CLOUD_PROVIDER_CATALOG
+        provider_keys = [entry[0] for entry in CLOUD_PROVIDER_CATALOG]
+        expected = {"gemini", "nvidia", "groq", "cerebras", "github",
+                    "mistral", "openrouter", "deepseek", "huggingface"}
+        self.assertEqual(set(provider_keys), expected)
+        self.assertEqual(len(CLOUD_PROVIDER_CATALOG), 9)
+
+    def test_rows_have_required_keys(self):
+        """Every row returned by get_cloud_provider_rows should carry all columns."""
+        from src.ai.llm.model_manager import get_cloud_provider_rows
+        required = {"provider", "display_name", "env_key", "model_env_key",
+                    "status", "model", "base_url"}
+        with patch.dict(os.environ, dict(self.CLOUD_KEYS), clear=False):
+            for row in get_cloud_provider_rows({}):
+                self.assertTrue(required.issubset(set(row.keys())), row)
+
+    def test_all_unconfigured_when_no_keys(self):
+        """With no keys present, every row should be UNCONFIGURED."""
+        from src.ai.llm.model_manager import get_cloud_provider_rows
+        with patch.dict(os.environ, dict(self.CLOUD_KEYS), clear=False):
+            rows = get_cloud_provider_rows({})
+            self.assertEqual(len(rows), 9)
+            for row in rows:
+                self.assertEqual(row["status"], "UNCONFIGURED")
+
+    def test_active_when_key_present(self):
+        """A provider whose key is set should be ACTIVE; others UNCONFIGURED."""
+        from src.ai.llm.model_manager import get_cloud_provider_rows
+        with patch.dict(os.environ, dict(self.CLOUD_KEYS), clear=False):
+            rows = get_cloud_provider_rows({"GROQ_API_KEY": "sk-test-123"})
+            by_provider = {r["provider"]: r for r in rows}
+            self.assertEqual(by_provider["groq"]["status"], "ACTIVE")
+            self.assertEqual(by_provider["groq"]["env_key"], "GROQ_API_KEY")
+            self.assertEqual(by_provider["nvidia"]["status"], "UNCONFIGURED")
+
+    def test_model_override_from_values(self):
+        """A model set in .env values should override the catalog default."""
+        from src.ai.llm.model_manager import get_cloud_provider_rows
+        with patch.dict(os.environ, dict(self.CLOUD_KEYS), clear=False):
+            rows = get_cloud_provider_rows({"MISTRAL_DEFAULT_MODEL": "mistral-large-latest"})
+            by_provider = {r["provider"]: r for r in rows}
+            self.assertEqual(by_provider["mistral"]["model"], "mistral-large-latest")
 
 
 if __name__ == "__main__":

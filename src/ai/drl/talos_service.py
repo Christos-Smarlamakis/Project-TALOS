@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: talos_service.py (v2.0 — Profile-Aware, Dynamic N Sources)
-Project: TALOS v5.9.17 — Phase 5
+Project: TALOS v5.9.18 — Phase 5
 Description:
     24/7 autonomous research service. Runs continuously on weak hardware
     (Raspberry Pi, old laptop, etc.) using the trained DRL agent to

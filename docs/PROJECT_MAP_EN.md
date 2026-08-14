@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.9.17
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.9.18
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-14 (v5.9.17 -- Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep)
+> **Last Updated:** 2026-08-14 (v5.9.18 -- Universal Cloud Mesh & Multi-Provider Redundancy Expansion)
 
 ---
 
@@ -97,26 +97,34 @@ Data Flow:
 | `get_default_state_space` | `() -> int` | v3.0: 1 + N + 2 + 4. |
 | `get_default_action_space` | `() -> int` | N + 1 sleep. |
 
-### 2.1 `core/ai_manager.py` — Class `AIManager` (v3.8)
+### 2.1 `core/ai_manager.py` — Class `AIManager` (v3.9)
 
 **v3.7 (Batch 1 audit):** New attribute `last_provider_used` — set on every successful `_execute_request()` with the name of the provider that actually served the request. Consumed by the live orchestrator for correct provider attribution.
 **v3.8 (Batch 3 hotfix):** Implemented `analyze_generic_text(full_prompt) -> str|None` — it was documented in this map and called by grey_literature_miner.py, but did NOT exist in the code (AttributeError). Thin wrapper around `_execute_request(model_type='pro', response_format='text')`.
 
-**Role:** Multi-provider LLM interface with circuit breaker pattern. Manages 4 providers: Gemini (primary cloud), DeepSeek (fallback), HuggingFace (free cloud), Local/Ollama (offline).
+**Role:** Multi-provider LLM interface with circuit breaker pattern. Manages 9 providers via the Universal Cloud Mesh (v5.9.18): Gemini (Google GenAI SDK, non-OpenAI) + 8 OpenAI-compatible redundancy providers (NVIDIA NIM, Groq, Cerebras, GitHub Models, Mistral, OpenRouter, DeepSeek, HuggingFace) + Local/Ollama (offline).
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| `__init__` | `(self, config: Dict[str, Any])` | Initializes all providers from config + .env. Sets provider_priority, FAILURE_THRESHOLD. |
+| `__init__` | `(self, config: Dict[str, Any])` | Initializes all providers from config + .env via `OPENAI_COMPATIBLE_REGISTRY`. Sets provider_priority, FAILURE_THRESHOLD. |
 | `_clean_json_string` | `(self, text: str) -> str` | Extracts clean JSON from LLM response. |
 | `evaluate_paper_json` | `(self, paper_content: str, model_type: str = 'pro', system_prompt_override: str = None) -> Union[Dict, None]` | Evaluates paper with AI, structured JSON. |
 | `analyze_generic_text` | `(self, full_prompt: str) -> str` | Analyzes arbitrary text. |
-| `_execute_request` | `(self, prompt: str, model_type: str, response_format: str = 'text') -> Union[Dict, str, None]` | Multi-provider request with circuit breaker. |
-| `_handle_failure` | `(self, provider_name: str)` | Increments failure counter, opens circuit at 3+. |
+| `_execute_request` | `(self, prompt: str, model_type: str, response_format: str = 'text') -> Union[Dict, str, None]` | Multi-provider request with 2D Execution Matrix routing. |
+| `_execute_cloud_chain` | `(self, prompt: str, model_type: str, response_format: str) -> Union[Dict, str, None]` | Routes through `provider_priority` (Universal Cloud Mesh), skipping unconfigured/open-circuit providers. |
+| `_execute_openai_compatible_request` | `(self, provider_name: str, prompt: str, model_type: str, response_format: str) -> Union[Dict, str, None]` | Unified OpenAI-compatible provider handler with circuit breaker. |
+| `_handle_failure` | `(self, provider_name: str)` | Increments failure counter, opens circuit at 5+. |
 
 **Providers:**
-- `gemini`: flash_model (pre-screening), pro_model (deep analysis)
-- `deepseek`: OpenAI client, model: deepseek-chat
-- `huggingface`: OpenAI client, free inference
+- `gemini`: Google GenAI SDK, flash_model (pre-screening), pro_model (deep analysis)
+- `nvidia`: OpenAI-compatible, model: nvidia/nemotron-3-ultra
+- `groq`: OpenAI-compatible, model: llama-3.3-70b-versatile
+- `cerebras`: OpenAI-compatible, model: llama-3.1-70b
+- `github`: OpenAI-compatible, model: gpt-4o-mini
+- `mistral`: OpenAI-compatible, model: mistral-small-latest
+- `openrouter`: OpenAI-compatible, model: meta-llama/llama-3.3-70b-instruct:free
+- `deepseek`: OpenAI-compatible, model: deepseek-chat
+- `huggingface`: OpenAI-compatible, model: meta-llama/Llama-3.3-70B-Instruct
 - `local`: Ollama OpenAI-compatible, model: gemma3:12b
 
 ---
@@ -300,7 +308,7 @@ Interactive Research Pivot Wizard.
 ### 6.1 `config.json` Schema (v5.3.1)
 ```json
 {
-  "ai_provider_priority": ["gemini", "deepseek", "huggingface", "local"],
+  "ai_provider_priority": ["local", "nvidia", "groq", "cerebras", "github", "gemini", "deepseek", "mistral", "openrouter", "huggingface"],
   "gemini_tier": "free",
   "provider_limits": {
     "gemini": {
@@ -312,7 +320,7 @@ Interactive Research Pivot Wizard.
     "huggingface":  { "rpm": 30,  "rpd": 500 },
     "local":        { "rpm": 9999,"rpd": 99999 }
   },
-  "failure_threshold": 3,
+  "failure_threshold": 5,
   "model_for_daily_search": "gemini-2.5-pro",
   "pre_screening_model": "gemini-2.5-flash",
   "min_pre_screening_score": 6,
@@ -325,6 +333,7 @@ Interactive Research Pivot Wizard.
 
 ### 6.2 `.env` Keys
 - **Premium AI:** `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `HF_TOKEN`
+- **Universal Cloud Mesh (v5.9.18):** `NVIDIA_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`, `GITHUB_TOKEN`, `MISTRAL_API_KEY`, `OPENROUTER_API_KEY`
 - **Academic:** `SEMANTIC_SCHOLAR_API_KEY`, `IEEE_API_KEY`, `ELSEVIER_API_KEY`, `SPRINGER_API_KEY`, `CORE_API_KEY`, `OPENARCHIVES_API_KEY`
 - **Local:** `LOCAL_MODEL_NAME`, `LOCAL_EMBEDDING_MODEL`
 
@@ -340,9 +349,12 @@ active_profile.txt
 
 ---
 
-## 7. Dependency Graph (v5.9.17 DDD Layout)
+## 7. Dependency Graph (v5.9.18 DDD Layout)
 
 ```
+src/core/ai_manager.py (Universal Cloud Mesh, v5.9.18)
+  └── config.settings
+
 talos.py (Rich TUI Master)
   ├── src.ai.llm.model_manager
   ├── src.analysis.graphify_adapter
@@ -434,7 +446,7 @@ src/utils/logger.py (Enterprise Logging)
 3. **`daily_search.py` and `historic_search.py`** must be kept in sync for dedup logic
 4. **4-layer framework** (strategic, operational, tactical, playground) is INVARIANT
 5. **`recommender.py`** reads SQLite directly, not via DatabaseManager
-6. **Circuit breaker** at 3+ failures
+6. **Circuit breaker** at 5+ failures
 7. **Profile-aware**: DatabaseManager accepts `db_path`
 8. **Questionary stdin piping** via `TALOS_GUI_STDIN` + `_gui_runner.py`
 9. **Subprocess env propagation**: `run_script()` forwards TALOS_* vars
@@ -444,8 +456,8 @@ src/utils/logger.py (Enterprise Logging)
 
 ---
 
-> **Last Updated:** 2026-08-14 (v5.9.17 -- Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep)
-> **Project Version:** v5.9.17
+> **Last Updated:** 2026-08-14 (v5.9.18 -- Universal Cloud Mesh & Multi-Provider Redundancy Expansion)
+> **Project Version:** v5.9.18
 > **Total Files Covered:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### New in v5.9.9: Report Path Consolidation

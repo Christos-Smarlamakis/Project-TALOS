@@ -11,7 +11,7 @@
 
 """
 Module: recalculate_scores.py (v2.0 - Recalibration Tool)
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 
 Description:
 Ένα σύγχρονο εργαλείο συντήρησης, πλήρως εναρμονισμένο με τη νέα αρχιτεκτονική.

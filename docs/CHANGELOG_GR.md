@@ -2,6 +2,26 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.9.18] - 2026-08-14 -- Καθολικό Πλέγμα Νέφους & Επέκταση Πολυπαρόχου Εφεδρείας
+
+### Προστέθηκε
+- **Καθολικό Πλέγμα Νέφους (`config/settings.py` + `src/core/ai_manager.py`)**: Επέκταση της βαθμίδας νέφους από τρεις παρόχους (Gemini, DeepSeek, Hugging Face) σε πλέγμα εννέα παρόχων. Νέοι συμβατοί με OpenAI πάροχοι: NVIDIA NIM (`https://integrate.api.nvidia.com/v1`, `nvidia/nemotron-3-ultra`), Groq (`https://api.groq.com/openai/v1`, `llama-3.3-70b-versatile`), Cerebras (`https://api.cerebras.ai/v1`, `llama-3.1-70b`), GitHub Models (`https://models.inference.ai.azure.com`, `gpt-4o-mini`), Mistral (`https://api.mistral.ai/v1`, `mistral-small-latest`) και OpenRouter (`https://openrouter.ai/api/v1`, `meta-llama/llama-3.3-70b-instruct:free`). Προστέθηκε η κανονική λίστα διάταξης `TALOS_CLOUD_PROVIDERS`.
+- **Μητρώο παρόχων συμβατών με OpenAI (`OPENAI_COMPATIBLE_REGISTRY`)**: Εκκίνηση καθοδηγούμενη από λεξικό στον `AIManager` που αντιστοιχίζει το όνομα παρόχου σε κλειδί περιβάλλοντος, βασική διεύθυνση URL, προεπιλεγμένο μοντέλο και κλειδί παράκαμψης μοντέλου. Οι πάροχοι χωρίς διαμορφωμένο κλειδί παραλείπονται ομαλά (Σύνταγμα ΙΙ -- το νέφος είναι ΠΡΟΑΙΡΕΤΙΚΟ).
+- **Ενοποιημένος χειριστής αιτημάτων (`_execute_openai_compatible_request`)**: Ενιαία διαδρομή εκτέλεσης συμβατή με OpenAI με ανεξάρτητους διακόπτες κυκλώματος ανά πάροχο (5 συνεχόμενες αποτυχίες = ενεργοποίηση διακόπτη) και καταμέτρηση αποτυχιών μέσω `_handle_failure()`.
+- **TUI Ρυθμίσεων Νέφους του Διαχειριστή Μοντέλων**: Ανακατασκευή της `select_cloud_models()` για απόδοση πίνακα Rich και των εννέα παρόχων με στήλες Όνομα Παρόχου, Κλειδί Περιβάλλοντος, Κατάσταση (`[ACTIVE]` πράσινο / `[UNCONFIGURED]` κίτρινο), Προεπιλεγμένο Μοντέλο και Βασική Διεύθυνση URL. Οποιοσδήποτε πάροχος μπορεί να επιλεγεί για προβολή λεπτομερειών, αποθήκευση κλειδιού API στο `.env` ή τροποποίηση του προεπιλεγμένου μοντέλου. Προστέθηκαν `CLOUD_PROVIDER_CATALOG` και βοηθός `get_cloud_provider_rows()`.
+
+### Άλλαξε
+- **`example.env`**: Προστέθηκαν πρότυπα καταχωρήσεων `NVIDIA_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`, `GITHUB_TOKEN`, `MISTRAL_API_KEY`, `OPENROUTER_API_KEY` και παρακάμψεις προεπιλεγμένου μοντέλου· η κεφαλίδα ενημερώθηκε σε v5.9.18.
+- **`config.template.json` / `config.json`**: Η προεπιλεγμένη λίστα `ai_provider_priority` είναι πλέον `["local", "nvidia", "groq", "cerebras", "github", "gemini", "deepseek", "mistral", "openrouter", "huggingface"]`· το `failure_threshold` αυξήθηκε σε 5.
+- **`src/core/ai_manager.py`**: Οι `_execute_cloud_chain()` και `_execute_legacy_request()` δρομολογούν πλέον όλους τους μη-Gemini παρόχους μέσω του ενοποιημένου χειριστή. Οι `_execute_openai_compatible` και `_execute_deepseek_request` διατηρούνται ως καταργημένα περιτυλίγματα.
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 6 αρχεία κώδικα και 15 αρχεία τεκμηρίωσης** σε v5.9.18 (και καθολική ενημέρωση κεφαλίδων σε `src/`, `config/` και `tests/`).
+
+### Επαλήθευση
+- Το `python -m compileall src config tests talos.py` ολοκληρώθηκε με μηδέν σφάλματα.
+- Η πλήρης σουίτα δοκιμών (συμπεριλαμβανομένων των νέων δοκιμών μητρώου/καταλόγου Πλέγματος Νέφους) και η δοκιμή smoke περνούν με επιτυχία.
+- Πρωτόκολλο μηδενικών emojis τηρείται αυστηρά· διατηρείται καθαρό ελληνικό unicode σε όλα τα αρχεία `_GR.md`.
+
+
 ## [v5.9.17] - 2026-08-14 -- Καθολικό Rich TUI, Αναβάθμιση Επιχειρησιακής Καταγραφής & Καθολική Ενημέρωση Κεφαλίδων
 
 ### Προστέθηκε

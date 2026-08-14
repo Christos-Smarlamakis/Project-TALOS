@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_multi_tier.py
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 Description:
     Unit tests for the multi-tier LLM routing architecture (v5.7.1). Tests cover:
     - Fast tier routing via HTTP POST to FAST_EDGE_BASE_URL with Neutrino-8B.
@@ -337,9 +337,9 @@ class TestSettingsResolution:
         assert DEFAULT_TIER == "fast"
 
     def test_talos_version(self):
-        """Verify the TALOS_VERSION is v5.9.17."""
+        """Verify the TALOS_VERSION is v5.9.18."""
         from config.settings import TALOS_VERSION
-        assert TALOS_VERSION == "5.9.17"
+        assert TALOS_VERSION == "5.9.18"
 
     def test_talos_api_port(self):
         """Verify the default TALOS_API_PORT is 8001."""
@@ -405,3 +405,93 @@ class TestMailboxPattern:
         """Verify the fast tier points to dedicated edge (11435)."""
         from config.settings import FAST_EDGE_BASE_URL
         assert "11435" in FAST_EDGE_BASE_URL
+
+
+# ------------------------------------------------------------------
+# -- v5.9.18: Universal Cloud Mesh Registry Tests --
+# ------------------------------------------------------------------
+
+class TestCloudMeshRegistry:
+    """Tests for the OpenAI-compatible cloud provider registry (v5.9.18)."""
+
+    # All cloud provider environment keys (for deterministic test isolation).
+    CLOUD_KEYS = {
+        "GEMINI_API_KEY": "", "NVIDIA_API_KEY": "", "GROQ_API_KEY": "",
+        "CEREBRAS_API_KEY": "", "GITHUB_TOKEN": "", "MISTRAL_API_KEY": "",
+        "OPENROUTER_API_KEY": "", "DEEPSEEK_API_KEY": "", "HF_TOKEN": "",
+        "TALOS_USE_LOCAL": "",
+    }
+
+    def test_registry_has_all_eight_openai_compatible_providers(self):
+        """Verify the registry enumerates all eight redundancy providers."""
+        from src.core.ai_manager import OPENAI_COMPATIBLE_REGISTRY
+        expected = {"nvidia", "groq", "cerebras", "github", "mistral",
+                    "openrouter", "deepseek", "huggingface"}
+        assert set(OPENAI_COMPATIBLE_REGISTRY.keys()) == expected
+
+    def test_registry_entries_have_required_metadata(self):
+        """Verify every registry entry declares its required metadata fields."""
+        from src.core.ai_manager import OPENAI_COMPATIBLE_REGISTRY
+        required = {"env_key", "base_url", "default_model", "model_env_key"}
+        for name, meta in OPENAI_COMPATIBLE_REGISTRY.items():
+            assert required.issubset(set(meta.keys())), f"{name} missing metadata"
+            assert meta["base_url"].startswith("https://"), f"{name} base_url not https"
+
+    def test_gemini_is_not_in_openai_compatible_registry(self):
+        """Verify Gemini is excluded (it uses the Google GenAI SDK path)."""
+        from src.core.ai_manager import OPENAI_COMPATIBLE_REGISTRY
+        assert "gemini" not in OPENAI_COMPATIBLE_REGISTRY
+
+    def test_provider_discovery_with_configured_keys(self):
+        """Verify AIManager initializes exactly the providers whose keys are set."""
+        from src.core.ai_manager import AIManager
+        env = dict(self.CLOUD_KEYS)
+        env.update({"GROQ_API_KEY": "test-groq-key", "DEEPSEEK_API_KEY": "test-deepseek-key"})
+        with patch.dict(os.environ, env, clear=False):
+            with patch("src.core.ai_manager._try_import_openai", return_value=True), \
+                 patch("src.core.ai_manager._try_import_genai", return_value=False), \
+                 patch("src.core.ai_manager._openai") as mock_openai, \
+                 patch.object(AIManager, "_ensure_local_model", return_value=None):
+                mgr = AIManager({"ai_provider_priority": ["local", "groq", "deepseek"],
+                                 "failure_threshold": 5})
+                assert "groq" in mgr.providers
+                assert "deepseek" in mgr.providers
+                assert "nvidia" not in mgr.providers
+                assert "local" not in mgr.providers
+
+    def test_missing_keys_skip_providers_gracefully(self):
+        """Verify no cloud providers are initialized when all keys are absent."""
+        from src.core.ai_manager import AIManager
+        with patch.dict(os.environ, dict(self.CLOUD_KEYS), clear=False):
+            with patch("src.core.ai_manager._try_import_openai", return_value=True), \
+                 patch("src.core.ai_manager._try_import_genai", return_value=False), \
+                 patch.object(AIManager, "_ensure_local_model", return_value=None):
+                mgr = AIManager({"ai_provider_priority": ["local", "groq"],
+                                 "failure_threshold": 5})
+                cloud_keys = {"nvidia", "groq", "cerebras", "github", "mistral",
+                              "openrouter", "deepseek", "huggingface", "gemini"}
+                assert not cloud_keys.intersection(set(mgr.providers.keys()))
+
+    def test_cascade_failover_simulation(self):
+        """Verify _execute_cloud_chain cascades to the next provider on failure."""
+        from src.core.ai_manager import AIManager
+        env = dict(self.CLOUD_KEYS)
+        env.update({"GROQ_API_KEY": "groq-key", "DEEPSEEK_API_KEY": "deepseek-key"})
+        with patch.dict(os.environ, env, clear=False):
+            with patch("src.core.ai_manager._try_import_openai", return_value=True), \
+                 patch("src.core.ai_manager._try_import_genai", return_value=False), \
+                 patch("src.core.ai_manager._openai") as mock_openai, \
+                 patch.object(AIManager, "_ensure_local_model", return_value=None):
+                mgr = AIManager({"ai_provider_priority": ["groq", "deepseek"],
+                                 "failure_threshold": 5})
+
+                def fake_request(provider_name, prompt, model_type, response_format):
+                    if provider_name == "groq":
+                        return None  # simulate provider failure
+                    return {"score": 9}  # next provider succeeds
+
+                with patch.object(mgr, "_execute_openai_compatible_request",
+                                  side_effect=fake_request):
+                    result = mgr._execute_cloud_chain("test prompt", "pro", "json")
+                    assert result == {"score": 9}
+                    assert mgr.last_provider_used == "deepseek"

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: train_agent.py (v1.0)
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 Description:
     Offline training script for the TALOS DRL agent using REAL historical
     paper scores from the SQLite database instead of simulated random scores.

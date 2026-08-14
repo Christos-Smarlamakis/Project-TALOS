@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: gwo_live_dashboard.py (v1.0 — Dash Live GWO Visualizer)
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 Description:
     Dash web application for TRULY LIVE Grey Wolf Optimizer visualization.
     Uses dcc.Interval for native real-time updates (no st.rerun() issues).

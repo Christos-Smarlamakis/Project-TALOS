@@ -4,9 +4,21 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-14 (v5.9.17 -- Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep)
+> **Last Updated:** 2026-08-14 (v5.9.18 -- Universal Cloud Mesh & Multi-Provider Redundancy Expansion)
 
 ---
+
+## Phase 29: Universal Cloud Mesh & Multi-Provider Redundancy Expansion (v5.9.18)
+
+### Status: COMPLETED (2026-08-14)
+
+- [x] **Universal Cloud Mesh (`config/settings.py`)** -- Added `NVIDIA_BASE_URL`, `GROQ_BASE_URL`, `CEREBRAS_BASE_URL`, `GITHUB_MODELS_BASE_URL`, `MISTRAL_BASE_URL`, `OPENROUTER_BASE_URL`, `HF_BASE_URL`, per-provider default models, API key getters, and the `TALOS_CLOUD_PROVIDERS` canonical list (9 providers).
+- [x] **OpenAI-compatible provider registry (`src/core/ai_manager.py`)** -- Added `OPENAI_COMPATIBLE_REGISTRY` (8 redundancy providers), dictionary-driven `__init__` with graceful missing-key skipping, unified `_execute_openai_compatible_request()` with independent 5-failure circuit breakers, and registry-driven `_execute_cloud_chain()`.
+- [x] **Model Manager Cloud Configuration TUI** -- `select_cloud_models()` renders a Rich table of all 9 providers (Provider Name, Env Key, Status, Default Model, Base URL) with per-provider key/model editing via `CLOUD_PROVIDER_CATALOG` and `get_cloud_provider_rows()`.
+- [x] **Config & Env Templates** -- `example.env` gained 6 new provider keys; `config.template.json`/`config.json` `ai_provider_priority` updated to the 10-item local-first list; `failure_threshold` raised to 5.
+- [x] **Unit Tests** -- `tests/test_multi_tier.py` (registry initialization, provider discovery, missing-key skip, cascade failover) and `tests/test_model_manager.py` (catalog table) expanded.
+- [x] **Sync all 6 code files and 15 documentation files to v5.9.18** (full global header sweep across `src/`, `config/`, `tests/`)
+
 
 ## Phase 28: Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep (v5.9.17)
 

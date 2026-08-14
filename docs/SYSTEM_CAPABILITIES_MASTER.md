@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.17
+# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.18
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-08-14
-> **Version:** v5.9.17 -- Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep
+> **Version:** v5.9.18 -- Universal Cloud Mesh & Multi-Provider Redundancy Expansion
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -24,7 +24,7 @@ The system operates as a five-layer architecture:
 |-------|-----------|------|
 | **Frontend** | React 18 with Tailwind CSS and Shadcn UI | User-facing dashboard leveraging the REST API |
 | **Backend** | `src/api/main_api.py` (18 endpoints) | Headless FastAPI facade exposing all core capabilities |
-| **AI Core** | `src/core/ai_manager.py` (4 providers + circuit breaker + 2D matrix) | Multi-provider LLM orchestration with hardware-aware routing and interactive cloud fallback |
+| **AI Core** | `src/core/ai_manager.py` (9 providers -- Universal Cloud Mesh + circuit breaker + 2D matrix) | Multi-provider LLM orchestration with hardware-aware routing and interactive cloud fallback |
 | **Persistence** | `src/core/database_manager.py` | SQLite + multi-model vector embeddings (Ollama + Gemini) |
 | **Integration** | `src/integration/synapse_client.py` + `src/mcp_server.py` + `src/analysis/graphify_adapter.py` | SYNAPSE Event Bus + MCP Tool Server + AST Knowledge Graph Intelligence |
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.9.17" | `config/settings.py` |
+| TALOS_VERSION | "5.9.18" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -126,14 +126,22 @@ TALOS ingests academic literature from **14 independent APIs**, each implemented
 
 ### 3.1 Provider Architecture (AIManager v3.9+)
 
-The AI Manager (`src/core/ai_manager.py`) implements a multi-provider architecture with automatic fallback and circuit breaker pattern across four independent providers:
+The AI Manager (`src/core/ai_manager.py`) implements a nine-provider Universal Cloud Mesh (v5.9.18) with automatic fallback and independent per-provider circuit breakers. Gemini remains the primary non-OpenAI-compatible path via the Google Generative AI SDK, while eight OpenAI-compatible redundancy providers are driven by a unified dictionary registry (`OPENAI_COMPATIBLE_REGISTRY`) and a single request handler (`_execute_openai_compatible_request`):
 
 | Provider | Type | SDK | Authentication | Use Case |
 |----------|------|-----|----------------|----------|
-| Gemini | Cloud | google-generativeai | GEMINI_API_KEY | Primary cloud text generation + embedding fallback |
-| DeepSeek | Cloud | OpenAI-compatible API | DEEPSEEK_API_KEY | Fallback cloud provider |
-| HuggingFace | Cloud (free) | OpenAI-compatible API | HF_TOKEN | Free cloud inference via router.huggingface.co |
-| Local/Ollama | Local | OpenAI-compatible API | TALOS_USE_LOCAL=1 | Offline-first operation |
+| Gemini | Cloud | google-genai SDK | GEMINI_API_KEY | Primary cloud text generation + embedding fallback |
+| NVIDIA NIM | Cloud | OpenAI-compatible | NVIDIA_API_KEY | `nvidia/nemotron-3-ultra` (integrate.api.nvidia.com/v1) |
+| Groq | Cloud | OpenAI-compatible | GROQ_API_KEY | `llama-3.3-70b-versatile` (api.groq.com) |
+| Cerebras | Cloud | OpenAI-compatible | CEREBRAS_API_KEY | `llama-3.1-70b` (api.cerebras.ai) |
+| GitHub Models | Cloud | OpenAI-compatible | GITHUB_TOKEN | `gpt-4o-mini` (models.inference.ai.azure.com) |
+| Mistral | Cloud | OpenAI-compatible | MISTRAL_API_KEY | `mistral-small-latest` (api.mistral.ai) |
+| OpenRouter | Cloud | OpenAI-compatible | OPENROUTER_API_KEY | `meta-llama/llama-3.3-70b-instruct:free` (openrouter.ai) |
+| DeepSeek | Cloud | OpenAI-compatible | DEEPSEEK_API_KEY | `deepseek-chat` (api.deepseek.com) |
+| HuggingFace | Cloud | OpenAI-compatible | HF_TOKEN | `meta-llama/Llama-3.3-70B-Instruct` (router.huggingface.co) |
+| Local/Ollama | Local | OpenAI-compatible | TALOS_USE_LOCAL=1 | Offline-first operation |
+
+The failover cascade iterates `ai_provider_priority` (default: `["local", "nvidia", "groq", "cerebras", "github", "gemini", "deepseek", "mistral", "openrouter", "huggingface"]`), skipping unconfigured providers and open circuits. `last_provider_used` records the exact provider that served each successful request.
 
 ### 3.2 Circuit Breaker Pattern
 
@@ -150,7 +158,7 @@ TALOS implements a three-tier LLM routing architecture with independent per-tier
 |------|---------------|------------------|-----------------|
 | **Fast Edge** | fermionresearch/Neutrino-8B | http://127.0.0.1:11435/v1 | TALOS_FAST_ROUTING |
 | **Heavy Reasoning** | qwen2.5:14b | http://127.0.0.1:11434 | TALOS_HEAVY_ROUTING |
-| **Cloud Provider** | Gemini / DeepSeek / HF | API endpoints | TALOS_CLOUD_PROVIDER |
+| **Cloud Provider** | Universal Cloud Mesh (9 providers) | API endpoints | TALOS_CLOUD_PROVIDER |
 
 ### 3.4 Local-to-Local Fallback (v5.9.8)
 
@@ -552,6 +560,16 @@ For each evaluated paper, the AI generates:
   - `logging.handlers.RotatingFileHandler` writing `data/logs/talos_system.log` (10 MB per file, 5 backups) with formatter `%(asctime)s - %(name)s - %(levelname)s - %(message)s`.
 - **`data/logs/`** directory auto-created; the root `talos` logger is configured idempotently (no duplicate handlers) and disables propagation.
 - **Universal Rich TUI enforcement** -- `talos.py`, `model_manager.py`, `research_pivot.py`, `generate_docs.py`, `red_tester.py` audited: status/diagnostics via logger, Rich Console/Panel for menus and tables, `questionary` for prompts, no raw `input()`, zero emojis.
+
+
+---
+
+### 10.5 Universal Cloud Mesh & Multi-Provider Redundancy Expansion (v5.9.18)
+
+- **`config/settings.py`** -- expanded the cloud tier to a nine-provider mesh: Gemini (Google GenAI SDK) plus 8 OpenAI-compatible redundancy providers (NVIDIA NIM, Groq, Cerebras, GitHub Models, Mistral, OpenRouter, DeepSeek, HuggingFace). Added `TALOS_CLOUD_PROVIDERS` canonical list.
+- **`src/core/ai_manager.py`** -- `OPENAI_COMPATIBLE_REGISTRY` (dictionary-driven init), unified `_execute_openai_compatible_request()`, independent 5-failure circuit breakers, registry-driven `_execute_cloud_chain()`.
+- **`src/ai/llm/model_manager.py`** -- Cloud Configuration TUI renders a Rich table of all 9 providers (Provider Name, Env Key, Status, Default Model, Base URL) via `CLOUD_PROVIDER_CATALOG` and `get_cloud_provider_rows()`.
+- **`config.json` / `config.template.json` / `example.env`** -- `ai_provider_priority` updated to `["local", "nvidia", "groq", "cerebras", "github", "gemini", "deepseek", "mistral", "openrouter", "huggingface"]`; 6 new API-key template entries; `failure_threshold` = 5.
 
 
 ---

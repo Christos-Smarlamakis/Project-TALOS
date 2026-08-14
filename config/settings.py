@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 Description:
-    Canonical configuration hub for TALOS v5.9.17. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.9.18. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
@@ -11,14 +11,16 @@ Description:
     Key design decisions:
     - Reads from environment variables with sensible defaults for air-gapped operation.
     - Supports three-tier LLM architecture: "fast" (edge/lightweight, CPU, port 11435),
-      "heavy" (reasoning/large, GPU, port 11434), and "cloud" (Gemini/DeepSeek/HF).
+      "heavy" (reasoning/large, GPU, port 11434), and "cloud" (Universal Cloud
+      Mesh, 8 providers).
     - v5.9.4: TALOS_EXECUTION_MODE is DEPRECATED and replaced by the 2D Execution
       Matrix: TALOS_NETWORK_STRATEGY (strict_local, local_first, cloud_first,
       strict_cloud) and TALOS_HARDWARE_STRATEGY (cpu_only, gpu_only, cpu_gpu_split).
     - Fast tier uses Neutrino-8B at a dedicated local endpoint (port 11435).
     - Heavy tier uses qwen2.5:14b at the standard Ollama endpoint (port 11434).
-    - Cloud LLM providers (Gemini, DeepSeek, HuggingFace) are configured via
-      environment variables for optional fallback/promotion.
+    - Cloud LLM providers (Gemini, NVIDIA NIM, Groq, Cerebras, GitHub Models,
+      Mistral, OpenRouter, DeepSeek, HuggingFace) are configured via environment
+      variables for optional redundancy/failover (v5.9.18 Universal Cloud Mesh).
     - All values can be overridden via .env for flexibility.
 
 Dependencies:
@@ -72,7 +74,8 @@ DEFAULT_TIER = os.getenv("TALOS_DEFAULT_TIER", "fast")
 # ------------------------------------------------------------------
 
 # Default cloud provider when not running entirely local.
-# Supported values: "gemini", "deepseek", "huggingface".
+# Supported values: "gemini", "nvidia", "groq", "cerebras", "github",
+# "mistral", "openrouter", "deepseek", "huggingface".
 CLOUD_PROVIDER = os.getenv("TALOS_CLOUD_PROVIDER", "gemini")
 
 # -- Google Gemini --
@@ -85,9 +88,49 @@ DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 DEEPSEEK_MODEL_CHAT = os.getenv("DEEPSEEK_MODEL_CHAT", "deepseek-chat")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
 
-# -- HuggingFace Inference API --
+# -- HuggingFace Inference API (Universal Cloud Mesh, v5.9.18) --
 HF_TOKEN = os.getenv("HF_TOKEN", "")
-HF_MODEL_NAME = os.getenv("HF_MODEL_NAME", "mistralai/Mixtral-8x7B-Instruct-v0.1")
+HF_BASE_URL = os.getenv("HF_BASE_URL", "https://router.huggingface.co/hf-inference/v1")
+HF_MODEL_NAME = os.getenv("HF_MODEL_NAME", "meta-llama/Llama-3.3-70B-Instruct")
+
+# -- NVIDIA NIM (Universal Cloud Mesh, v5.9.18) --
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
+NVIDIA_BASE_URL = os.getenv("NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
+NVIDIA_DEFAULT_MODEL = os.getenv("NVIDIA_DEFAULT_MODEL", "nvidia/nemotron-3-ultra")
+
+# -- Groq (Universal Cloud Mesh, v5.9.18) --
+GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
+GROQ_BASE_URL = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+GROQ_DEFAULT_MODEL = os.getenv("GROQ_DEFAULT_MODEL", "llama-3.3-70b-versatile")
+
+# -- Cerebras (Universal Cloud Mesh, v5.9.18) --
+CEREBRAS_API_KEY = os.getenv("CEREBRAS_API_KEY", "")
+CEREBRAS_BASE_URL = os.getenv("CEREBRAS_BASE_URL", "https://api.cerebras.ai/v1")
+CEREBRAS_DEFAULT_MODEL = os.getenv("CEREBRAS_DEFAULT_MODEL", "llama-3.1-70b")
+
+# -- GitHub Models (Universal Cloud Mesh, v5.9.18) --
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+GITHUB_MODELS_BASE_URL = os.getenv("GITHUB_MODELS_BASE_URL", "https://models.inference.ai.azure.com")
+GITHUB_MODELS_DEFAULT_MODEL = os.getenv("GITHUB_MODELS_DEFAULT_MODEL", "gpt-4o-mini")
+
+# -- Mistral (Universal Cloud Mesh, v5.9.18) --
+MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "")
+MISTRAL_BASE_URL = os.getenv("MISTRAL_BASE_URL", "https://api.mistral.ai/v1")
+MISTRAL_DEFAULT_MODEL = os.getenv("MISTRAL_DEFAULT_MODEL", "mistral-small-latest")
+
+# -- OpenRouter (Universal Cloud Mesh, v5.9.18) --
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
+OPENROUTER_DEFAULT_MODEL = os.getenv("OPENROUTER_DEFAULT_MODEL", "meta-llama/llama-3.3-70b-instruct:free")
+
+# -- v5.9.18: Canonical cloud provider ordering for the Universal Cloud Mesh --
+# This list is the authoritative enumeration of every cloud provider TALOS can
+# route through. "gemini" uses the Google Generative AI SDK; all others use the
+# OpenAI-compatible request path handled by AIManager.
+TALOS_CLOUD_PROVIDERS = [
+    "gemini", "nvidia", "groq", "cerebras", "github",
+    "mistral", "openrouter", "deepseek", "huggingface"
+]
 
 
 # ------------------------------------------------------------------
@@ -130,7 +173,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.9.17"
+TALOS_VERSION = "5.9.18"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.

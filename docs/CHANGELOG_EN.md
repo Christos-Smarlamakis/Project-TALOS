@@ -2,6 +2,26 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.9.18] - 2026-08-14 -- Universal Cloud Mesh & Multi-Provider Redundancy Expansion
+
+### Added
+- **Universal Cloud Mesh (`config/settings.py` + `src/core/ai_manager.py`)**: Expanded the cloud tier from three providers (Gemini, DeepSeek, Hugging Face) to a nine-provider mesh. New OpenAI-compatible providers: NVIDIA NIM (`https://integrate.api.nvidia.com/v1`, `nvidia/nemotron-3-ultra`), Groq (`https://api.groq.com/openai/v1`, `llama-3.3-70b-versatile`), Cerebras (`https://api.cerebras.ai/v1`, `llama-3.1-70b`), GitHub Models (`https://models.inference.ai.azure.com`, `gpt-4o-mini`), Mistral (`https://api.mistral.ai/v1`, `mistral-small-latest`), and OpenRouter (`https://openrouter.ai/api/v1`, `meta-llama/llama-3.3-70b-instruct:free`). Added `TALOS_CLOUD_PROVIDERS` canonical ordering list.
+- **OpenAI-compatible provider registry (`OPENAI_COMPATIBLE_REGISTRY`)**: Dictionary-driven initialization in `AIManager` mapping provider name to env key, base URL, default model, and model-override key. Providers without a configured key are skipped gracefully (Constitution II -- cloud is OPTIONAL).
+- **Unified request handler (`_execute_openai_compatible_request`)**: Single OpenAI-compatible execution path with independent per-provider circuit breakers (5 consecutive failures = circuit trip) and failure counting via `_handle_failure()`.
+- **Model Manager Cloud Configuration TUI**: `select_cloud_models()` overhauled to render a Rich table of all nine providers with columns Provider Name, Env Key, Status (`[ACTIVE]` green / `[UNCONFIGURED]` yellow), Default Model, and Base URL. Any provider can be selected to view details, save its API key to `.env`, or modify its default model. Added `CLOUD_PROVIDER_CATALOG` and pure `get_cloud_provider_rows()` helper.
+
+### Changed
+- **`example.env`**: Added `NVIDIA_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`, `GITHUB_TOKEN`, `MISTRAL_API_KEY`, `OPENROUTER_API_KEY` template entries plus default-model overrides; header bumped to v5.9.18.
+- **`config.template.json` / `config.json`**: `ai_provider_priority` default list now `["local", "nvidia", "groq", "cerebras", "github", "gemini", "deepseek", "mistral", "openrouter", "huggingface"]`; `failure_threshold` raised to 5.
+- **`src/core/ai_manager.py`**: `_execute_cloud_chain()` and `_execute_legacy_request()` now route all non-Gemini providers through the unified handler. `_execute_openai_compatible` and `_execute_deepseek_request` retained as deprecated wrappers.
+- **Version strings synced across 6 code files and 15 documentation files** to v5.9.18 (plus a full global header sweep across `src/`, `config/`, and `tests/`).
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- Full test suite (including new Cloud Mesh registry/catalog tests) and smoke test pass.
+- Zero emojis protocol strictly enforced; pure Greek unicode maintained in all `_GR.md` files.
+
+
 ## [v5.9.17] - 2026-08-14 -- Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep
 
 ### Added

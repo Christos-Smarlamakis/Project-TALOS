@@ -10,12 +10,13 @@
 #  For commercial licensing, please contact the author.
 """
 Module: model_manager.py
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 Description:
     Interactive TUI for configuring all LLM tiers (Fast Edge CPU, Heavy Reasoning GPU,
     Cloud API) and setting the 2D Execution Matrix (Network Strategy & Hardware Strategy).
-    Supports Ollama model selection with quantization-aware sizing, plus cloud
-    provider configuration for Gemini, DeepSeek, and Hugging Face.
+    Supports Ollama model selection with quantization-aware sizing, plus the
+    Universal Cloud Mesh provider registry (Gemini primary + 8-provider
+    OpenAI-compatible redundancy cascade) for cloud configuration.
 
     Key design decisions:
     - Multi-tier architecture: Fast Edge Tier (port 11435, CPU-optimized), Heavy
@@ -80,7 +81,21 @@ from config.settings import (
     GEMINI_FLASH_MODEL as DEFAULT_GEMINI_FLASH,
     GEMINI_PRO_MODEL as DEFAULT_GEMINI_PRO,
     DEEPSEEK_MODEL_CHAT as DEFAULT_DEEPSEEK_MODEL,
+    DEEPSEEK_BASE_URL,
     HF_MODEL_NAME as DEFAULT_HF_MODEL,
+    HF_BASE_URL,
+    NVIDIA_DEFAULT_MODEL as DEFAULT_NVIDIA_MODEL,
+    NVIDIA_BASE_URL,
+    GROQ_DEFAULT_MODEL as DEFAULT_GROQ_MODEL,
+    GROQ_BASE_URL,
+    CEREBRAS_DEFAULT_MODEL as DEFAULT_CEREBRAS_MODEL,
+    CEREBRAS_BASE_URL,
+    GITHUB_MODELS_DEFAULT_MODEL as DEFAULT_GITHUB_MODEL,
+    GITHUB_MODELS_BASE_URL,
+    MISTRAL_DEFAULT_MODEL as DEFAULT_MISTRAL_MODEL,
+    MISTRAL_BASE_URL,
+    OPENROUTER_DEFAULT_MODEL as DEFAULT_OPENROUTER_MODEL,
+    OPENROUTER_BASE_URL,
 )
 
 
@@ -900,19 +915,62 @@ def select_heavy_model(env_path):
     console.input("\n[dim]Press Enter to continue...[/]")
 
 
-def select_cloud_models(env_path):
-    """Interactive cloud model selection (Gemini, DeepSeek, Hugging Face).
+# -- v5.9.18: Universal Cloud Mesh provider catalog (single source of truth) --
+# Maps provider key -> (display name, env key, model env key, default model, base URL).
+CLOUD_PROVIDER_CATALOG = [
+    ("gemini", "Gemini", "GEMINI_API_KEY", "GEMINI_FLASH_MODEL", DEFAULT_GEMINI_FLASH, "n/a (Google GenAI SDK)"),
+    ("nvidia", "NVIDIA NIM", "NVIDIA_API_KEY", "NVIDIA_DEFAULT_MODEL", DEFAULT_NVIDIA_MODEL, NVIDIA_BASE_URL),
+    ("groq", "Groq", "GROQ_API_KEY", "GROQ_DEFAULT_MODEL", DEFAULT_GROQ_MODEL, GROQ_BASE_URL),
+    ("cerebras", "Cerebras", "CEREBRAS_API_KEY", "CEREBRAS_DEFAULT_MODEL", DEFAULT_CEREBRAS_MODEL, CEREBRAS_BASE_URL),
+    ("github", "GitHub Models", "GITHUB_TOKEN", "GITHUB_MODELS_DEFAULT_MODEL", DEFAULT_GITHUB_MODEL, GITHUB_MODELS_BASE_URL),
+    ("mistral", "Mistral", "MISTRAL_API_KEY", "MISTRAL_DEFAULT_MODEL", DEFAULT_MISTRAL_MODEL, MISTRAL_BASE_URL),
+    ("openrouter", "OpenRouter", "OPENROUTER_API_KEY", "OPENROUTER_DEFAULT_MODEL", DEFAULT_OPENROUTER_MODEL, OPENROUTER_BASE_URL),
+    ("deepseek", "DeepSeek", "DEEPSEEK_API_KEY", "DEEPSEEK_MODEL_CHAT", DEFAULT_DEEPSEEK_MODEL, DEEPSEEK_BASE_URL),
+    ("huggingface", "Hugging Face", "HF_TOKEN", "HF_MODEL_NAME", DEFAULT_HF_MODEL, HF_BASE_URL),
+]
 
-    Displays current Cloud API provider statuses and key presence in structured
-    Rich panels. Offers to configure each provider only if its API key is present.
-    Implements explicit Cancel/Back navigation guardrails.
+
+def get_cloud_provider_rows(values):
+    """Build the cloud provider status rows for the Universal Cloud Mesh table.
+
+    Args:
+        values: dict-like mapping of .env values (dotenv_values result).
+
+    Returns:
+        list of dicts, each with keys: provider, display_name, env_key,
+        model_env_key, status, model, base_url.
+    """
+    rows = []
+    for key, display, env_key, model_env_key, default_model, base_url in CLOUD_PROVIDER_CATALOG:
+        has_key = bool(os.getenv(env_key) or values.get(env_key))
+        rows.append({
+            "provider": key,
+            "display_name": display,
+            "env_key": env_key,
+            "model_env_key": model_env_key,
+            "status": "ACTIVE" if has_key else "UNCONFIGURED",
+            "model": values.get(model_env_key, default_model),
+            "base_url": base_url,
+        })
+    return rows
+
+
+def select_cloud_models(env_path):
+    """Interactive Universal Cloud Mesh configuration (v5.9.18).
+
+    Renders a Rich table of all nine cloud providers (Gemini primary plus the
+    8-provider OpenAI-compatible redundancy cascade) with columns: Provider Name,
+    Env Key, Status ([ACTIVE] green vs [UNCONFIGURED] yellow), Default Model, and
+    Base URL. Lets the user select any provider to view details, save its API key
+    to .env, or modify its default model. Implements explicit Cancel/Back
+    navigation guardrails.
 
     Args:
         env_path: Absolute path to the .env file.
     """
     os.system('cls' if os.name == 'nt' else 'clear')
     panel = Panel(
-        "[bold]Cloud API Tier Configuration[/]\n[dim]Gemini | DeepSeek | Hugging Face -- Internet-dependent[/]",
+        "[bold]Cloud Configuration -- Universal Cloud Mesh[/]\n[dim]Gemini primary + 8-provider OpenAI-compatible redundancy cascade[/]",
         border_style="yellow",
         box=box.ROUNDED,
         padding=(1, 2),
@@ -921,131 +979,69 @@ def select_cloud_models(env_path):
 
     values = dotenv_values(env_path)
 
-    # -- Provider status table --
-    status_table = Table(box=box.ROUNDED, show_header=True, header_style="bold white")
-    status_table.add_column("Provider", style="cyan")
-    status_table.add_column("API Key Status", style="white")
-    status_table.add_column("Current Model", style="green")
+    # -- Provider registry table --
+    rows = get_cloud_provider_rows(values)
+    table = Table(
+        box=box.ROUNDED,
+        show_header=True,
+        header_style="bold white",
+        title="[bold bright_yellow]Cloud Provider Registry[/bold bright_yellow]",
+        title_justify="center",
+    )
+    table.add_column("Provider Name", style="cyan")
+    table.add_column("Env Key", style="white")
+    table.add_column("Status", style="white")
+    table.add_column("Default Model", style="green")
+    table.add_column("Base URL", style="dim")
 
-    gemini_has_key = bool(os.getenv("GEMINI_API_KEY") or values.get("GEMINI_API_KEY"))
-    deepseek_has_key = bool(os.getenv("DEEPSEEK_API_KEY") or values.get("DEEPSEEK_API_KEY"))
-    hf_has_key = bool(os.getenv("HF_TOKEN") or values.get("HF_TOKEN"))
-
-    status_table.add_row(
-        "Gemini",
-        "[green][CONFIGURED][/]" if gemini_has_key else "[dim][NO KEY][/]",
-        f"{values.get('GEMINI_FLASH_MODEL', DEFAULT_GEMINI_FLASH)} / {values.get('GEMINI_PRO_MODEL', DEFAULT_GEMINI_PRO)}"
-    )
-    status_table.add_row(
-        "DeepSeek",
-        "[green][CONFIGURED][/]" if deepseek_has_key else "[dim][NO KEY][/]",
-        values.get("DEEPSEEK_MODEL_CHAT", DEFAULT_DEEPSEEK_MODEL)
-    )
-    status_table.add_row(
-        "Hugging Face",
-        "[green][CONFIGURED][/]" if hf_has_key else "[dim][NO KEY][/]",
-        values.get("HF_MODEL_NAME", DEFAULT_HF_MODEL)
-    )
+    for r in rows:
+        status = "[bold green][ACTIVE][/]" if r["status"] == "ACTIVE" else "[bold yellow][UNCONFIGURED][/]"
+        table.add_row(r["display_name"], r["env_key"], status, r["model"], r["base_url"])
 
     console.print()
-    console.print(status_table)
+    console.print(table)
 
-    has_any_key = gemini_has_key or deepseek_has_key or hf_has_key
-    if not has_any_key:
-        console.print("\n  [dim]No cloud API keys detected. Configure keys in .env to enable cloud providers.[/]")
-        console.print("  [dim]Required: GEMINI_API_KEY, DEEPSEEK_API_KEY, or HF_TOKEN[/]")
+    # -- Provider selection (any provider may be selected, configured or not) --
+    choices = [questionary.Choice(title=r["display_name"], value=r["provider"]) for r in rows]
+    choices.append(questionary.Separator())
+    choices.append(questionary.Choice(title="[Cancel / Back]", value="__cancel__"))
+    selected = questionary.select("Select a provider to view or configure:", choices=choices).ask()
+
+    if not selected or selected in ("__cancel__", "Cancel", "[Cancel / Back]"):
         console.input("\n[dim]Press Enter to return...[/]")
         return
 
-    # -- Gemini --
-    if gemini_has_key:
-        console.print("\n" + "-" * 62)
-        console.print("  [bold]Gemini Models[/]")
-        current_gemini_flash = values.get("GEMINI_FLASH_MODEL", DEFAULT_GEMINI_FLASH)
-        current_gemini_pro = values.get("GEMINI_PRO_MODEL", DEFAULT_GEMINI_PRO)
-        console.print(f"  [dim]Flash (pre-screening):[/] [cyan]{current_gemini_flash}[/]")
-        console.print(f"  [dim]Pro   (deep analysis):[/] [cyan]{current_gemini_pro}[/]")
+    # -- Resolve the selected provider's metadata --
+    meta = next((r for r in rows if r["provider"] == selected), None)
+    if meta is None:
+        console.input("\n[dim]Press Enter to return...[/]")
+        return
 
-        if questionary.confirm("Configure Gemini models?", default=False).ask():
-            flash_choices = [questionary.Choice(title=f"{m[0]} - {m[1]}", value=m[0]) for m in GEMINI_MODELS]
-            flash_choices.append(questionary.Separator())
-            flash_choices.append(questionary.Choice(title="[Cancel / Back]", value="__cancel__"))
-            flash_sel = questionary.select(
-                "Select Flash model (pre-screening):",
-                choices=flash_choices,
-            ).ask()
-            if flash_sel and flash_sel != "__cancel__":
-                # -- Confirmation safety lock --
-                if _confirm_setting_change(env_path, "GEMINI_FLASH_MODEL", current_gemini_flash, flash_sel):
-                    _set_key(env_path, "GEMINI_FLASH_MODEL", flash_sel)
-                    os.environ["GEMINI_FLASH_MODEL"] = flash_sel
-                    console.print(f"  [bold green][[OK]][/] GEMINI_FLASH_MODEL set to: [cyan]{flash_sel}[/]")
+    console.print(f"\n  [bold]{meta['display_name']}[/]")
+    console.print(f"  [dim]Env Key:[/]      [cyan]{meta['env_key']}[/]")
+    console.print(f"  [dim]Default Model:[/] [cyan]{meta['model']}[/]")
+    console.print(f"  [dim]Base URL:[/]     [cyan]{meta['base_url']}[/]")
 
-            pro_choices = [questionary.Choice(title=f"{m[0]} - {m[1]}", value=m[0]) for m in GEMINI_MODELS]
-            pro_choices.append(questionary.Separator())
-            pro_choices.append(questionary.Choice(title="[Cancel / Back]", value="__cancel__"))
-            pro_sel = questionary.select(
-                "Select Pro model (deep analysis):",
-                choices=pro_choices,
-            ).ask()
-            if pro_sel and pro_sel != "__cancel__":
-                # -- Confirmation safety lock --
-                if _confirm_setting_change(env_path, "GEMINI_PRO_MODEL", current_gemini_pro, pro_sel):
-                    _set_key(env_path, "GEMINI_PRO_MODEL", pro_sel)
-                    os.environ["GEMINI_PRO_MODEL"] = pro_sel
-                    console.print(f"  [bold green][[OK]][/] GEMINI_PRO_MODEL set to: [cyan]{pro_sel}[/]")
+    # -- Configure / save API key --
+    if questionary.confirm(f"Save API key for {meta['display_name']}?", default=False).ask():
+        current_key = os.getenv(meta["env_key"]) or values.get(meta["env_key"]) or ""
+        new_key = questionary.text(f"Enter {meta['env_key']} value:", default=current_key or "").ask()
+        if new_key is not None and new_key.strip():
+            _set_key(env_path, meta["env_key"], new_key.strip())
+            os.environ[meta["env_key"]] = new_key.strip()
+            console.print(f"  [bold green][[OK]][/] {meta['env_key']} saved.")
+        else:
+            console.print("  [dim][[CANCELLED]][/] No key entered.")
 
-    # -- DeepSeek --
-    if deepseek_has_key:
-        console.print("\n" + "-" * 62)
-        console.print("  [bold]DeepSeek Models[/]")
-        current_ds = values.get("DEEPSEEK_MODEL_CHAT", DEFAULT_DEEPSEEK_MODEL)
-        console.print(f"  [dim]Current:[/] [cyan]{current_ds}[/]")
-
-        if questionary.confirm("Configure DeepSeek model?", default=False).ask():
-            ds_choices = [questionary.Choice(title=f"{m[0]} - {m[1]}", value=m[0]) for m in DEEPSEEK_MODELS]
-            ds_choices.append(questionary.Separator())
-            ds_choices.append(questionary.Choice(title="[Cancel / Back]", value="__cancel__"))
-            ds_sel = questionary.select(
-                "Select DeepSeek model:",
-                choices=ds_choices,
-            ).ask()
-            if ds_sel and ds_sel != "__cancel__":
-                # -- Confirmation safety lock --
-                if _confirm_setting_change(env_path, "DEEPSEEK_MODEL_CHAT", current_ds, ds_sel):
-                    _set_key(env_path, "DEEPSEEK_MODEL_CHAT", ds_sel)
-                    os.environ["DEEPSEEK_MODEL_CHAT"] = ds_sel
-                    console.print(f"  [bold green][[OK]][/] DEEPSEEK_MODEL_CHAT set to: [cyan]{ds_sel}[/]")
-
-    # -- Hugging Face --
-    if hf_has_key:
-        console.print("\n" + "-" * 62)
-        console.print("  [bold]Hugging Face Models[/]")
-        current_hf = values.get("HF_MODEL_NAME", DEFAULT_HF_MODEL)
-        console.print(f"  [dim]Current:[/] [cyan]{current_hf}[/]")
-
-        if questionary.confirm("Configure Hugging Face model?", default=False).ask():
-            hf_choices = [questionary.Choice(title=m, value=m) for m in HF_MODELS]
-            hf_choices.append(questionary.Choice(title="Custom...", value="__custom__"))
-            hf_choices.append(questionary.Separator())
-            hf_choices.append(questionary.Choice(title="[Cancel / Back]", value="__cancel__"))
-            hf_sel = questionary.select(
-                "Select HF model (free tier):",
-                choices=hf_choices,
-            ).ask()
-            if hf_sel == "__custom__":
-                custom = questionary.text("Enter HF model ID:").ask()
-                if custom and custom.strip():
-                    hf_sel = custom.strip()
-                else:
-                    console.print("  [dim][[CANCELLED]][/] No model ID entered.")
-                    hf_sel = None
-            if hf_sel and hf_sel != "__cancel__":
-                # -- Confirmation safety lock --
-                if _confirm_setting_change(env_path, "HF_MODEL_NAME", current_hf, hf_sel):
-                    _set_key(env_path, "HF_MODEL_NAME", hf_sel)
-                    os.environ["HF_MODEL_NAME"] = hf_sel
-                    console.print(f"  [bold green][[OK]][/] HF_MODEL_NAME set to: [cyan]{hf_sel}[/]")
+    # -- Modify default model --
+    if questionary.confirm(f"Modify default model for {meta['display_name']}?", default=False).ask():
+        new_model = questionary.text("Enter model name:", default=meta["model"]).ask()
+        if new_model and new_model.strip():
+            _set_key(env_path, meta["model_env_key"], new_model.strip())
+            os.environ[meta["model_env_key"]] = new_model.strip()
+            console.print(f"  [bold green][[OK]][/] {meta['model_env_key']} set to: [cyan]{new_model.strip()}[/]")
+        else:
+            console.print("  [dim][[CANCELLED]][/] No model entered.")
 
     console.input("\n[dim]Press Enter to continue...[/]")
 

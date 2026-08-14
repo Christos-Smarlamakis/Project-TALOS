@@ -1,4 +1,4 @@
-# TALOS v5.9.17 -- Dependencies
+# TALOS v5.9.18 -- Dependencies
 # Install: pip install -r requirements.txt
 
 # === Core: API Framework & Networking ===

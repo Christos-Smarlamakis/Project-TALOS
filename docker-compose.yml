@@ -1,11 +1,11 @@
-# TALOS v5.9.17 — Docker Compose configuration
+# TALOS v5.9.18 — Docker Compose configuration
 # Headless FastAPI service on port 8001. Local Ollama runs on the host and is
 # reached through host.docker.internal (see docs/DOCKER.md for full instructions).
 
 services:
   talos:
     build: .
-    image: talos:5.9.17
+    image: talos:5.9.18
     container_name: talos_api
     stdin_open: true
     tty: true

@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: core_source.py
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 
 Description:
     Search agent for the CORE API (core.ac.uk), a large aggregator of open-access

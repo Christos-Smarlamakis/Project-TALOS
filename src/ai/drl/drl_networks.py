@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: drl_networks.py (v1.0)
-Project: TALOS v5.9.17
+Project: TALOS v5.9.18
 Description:
     Neural network architectures for the TALOS Deep Reinforcement Learning
     agent. This module is designed to be PLUGGABLE — any network with the

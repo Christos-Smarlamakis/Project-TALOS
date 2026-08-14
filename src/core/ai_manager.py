@@ -5,23 +5,28 @@
 #  This program is free software...
 #
 """
-Module: ai_manager.py (v3.8 - 2D Execution Matrix & Cross-Environment Fallback)
-Project: TALOS v5.9.17
+Module: ai_manager.py (v3.9 - Universal Cloud Mesh & 2D Execution Matrix)
+Project: TALOS v5.9.18
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture
-    with automatic fallback and circuit breaker pattern. Orchestrates all LLM
-    interactions across four independent providers and embedding across three
-    independent providers:
+    with automatic fallback and independent circuit breakers. Orchestrates all
+    LLM interactions across a Universal Cloud Mesh of nine providers (v5.9.18)
+    and embeddings across three providers:
 
-    - Gemini (Google Generative AI) -- primary cloud provider
-    - DeepSeek -- fallback cloud provider via OpenAI-compatible API
-    - Hugging Face -- free cloud inference via router.huggingface.co (text)
-                   and api-inference.huggingface.co (embeddings)
+    - Gemini (Google Generative AI SDK) -- non-OpenAI-compatible path
+    - NVIDIA NIM, Groq, Cerebras, GitHub Models, Mistral, OpenRouter,
+      DeepSeek, Hugging Face -- OpenAI-compatible cloud providers, driven by a
+      unified dictionary registry (OPENAI_COMPATIBLE_REGISTRY)
     - Local (Ollama) -- offline operation via OpenAI-compatible API
 
     Supports JSON mode, text generation, and HYBRID embedding generation with
     automatic failover across Ollama -> HuggingFace -> Gemini.
+
+    v5.9.18: Universal Cloud Mesh -- cloud providers are initialized from a
+    single registry and routed through _execute_openai_compatible_request().
+    The failover chain iterates provider_priority, skipping open circuits and
+    unconfigured providers, with 5 consecutive failures tripping a circuit.
 
     v5.9.4: Introduces the 2D Execution Matrix for routing:
       - Network Strategy (strict_local | local_first | cloud_first | strict_cloud)
@@ -38,6 +43,18 @@ import os, json, re, requests, sys
 from dotenv import load_dotenv
 from typing import Union, List, Dict, Any, Tuple, Optional
 import numpy as np
+
+# -- v5.9.18: Universal Cloud Mesh provider metadata (single source of truth) --
+from config.settings import (
+    NVIDIA_BASE_URL, NVIDIA_DEFAULT_MODEL,
+    GROQ_BASE_URL, GROQ_DEFAULT_MODEL,
+    CEREBRAS_BASE_URL, CEREBRAS_DEFAULT_MODEL,
+    GITHUB_MODELS_BASE_URL, GITHUB_MODELS_DEFAULT_MODEL,
+    MISTRAL_BASE_URL, MISTRAL_DEFAULT_MODEL,
+    OPENROUTER_BASE_URL, OPENROUTER_DEFAULT_MODEL,
+    DEEPSEEK_BASE_URL, DEEPSEEK_MODEL_CHAT,
+    HF_BASE_URL, HF_MODEL_NAME,
+)
 
 # -- Lazy SDK imports (Constitution II: cloud providers are OPTIONAL) --
 # All SDKs are loaded only when their provider is configured and needed.
@@ -90,6 +107,62 @@ except ImportError:
     _GENAI_V2 = False
 
 
+# -- v5.9.18: Universal Cloud Mesh -- OpenAI-compatible provider registry --
+# Maps provider name to metadata: environment key name, base URL, default model,
+# and the environment key used to override the default model. Gemini is absent
+# because it uses the Google Generative AI SDK (non-OpenAI-compatible path).
+OPENAI_COMPATIBLE_REGISTRY = {
+    "nvidia": {
+        "env_key": "NVIDIA_API_KEY",
+        "base_url": NVIDIA_BASE_URL,
+        "default_model": NVIDIA_DEFAULT_MODEL,
+        "model_env_key": "NVIDIA_DEFAULT_MODEL",
+    },
+    "groq": {
+        "env_key": "GROQ_API_KEY",
+        "base_url": GROQ_BASE_URL,
+        "default_model": GROQ_DEFAULT_MODEL,
+        "model_env_key": "GROQ_DEFAULT_MODEL",
+    },
+    "cerebras": {
+        "env_key": "CEREBRAS_API_KEY",
+        "base_url": CEREBRAS_BASE_URL,
+        "default_model": CEREBRAS_DEFAULT_MODEL,
+        "model_env_key": "CEREBRAS_DEFAULT_MODEL",
+    },
+    "github": {
+        "env_key": "GITHUB_TOKEN",
+        "base_url": GITHUB_MODELS_BASE_URL,
+        "default_model": GITHUB_MODELS_DEFAULT_MODEL,
+        "model_env_key": "GITHUB_MODELS_DEFAULT_MODEL",
+    },
+    "mistral": {
+        "env_key": "MISTRAL_API_KEY",
+        "base_url": MISTRAL_BASE_URL,
+        "default_model": MISTRAL_DEFAULT_MODEL,
+        "model_env_key": "MISTRAL_DEFAULT_MODEL",
+    },
+    "openrouter": {
+        "env_key": "OPENROUTER_API_KEY",
+        "base_url": OPENROUTER_BASE_URL,
+        "default_model": OPENROUTER_DEFAULT_MODEL,
+        "model_env_key": "OPENROUTER_DEFAULT_MODEL",
+    },
+    "deepseek": {
+        "env_key": "DEEPSEEK_API_KEY",
+        "base_url": DEEPSEEK_BASE_URL,
+        "default_model": DEEPSEEK_MODEL_CHAT,
+        "model_env_key": "DEEPSEEK_MODEL_CHAT",
+    },
+    "huggingface": {
+        "env_key": "HF_TOKEN",
+        "base_url": HF_BASE_URL,
+        "default_model": HF_MODEL_NAME,
+        "model_env_key": "HF_MODEL_NAME",
+    },
+}
+
+
 class AIManager:
     """Manages all LLM and embedding interactions with multi-provider fallback
     and circuit breaker pattern.
@@ -130,31 +203,24 @@ class AIManager:
         elif gemini_api_key:
             print(f"WARNING: Gemini API key found but google-generativeai not installed ({_genai_import_error}). Skipping Gemini.")
 
-        # --- DeepSeek Provider ---
-        deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-        if deepseek_api_key and _try_import_openai():
-            self.providers['deepseek'] = {
-                'client': _openai.OpenAI(api_key=deepseek_api_key, base_url="https://api.deepseek.com/v1"),
-                'model_name': config.get("deepseek_model_chat", "deepseek-chat"),
-                'consecutive_failures': 0, 'circuit_open': False
-            }
-            print("INFO: DeepSeek provider initialized.")
-        elif deepseek_api_key:
-            print(f"WARNING: DeepSeek API key found but openai not installed ({_openai_import_error}). Skipping DeepSeek.")
-
-        # --- Hugging Face Provider (Free cloud inference) ---
-        hf_token = os.getenv("HF_TOKEN")
-        if hf_token and _try_import_openai():
-            self.providers['huggingface'] = {
-                'client': _openai.OpenAI(api_key=hf_token, base_url="https://router.huggingface.co/v1"),
-                'model_name': os.getenv("HF_MODEL_NAME", "Qwen/Qwen2.5-7B-Instruct"),
-                'consecutive_failures': 0, 'circuit_open': False
-            }
-            print("INFO: Hugging Face provider initialized.")
-            if 'huggingface' not in self.provider_priority:
-                self.provider_priority.insert(0, 'huggingface')  # Free first
-        elif hf_token:
-            print(f"WARNING: HF API key found but openai not installed ({_openai_import_error}). Skipping HuggingFace.")
+        # --- Universal Cloud Mesh (v5.9.18): OpenAI-compatible provider registry ---
+        # Dictionary-driven initialization. Each entry supplies the environment
+        # variable key name, base URL, default model, and model-override key.
+        # Providers without a configured key are skipped gracefully (Constitution
+        # II: cloud providers are OPTIONAL, never required for local operation).
+        for provider_name, meta in OPENAI_COMPATIBLE_REGISTRY.items():
+            api_key = os.getenv(meta["env_key"], "")
+            if api_key and _try_import_openai():
+                model_name = os.getenv(meta["model_env_key"], meta["default_model"])
+                self.providers[provider_name] = {
+                    'client': _openai.OpenAI(api_key=api_key, base_url=meta["base_url"]),
+                    'model_name': model_name,
+                    'consecutive_failures': 0, 'circuit_open': False
+                }
+                print(f"INFO: {provider_name.capitalize()} provider initialized ({model_name}).")
+            elif api_key:
+                print(f"WARNING: {meta['env_key']} found but openai not installed "
+                      f"({_openai_import_error}). Skipping {provider_name}.")
 
         # --- Local Model Provider (Ollama) ---
         local_url = os.getenv("LOCAL_MODEL_BASE_URL", "http://localhost:11434/v1")
@@ -638,11 +704,11 @@ class AIManager:
     def _execute_cloud_chain(self, prompt: str, model_type: str,
                              response_format: str
                              ) -> Union[Dict[str, Any], str, None]:
-        """Execute a request through the cloud provider chain.
+        """Execute a request through the Universal Cloud Mesh provider chain.
 
-        Iterates through provider_priority, skipping 'local' and any
-        open-circuit providers. Used as the cloud execution arm for
-        cloud_first and strict_cloud network strategies.
+        Iterates through provider_priority, skipping 'local', unconfigured
+        providers, and open-circuit providers. Gemini uses the Google SDK; all
+        other cloud providers use the unified OpenAI-compatible handler.
 
         Args:
             prompt: Full prompt text.
@@ -655,22 +721,21 @@ class AIManager:
         for provider_name in self.provider_priority:
             if provider_name == 'local':
                 continue  # Skip local in cloud chain
-            if provider_name in self.providers and not self.providers[provider_name]['circuit_open']:
-                print(f"  > Attempting cloud request with provider: {provider_name.upper()}")
-                result = None
-                if provider_name == 'gemini':
-                    result = self._execute_gemini_request(prompt, model_type, response_format)
-                elif provider_name == 'deepseek':
-                    result = self._execute_deepseek_request(prompt, response_format)
-                elif provider_name == 'huggingface':
-                    result = self._execute_openai_compatible(prompt, response_format, 'huggingface')
-                if result is not None:
-                    self.providers[provider_name]['consecutive_failures'] = 0
-                    self.last_provider_used = provider_name
-                    return result
-                else:
-                    print(f"  >!> Provider {provider_name.upper()} failed. Trying next provider...")
-                    continue
+            if provider_name not in self.providers:
+                continue  # Skip unconfigured providers
+            if self.providers[provider_name]['circuit_open']:
+                continue  # Skip open-circuit providers
+            print(f"  > Attempting cloud request with provider: {provider_name.upper()}")
+            if provider_name == 'gemini':
+                result = self._execute_gemini_request(prompt, model_type, response_format)
+            else:
+                result = self._execute_openai_compatible_request(provider_name, prompt, model_type, response_format)
+            if result is not None:
+                self.providers[provider_name]['consecutive_failures'] = 0
+                self.last_provider_used = provider_name
+                return result
+            print(f"  >!> Provider {provider_name.upper()} failed. Trying next provider...")
+            continue
         print("  >!> All cloud providers failed.")
         return None
 
@@ -714,15 +779,10 @@ class AIManager:
         for provider_name in self.provider_priority:
             if provider_name in self.providers and not self.providers[provider_name]['circuit_open']:
                 print(f"  > Attempting request with provider: {provider_name.upper()}")
-                result = None
                 if provider_name == 'gemini':
                     result = self._execute_gemini_request(prompt, model_type, response_format)
-                elif provider_name == 'deepseek':
-                    result = self._execute_deepseek_request(prompt, response_format)
-                elif provider_name == 'huggingface':
-                    result = self._execute_openai_compatible(prompt, response_format, 'huggingface')
-                elif provider_name == 'local':
-                    result = self._execute_openai_compatible(prompt, response_format, 'local')
+                else:
+                    result = self._execute_openai_compatible_request(provider_name, prompt, model_type, response_format)
                 if result is not None:
                     self.providers[provider_name]['consecutive_failures'] = 0
                     self.last_provider_used = provider_name
@@ -777,29 +837,38 @@ class AIManager:
 
     def _execute_deepseek_request(self, prompt: str,
                                    response_format: str) -> Union[Dict[str, Any], str, None]:
-        provider = self.providers['deepseek']
-        final_prompt = prompt
-        if response_format == 'json':
-            final_prompt += "\n\nIMPORTANT: Your response MUST be a single, valid JSON object. Do not include any text explanation before or after the JSON."
-        try:
-            chat_completion = provider['client'].chat.completions.create(
-                model=provider['model_name'],
-                messages=[{"role": "user", "content": final_prompt}],
-                temperature=0.5)
-            response_text = chat_completion.choices[0].message.content
-            if response_format == 'json':
-                try:
-                    return json.loads(self._clean_json_string(response_text))
-                except json.JSONDecodeError:
-                    print(f"  >!> DeepSeek JSON decode failed.")
-                    return None
-            return response_text
-        except Exception as e:
-            print(f"  >!> DeepSeek execution error: {e}")
-            return None
+        """DEPRECATED (v5.9.18): DeepSeek is now routed through the unified
+        OpenAI-compatible handler. Retained for backward compatibility.
 
-    def _execute_openai_compatible(self, prompt: str, response_format: str,
-                                   provider_name: str) -> Union[Dict[str, Any], str, None]:
+        Args:
+            prompt: Full prompt text to send.
+            response_format: 'json' or 'text'.
+
+        Returns:
+            Parsed response, or None on failure.
+        """
+        return self._execute_openai_compatible_request('deepseek', prompt, 'pro', response_format)
+
+    def _execute_openai_compatible_request(self, provider_name: str, prompt: str,
+                                           model_type: str,
+                                           response_format: str) -> Union[Dict[str, Any], str, None]:
+        """Execute a request through any OpenAI-compatible cloud provider.
+
+        Unified handler for the Universal Cloud Mesh (v5.9.18). On failure the
+        provider's consecutive-failure counter is incremented via
+        _handle_failure() so its circuit breaker trips after the configured
+        threshold; on success the counter is reset.
+
+        Args:
+            provider_name: Registry key of the provider (e.g. 'groq', 'deepseek').
+            prompt: Full prompt text to send.
+            model_type: 'pro' or 'flash'. Unused by OpenAI-compatible providers;
+                retained for a uniform signature across the cloud mesh.
+            response_format: 'json' or 'text'.
+
+        Returns:
+            Parsed response, or None if the provider fails.
+        """
         provider = self.providers[provider_name]
         final_prompt = prompt
         if response_format == 'json':
@@ -812,14 +881,35 @@ class AIManager:
             response_text = chat_completion.choices[0].message.content
             if response_format == 'json':
                 try:
-                    return json.loads(self._clean_json_string(response_text))
+                    parsed = json.loads(self._clean_json_string(response_text))
                 except json.JSONDecodeError:
                     print(f"  >!> {provider_name} JSON decode failed.")
+                    self._handle_failure(provider_name)
                     return None
+                self.providers[provider_name]['consecutive_failures'] = 0
+                return parsed
+            self.providers[provider_name]['consecutive_failures'] = 0
             return response_text
         except Exception as e:
             print(f"  >!> {provider_name} execution error: {e}")
+            self._handle_failure(provider_name)
             return None
+
+    def _execute_openai_compatible(self, prompt: str, response_format: str,
+                                   provider_name: str) -> Union[Dict[str, Any], str, None]:
+        """DEPRECATED (v5.9.18): use _execute_openai_compatible_request() instead.
+
+        Retained for backward compatibility with legacy callers and tests.
+
+        Args:
+            prompt: Full prompt text to send.
+            response_format: 'json' or 'text'.
+            provider_name: Registry key of the provider.
+
+        Returns:
+            Parsed response, or None on failure.
+        """
+        return self._execute_openai_compatible_request(provider_name, prompt, 'pro', response_format)
 
     # ==================================================================
     # -- v5.9.2: Interactive Runtime Cloud Fallback --
