@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: osti_source.py
-Project: TALOS v5.9.15
+Project: TALOS v5.9.17
 
 Description:
     Search agent for the OSTI.gov API (U.S. Department of Energy Office of

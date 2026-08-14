@@ -6,7 +6,7 @@
 #
 """
 Module: ai_manager.py (v3.8 - 2D Execution Matrix & Cross-Environment Fallback)
-Project: TALOS v5.9.15
+Project: TALOS v5.9.17
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture

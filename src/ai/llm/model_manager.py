@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: model_manager.py
-Project: TALOS v5.9.15
+Project: TALOS v5.9.17
 Description:
     Interactive TUI for configuring all LLM tiers (Fast Edge CPU, Heavy Reasoning GPU,
     Cloud API) and setting the 2D Execution Matrix (Network Strategy & Hardware Strategy).

@@ -74,4 +74,4 @@ Related systems and competitors that TALOS is evaluated against, tracked to keep
 
 ---
 
-> **Project Version:** v5.9.16 | **Last Updated:** 2026-08-14
+> **Project Version:** v5.9.17 | **Last Updated:** 2026-08-14

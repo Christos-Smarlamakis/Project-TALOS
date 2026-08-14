@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.16</title>
+<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.17</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -269,6 +269,7 @@
   <a href="#s10-1" class="sub-link">10.1 Entry Points</a>
   <a href="#s10-2" class="sub-link">10.2 talos.py Rich TUI Features</a>
   <a href="#s10-3" class="sub-link">10.3 run_talos.bat / run_talos.sh</a>
+  <a href="#s10-4" class="sub-link">10.4 Enterprise Logging</a>
   <a href="#s11" class="section-link">11. Configuration & Environment</a>
   <a href="#s11-1" class="sub-link">11.1 Environment Variables</a>
   <a href="#s11-2" class="sub-link">11.2 config.json Keys</a>
@@ -287,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.16</h1>
+<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.17</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -302,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-08-14 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.9.16 -- Autonomous Red Tester Upgrade (Rename, Deep API Fuzzing & Context Truncation)
+  <strong>Version:</strong> v5.9.17 -- Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep
 </div>
 
 <!-- ===================================================================== -->
@@ -855,6 +856,18 @@
   <li>Auto-Conda/Virtualenv detection, background server spawning, Fermion CPU auto-start</li>
 </ul>
 
+<h3 id="s10-4">10.4 Enterprise Logging & Universal Rich TUI (v5.9.17)</h3>
+<ul>
+  <li><strong><code>src/utils/logger.py</code></strong> -- single <code>get_logger(name)</code> factory with two handlers:
+    <ul>
+      <li><code>rich.logging.RichHandler</code> for emoji-free, colorized console output.</li>
+      <li><code>logging.handlers.RotatingFileHandler</code> writing <code>data/logs/talos_system.log</code> (10 MB per file, 5 backups) with formatter <code>%(asctime)s - %(name)s - %(levelname)s - %(message)s</code>.</li>
+    </ul>
+  </li>
+  <li><code>data/logs/</code> directory auto-created; the root <code>talos</code> logger is configured idempotently and disables propagation.</li>
+  <li><strong>Universal Rich TUI enforcement</strong> -- interactive modules use Rich Console/Panel, <code>questionary</code> prompts, logger diagnostics, zero emojis, no raw <code>input()</code>.</li>
+</ul>
+
 <!-- ===================================================================== -->
 <h2 id="s11">Section 11: Configuration & Environment</h2>
 
@@ -1010,7 +1023,7 @@
 </ul>
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.16</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.17</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

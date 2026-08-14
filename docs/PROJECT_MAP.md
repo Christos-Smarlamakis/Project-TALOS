@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.9.16
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.9.17
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.9.16 -- Αναβάθμιση Αυτόνομου Κόκκινου Ελεγκτή & Συγχρονισμός Έκδοσης)
+> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.9.17 -- Καθολικό Rich TUI, Αναβάθμιση Επιχειρησιακής Καταγραφής & Καθολική Ενημέρωση Κεφαλίδων)
 
 ---
 
@@ -346,7 +346,7 @@ active_profile.txt
 
 ---
 
-## 7. Dependency Graph (v5.9.16 DDD Layout)
+## 7. Dependency Graph (v5.9.17 DDD Layout)
 
 ```
 talos.py (Rich TUI Master)
@@ -394,6 +394,10 @@ src/integration/synapse_client.py
 
 src/mcp_server.py
   └── requests
+
+src/utils/logger.py (Enterprise Logging)
+  ├── rich.logging
+  └── logging.handlers
 ```
 
 ---
@@ -412,6 +416,7 @@ src/mcp_server.py
 | **PDF Downloader** | `scripts/pdf_downloader.py` | Downloads Open Access PDFs via Unpaywall API with multi-threaded batch support |
 | **Autonomous Research Service** | `scripts/talos_service.py` | 24/7 background research daemon with Telegram/Discord/Email notifications |
 | **MCP Server** | `src/mcp_server.py` | Native MCP (Model Context Protocol) stdio server που εκθέτει 4 tools (system_status, semantic_search, paper_details, trigger_scrape) μέσω MCPServer v2.0.0. Decoupled αρχιτεκτονική: τα tools καλούν το FastAPI backend μέσω HTTP. |
+| **Enterprise Logger** | `src/utils/logger.py` | Central `get_logger(name)` factory -- `rich.logging.RichHandler` console + `RotatingFileHandler` to `data/logs/talos_system.log` (10 MB, 5 backups) |
 
 ---
 
@@ -448,8 +453,8 @@ src/mcp_server.py
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-08-14 (v5.9.16 -- Αναβάθμιση Αυτόνομου Κόκκινου Ελεγκτή & Συγχρονισμός Έκδοσης)
-> **Έκδοση Project:** v5.9.16
+> **Τελευταία ενημέρωση:** 2026-08-14 (v5.9.17 -- Καθολικό Rich TUI, Αναβάθμιση Επιχειρησιακής Καταγραφής & Καθολική Ενημέρωση Κεφαλίδων)
+> **Έκδοση Project:** v5.9.17
 > **Συνολικά αρχεία που καλύπτονται:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### Νέο στην v5.9.9: Ενοποίηση Αναφορών

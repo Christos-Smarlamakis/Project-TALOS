@@ -1,6 +1,6 @@
 """
 Module: generate_docs.py (v2.0)
-Project: TALOS v5.9.15 — Multi-Language Codebase Documentation Builder
+Project: TALOS v5.9.17 — Multi-Language Codebase Documentation Builder
 Description:
     Fully interactive script that documents the ENTIRE TALOS codebase (93+ files)
     in any of 18 languages using a local Ollama instance. No CLI arguments needed
@@ -27,12 +27,24 @@ import requests
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-# questionary may not be available in all environments — graceful fallback
+# questionary may not be available in all environments -- graceful fallback
 try:
     import questionary
     HAS_QUESTIONARY = True
 except ImportError:
     HAS_QUESTIONARY = False
+
+
+# -- v5.9.17: Enterprise logging & Universal Rich TUI --
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+from src.utils.logger import get_logger
+from rich.console import Console
+from rich.panel import Panel
+
+logger = get_logger(__name__)
+console = Console()
 
 
 # ── Constants ──────────────────────────────────────────────────────────────────
@@ -189,7 +201,7 @@ def get_code_files(selected_dirs: List[str]) -> List[str]:
         else:
             dir_path = project_root / sel
             if not dir_path.is_dir():
-                print(f"[WARNING] Directory not found: {dir_path}")
+                logger.warning("Directory not found: %s", dir_path)
                 continue
             for file_path in dir_path.rglob("*"):
                 if file_path.is_file():
@@ -263,13 +275,13 @@ def generate_documentation(
         data = response.json()
         return data.get("response", "")
     except requests.exceptions.Timeout:
-        print(f"  [ERROR] Request timed out after {REQUEST_TIMEOUT}s")
+        logger.error("Request timed out after %ss", REQUEST_TIMEOUT)
     except requests.exceptions.ConnectionError:
-        print("  [ERROR] Could not connect to Ollama. Is it running?")
+        logger.error("Could not connect to Ollama. Is it running?")
     except requests.exceptions.RequestException as exc:
-        print(f"  [ERROR] HTTP request failed: {exc}")
+        logger.error("HTTP request failed: %s", exc)
     except json.JSONDecodeError:
-        print("  [ERROR] Could not parse Ollama response as JSON")
+        logger.error("Could not parse Ollama response as JSON")
 
     return None
 
@@ -323,8 +335,8 @@ def main() -> None:
     """
     # ── Step 0: check for questionary ──────────────────────────────────────
     if not HAS_QUESTIONARY:
-        print("[ERROR] 'questionary' library is required for interactive mode.")
-        print("        Install it: pip install questionary")
+        logger.error("'questionary' library is required for interactive mode.")
+        logger.error("        Install it: pip install questionary")
         sys.exit(1)
 
     config = load_configuration()
@@ -333,20 +345,21 @@ def main() -> None:
 
     # ── Step 1: Ollama health check ─────────────────────────────────────────
     base_url = ollama_url.replace("/api/generate", "")
-    print("=" * 72)
-    print("  TALOS v5.9.15 — Multi-Language Documentation Builder")
-    print(f"  Model:  {model}")
-    print(f"  Ollama: {base_url}")
-    print("=" * 72)
+    console.print(Panel(
+        "[bold bright_cyan]Multi-Language Documentation Builder[/bold bright_cyan]\n"
+        f"[dim]Model:[/dim]  {model}\n"
+        f"[dim]Ollama:[/dim] {base_url}",
+        title="[bold]TALOS[/bold]",
+        border_style="bright_magenta",
+    ))
 
     if not check_ollama(base_url):
-        print("\n[ERROR] Ollama is not running or unreachable.")
-        print(f"        URL: {base_url}")
-        print("        Please start Ollama first (ollama serve)")
-        print("        This tool is LOCAL-only — zero cloud cost, full privacy.")
+        logger.error("Ollama is not running or unreachable. URL: %s", base_url)
+        logger.error("        Please start Ollama first (ollama serve)")
+        logger.error("        This tool is LOCAL-only -- zero cloud cost, full privacy.")
         sys.exit(1)
 
-    print("  ✓ Ollama is running")
+    logger.info("Ollama is running.")
 
     # ── Step 2: select language ─────────────────────────────────────────────
     lang_choices = [
@@ -363,11 +376,11 @@ def main() -> None:
     ).ask()
 
     if lang_code is None:
-        print("\nCancelled.")
+        logger.info("Cancelled.")
         return
 
     _, language_keyword = LANGUAGES[lang_code]
-    print(f"\n  Language: {LANGUAGES[lang_code][0]}")
+    logger.info("Language: %s", LANGUAGES[lang_code][0])
 
     # ── Step 3: select directories ──────────────────────────────────────────
     dir_choices = [
@@ -385,13 +398,13 @@ def main() -> None:
     ).ask()
 
     if selected_dirs is None or len(selected_dirs) == 0:
-        print("\nNo directories selected. Exiting.")
+        logger.info("No directories selected. Exiting.")
         return
 
-    # ── Step 4: collect files and estimate ──────────────────────────────────
+    # -- Step 4: collect files and estimate --
     file_paths = get_code_files(selected_dirs)
     if not file_paths:
-        print("[ERROR] No files found in selected directories.")
+        logger.error("No files found in selected directories.")
         return
 
     info = estimate_file_info(file_paths)
@@ -400,27 +413,30 @@ def main() -> None:
     project_root = Path(__file__).resolve().parent.parent.parent
     output_path = project_root / OUTPUT_DIR / lang_code
 
-    print("\n" + "═" * 60)
-    print("  Summary")
-    print("═" * 60)
-    print(f"  Language:      {LANGUAGES[lang_code][0]}")
-    print(f"  Files:         {info['total_files']}")
-    print(f"  Total lines:   ~{info['total_lines']:,}")
-    print(f"  Output:        {output_path}")
     # Rough time estimate: ~3 min per file
     est_minutes = info["total_files"] * 3
     if est_minutes < 60:
-        print(f"  Est. time:     ~{est_minutes} λεπτά")
+        est_time = f"~{est_minutes} minutes"
     else:
         hours = est_minutes // 60
         mins = est_minutes % 60
-        print(f"  Est. time:     ~{hours}ώ {mins}λ")
-    print(f"  Cost:          €0.00 (τοπικό Ollama — zero cloud tokens)")
-    print("═" * 60)
+        est_time = f"~{hours}h {mins}m"
+
+    console.print(Panel(
+        "[bold bright_cyan]Summary[/bold bright_cyan]\n"
+        f"[dim]Language:[/dim]      {LANGUAGES[lang_code][0]}\n"
+        f"[dim]Files:[/dim]         {info['total_files']}\n"
+        f"[dim]Total lines:[/dim]   ~{info['total_lines']:,}\n"
+        f"[dim]Output:[/dim]        {output_path}\n"
+        f"[dim]Est. time:[/dim]     {est_time}\n"
+        f"[dim]Cost:[/dim]          EUR 0.00 (local Ollama -- zero cloud tokens)",
+        title="[bold]GENERATION PLAN[/bold]",
+        border_style="cyan",
+    ))
 
     confirmed = questionary.confirm("Proceed with generation?", default=True).ask()
     if not confirmed:
-        print("\nCancelled.")
+        logger.info("Cancelled.")
         return
 
     # ── Step 6: generate ────────────────────────────────────────────────────
@@ -458,19 +474,23 @@ def main() -> None:
         # Small delay to avoid overwhelming Ollama
         time.sleep(1)
 
-    # ── Step 7: final summary ───────────────────────────────────────────────
-    print("\n" + "=" * 72)
-    print(f"  Done!")
-    print(f"  Language:  {LANGUAGES[lang_code][0]}")
-    print(f"  Success:   {success_count}")
-    print(f"  Failed:    {fail_count}")
-    print(f"  Output:    {output_path}")
-    print(f"  Cost:     €0.00 (100% local Ollama)")
-    print("=" * 72)
+    # -- Step 7: final summary --
+    logger.info("Done! Language: %s | Success: %s | Failed: %s | Output: %s",
+                LANGUAGES[lang_code][0], success_count, fail_count, output_path)
+    console.print(Panel(
+        "[bold bright_cyan]Generation Complete[/bold bright_cyan]\n"
+        f"[dim]Language:[/dim]  {LANGUAGES[lang_code][0]}\n"
+        f"[dim]Success:[/dim]   {success_count}\n"
+        f"[dim]Failed:[/dim]    {fail_count}\n"
+        f"[dim]Output:[/dim]    {output_path}\n"
+        f"[dim]Cost:[/dim]      EUR 0.00 (100% local Ollama)",
+        title="[bold]DONE[/bold]",
+        border_style="green",
+    ))
 
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\nInterrupted. Partial results saved in docs/.")
+        logger.warning("Interrupted. Partial results saved in docs/.")

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: research_pivot.py (v1.0)
-Project: TALOS v5.9.15
+Project: TALOS v5.9.17
 Description:
     Interactive Research Pivot Wizard for TALOS.  Guides the user through
     recalibrating the system when their research interests have shifted.
@@ -19,7 +19,6 @@ Description:
 """
 import os
 import sys
-import os, sys
 _P = os.path.abspath(os.path.dirname(__file__))
 while _P and not os.path.exists(os.path.join(_P, 'talos.py')):
     _P = os.path.dirname(_P)
@@ -28,6 +27,14 @@ import json
 import shutil
 import subprocess
 import questionary
+
+# -- v5.9.17: Enterprise logging & Universal Rich TUI --
+from src.utils.logger import get_logger
+from rich.console import Console
+from rich.panel import Panel
+
+logger = get_logger(__name__)
+console = Console()
 
 # ── Add project root to Python's import path ────────────────────────────────
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -100,97 +107,87 @@ def main():
     profile = get_active_profile_name()
     auto_mode = "--auto" in sys.argv or "--yes" in sys.argv
 
-    print("=" * 65)
-    print("  🔄 TALOS Research Pivot Wizard — v5.2.0")
-    print("=" * 65)
-    print(f"  Active Profile: {profile}")
-    print(f"  Mode: {'AUTO (non-interactive)' if auto_mode else 'INTERACTIVE'}")
-    print()
-    print("  This wizard will help you recalibrate TALOS when your")
-    print("  research interests have shifted to a new direction.")
-    print("  ─────────────────────────────────────────────────────")
-    print()
+    # -- Rich header panel (emoji-free academic styling) --
+    header = Panel(
+        "[bold bright_cyan]TALOS Research Pivot Wizard[/bold bright_cyan]\n"
+        f"[dim]Active Profile:[/dim] [cyan]{profile}[/cyan]\n"
+        f"[dim]Mode:[/dim] {'[yellow]AUTO (non-interactive)[/yellow]' if auto_mode else '[green]INTERACTIVE[/green]'}\n"
+        "[dim]This wizard recalibrates TALOS after a research focus shift.[/dim]",
+        title="[bold]RESEARCH PIVOT[/bold]",
+        border_style="bright_magenta",
+    )
+    console.print(header)
 
-    # ═════════════════════════════════════════════════════════════════════════
-    # STEP 1: Collect new research direction
-    # ═════════════════════════════════════════════════════════════════════════
+    # -- STEP 1: Collect new research direction --
     if auto_mode:
         # In auto mode, try to read from TALOS_GUI_STDIN env var
         new_direction = os.environ.get("TALOS_GUI_STDIN", "").strip()
         if not new_direction:
-            print("  ERROR: --auto mode requires TALOS_GUI_STDIN env var or piped input.")
+            logger.error("--auto mode requires TALOS_GUI_STDIN env var or piped input.")
             return
-        print(f"  Research direction: {new_direction[:80]}...")
+        logger.info("Research direction: %s...", new_direction[:80])
     else:
         new_direction = questionary.text(
-            "📝 Describe your NEW research direction (what has changed?):",
+            "Describe your NEW research direction (what has changed?):",
             validate=lambda t: True if len(t.strip()) > 20
             else "Please provide at least 20 characters."
         ).ask()
 
         if not new_direction:
-            print("  Cancelled.")
+            logger.warning("Pivot cancelled -- no research direction provided.")
             return
 
-    print()
-
-    # ═════════════════════════════════════════════════════════════════════════
-    # STEP 2: Run PYTHIA to regenerate queries and prompts
-    # ═════════════════════════════════════════════════════════════════════════
+    # -- STEP 2: Run PYTHIA to regenerate queries and prompts --
     run_pythia = True
     if not auto_mode:
         run_pythia = questionary.confirm(
-            "🔮 Step 2/4: Run PYTHIA to regenerate search queries & prompts?",
+            "Step 2/4: Run PYTHIA to regenerate search queries and prompts?",
             default=True
         ).ask()
 
     if run_pythia:
-        print("\n  ⏳ Running PYTHIA with your new research direction...")
+        logger.info("Running PYTHIA with the new research direction...")
         rc, out = run_script("query_translator.py", stdin_text=new_direction + "\n")
         if rc == 0:
-            print("  ✅ PYTHIA completed — queries and prompts regenerated.")
+            logger.info("PYTHIA completed -- queries and prompts regenerated.")
             # Save immediately to the profile
             save_state_to_profile(profile)
-            print(f"  💾 Profile '{profile}' saved with new configuration.")
+            logger.info("Profile '%s' saved with new configuration.", profile)
         else:
-            print(f"  ⚠️ PYTHIA completed with code {rc}. Check output.")
+            logger.warning("PYTHIA completed with code %s. Check output.", rc)
             if out.strip():
                 # Show last 10 lines of output
                 for line in out.strip().split("\n")[-10:]:
-                    print(f"    {line}")
+                    logger.info("    %s", line)
     else:
-        print("  ⏭️ Skipped PYTHIA.")
+        logger.info("Skipped PYTHIA.")
 
-    # ═════════════════════════════════════════════════════════════════════════
-    # STEP 3: Optionally re-evaluate the database
-    # ═════════════════════════════════════════════════════════════════════════
+    # -- STEP 3: Optionally re-evaluate the database --
     run_reeval = False
     if not auto_mode:
         run_reeval = questionary.confirm(
-            "🔄 Step 3/4: Re-evaluate the database with the new criteria?\n"
+            "Step 3/4: Re-evaluate the database with the new criteria?\n"
             "   (This re-scores all papers using the updated prompts.)",
             default=True
         ).ask()
 
     if run_reeval:
-        print("\n  ⏳ Running database re-evaluation...")
-        print("  (This may take a while depending on database size.)")
+        logger.info("Running database re-evaluation...")
+        logger.info("(This may take a while depending on database size.)")
         rc, out = run_script("reevaluate_database.py", stdin_text="y\n")
         if rc == 0:
-            print("  ✅ Database re-evaluation complete.")
+            logger.info("Database re-evaluation complete.")
         else:
-            print(f"  ⚠️ Re-evaluation completed with code {rc}.")
+            logger.warning("Re-evaluation completed with code %s.", rc)
     else:
-        print("  ⏭️ Skipped database re-evaluation.")
+        logger.info("Skipped database re-evaluation.")
 
-    # ═════════════════════════════════════════════════════════════════════════
-    # STEP 4: Optionally retrain the DRL agent
-    # ═════════════════════════════════════════════════════════════════════════
+    # -- STEP 4: Optionally retrain the DRL agent --
     run_retrain = False
     if not auto_mode:
         run_retrain = questionary.confirm(
-            "🧠 Step 4/4: Retrain the DRL agent with updated scores?\n"
-            "   (Runs 500 episodes of DDQN training — ~2-5 minutes on GPU.)",
+            "Step 4/4: Retrain the DRL agent with updated scores?\n"
+            "   (Runs 500 episodes of DDQN training -- ~2-5 minutes on GPU.)",
             default=False
         ).ask()
 
@@ -205,41 +202,38 @@ def main():
             if ep_input:
                 episodes = int(ep_input)
 
-        print(f"\n  ⏳ Training DRL agent for {episodes} episodes...")
+        logger.info("Training DRL agent for %s episodes...", episodes)
         rc, out = run_script("train_agent.py", args=[f"--episodes={episodes}"])
         if rc == 0:
-            print("  ✅ Agent retraining complete.")
+            logger.info("Agent retraining complete.")
 
             # Show summary from output
             for line in out.strip().split("\n"):
                 if any(kw in line for kw in ["Best episode", "Average reward", "Model saved"]):
-                    print(f"    {line.strip()}")
+                    logger.info("    %s", line.strip())
         else:
-            print(f"  ⚠️ Training completed with code {rc}.")
+            logger.warning("Training completed with code %s.", rc)
     else:
-        print("  ⏭️ Skipped agent retraining.")
+        logger.info("Skipped agent retraining.")
 
-    # ═════════════════════════════════════════════════════════════════════════
-    # STEP 5: Final save
-    # ═════════════════════════════════════════════════════════════════════════
+    # -- STEP 5: Final save --
     save_state_to_profile(profile)
-    print(f"\n  💾 Profile '{profile}' saved.")
+    logger.info("Profile '%s' saved.", profile)
 
-    # ── Summary ─────────────────────────────────────────────────────────────
-    print()
-    print("=" * 65)
-    print("  ✅ Research Pivot Complete!")
-    print(f"  Profile: {profile}")
-    print(f"  PYTHIA regenerated: {'✅' if run_pythia else '⏭️'}")
-    print(f"  Database re-evaluated: {'✅' if run_reeval else '⏭️'}")
-    print(f"  Agent retrained: {'✅' if run_retrain else '⏭️'}")
-    print()
-    print("  💡 Next steps:")
-    print("     - Run a Daily Search to find new papers with your new queries.")
-    print("     - Start the Autonomous Research Service (daemon) for 24/7 monitoring.")
-    print("     - Use CHIRON to generate a new knowledge path.")
-    print("=" * 65)
-
-
+    # -- Summary panel (emoji-free academic styling) --
+    summary = Panel(
+        "[bold bright_cyan]Research Pivot Complete[/bold bright_cyan]\n"
+        f"[dim]Profile:[/dim] {profile}\n"
+        f"[dim]PYTHIA regenerated:[/dim] {'[green]YES[/green]' if run_pythia else '[yellow]SKIPPED[/yellow]'}\n"
+        f"[dim]Database re-evaluated:[/dim] {'[green]YES[/green]' if run_reeval else '[yellow]SKIPPED[/yellow]'}\n"
+        f"[dim]Agent retrained:[/dim] {'[green]YES[/green]' if run_retrain else '[yellow]SKIPPED[/yellow]'}\n\n"
+        "[dim]Next steps:[/dim]\n"
+        "  - Run a Daily Search to find new papers with your new queries.\n"
+        "  - Start the Autonomous Research Service (daemon) for 24/7 monitoring.\n"
+        "  - Use CHIRON to generate a new knowledge path.",
+        title="[bold]PIVOT SUMMARY[/bold]",
+        border_style="green",
+    )
+    console.print(summary)
 if __name__ == "__main__":
     main()

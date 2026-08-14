@@ -11,7 +11,7 @@
 
 """
 Module: metadata_enricher.py (v2.0 - Multi-Source Fallback)
-Project: TALOS v5.9.15
+Project: TALOS v5.9.17
 
 Description:
 Ένα εργαλείο συντήρησης που "εμπλουτίζει" τις υπάρχουσες εγγραφές στη βάση

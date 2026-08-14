@@ -2,6 +2,25 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.9.17] - 2026-08-14 -- Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep
+
+### Added
+- **Enterprise Logging (`src/utils/logger.py`)**: A single `get_logger(name)` factory wiring a `rich.logging.RichHandler` (emoji-free, colorized console output) and a `logging.handlers.RotatingFileHandler` writing to `data/logs/talos_system.log` (10 MB per file, 5 rotating backups) with the academic formatter `%(asctime)s - %(name)s - %(levelname)s - %(message)s`. The `data/logs/` directory is auto-created.
+
+### Changed
+- **Universal Rich TUI & Logger Enforcement**: Audited all interactive modules (`talos.py`, `src/ai/llm/model_manager.py`, `src/ai/llm/research_pivot.py`, `src/utils/generate_docs.py`, `src/ai/testing/red_tester.py`). Replaced naked runtime `print()` status/diagnostics with `logger.info/warning/error`; enforced `rich.console.Console` and `rich.panel.Panel` for menus, tables, and panels; kept `questionary` for all data prompts and removed the legacy raw `input()` pause (now `console.input`). Removed all emojis from `research_pivot.py` and translated inline Greek strings in `generate_docs.py` to English.
+- **`src/api/main_api.py`**: Migrated the inline `logging.basicConfig` to the enterprise `get_logger("api")`; FastAPI `version="5.9.17"` and startup/description strings updated.
+- **Global Header Sweep**: Updated every `Project: TALOS v5.9.15`/`v5.9.16` module docstring to `Project: TALOS v5.9.17` across `src/`, `config/`, and `tests/` (78 files).
+- **Docker & Launcher Sweep**: `Dockerfile` and `docker-compose.yml` headers and the `talos:5.9.17` image tag synced; `requirements.txt` header and `docs/DOCKER.md` tags updated; `run_talos.bat` and `run_talos.sh` banners and titles synced.
+- **Version strings synced across 5 code files and 15 documentation files** to v5.9.17.
+- **`tests/test_multi_tier.py`**: `test_talos_version` assertion updated to "5.9.17".
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- Full test suite and smoke test pass.
+- Zero emojis protocol strictly enforced; pure Greek unicode maintained in all `_GR.md` files.
+
+
 ## [v5.9.16] - 2026-08-14 -- Autonomous Red Tester Upgrade (Rename, Deep API Fuzzing & Context Truncation)
 
 ### Added

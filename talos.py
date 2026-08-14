@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.9.16
+Project: TALOS v5.9.17
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -73,6 +73,10 @@ load_dotenv()
 import shutil
 
 from config.settings import TALOS_VERSION, TALOS_API_PORT
+
+# -- v5.9.17: Enterprise logging --
+from src.utils.logger import get_logger
+logger = get_logger(__name__)
 
 # -- v5.9.8: Clickable Terminal Hyperlinks --
 def _make_clickable_path(path_str: str) -> str:
@@ -250,12 +254,12 @@ def safe_select(message, choices):
             return None
 
 def safe_pause(msg="Press Enter to return..."):
-    """input() that swallows Ctrl+C so a stray interrupt at a pause prompt
-    returns to the menu instead of killing the whole TUI."""
+    """Pause prompt that swallows Ctrl+C so a stray interrupt at a pause
+    prompt returns to the menu instead of killing the whole TUI."""
     try:
-        input(msg)
+        console.input(msg)
     except (KeyboardInterrupt, EOFError):
-        print()
+        console.print()
 
 def _resolve_script_path(script_name):
     """Resolve a script filename to its full path inside src/<subdir>/.
@@ -374,7 +378,7 @@ def run_script(script_name, python_exe, args=None, capture=False):
     try:
         if capture:
             result = subprocess.run(command, check=True, capture_output=True, text=True, encoding="utf-8", env=env)
-            print(result.stdout)
+            logger.info("%s", result.stdout)
             console.print(f"\n[dim green]--- '{script_name}' completed. ---[/dim green]")
             return result
         else:
@@ -398,12 +402,12 @@ def check_first_run(python_exe):
     config_path = "config.json"
     template_path = "config.template.json"
     if not os.path.exists(config_path):
-        print("\nWelcome to Project TALOS!")
+        logger.info("Welcome to Project TALOS!")
         if os.path.exists(template_path):
             shutil.copy(template_path, config_path)
-            print("Created 'config.json' from the template.")
+            logger.info("Created 'config.json' from the template.")
         else:
-            print("ERROR: 'config.template.json' not found.")
+            logger.error("'config.template.json' not found.")
             return
         if not os.path.exists("_profiles"): os.makedirs("_profiles")
         # .ask() returns None on Ctrl+C -- treat as "no" (skip config).
@@ -412,9 +416,9 @@ def check_first_run(python_exe):
             run_script("query_translator.py", python_exe)
             set_active_profile_name("default")
             save_current_state_to_profile("default")
-            print("\n--- Initial setup complete! ---\n")
+            logger.info("Initial setup complete.")
         else:
-            print("\n--- Setup skipped. You can configure later via Profile & Settings. ---\n")
+            logger.info("Setup skipped. You can configure later via Profile & Settings.")
         time.sleep(2)
 
 def author_tools_menu(python_exe):
@@ -478,9 +482,12 @@ def system_health_menu(python_exe):
             tp = os.path.join(project_root, 'test_smoke.py')  # legacy fallback
         if os.path.exists(tp):
             r = subprocess.run([python_exe, tp], check=False, env=os.environ.copy())
-            print("\nAll checks passed!" if r.returncode == 0 else f"\nCode {r.returncode}.")
+            if r.returncode == 0:
+                logger.info("All checks passed!")
+            else:
+                logger.warning("Smoke test exited with code %s.", r.returncode)
         else:
-            print("\nSmoke test not found at tests/test_smoke.py")
+            logger.warning("Smoke test not found at tests/test_smoke.py")
     elif choice.startswith("2."):
         run_script("verify_dependency_map.py", python_exe, args=["--all"])
     elif choice.startswith("3."):
@@ -499,12 +506,14 @@ def system_health_menu(python_exe):
             run_script("architecture_intelligence_report.py", python_exe)
     elif choice.startswith("5."):
         import webbrowser, socket
-        print("\n" + "=" * 65)
-        print("  GWO Live Dashboard -- Real-Time 3D Swarm Hunt")
-        print("=" * 65)
-        print("\n  Starts a Dash server at http://localhost:8050")
-        print("  Shows live 3D scatter plot of GWO wolf pack convergence.")
-        print("  Auto-refreshes every 3 seconds.")
+        console.print(_build_info_panel(
+            "GWO Live Dashboard",
+            "Real-Time 3D Swarm Hunt\n"
+            "Starts a Dash server at http://localhost:8050\n"
+            "Shows live 3D scatter plot of GWO wolf pack convergence.\n"
+            "Auto-refreshes every 3 seconds.",
+            border_style="bright_magenta",
+        ))
         dash_running = False
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -515,7 +524,7 @@ def system_health_menu(python_exe):
         except Exception:
             pass
         if not dash_running:
-            print("\n  Starting Dash server...")
+            logger.info("Starting Dash server...")
             script_path = _resolve_script_path("gwo_live_dashboard.py")
             subprocess.Popen(
                 [python_exe, script_path],
@@ -523,9 +532,9 @@ def system_health_menu(python_exe):
             )
             time.sleep(2)
         webbrowser.open("http://localhost:8050")
-        print("\n  Dashboard opened in browser.")
-        print("  NOTE: Run GWO first from another terminal with --live flag.")
-        print("  python src/ai/optimizers/gwo_rl_optimizer.py --live")
+        logger.info("Dashboard opened in browser.")
+        logger.info("NOTE: Run GWO first from another terminal with --live flag.")
+        logger.info("  python src/ai/optimizers/gwo_rl_optimizer.py --live")
     elif choice.startswith("6."): run_script("generate_baseline_report.py", python_exe)
     elif choice.startswith("7."): run_script("generate_baseline_report.py", python_exe, args=["--academic"])
     elif choice.startswith("8."):
@@ -547,22 +556,27 @@ def system_health_menu(python_exe):
             else: t.add_row("GWO", "[red]Not found")
             c.print(Panel(t, title="[bold]DRL Agent Status", border_style="cyan"))
         except ImportError:
-            print("\n=== DRL Agent Status ===")
-            if os.path.exists(mp): print(f"  Model: {mp} ({os.path.getsize(mp)/1024:.0f}KB)")
-            else: print("  No trained model")
+            logger.info("=== DRL Agent Status ===")
+            if os.path.exists(mp):
+                logger.info("Model: %s (%.0fKB)", mp, os.path.getsize(mp) / 1024)
+            else:
+                logger.warning("No trained model")
             if os.path.exists(gp):
                 import json
                 with open(gp) as f: p = json.load(f)
-                print(f"  LR={p['learning_rate']:.6e} GAMMA={p['gamma']:.4f} EPS={p['epsilon_decay']:.6f} Fitness={p['best_fitness']:.1f}")
+                logger.info("LR=%s GAMMA=%s EPS=%s Fitness=%s",
+                            p['learning_rate'], p['gamma'], p['epsilon_decay'], p['best_fitness'])
     elif choice.startswith("9."):
-        print("\n" + "=" * 65)
-        print("  Codebase Documentation Generator (18 Languages)")
-        print("=" * 65)
-        print("\n  Uses LOCAL Ollama -- zero cloud cost, full privacy.")
-        print("  Produces detailed Markdown docs for every code file you select.")
+        console.print(_build_info_panel(
+            "Codebase Documentation Generator",
+            "18 Languages, LOCAL Only\n"
+            "Uses LOCAL Ollama -- zero cloud cost, full privacy.\n"
+            "Produces detailed Markdown docs for every code file you select.",
+            border_style="bright_blue",
+        ))
         if questionary.confirm("Launch documentation generator?", default=True).ask():
             run_script("generate_docs.py", python_exe)
-    print(); safe_pause("Press Enter...")
+    console.print(); safe_pause("Press Enter...")
 
 def api_keys_menu(python_exe):
     from dotenv import dotenv_values
@@ -583,14 +597,23 @@ def api_keys_menu(python_exe):
     ]
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
-        print("\n  API Keys Management\n")
         vals = dotenv_values(env_path)
+        keys_table = Table(
+            title="[bold bright_cyan]API Keys Management[/bold bright_cyan]",
+            box=box.ROUNDED,
+            border_style="cyan",
+            header_style="bold bright_cyan",
+        )
+        keys_table.add_column("Key", style="cyan")
+        keys_table.add_column("Status", style="yellow")
+        keys_table.add_column("Category | Description", style="dim white")
         for cat, keys in ALL_KEYS:
-            print(f"  [{cat}]")
             for k, d in keys:
-                v = vals.get(k, ""); s = "[SET]" if v.strip() else "[NOT SET]"
-                print(f"    {k:<28} | {s:<8} | {d}")
-        print("\n  [1] Edit key  [2] API Diagnostics  [3] Back")
+                v = vals.get(k, "")
+                s = "[green][SET][/green]" if v.strip() else "[red][NOT SET][/red]"
+                keys_table.add_row(k, s, f"[magenta]{cat}[/magenta] | {d}")
+        console.print(keys_table)
+        console.print("\n[1] Edit key  [2] API Diagnostics  [3] Back")
         c = safe_select("Action:", ["1. Edit a key", "2. API Diagnostics", "3. Back"])
         if c is None or c.startswith("3"): return
         if c.startswith("1"):
@@ -610,9 +633,9 @@ def api_keys_menu(python_exe):
                     try:
                         set_key(env_path, k, nv.strip())
                         os.environ[k] = nv.strip()
-                        print(f"\n  [{k}] updated.")
+                        logger.info("[%s] updated.", k)
                     except Exception as e:
-                        print(f"\n  Error: {e}")
+                        logger.error("Error: %s", e)
         elif c.startswith("2"):
             tp = _resolve_script_path("api_health_check.py")
             if os.path.exists(tp): subprocess.run([python_exe, tp], check=False)
@@ -1245,5 +1268,5 @@ if __name__ == "__main__":
     try:
         main_menu()
     except KeyboardInterrupt:
-        print("\n\nTALOS Closing...\n")
+        console.print("\n\n[dim]TALOS Closing...[/dim]\n")
         sys.exit(0)

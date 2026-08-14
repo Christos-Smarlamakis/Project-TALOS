@@ -11,7 +11,7 @@
 
 """
 Module: zotero_connector.py (v2.1 - Graceful Import Degradation)
-Project: TALOS v5.9.15
+Project: TALOS v5.9.17
 
 Description:
 Η πλήρως αναβαθμισμένη έκδοση του "Zotero Bridge", εναρμονισμένη με την αρχιτεκτονική

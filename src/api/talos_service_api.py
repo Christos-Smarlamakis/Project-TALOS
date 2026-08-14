@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: talos_service_api.py (v1.0)
-Project: TALOS v5.9.15
+Project: TALOS v5.9.17
 Description:
     Micro-Flask API server for the TALOS Autonomous Research Service.
     Provides a lightweight HTTP interface to query the service's status,

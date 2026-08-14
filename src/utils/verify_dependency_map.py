@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: verify_dependency_map.py (v1.0)
-Project: TALOS v5.9.15
+Project: TALOS v5.9.17
 Description:
     AST-based dependency verification tool. Compares the documented
     dependency graph in PROJECT_MAP.md (Section 7) against actual

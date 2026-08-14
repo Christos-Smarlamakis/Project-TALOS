@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.16
+# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.17
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-08-14
-> **Version:** v5.9.16 -- Autonomous Red Tester Upgrade (Rename, Deep API Fuzzing & Context Truncation)
+> **Version:** v5.9.17 -- Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.9.16" | `config/settings.py` |
+| TALOS_VERSION | "5.9.17" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -544,6 +544,15 @@ For each evaluated paper, the AI generates:
 - **Background Minimized/Spawned Server Windows** (Windows)
 - **Detached Background Daemons** (POSIX, output to /dev/null)
 - **Fermion CPU Accelerator Auto-Start** for Neutrino-8B
+
+### 10.4 Enterprise Logging & Universal Rich TUI (v5.9.17)
+
+- **`src/utils/logger.py`** -- single `get_logger(name)` factory with two handlers:
+  - `rich.logging.RichHandler` for emoji-free, colorized console output.
+  - `logging.handlers.RotatingFileHandler` writing `data/logs/talos_system.log` (10 MB per file, 5 backups) with formatter `%(asctime)s - %(name)s - %(levelname)s - %(message)s`.
+- **`data/logs/`** directory auto-created; the root `talos` logger is configured idempotently (no duplicate handlers) and disables propagation.
+- **Universal Rich TUI enforcement** -- `talos.py`, `model_manager.py`, `research_pivot.py`, `generate_docs.py`, `red_tester.py` audited: status/diagnostics via logger, Rich Console/Panel for menus and tables, `questionary` for prompts, no raw `input()`, zero emojis.
+
 
 ---
 

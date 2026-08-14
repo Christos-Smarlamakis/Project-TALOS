@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: frontend_provisioner.py
-Project: TALOS v5.9.15
+Project: TALOS v5.9.17
 Description:
     Isolated interim UI provisioner for TALOS. Downloads a portable copy of Cherry
     Studio (CherryHQ/cherry-studio) based on the host operating system AND CPU

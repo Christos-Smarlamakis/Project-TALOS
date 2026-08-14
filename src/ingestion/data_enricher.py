@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: data_enricher.py (v4.8.1 — Graceful Degradation)
-Project: TALOS v5.9.15
+Project: TALOS v5.9.17
 Description:
     Data enrichment agent that queries the Unpaywall API to find Open Access
     PDF URLs, OpenAlex IDs, PubMed IDs, and publisher metadata for papers

@@ -11,7 +11,7 @@
 
 """
 Module: crossref_source.py
-Project: TALOS v5.9.15
+Project: TALOS v5.9.17
 
 Description:
     Search agent for the Crossref API (https://api.crossref.org), a central

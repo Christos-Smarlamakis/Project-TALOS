@@ -4,9 +4,21 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-14 (v5.9.16 -- Autonomous Red Tester Upgrade: Rename, Deep API Fuzzing & Context Truncation)
+> **Last Updated:** 2026-08-14 (v5.9.17 -- Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep)
 
 ---
+
+## Phase 28: Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep (v5.9.17)
+
+### Status: COMPLETED (2026-08-14)
+
+- [x] **Enterprise Logging (`src/utils/logger.py`)** -- `get_logger(name)` factory with `rich.logging.RichHandler` (emoji-free console) plus `logging.handlers.RotatingFileHandler` to `data/logs/talos_system.log` (10 MB, 5 backups, `%(asctime)s - %(name)s - %(levelname)s - %(message)s`).
+- [x] **Universal Rich TUI & Logger Enforcement** -- audited `talos.py`, `model_manager.py`, `research_pivot.py`, `generate_docs.py`, `red_tester.py`: `print()` -> logger, Rich Console/Panel for menus/tables, `questionary` for prompts, removed legacy raw `input()`.
+- [x] **Zero Emojis** -- stripped all emojis from `research_pivot.py`; translated inline Greek strings in `generate_docs.py` to English.
+- [x] **Global Header Sweep** -- 78 files synced from `Project: TALOS v5.9.15/v5.9.16` to `v5.9.17`.
+- [x] **Docker & Launcher Sweep** -- `Dockerfile`, `docker-compose.yml` (`talos:5.9.17`), `requirements.txt`, `docs/DOCKER.md`, `run_talos.bat`, `run_talos.sh`.
+- [x] **Sync all 5 code files and 15 documentation files to v5.9.17**
+
 
 ## Phase 27: Autonomous Red Tester Upgrade - Rename, Deep API Fuzzing & Context Truncation (v5.9.16)
 

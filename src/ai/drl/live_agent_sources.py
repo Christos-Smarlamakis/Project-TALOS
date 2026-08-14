@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: live_agent_sources.py (v1.0)
-Project: TALOS v5.9.15
+Project: TALOS v5.9.17
 Description:
     Source discovery and management for the TALOS Live DRL Agent.
     Handles auto-detection of configured API sources from config.json,

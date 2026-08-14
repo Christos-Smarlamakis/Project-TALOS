@@ -11,7 +11,7 @@
 
 """
 Module: query_translator.py (v2.3 - Final with Override)
-Project: TALOS v5.9.15
+Project: TALOS v5.9.17
 
 Description:
 Ο απόλυτος αυτοματισμός ρύθμισης (Project PYTHIA).

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.9.16
+Project: TALOS v5.9.17
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -66,7 +66,6 @@ if _P:
 
 import json
 import uuid
-import logging
 import threading
 import time
 from datetime import datetime
@@ -85,18 +84,15 @@ from src.core.ai_manager import AIManager
 from src.api.synapse_routes import router as synapse_router
 from src.api.red_tester_routes import router as red_tester_router
 
-# -- Logging ------------------------------------------------------------------
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-)
-logger = logging.getLogger("talos_api")
+# -- Logging (v5.9.17: enterprise logger with Rich + rotating file handlers) --
+from src.utils.logger import get_logger
+logger = get_logger("api")
 
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-description="Facade REST API for the TALOS autonomous research platform (v5.9.16 -- Autonomous Red Tester Upgrade: Deep API Fuzzing & Context Truncation)",
-version="5.9.16",
+description="Facade REST API for the TALOS autonomous research platform (v5.9.17 -- Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep)",
+version="5.9.17",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -352,7 +348,7 @@ class EvaluatePaperRequest(BaseModel):
 @app.on_event("startup")
 def on_startup():
     """Pre-warm singletons and log readiness."""
-    logger.info("TALOS FastAPI v5.9.16 starting up (Autonomous Red Tester Upgrade, port 8001)...")
+    logger.info("TALOS FastAPI v5.9.17 starting up (Universal Rich TUI, Enterprise Logging Upgrade, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")

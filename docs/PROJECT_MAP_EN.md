@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.9.16
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.9.17
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-14 (v5.9.16 -- Autonomous Red Tester Upgrade & Version Sync)
+> **Last Updated:** 2026-08-14 (v5.9.17 -- Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep)
 
 ---
 
@@ -340,7 +340,7 @@ active_profile.txt
 
 ---
 
-## 7. Dependency Graph (v5.9.16 DDD Layout)
+## 7. Dependency Graph (v5.9.17 DDD Layout)
 
 ```
 talos.py (Rich TUI Master)
@@ -388,6 +388,10 @@ src/integration/synapse_client.py
 
 src/mcp_server.py
   └── requests
+
+src/utils/logger.py (Enterprise Logging)
+  ├── rich.logging
+  └── logging.handlers
 ```
 
 ---
@@ -406,6 +410,7 @@ src/mcp_server.py
 | **PDF Downloader** | `scripts/pdf_downloader.py` | Downloads Open Access PDFs via Unpaywall API with multi-threaded batch support |
 | **Autonomous Research Service** | `scripts/talos_service.py` | 24/7 background research daemon with Telegram/Discord/Email notifications |
 | **MCP Server** | `src/mcp_server.py` | Native MCP (Model Context Protocol) stdio server exposing 4 tools (system_status, semantic_search, paper_details, trigger_scrape) via MCPServer v2.0.0. Decoupled architecture: tools delegate to FastAPI backend via HTTP. |
+| **Enterprise Logger** | `src/utils/logger.py` | Central `get_logger(name)` factory -- `rich.logging.RichHandler` console + `RotatingFileHandler` to `data/logs/talos_system.log` (10 MB, 5 backups) |
 
 ---
 
@@ -439,8 +444,8 @@ src/mcp_server.py
 
 ---
 
-> **Last Updated:** 2026-08-14 (v5.9.16 -- Autonomous Red Tester Upgrade & Version Sync)
-> **Project Version:** v5.9.16
+> **Last Updated:** 2026-08-14 (v5.9.17 -- Universal Rich TUI, Enterprise Logging Upgrade & Global Header Sweep)
+> **Project Version:** v5.9.17
 > **Total Files Covered:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### New in v5.9.9: Report Path Consolidation
