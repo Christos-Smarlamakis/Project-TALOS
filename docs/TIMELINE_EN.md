@@ -4,9 +4,19 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-14 (v5.9.15 -- RL & Daemon Hardening, Zero-Click Model Provisioning, Silent Fast Boot & Dependency Map Reconciliation)
+> **Last Updated:** 2026-08-14 (v5.9.16 -- Autonomous Red Tester Upgrade: Rename, Deep API Fuzzing & Context Truncation)
 
 ---
+
+## Phase 27: Autonomous Red Tester Upgrade - Rename, Deep API Fuzzing & Context Truncation (v5.9.16)
+
+### Status: COMPLETED (2026-08-14)
+
+- [x] **Rename `src/ai/testing/autonomous_tester.py` to `red_tester.py`** and `src/api/tester_routes.py` to `red_tester_routes.py` -- entry point `run_red_tester()`, router tag `red_tester`, endpoint prefix `/api/v1/tester` preserved for frontend compatibility.
+- [x] **Migrate persistence artifacts** -- `data/tester_q_table.json` to `data/red_tester_q_table.json`, `data/reports/autonomous_tester/` to `data/reports/red_tester/`.
+- [x] **Deep API Fuzzing** -- hybrid arm discovery (`_discover_all_targets()`) adds four API fuzzing arms against `http://127.0.0.1:8001` (malformed Synapse webhook JSON, negative paper ID, empty semantic query, invalid scrape source). Graceful rejections (400/404/422) are passes; HTTP 5xx and timeouts are crashes.
+- [x] **LLM Context Truncation** -- `_protect_context_window()` clips crash stderr to the last 2,000 characters before Fast Edge LLM diagnosis.
+- [x] **Sync all 5 code files and 15 documentation files to v5.9.16**
 
 ## Phase 26: RL & Daemon Hardening, Zero-Click Model Provisioning, Silent Fast Boot & Dependency Map Reconciliation (v5.9.15)
 

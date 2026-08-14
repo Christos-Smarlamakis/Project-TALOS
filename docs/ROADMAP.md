@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward.
 
-> **Current Version:** v5.9.15 (Documentation Governance Restructuring, 18 Endpoints, 14-Option TUI)
+> **Current Version:** v5.9.16 (Autonomous Red Tester Upgrade -- Deep API Fuzzing & Context Truncation)
 > **Last Updated:** 2026-08-14
 
 ---

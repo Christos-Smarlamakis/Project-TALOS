@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.15
+# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.16
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-08-14
-> **Version:** v5.9.15 -- Docker Infrastructure Fix & Usage Reference
+> **Version:** v5.9.16 -- Autonomous Red Tester Upgrade (Rename, Deep API Fuzzing & Context Truncation)
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -47,7 +47,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 - **Production:** Headless FastAPI listener on port 8001, React frontend consuming the API
 - **Development:** `uvicorn src.api.main_api:app --reload --port 8001`
-- **Background Services:** Scraping pipeline, GWO optimizer, DRL training, Autonomous System Tester -- all via FastAPI BackgroundTasks
+- **Background Services:** Scraping pipeline, GWO optimizer, DRL training, Autonomous Red Tester -- all via FastAPI BackgroundTasks
 - **CLI:** `talos.py` (Rich-powered TUI, 11 options) retains full terminal-mode access for maintenance, diagnostics, and Graphify AST generation
 - **SYNAPSE Webhook:** `POST /api/v1/synapse/webhook` receives external commands from other ALEXANDRIA microservices
 - **MCP Server:** `src/mcp_server.py` exposes 4 tools (system_status, semantic_search, paper_details, trigger_scrape) to MCP-compatible clients like Cherry Studio
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.9.15" | `config/settings.py` |
+| TALOS_VERSION | "5.9.16" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -250,22 +250,26 @@ The Grey Wolf Optimizer (`src/ai/optimizers/gwo_rl_optimizer.py` v2.0) tunes the
 - **GWO Live Dashboard:** Dash-based 3D scatter plot at http://localhost:8050
 - **Model Artifacts:** `models/gwo_best_params.json`, `models/gwo_history.json`, `models/gwo_progress.json`
 
-### 4.4 Autonomous System Tester (RL-Driven Chaos Engineering) -- v5.9.0 / v5.9.7
+### 4.4 Autonomous Red Tester (RL-Driven Chaos Engineering) -- v5.9.0 / v5.9.7 / v5.9.16
 
-The Autonomous System Tester (`src/ai/testing/autonomous_tester.py`) stress-tests TALOS components using a Non-Stationary Epsilon-Greedy Multi-Armed Bandit with LLM-as-a-Judge diagnostics.
+The Autonomous Red Tester (`src/ai/testing/red_tester.py`) stress-tests TALOS components using a Non-Stationary Epsilon-Greedy Multi-Armed Bandit with LLM-as-a-Judge diagnostics. In v5.9.16 it was renamed from `autonomous_tester.py` and upgraded with Deep API Fuzzing and LLM Context Truncation.
 
 | Component | Value |
 |-----------|-------|
 | Algorithm | Non-Stationary Epsilon-Greedy MAB |
 | Epsilon | 0.2 |
 | Learning Rate (Alpha) | 0.1 |
-| Target Discovery | Dynamic scanner (`_discover_all_python_targets()`) -- 70+ arms across `src/` |
-| Test Method | Subprocess launch with `--help` flag for fast exit |
-| Timeout | 5 seconds per target cycle |
+| Target Discovery | Hybrid discovery (`_discover_all_targets()`) -- 70+ CLI arms across `src/` plus 4 API fuzzing arms |
+| Test Method | CLI: subprocess launch with `--help`; API: `requests` with 3-second timeout |
+| Timeout | 5 seconds (CLI) / 3 seconds (API) per target cycle |
 | Rewards | +50 (crash detected), -1 (pass) |
+| Deep API Fuzzing | 4 arms against `http://127.0.0.1:8001`: malformed Synapse webhook JSON, negative paper ID, empty semantic query, invalid scrape source (v5.9.16) |
+| Graceful Rejection | API 400/404/422 handled correctly = pass (reward -1) |
+| Unhandled Exception | API HTTP 5xx or timeout = crash (reward +50, status/body fed to LLM) |
 | Diagnostics | Fast Edge LLM (tier="fast") provides 2-sentence crash analysis |
-| Persistence | `data/tester_q_table.json` (Q-table with reconciliation on launch) |
-| Reports | `data/reports/autonomous_tester/CRASH_REPORT_{timestamp}.md` |
+| LLM Context Truncation | `_protect_context_window()` clips error output to the last 2000 chars before LLM (v5.9.16) |
+| Persistence | `data/red_tester_q_table.json` (Q-table with reconciliation on launch) |
+| Reports | `data/reports/red_tester/CRASH_REPORT_{timestamp}.md` |
 | Fragility Labels | STABLE, LOW, MODERATE, HIGH_FRAGILITY |
 | Rich TUI | Spinners, red crash Panels, yellow AI Diagnosis Panels, green PASS confirmations, color-coded Q-Table |
 | Clickable Paths | Rich `[link=file:///...]` terminal hyperlinks for crash reports (v5.9.8) |
@@ -343,7 +347,7 @@ TALOS participates in the ALEXANDRIA Ecosystem via the SYNAPSE Event-Driven Prot
 | E14 | GET | `/api/v1/tasks` | List all background tasks | `List[TaskStatus]` |
 | E15 | GET | `/api/v1/capabilities` | Serve System Capabilities Master HTML | `HTMLResponse` |
 | E16 | POST | `/api/v1/synapse/webhook` | SYNAPSE protocol inbound command receiver | `SynapseWebhookResponse` |
-| E17 | GET | `/api/v1/tester/status` | Autonomous System Tester Q-table status (70+ arms) | `TesterStatusResponse` |
+| E17 | GET | `/api/v1/tester/status` | Autonomous Red Tester Q-table status (70+ arms) | `TesterStatusResponse` |
 | E18 | GET | `/api/v1/tester/reports` | List crash report metadata from data/reports/ | `List[CrashReport]` |
 
 ### 6.2 Pydantic v2 Model Inventory
@@ -522,7 +526,7 @@ For each evaluated paper, the AI generates:
 - **11-Option Menu** (organized in visual Rich groups):
   - MODEL CONFIGURATION (Option 1: Model Manager)
   - RESEARCH OPERATIONS (Options 2-4: CLI Research Search, Daily Search Pipeline, View & Pivot Research Focus)
-  - ANALYSIS & INSIGHTS (Options 5-7: Graphify AST Knowledge Graph, Autonomous System Tester, Baseline Reports)
+  - ANALYSIS & INSIGHTS (Options 5-7: Graphify AST Knowledge Graph, Autonomous Red Tester, Baseline Reports)
   - SYSTEM DIAGNOSTICS (Options 8-10: DRL Agent Status, Architecture Graph, Docs Generator)
   - EXIT (Option 11)
 - **Rich Panels:** All sub-menu launches display contextual informational panels with color-coded borders
@@ -534,7 +538,7 @@ For each evaluated paper, the AI generates:
 
 - **Section 1: REST API & FRONTEND** (Full Setup, FastAPI server on port 8001, MCP server, Cherry Studio UI)
 - **Section 2: CLI & STANDALONE DAEMONS** (TALOS TUI, Autonomous Research Daemon 24/7, Live DRL Agent)
-- **Section 3: TESTING & SYSTEM** (Autonomous System Tester, Pytest suite, Exit)
+- **Section 3: TESTING & SYSTEM** (Autonomous Red Tester, Pytest suite, Exit)
 - **Auto-Conda Path Detection** (Windows): scans 5 common Miniconda/Anaconda directories
 - **Auto-virtualenv/Conda Detection** (POSIX): `.venv/` -> `venv/` -> Conda `talosenv` -> system Python
 - **Background Minimized/Spawned Server Windows** (Windows)
@@ -703,7 +707,7 @@ For each evaluated paper, the AI generates:
 
 ### 15.6 Dynamic Target Discovery (v5.9.7)
 
-- Autonomous System Tester scales from 4 hardcoded targets to 70+ dynamically discovered arms
+- Autonomous Red Tester scales from 4 hardcoded targets to 70+ dynamically discovered arms
 - Q-table reconciliation on launch preserves existing Q-values
 
 ### 15.7 2D Execution Matrix (v5.9.4)

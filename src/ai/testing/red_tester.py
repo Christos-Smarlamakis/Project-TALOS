@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-Module: autonomous_tester.py
-Project: TALOS v5.9.15
+Module: red_tester.py
+Project: TALOS v5.9.16
 Description:
-    Autonomous System Tester (RL-Driven Chaos Engineering) that stress-tests TALOS
+    Autonomous Red Tester (RL-Driven Chaos Engineering) that stress-tests TALOS
     system components using a Non-Stationary Multi-Armed Bandit (Epsilon-Greedy with
-    constant step-size alpha). Each arm corresponds to a Python module under src/
-    discovered dynamically at runtime and executed as a subprocess. If a target
-    crashes (non-zero exit), the stderr is sent to the Fast Edge LLM (tier="fast")
-    for a human-readable two-sentence diagnosis. Results are visualized in the
-    terminal using Rich (Spinners, Panels, Tables) and saved as timestamped Markdown
-    crash reports under data/reports/autonomous_tester/. A Synapse
+    constant step-size alpha). Two categories of test arms are discovered at runtime:
+    (1) CLI arms -- every non-__init__.py Python module under src/ executed as a
+    subprocess with --help -- and (2) API fuzzing arms -- malformed or edge-case HTTP
+    requests against the local FastAPI on http://127.0.0.1:8001. If a target crashes
+    (non-zero exit for CLI, HTTP 5xx or timeout for API), the stderr is sent to the
+    Fast Edge LLM (tier="fast") for a human-readable two-sentence diagnosis. Results
+    are visualized in the terminal using Rich (Spinners, Panels, Tables) and saved as
+    timestamped Markdown crash reports under data/reports/red_tester/. A Synapse
     event is emitted on each test cycle.
 
     Key design decisions:
@@ -19,8 +21,15 @@ Description:
       time rather than converging to a stationary estimate.
     - Reward signal: +50 for a crash (the tester seeks crashes to surface), -1 for a
       successful pass (small penalty to discourage testing stable components).
-    - Q-table persisted as JSON at data/tester_q_table.json for continuity across runs.
-    - Subprocess timeout of 5 seconds prevents hung tests from blocking the pipeline.
+    - Graceful rejection is a pass: API responses 400, 404, and 422 mean the endpoint
+      validated the malformed input correctly and are treated as passes (reward -1).
+    - Unhandled exceptions are crashes: API responses 500 or request timeouts are
+      treated as crashes (reward +50), with the HTTP status and body fed to the LLM.
+    - Q-table persisted as JSON at data/red_tester_q_table.json for continuity across runs.
+    - Subprocess timeout of 5 seconds and API timeout of 3 seconds prevent hung tests
+      from blocking the pipeline.
+    - LLM Context Truncation: error output sent to the Fast Edge LLM is clipped to the
+      last 2,000 characters to prevent context window overflow on massive stack traces.
     - LLM-as-a-Judge uses AIManager with tier="fast" for low-latency diagnosis.
     - Zero emojis protocol: all Rich output uses formal academic tone with color coding
       (green for pass, red for failure, yellow for AI diagnosis).
@@ -28,6 +37,7 @@ Description:
 Dependencies:
     - json, os, subprocess, time, datetime: Core Python runtime for execution and I/O.
     - random: Epsilon-greedy action selection.
+    - requests: HTTP client for API fuzzing arms (3-second timeout).
     - rich.console, rich.panel, rich.table, rich.status: Terminal UI beautification.
     - src.core.ai_manager: LLM-as-a-Judge diagnosis via fast edge tier.
     - src.integration.synapse_client: Synapse event emission.
@@ -109,21 +119,21 @@ def _get_synapse_emitter():
 # ---------------------------------------------------------------------------
 
 # -- Target arms: dynamically discovered from src/ at runtime --
-TARGET_ARMS: List[Tuple[str, str, List[str]]] = []
+TARGET_ARMS: List[Tuple[str, str, object, object]] = []
 
 
-def _discover_all_python_targets() -> List[Tuple[str, str, List[str]]]:
-    """Dynamically discover all executable .py files under src/ directories.
+def _discover_all_targets() -> List[Tuple[str, str, object, object]]:
+    """Discover all test arms: CLI targets plus API fuzzing targets.
 
-    Scans src/analysis/, src/ingestion/, src/ai/, src/utils/, src/core/,
-    and src/api/ for .py files, excluding __init__.py. Each discovered file
-    becomes a test arm with the --help flag to trigger fast subprocess
-    exit after argument parsing.
+    CLI targets are all non-__init__.py files under src/ executed with --help.
+    API fuzzing targets are malformed or edge-case HTTP requests against the
+    local FastAPI (http://127.0.0.1:8001).
 
     Returns:
-        List of (display_name, relative_path, python_args) tuples sorted
-        alphabetically by relative path. The display_name uses
-        "path (dotted.module)" format for human readability.
+        List of (arm_type, display_name, target, args) tuples. arm_type is
+        "cli" or "api". For CLI arms target is the relative .py path and args
+        is the argument list. For API arms target is a request spec dict and
+        args is None.
     """
     target_dirs = [
         "src/analysis",
@@ -134,7 +144,7 @@ def _discover_all_python_targets() -> List[Tuple[str, str, List[str]]]:
         "src/api",
     ]
 
-    arms = []
+    arms: List[Tuple[str, str, object, object]] = []
     for target_dir in target_dirs:
         dir_path = os.path.join(_PROJECT_ROOT, target_dir)
         if not os.path.isdir(dir_path):
@@ -146,9 +156,62 @@ def _discover_all_python_targets() -> List[Tuple[str, str, List[str]]]:
                     rel_path = os.path.relpath(full_path, _PROJECT_ROOT).replace("\\", "/")
                     module_part = rel_path.replace("/", ".").replace(".py", "")
                     display_name = f"{rel_path} ({module_part})"
-                    arms.append((display_name, rel_path, ["--help"]))
+                    arms.append(("cli", display_name, rel_path, ["--help"]))
+
+    # -- API fuzzing arms: malformed or edge-case HTTP requests --
+    arms.extend(_build_api_fuzzing_arms())
 
     return arms
+
+
+def _build_api_fuzzing_arms() -> List[Tuple[str, str, object, object]]:
+    """Build the API fuzzing arms targeting the local FastAPI.
+
+    Each arm sends a malformed or edge-case request designed to probe the
+    endpoint's input validation. Graceful rejections (400/404/422) are passes;
+    HTTP 5xx responses and timeouts are crashes.
+
+    Returns:
+        List of ("api", display_name, request_spec, None) tuples. Each request
+        spec is a dict with "method", "url", and optional "json"/"data"/"headers".
+    """
+    base = API_BASE_URL
+    return [
+        (
+            "api",
+            f"POST {base}/api/v1/synapse/webhook (malformed JSON)",
+            {
+                "method": "POST",
+                "url": f"{base}/api/v1/synapse/webhook",
+                "data": '{"command": "trigger_search", "params": ',
+                "headers": {"Content-Type": "application/json"},
+            },
+            None,
+        ),
+        (
+            "api",
+            f"GET {base}/api/v1/papers/-999 (invalid negative ID)",
+            {"method": "GET", "url": f"{base}/api/v1/papers/-999"},
+            None,
+        ),
+        (
+            "api",
+            f"POST {base}/api/v1/search/semantic (empty query body)",
+            {"method": "POST", "url": f"{base}/api/v1/search/semantic", "json": {}},
+            None,
+        ),
+        (
+            "api",
+            f"POST {base}/api/v1/scrape/trigger (invalid source names)",
+            {
+                "method": "POST",
+                "url": f"{base}/api/v1/scrape/trigger",
+                "json": {"source_filter": ["nonexistent_source"]},
+            },
+            None,
+        ),
+    ]
+
 
 # -- MAB hyperparameters --
 EPSILON = 0.2       # Exploration probability
@@ -159,9 +222,17 @@ PASS_PENALTY = -1.0 # Penalty when a target passes cleanly
 # -- Subprocess configuration --
 SUBPROCESS_TIMEOUT = 5  # Seconds before a test is considered hung
 
+# -- API fuzzing configuration --
+API_BASE_URL = "http://127.0.0.1:8001"  # Local FastAPI target for fuzzing arms
+API_TIMEOUT = 3  # Seconds before an API fuzz request is considered hung
+API_GRACEFUL_STATUS_CODES = {400, 404, 422}  # Validation rejections handled correctly
+
+# -- LLM context protection --
+CONTEXT_WINDOW_LIMIT = 2000  # Last N characters of error output sent to the Fast Edge LLM
+
 # -- Persistence paths --
-Q_TABLE_PATH = os.path.join(_PROJECT_ROOT, "data", "tester_q_table.json")
-REPORTS_DIR = os.path.join(_PROJECT_ROOT, "data", "reports", "autonomous_tester")
+Q_TABLE_PATH = os.path.join(_PROJECT_ROOT, "data", "red_tester_q_table.json")
+REPORTS_DIR = os.path.join(_PROJECT_ROOT, "data", "reports", "red_tester")
 
 # -- AI diagnosis prompt template --
 DIAGNOSIS_PROMPT = (
@@ -183,7 +254,7 @@ DIAGNOSIS_PROMPT = (
 # ---------------------------------------------------------------------------
 
 def _load_q_table() -> Dict[int, float]:
-    """Load the Q-table from data/tester_q_table.json.
+    """Load the Q-table from data/red_tester_q_table.json.
 
     Returns:
         Dict mapping arm index (0..N-1) to estimated Q-value (float).
@@ -202,7 +273,7 @@ def _load_q_table() -> Dict[int, float]:
 
 
 def _save_q_table(q_table: Dict[int, float]):
-    """Persist the Q-table to data/tester_q_table.json.
+    """Persist the Q-table to data/red_tester_q_table.json.
 
     Args:
         q_table: Dict mapping arm index to estimated Q-value.
@@ -216,6 +287,27 @@ def _save_q_table(q_table: Dict[int, float]):
 # ---------------------------------------------------------------------------
 # -- LLM-as-a-Judge Diagnosis --
 # ---------------------------------------------------------------------------
+
+def _protect_context_window(text: str, max_chars: int = CONTEXT_WINDOW_LIMIT) -> str:
+    """Clip diagnostic text to the tail to protect the LLM context window.
+
+    Keeps only the last max_chars characters (the most relevant tail of a stack
+    trace) and prepends a truncation marker when clipping occurred. This prevents
+    context window overflow (OOM) on massive stack traces.
+
+    Args:
+        text: The raw error output.
+        max_chars: Maximum number of characters to retain (default 2000).
+
+    Returns:
+        The protected text, possibly prefixed with a truncation marker.
+    """
+    if not text:
+        return ""
+    if len(text) <= max_chars:
+        return text
+    return f"[TRUNCATED {len(text) - max_chars} characters]\n...\n{text[-max_chars:]}"
+
 
 def _diagnose_crash(component_name: str, command: str, stderr: str) -> Optional[str]:
     """Send crash stderr to the Fast Edge LLM for human-readable diagnosis.
@@ -235,7 +327,7 @@ def _diagnose_crash(component_name: str, command: str, stderr: str) -> Optional[
     prompt = DIAGNOSIS_PROMPT.format(
         component_name=component_name,
         command=command,
-        stderr=stderr[:3000],  # Truncate to avoid overwhelming the model
+        stderr=_protect_context_window(stderr),  # Keep last 2000 chars to protect the context window
     )
 
     try:
@@ -255,19 +347,38 @@ def _diagnose_crash(component_name: str, command: str, stderr: str) -> Optional[
 
 
 # ---------------------------------------------------------------------------
-# -- Subprocess Execution --
+# -- Arm Execution (CLI Subprocess + API Fuzzing) --
 # ---------------------------------------------------------------------------
 
-def _test_target(
-    arm_index: int,
+def _execute_arm(arm: Tuple[str, str, object, object]) -> Tuple[bool, str, str]:
+    """Execute a single test arm and classify its outcome.
+
+    Dispatches to the CLI subprocess executor or the API fuzzer based on the
+    arm type.
+
+    Args:
+        arm: A (arm_type, display_name, target, args) tuple.
+
+    Returns:
+        Tuple of (crashed: bool, stdout: str, stderr: str). For API arms a crash
+        is an HTTP 5xx or a timeout; graceful rejections (400/404/422) are passes.
+    """
+    arm_type, display_name, target, args = arm
+    if arm_type == "cli":
+        return _execute_cli_arm(display_name, target, args)
+    if arm_type == "api":
+        return _execute_api_arm(display_name, target)
+    return True, "", f"Unknown arm type: {arm_type}"
+
+
+def _execute_cli_arm(
     display_name: str,
     script_path: str,
     args: List[str],
 ) -> Tuple[bool, str, str]:
-    """Execute a target script as a subprocess with a timeout.
+    """Execute a CLI target script as a subprocess with a timeout.
 
     Args:
-        arm_index: Index of the arm in TARGET_ARMS.
         display_name: Human-readable component name.
         script_path: Relative path from project root to the target .py file.
         args: Additional command-line arguments (e.g., --help to trigger fast exit).
@@ -308,6 +419,69 @@ def _test_target(
         stderr_str = f"Subprocess execution exception: {e}"
 
     return crashed, stdout_str, stderr_str
+
+
+def _execute_api_arm(
+    display_name: str,
+    request_spec: object,
+) -> Tuple[bool, str, str]:
+    """Send a malformed or edge-case HTTP request to the local FastAPI.
+
+    Graceful rejections (400, 404, 422) mean the endpoint validated the bad input
+    correctly and are treated as passes. HTTP 5xx responses and timeouts are
+    treated as crashes, with the HTTP status and body included for LLM diagnosis.
+
+    Args:
+        display_name: Human-readable arm label.
+        request_spec: Dict with "method", "url", and optional "json"/"data"/"headers".
+
+    Returns:
+        Tuple of (crashed: bool, stdout: str, stderr: str).
+    """
+    try:
+        import requests
+    except ImportError:
+        return False, "", "requests library unavailable -- API fuzz arm skipped"
+
+    spec = request_spec if isinstance(request_spec, dict) else {}
+    method = spec.get("method", "GET")
+    url = spec.get("url", "")
+    kwargs = {}
+    if "json" in spec:
+        kwargs["json"] = spec["json"]
+    if "data" in spec:
+        kwargs["data"] = spec["data"]
+    if "headers" in spec:
+        kwargs["headers"] = spec["headers"]
+
+    try:
+        response = requests.request(method, url, timeout=API_TIMEOUT, **kwargs)
+    except requests.exceptions.Timeout:
+        # A hung endpoint is a real finding -- treat as a crash.
+        stderr = f"API fuzz timeout: {method} {url} did not respond within {API_TIMEOUT} seconds."
+        return True, "", stderr
+    except requests.exceptions.ConnectionError:
+        # The API is offline -- not a crash, avoid polluting the Q-table.
+        return False, "", f"API unreachable (connection refused): {method} {url}"
+    except Exception as e:
+        # A fuzzer-side error, not an API defect.
+        return False, "", f"API fuzz request exception: {e}"
+
+    status = response.status_code
+    text = (response.text or "")[:2000]
+    stdout = f"{method} {url} -> HTTP {status}"
+
+    if status >= 500:
+        # Unhandled exception on the server side -- a crash worth surfacing.
+        stderr = f"HTTP {status}: {text}"
+        return True, stdout, stderr
+
+    if status in API_GRACEFUL_STATUS_CODES:
+        # Graceful rejection: the endpoint validated the bad input correctly.
+        return False, stdout, f"Graceful rejection HTTP {status}: {text[:500]}"
+
+    # Any other response (2xx, 3xx, other 4xx) did not crash the API.
+    return False, stdout, f"HTTP {status}: {text[:500]}"
 
 
 # ---------------------------------------------------------------------------
@@ -373,12 +547,12 @@ def _save_crash_report(
 
     # -- Build Q-table summary for the report --
     q_table_lines = ""
-    for i, (name, _, _) in enumerate(TARGET_ARMS):
+    for i, (_, name, _, _) in enumerate(TARGET_ARMS):
         q_val = q_table.get(i, 0.0)
         marker = " <-- CRASHED" if i == arm_index else ""
         q_table_lines += f"| {name} | {q_val:+.2f}{marker} |\n"
 
-    report_content = f"""# Autonomous System Tester -- Crash Report
+    report_content = f"""# Autonomous Red Tester -- Crash Report
 
 **Timestamp:** {datetime.now(timezone.utc).isoformat()}
 **Component:** {display_name}
@@ -417,7 +591,7 @@ def _save_crash_report(
 
 ---
 
-*Report generated by TALOS v5.9.15 Autonomous System Tester (RL-Driven Chaos Engineering)*
+*Report generated by TALOS v5.9.16 Autonomous Red Tester (RL-Driven Chaos Engineering)*
 """
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(report_content)
@@ -453,7 +627,7 @@ def _build_q_table_panel(q_table: Dict[int, float]) -> Table:
     table.add_column("Q-Value (Fragility)", style="bold", width=20, justify="right")
     table.add_column("Status", style="white", width=20)
 
-    for i, (name, _, _) in enumerate(TARGET_ARMS):
+    for i, (_, name, _, _) in enumerate(TARGET_ARMS):
         q_val = q_table.get(i, 0.0)
         # Color-code based on fragility
         if q_val >= 40:
@@ -499,7 +673,8 @@ def _run_test_cycle(
     """
     n_arms = len(TARGET_ARMS)
     arm_index = _select_arm(q_table)
-    display_name, script_path, args = TARGET_ARMS[arm_index]
+    arm = TARGET_ARMS[arm_index]
+    arm_type, display_name, target, args = arm
 
     # -- Build the cycle header --
     console.print("")
@@ -515,18 +690,23 @@ def _run_test_cycle(
     ))
 
     # -- Build the command for display --
-    full_path = os.path.join(_PROJECT_ROOT, script_path)
-    command_str = f"{sys.executable or 'python'} {script_path} {' '.join(args)}"
+    if arm_type == "cli":
+        command_str = f"{sys.executable or 'python'} {target} {' '.join(args)}"
+        status_label = target
+    else:
+        spec = target if isinstance(target, dict) else {}
+        command_str = f"{spec.get('method', 'GET')} {spec.get('url', '')}"
+        status_label = command_str
 
     # -- Execute with Rich spinner --
     crashed = False
     stdout_str = ""
     stderr_str = ""
     with console.status(
-        f"[bold bright_cyan][TESTING][/bold bright_cyan] Executing: {script_path}...",
+        f"[bold bright_cyan][TESTING][/bold bright_cyan] Executing: {status_label}...",
         spinner="dots",
     ):
-        crashed, stdout_str, stderr_str = _test_target(arm_index, display_name, full_path, args)
+        crashed, stdout_str, stderr_str = _execute_arm(arm)
 
     # -- Compute reward and update Q-value --
     reward = CRASH_REWARD if crashed else PASS_PENALTY
@@ -588,7 +768,7 @@ def _run_test_cycle(
                 pass  # Synapse emission is best-effort
     else:
         # -- Pass: green confirmation --
-        console.print(f"[bold green][PASS][/bold green] {display_name} executed successfully. Reward: {PASS_PENALTY:+.1f}")
+        console.print(f"[bold green][PASS][/bold green] {display_name} passed cleanly. Reward: {PASS_PENALTY:+.1f}")
 
     # -- Show Q-value change --
     console.print(
@@ -603,8 +783,8 @@ def _run_test_cycle(
 # -- Standalone Entry Point --
 # ---------------------------------------------------------------------------
 
-def run_autonomous_tester(cycles: int = 10):
-    """Entry point for the Autonomous System Tester.
+def run_red_tester(cycles: int = 10):
+    """Entry point for the Autonomous Red Tester.
 
     Runs the Non-Stationary MAB for the specified number of cycles, testing
     TALOS system components, diagnosing crashes with LLM-as-a-Judge, and
@@ -615,9 +795,9 @@ def run_autonomous_tester(cycles: int = 10):
     """
     # -- Discover all Python targets dynamically --
     global TARGET_ARMS
-    TARGET_ARMS = _discover_all_python_targets()
+    TARGET_ARMS = _discover_all_targets()
     if not TARGET_ARMS:
-        console.print("[red][ERROR][/red] No Python targets discovered under src/. Aborting.")
+        console.print("[red][ERROR][/red] No test targets discovered. Aborting.")
         return
 
     # -- Load Q-table (reconciled to match discovered arm count) --
@@ -633,11 +813,11 @@ def run_autonomous_tester(cycles: int = 10):
     console.print("")
     banner = Panel(
         Align.center(Text(
-            "Autonomous System Tester\n"
+            "Autonomous Red Tester\n"
             "RL-Driven Chaos Engineering with LLM-as-a-Judge Diagnostics",
             style="bold bright_cyan",
         )),
-        title="[bold]TALOS v5.9.15[/bold]",
+        title="[bold]TALOS v5.9.16[/bold]",
         subtitle="[dim]Non-Stationary Epsilon-Greedy Multi-Armed Bandit[/dim]",
         border_style="bright_magenta",
         box=box.ROUNDED,
@@ -716,9 +896,9 @@ if __name__ == "__main__":
             console.print("[yellow]Invalid cycle count. Using default (10).[/yellow]")
 
     try:
-        run_autonomous_tester(cycles=num_cycles)
+        run_red_tester(cycles=num_cycles)
     except KeyboardInterrupt:
-        console.print("\n[yellow]Autonomous System Tester terminated by user.[/yellow]")
+        console.print("\n[yellow]Autonomous Red Tester terminated by user.[/yellow]")
     except Exception as e:
         console.print(f"\n[red]Fatal error: {e}[/red]")
         sys.exit(1)

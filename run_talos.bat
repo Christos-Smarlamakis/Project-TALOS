@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Project TALOS v5.9.15 -- Research Intelligence Dashboard
+title Project TALOS v5.9.16 -- Research Intelligence Dashboard
 
 REM ---------------------------------------------------------------------------
 REM [ INIT ] Enforce Terminal Viewport Dimensions
@@ -12,7 +12,7 @@ chcp 65001 >nul 2>&1
 
 REM ===========================================================================
 REM script         : run_talos.bat
-REM version        : v5.9.15 (Sealed Architecture)
+REM version        : v5.9.16 (Sealed Architecture)
 REM description    : Advanced System Dashboard and Execution Matrix for Project TALOS.
 REM                  Implements Two-Column UI, IEEE WEIGD standard telemetry,
 REM                  defensive error handling, solid-block Unicode rendering,
@@ -103,7 +103,7 @@ echo %C_IEEE_LIGHT%             ██    ███████ ██      █�
 echo %C_IEEE_LIGHT%             ██    ██   ██ ██      ██    ██     ██  %C_RESET%
 echo %C_IEEE_LIGHT%             ██    ██   ██ ███████  ██████  ██████  %C_RESET%
 echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
-echo  %C_CYAN%Project TALOS v5.9.15 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)%C_RESET%
+echo  %C_CYAN%Project TALOS v5.9.16 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)%C_RESET%
 echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
 echo  [ SYSTEM TELEMETRY ]    API (8001): %API_STATUS%   ^|   BUS (8000): %SYNAPSE_STATUS%   ^|   EDGE (11435): %EDGE_STATUS%
 echo %C_IEEE_DARK%-----------------------------------------------------------------------------------------------------%C_RESET%
@@ -114,7 +114,7 @@ echo  [3] Start MCP Server (Background)            [7] Live DRL Agent (Verbose O
 echo  [4] Launch UI (Cherry Studio Provisioner)
 echo.
 echo  %C_IEEE_LIGHT%[ TESTING ^& MAINTENANCE ]%C_RESET%
-echo  [8] Autonomous System Tester (RL Chaos)      [10] Terminate Session
+echo  [8] Autonomous Red Tester (RL Chaos Fuzzer)   [10] Terminate Session
 echo  [9] Execute Test Framework (Pytest Suite)
 echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
 echo.
@@ -197,7 +197,7 @@ if %ERRORLEVEL% equ 0 (
     call :LOG_WARN "Ollama not found in PATH. Skipping GPU model pull."
 )
 
-call :LOG_SUCCESS "TALOS v5.9.15 deployment finalized."
+call :LOG_SUCCESS "TALOS v5.9.16 deployment finalized."
 pause
 goto MAIN_MENU
 
@@ -267,9 +267,9 @@ goto MAIN_MENU
 
 :AUTO_TESTER
 cls
-call :LOG_INFO "Deploying Autonomous Chaos Fuzzer..."
+call :LOG_INFO "Deploying Autonomous Red Tester (RL Chaos Fuzzer)..."
 call :ACTIVATE_CONDA
-python src/ai/testing/autonomous_tester.py %*
+python src/ai/testing/red_tester.py %*
 pause
 goto MAIN_MENU
 

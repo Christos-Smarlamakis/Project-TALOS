@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.9.15
+Project: TALOS v5.9.16
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -25,7 +25,7 @@ AST Knowledge Graph adapter (v5.9.12).
     src/analysis/graphify_adapter.py. Main menu reorganized into five
     visually-grouped Rich categories. Version bumped from 5.9.9.
 
-    v5.9.0: Autonomous System Tester (RL-Driven Chaos Engineering) integrated
+    v5.9.0: Autonomous Red Tester (RL-Driven Chaos Engineering) integrated
     as menu option 8. Runs a Non-Stationary Epsilon-Greedy Multi-Armed Bandit
     that stress-tests TALOS components via subprocess, diagnoses crashes with
     LLM-as-a-Judge (Fast Edge tier), saves Markdown reports, and displays
@@ -54,7 +54,7 @@ Dependencies:
     - config.settings: Single source of truth for TALOS_VERSION.
     - src.core.profile_manager: Profile switching and retrieval.
     - src.ai.llm.model_manager: Multi-tier AI model management TUI.
-    - src.ai.testing.autonomous_tester: RL-driven chaos engineering daemon.
+    - src.ai.testing.red_tester: RL-driven chaos engineering daemon.
     - src.analysis.graphify_adapter: Vendored Graphify AST knowledge graph.
     - rich: Terminal UI beautification (Console, Panel, Table, Box, Text).
     - questionary: Terminal UI interactive prompts.
@@ -1003,7 +1003,7 @@ def main_menu():
             "  5. Legacy Architecture Graph (D3.js)",
             "  6. Advanced AST Knowledge Graph (Graphify)",
             questionary.Separator("  [ DAEMONS & CI/CD ]"),
-            "  7. Autonomous System Tester (RL Chaos Fuzzer)",
+            "  7. Autonomous Red Tester (RL Chaos Fuzzer)",
             "  8. Live DRL Agent (Real API Orchestration)",
             "  9. Autonomous Research Process (24/7 Service)",
             questionary.Separator("  [ DIAGNOSTICS & EXIT ]"),
@@ -1126,9 +1126,9 @@ def main_menu():
                     console.print(f"[red][ERROR] Graphify pipeline failed: {e}[/red]")
             safe_pause()
         elif " 7." in choice:
-            # -- Autonomous System Tester (RL Chaos Fuzzer) --
+            # -- Autonomous Red Tester (RL Chaos Fuzzer) --
             info = _build_info_panel(
-                "Autonomous System Tester (RL-Driven Chaos Engineering)",
+                "Autonomous Red Tester (RL-Driven Chaos Engineering)",
                 "Stress-tests TALOS system components using a Non-Stationary\n"
                 "Epsilon-Greedy Multi-Armed Bandit. Diagnoses crashes with\n"
                 "LLM-as-a-Judge (Fast Edge tier) and saves Markdown reports.\n"
@@ -1148,10 +1148,10 @@ def main_menu():
                     cycles = 10
                     console.print("[yellow]Invalid input. Using default (10).[/yellow]")
                 try:
-                    from src.ai.testing.autonomous_tester import run_autonomous_tester
-                    run_autonomous_tester(cycles=cycles)
+                    from src.ai.testing.red_tester import run_red_tester
+                    run_red_tester(cycles=cycles)
                 except Exception as e:
-                    console.print(f"[red]Error running Autonomous Tester: {e}[/red]")
+                    console.print(f"[red]Error running Autonomous Red Tester: {e}[/red]")
         elif " 8." in choice:
             # -- Live DRL Agent --
             info = _build_info_panel(

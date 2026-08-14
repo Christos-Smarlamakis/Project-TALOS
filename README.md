@@ -1,8 +1,8 @@
-# Project TALOS (v5.9.15)
+# Project TALOS (v5.9.16)
 
 ### **Tactical Agentic Literature Orchestration System**
 
-> **An Autonomous Research Intelligence Platform -- Multi-Tier LLM Routing (CPU/GPU/Cloud), Headless FastAPI Backend with 18 REST Endpoints, SYNAPSE Event-Driven Protocol, RL-Driven Autonomous System Tester with LLM-as-a-Judge Diagnostics, Academic Print Mode for AST Knowledge Graphs, React 18 + Tailwind CSS + Shadcn UI Frontend.**
+> **An Autonomous Research Intelligence Platform -- Multi-Tier LLM Routing (CPU/GPU/Cloud), Headless FastAPI Backend with 18 REST Endpoints, SYNAPSE Event-Driven Protocol, RL-Driven Autonomous Red Tester with LLM-as-a-Judge Diagnostics, Academic Print Mode for AST Knowledge Graphs, React 18 + Tailwind CSS + Shadcn UI Frontend.**
 
 [![IEEE Computer Society](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
@@ -40,18 +40,18 @@ TALOS acts as an autonomous "Research Architect," filtering noise and highlighti
   - Single-paper AI evaluation, natural-language to boolean query translation
   - GWO history for Recharts, architecture graph HTML, top authors for BarChart
   - Bulk score recalculation, DB health stats, System Capabilities Master Reference
-  - **Autonomous System Tester** (`GET /api/v1/tester/status`, `GET /api/v1/tester/reports`) -- Q-table status and crash report listing
+  - **Autonomous Red Tester** (`GET /api/v1/tester/status`, `GET /api/v1/tester/reports`) -- Q-table status and crash report listing
   - **SYNAPSE webhook receiver** (`POST /api/v1/synapse/webhook`) for ALEXANDRIA ecosystem interoperability
   - **Port 8001** (port 8000 reserved for SYNAPSE event bus)
   - Auto-generated interactive docs at `http://localhost:8001/docs`
   - Models saved at `models/dddqn_trained.pth` and `models/talos_drl.pth`
-- **Autonomous System Tester (RL-Driven Chaos Engineering)** (`src/ai/testing/autonomous_tester.py`)
+- **Autonomous Red Tester (RL-Driven Chaos Engineering)** (`src/ai/testing/red_tester.py`)
   - **Non-Stationary Multi-Armed Bandit** with Epsilon-Greedy (epsilon=0.2, alpha=0.1) stress-tests system components via subprocess
   - **LLM-as-a-Judge Diagnostics**: Crash stderr sent to Fast Edge LLM (Neutrino-8B) for two-sentence human-readable diagnosis
   - **Rich TUI Visualization**: Spinners, red crash Panels, yellow AI Diagnosis Panels, green PASS confirmations, color-coded Q-Table (Component Fragility)
-  - **Crash Reports**: Timestamped Markdown files in `data/reports/autonomous_tester/`
+  - **Crash Reports**: Timestamped Markdown files in `data/reports/red_tester/`
   - **Synapse Event Emission**: `agent_episode_end` events on each test cycle
-  - **Q-Table Persistence**: `data/tester_q_table.json` for continuity across runs
+  - **Q-Table Persistence**: `data/red_tester_q_table.json` for continuity across runs
   - Integrated into `talos.py` menu (Option 7), `run_talos.bat` (Option 8), and `run_talos.sh` (Option 8)
 - **Graphify AST Knowledge Graph** (`src/analysis/graphify_adapter.py`) -- NEW in v5.9.10
   - Vendored Graphify engine invoked as subprocess for pure-local AST extraction
@@ -110,7 +110,7 @@ For the full Docker reference (host Ollama connectivity, GPU notes, volumes, env
 ### Method B: 1-Click Launcher (Windows)
 For users without Docker.
 1. Set up your `.env` file.
-2. Double-click **`run_talos.bat`**. The script provides a 10-option menu: Full Setup (Conda env + pip install), Start FastAPI Server (port 8001), MCP Server, Interim UI, TALOS CLI, Research Daemon, Live DRL Agent, Autonomous System Tester, Run Test Suite, or Exit.
+2. Double-click **`run_talos.bat`**. The script provides a 10-option menu: Full Setup (Conda env + pip install), Start FastAPI Server (port 8001), MCP Server, Interim UI, TALOS CLI, Research Daemon, Live DRL Agent, Autonomous Red Tester, Run Test Suite, or Exit.
 
 ### Method C: Traditional Python Environment (Linux/Mac)
 ```bash
@@ -135,7 +135,7 @@ Requires **Ollama** for running locally the `gemma4` model.
 This software is part of ongoing research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.15, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.16, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -144,7 +144,7 @@ This software is part of ongoing research. If you use **TALOS** in your work, pl
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.9.15},
+  version = {v5.9.16},
   year = {2026}
 }
 ```
@@ -197,18 +197,18 @@ The Lead Architect and Author, **Christos Smarlamakis**, is an officially select
   - Αξιολόγηση μεμονωμένου paper με AI, μετάφραση φυσικής γλώσσας σε boolean query
   - Ιστορικό GWO για Recharts, γράφημα αρχιτεκτονικής HTML, κορυφαίοι συγγραφείς για BarChart
   - Μαζικός επανυπολογισμός βαθμολογιών, στατιστικά βάσης δεδομένων, Αναφορά Δυνατοτήτων Συστήματος
-  - **Αυτόνομος Ελεγκτής Συστήματος** (`GET /api/v1/tester/status`, `GET /api/v1/tester/reports`) -- Κατάσταση Πίνακα Q και λίστα αναφορών καταρρεύσεων
+  - **Αυτόνομος Κόκκινος Ελεγκτής** (`GET /api/v1/tester/status`, `GET /api/v1/tester/reports`) -- Κατάσταση Πίνακα Q και λίστα αναφορών καταρρεύσεων
   - **SYNAPSE webhook** (`POST /api/v1/synapse/webhook`) για διαλειτουργικότητα οικοσυστήματος ALEXANDRIA
   - **Θύρα 8001** (η θύρα 8000 προορίζεται για τον δίαυλο SYNAPSE)
   - Αυτόματα παραγόμενα διαδραστικά docs στο `http://localhost:8001/docs`
   - Μοντέλα αποθηκευμένα στα `models/dddqn_trained.pth` και `models/talos_drl.pth`
-- **Αυτόνομος Ελεγκτής Συστήματος (RL-Driven Chaos Engineering)** (`src/ai/testing/autonomous_tester.py`)
+- **Αυτόνομος Κόκκινος Ελεγκτής (RL-Driven Chaos Engineering)** (`src/ai/testing/red_tester.py`)
   - **Μη Στάσιμος Πολυβραχίονας Ληστής** με Epsilon-Greedy (epsilon=0.2, alpha=0.1) δοκιμάζει υπό πίεση τα υποσυστήματα του TALOS μέσω υποδιεργασιών
   - **LLM-as-a-Judge Διαγνωστικά**: Το stderr καταρρεύσεων αποστέλλεται στο Fast Edge LLM (Neutrino-8B) για διάγνωση δύο προτάσεων
   - **Οπτικοποίηση Rich TUI**: Spinners, κόκκινα Panels καταρρεύσεων, κίτρινα Panels Διάγνωσης AI, πράσινες επιβεβαιώσεις PASS, έγχρωμος Πίνακας Q (Ευθραυστότητα Στοιχείων)
-  - **Αναφορές Καταρρεύσεων**: Χρονοσημασμένα αρχεία Markdown στο `data/reports/autonomous_tester/`
+  - **Αναφορές Καταρρεύσεων**: Χρονοσημασμένα αρχεία Markdown στο `data/reports/red_tester/`
   - **Εκπομπή Γεγονότων Synapse**: Γεγονότα `agent_episode_end` σε κάθε κύκλο δοκιμής
-  - **Διατήρηση Πίνακα Q**: `data/tester_q_table.json` για συνέχεια μεταξύ εκτελέσεων
+  - **Διατήρηση Πίνακα Q**: `data/red_tester_q_table.json` για συνέχεια μεταξύ εκτελέσεων
   - Ενσωματωμένο στο μενού `talos.py` (Επιλογή 7), `run_talos.bat` (Επιλογή 8), και `run_talos.sh` (Επιλογή 8)
 - **Γράφος Γνώσης AST Graphify** (`src/analysis/graphify_adapter.py`) -- ΝΕΟ στην v5.9.10
   - Vendored μηχανή Graphify που καλείται ως υποδιεργασία για αμιγώς τοπική εξαγωγή AST
@@ -287,7 +287,7 @@ python src/utils/generate_docs.py
 Αυτό το λογισμικό αποτελεί μέρος εν εξελίξει έρευνας. Εάν χρησιμοποιήσετε το **TALOS** στην εργασία σας, παρακαλούμε να το αναφέρετε ως εξής:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.15, Αύγουστος 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.16, Αύγουστος 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -296,7 +296,7 @@ python src/utils/generate_docs.py
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.9.15},
+  version = {v5.9.16},
   year = {2026}
 }
 ```

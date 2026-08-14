@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ===========================================================================
 # script         : run_talos.sh
-# version        : v5.9.15 (Sealed Architecture)
+# version        : v5.9.16 (Sealed Architecture)
 # description    : Cross-Platform POSIX Dashboard for Project TALOS.
 #                  Implements Two-Column UI, IEEE WEIGD standard telemetry,
 #                  defensive error handling, Universal ASCII rendering, and
@@ -115,7 +115,7 @@ show_menu() {
     echo -e "${C_IEEE_LIGHT}             ##      ##    ##  ##        ##    ##       ## ${C_RESET}"
     echo -e "${C_IEEE_LIGHT}             ##      ##    ##  ########   ######   ######  ${C_RESET}"
     echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
-    echo -e "  ${C_CYAN}Project TALOS v5.9.15 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)${C_RESET}"
+    echo -e "  ${C_CYAN}Project TALOS v5.9.16 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)${C_RESET}"
     echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
     echo -e "  [ SYSTEM TELEMETRY ]    API (8001): ${API_STATUS}   |   BUS (8000): ${SYNAPSE_STATUS}   |   EDGE (11435): ${EDGE_STATUS}"
     echo -e "${C_IEEE_DARK}-----------------------------------------------------------------------------------------------------${C_RESET}"
@@ -126,7 +126,7 @@ show_menu() {
     echo -e "  [4] Launch UI (Cherry Studio Provisioner)"
     echo -e ""
     echo -e "  ${C_IEEE_LIGHT}[ TESTING & MAINTENANCE ]${C_RESET}"
-    echo -e "  [8] Autonomous System Tester (RL Chaos)      [10] Terminate Session"
+    echo -e "  [8] Autonomous Red Tester (RL Chaos Fuzzer)   [10] Terminate Session"
     echo -e "  [9] Execute Test Framework (Pytest Suite)"
     echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
     echo -e ""
@@ -202,7 +202,7 @@ do_setup() {
         log_warn "Ollama not found on PATH. Skipping GPU model pull."
     fi
 
-    log_success "TALOS v5.9.15 deployment finalized."
+    log_success "TALOS v5.9.16 deployment finalized."
     press_enter
 }
 
@@ -277,9 +277,9 @@ do_live_drl() {
 
 do_auto_tester() {
     clear
-    log_info "Deploying Autonomous Chaos Fuzzer..."
+    log_info "Deploying Autonomous Red Tester (RL Chaos Fuzzer)..."
     detect_and_activate_env
-    $PYTHON_CMD src/ai/testing/autonomous_tester.py "$@"
+    $PYTHON_CMD src/ai/testing/red_tester.py "$@"
     press_enter
 }
 
@@ -335,7 +335,7 @@ while true; do
         10)
             echo ""
             echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
-            echo -e "  Closing Project TALOS v5.9.15..."
+            echo -e "  Closing Project TALOS v5.9.16..."
             echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
             # Reset viewport constraint on exit
             printf '\033[8;24;80t' >/dev/null 2>&1 || true

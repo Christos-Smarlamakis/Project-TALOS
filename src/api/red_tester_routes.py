@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-Module: tester_routes.py
-Project: TALOS v5.9.15
+Module: red_tester_routes.py
+Project: TALOS v5.9.16
 Description:
-    FastAPI APIRouter exposing REST endpoints for the Autonomous System Tester
+    FastAPI APIRouter exposing REST endpoints for the Autonomous Red Tester
     (RL-Driven Chaos Engineering). Provides two endpoints:
 
     - GET /api/v1/tester/status: Returns the current Q-table (Component Fragility
-      estimates) from data/tester_q_table.json. Falls back to zero-initialized
+      estimates) from data/red_tester_q_table.json. Falls back to zero-initialized
       table if no test run has occurred yet.
     - GET /api/v1/tester/reports: Lists all available Markdown crash reports in
-      reports/autonomous_tester/, sorted by timestamp descending.
+      data/reports/red_tester/, sorted by timestamp descending.
 
     This router is integrated into src/api/main_api.py via app.include_router().
 
@@ -45,8 +45,8 @@ if _PROJECT_ROOT:
     sys.path.insert(0, _PROJECT_ROOT)
 
 # -- Constants --
-Q_TABLE_PATH = os.path.join(_PROJECT_ROOT, "data", "tester_q_table.json")
-REPORTS_DIR = os.path.join(_PROJECT_ROOT, "data", "reports", "autonomous_tester")
+Q_TABLE_PATH = os.path.join(_PROJECT_ROOT, "data", "red_tester_q_table.json")
+REPORTS_DIR = os.path.join(_PROJECT_ROOT, "data", "reports", "red_tester")
 
 # -- Target arms metadata: dynamically discovered from src/ at runtime --
 def _discover_target_arms() -> List[Dict[str, object]]:
@@ -84,7 +84,7 @@ def _discover_target_arms() -> List[Dict[str, object]]:
 TARGET_ARMS = _discover_target_arms()
 
 # -- Router definition --
-router = APIRouter(prefix="/api/v1/tester", tags=["autonomous_tester"])
+router = APIRouter(prefix="/api/v1/tester", tags=["red_tester"])
 
 
 # ---------------------------------------------------------------------------
@@ -101,7 +101,7 @@ class ArmStatus(BaseModel):
 
 
 class TesterStatus(BaseModel):
-    """Full status response for the Autonomous System Tester."""
+    """Full status response for the Autonomous Red Tester."""
     model_config = {"extra": "ignore"}
     q_table_path: str = Field(..., description="Absolute path to the Q-table JSON file")
     arms: List[ArmStatus] = Field(..., description="Per-component Q-value status")
@@ -174,7 +174,7 @@ def _load_q_table() -> Dict[int, float]:
 async def get_tester_status():
     """Return the current Q-table (Component Fragility estimates).
 
-    Reads the persisted Q-table from data/tester_q_table.json. If no test
+    Reads the persisted Q-table from data/red_tester_q_table.json. If no test
     run has been performed yet, returns a zero-initialized table.
 
     Returns:
@@ -205,7 +205,7 @@ async def get_tester_status():
 async def get_tester_reports():
     """List all available Markdown crash reports.
 
-    Scans reports/autonomous_tester/ for *.md files and returns metadata
+    Scans data/reports/red_tester/ for *.md files and returns metadata
     sorted by filesystem modification time (newest first).
 
     Returns:

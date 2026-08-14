@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.15</title>
+<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.16</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -238,7 +238,7 @@
   <a href="#s4-1" class="sub-link">4.1 DRL Agent Architecture</a>
   <a href="#s4-2" class="sub-link">4.2 DRL Module Inventory</a>
   <a href="#s4-3" class="sub-link">4.3 GWO Hyperparameter Optimization</a>
-  <a href="#s4-4" class="sub-link">4.4 Autonomous System Tester</a>
+  <a href="#s4-4" class="sub-link">4.4 Autonomous Red Tester</a>
   <a href="#s5" class="section-link">5. SYNAPSE Event-Driven Protocol</a>
   <a href="#s5-1" class="sub-link">5.1 Architecture</a>
   <a href="#s5-2" class="sub-link">5.2 Outbound Event Types</a>
@@ -287,7 +287,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.15</h1>
+<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.16</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -302,7 +302,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-08-14 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.9.15 -- Docker Infrastructure Fix & Usage Reference
+  <strong>Version:</strong> v5.9.16 -- Autonomous Red Tester Upgrade (Rename, Deep API Fuzzing & Context Truncation)
 </div>
 
 <!-- ===================================================================== -->
@@ -344,7 +344,7 @@
 <ul>
   <li><strong>Production:</strong> Headless FastAPI listener on port 8001, React frontend consuming the API</li>
   <li><strong>Development:</strong> <code>uvicorn src.api.main_api:app --reload --port 8001</code></li>
-  <li><strong>Background Services:</strong> Scraping pipeline, GWO optimizer, DRL training, Autonomous System Tester -- all via FastAPI BackgroundTasks</li>
+  <li><strong>Background Services:</strong> Scraping pipeline, GWO optimizer, DRL training, Autonomous Red Tester -- all via FastAPI BackgroundTasks</li>
   <li><strong>CLI:</strong> <code>talos.py</code> (Rich-powered TUI, 11 options) retains full terminal-mode access for maintenance, diagnostics, and Graphify AST generation</li>
   <li><strong>SYNAPSE Webhook:</strong> <code>POST /api/v1/synapse/webhook</code> receives external commands from other ALEXANDRIA microservices</li>
   <li><strong>MCP Server:</strong> <code>src/mcp_server.py</code> exposes 4 tools to MCP-compatible clients like Cherry Studio</li>
@@ -574,9 +574,9 @@
   <li><strong>Model Artifacts:</strong> <code>models/gwo_best_params.json</code>, <code>models/gwo_history.json</code>, <code>models/gwo_progress.json</code></li>
 </ul>
 
-<h3 id="s4-4">4.4 Autonomous System Tester (RL-Driven Chaos Engineering) -- v5.9.0 / v5.9.7</h3>
+<h3 id="s4-4">4.4 Autonomous Red Tester (RL-Driven Chaos Engineering) -- v5.9.0 / v5.9.7 / v5.9.16</h3>
 
-<p>The Autonomous System Tester (<code>src/ai/testing/autonomous_tester.py</code>) stress-tests TALOS components using a Non-Stationary Epsilon-Greedy Multi-Armed Bandit with LLM-as-a-Judge diagnostics.</p>
+<p>The Autonomous Red Tester (<code>src/ai/testing/red_tester.py</code>) stress-tests TALOS components using a Non-Stationary Epsilon-Greedy Multi-Armed Bandit with LLM-as-a-Judge diagnostics. In v5.9.16 it was renamed from <code>autonomous_tester.py</code> and upgraded with Deep API Fuzzing and LLM Context Truncation.</p>
 
 <table>
   <thead><tr><th>Component</th><th>Value</th></tr></thead>
@@ -584,13 +584,17 @@
     <tr><td>Algorithm</td><td>Non-Stationary Epsilon-Greedy MAB</td></tr>
     <tr><td>Epsilon</td><td>0.2</td></tr>
     <tr><td>Learning Rate (Alpha)</td><td>0.1</td></tr>
-    <tr><td>Target Discovery</td><td>Dynamic scanner -- 70+ arms across <code>src/</code></td></tr>
-    <tr><td>Test Method</td><td>Subprocess with <code>--help</code> flag for fast exit</td></tr>
-    <tr><td>Timeout</td><td>5 seconds per target</td></tr>
+    <tr><td>Target Discovery</td><td>Hybrid discovery (<code>_discover_all_targets()</code>) -- 70+ CLI arms plus 4 API fuzzing arms</td></tr>
+    <tr><td>Test Method</td><td>CLI: subprocess with <code>--help</code>; API: <code>requests</code> with 3-second timeout</td></tr>
+    <tr><td>Timeout</td><td>5 seconds (CLI) / 3 seconds (API) per target</td></tr>
     <tr><td>Rewards</td><td>+50 (crash), -1 (pass)</td></tr>
+    <tr><td>Deep API Fuzzing</td><td>4 arms against <code>http://127.0.0.1:8001</code>: malformed webhook JSON, negative paper ID, empty semantic query, invalid scrape source (v5.9.16)</td></tr>
+    <tr><td>Graceful Rejection</td><td>API 400/404/422 handled correctly = pass (reward -1)</td></tr>
+    <tr><td>Unhandled Exception</td><td>API HTTP 5xx or timeout = crash (reward +50, status/body fed to LLM)</td></tr>
     <tr><td>Diagnostics</td><td>Fast Edge LLM 2-sentence crash analysis</td></tr>
-    <tr><td>Persistence</td><td><code>data/tester_q_table.json</code> (with launch reconciliation)</td></tr>
-    <tr><td>Reports</td><td><code>data/reports/autonomous_tester/CRASH_REPORT_{timestamp}.md</code></td></tr>
+    <tr><td>LLM Context Truncation</td><td><code>_protect_context_window()</code> clips error output to last 2000 chars (v5.9.16)</td></tr>
+    <tr><td>Persistence</td><td><code>data/red_tester_q_table.json</code> (with launch reconciliation)</td></tr>
+    <tr><td>Reports</td><td><code>data/reports/red_tester/CRASH_REPORT_{timestamp}.md</code></td></tr>
     <tr><td>Fragility Labels</td><td>STABLE, LOW, MODERATE, HIGH_FRAGILITY</td></tr>
     <tr><td>Clickable Paths</td><td>Rich <code>[link=file:///...]</code> terminal hyperlinks (v5.9.8)</td></tr>
     <tr><td>API Endpoints</td><td><code>GET /api/v1/tester/status</code>, <code>GET /api/v1/tester/reports</code></td></tr>
@@ -672,7 +676,7 @@
     <tr><td>E14</td><td><code>GET</code></td><td><code>/api/v1/tasks</code></td><td>List all background tasks</td><td><code>List[TaskStatus]</code></td></tr>
     <tr><td>E15</td><td><code>GET</code></td><td><code>/api/v1/capabilities</code></td><td>Serve System Capabilities Master HTML</td><td><code>HTMLResponse</code></td></tr>
     <tr><td>E16</td><td><code>POST</code></td><td><code>/api/v1/synapse/webhook</code></td><td>SYNAPSE protocol inbound command receiver</td><td><code>SynapseWebhookResponse</code></td></tr>
-    <tr><td>E17</td><td><code>GET</code></td><td><code>/api/v1/tester/status</code></td><td>Autonomous System Tester Q-table status (70+ arms)</td><td><code>TesterStatusResponse</code></td></tr>
+    <tr><td>E17</td><td><code>GET</code></td><td><code>/api/v1/tester/status</code></td><td>Autonomous Red Tester Q-table status (70+ arms)</td><td><code>TesterStatusResponse</code></td></tr>
     <tr><td>E18</td><td><code>GET</code></td><td><code>/api/v1/tester/reports</code></td><td>List crash report metadata from data/reports/</td><td><code>List[CrashReport]</code></td></tr>
   </tbody>
 </table>
@@ -847,7 +851,7 @@
 <ul>
   <li>Section 1: REST API & FRONTEND (Full Setup, FastAPI, MCP, Cherry Studio)</li>
   <li>Section 2: CLI & DAEMONS (TALOS TUI, Autonomous Research Daemon 24/7, Live DRL Agent)</li>
-  <li>Section 3: TESTING & SYSTEM (Autonomous System Tester, Pytest suite, Exit)</li>
+  <li>Section 3: TESTING & SYSTEM (Autonomous Red Tester, Pytest suite, Exit)</li>
   <li>Auto-Conda/Virtualenv detection, background server spawning, Fermion CPU auto-start</li>
 </ul>
 
@@ -1006,7 +1010,7 @@
 </ul>
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.15</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.16</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

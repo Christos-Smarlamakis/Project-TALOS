@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.9.15
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.9.16
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.9.15 -- Έλεγχος Κώδικα & Συγχρονισμός Έκδοσης)
+> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.9.16 -- Αναβάθμιση Αυτόνομου Κόκκινου Ελεγκτή & Συγχρονισμός Έκδοσης)
 
 ---
 
@@ -346,20 +346,20 @@ active_profile.txt
 
 ---
 
-## 7. Dependency Graph (v5.9.15 DDD Layout)
+## 7. Dependency Graph (v5.9.16 DDD Layout)
 
 ```
 talos.py (Rich TUI Master)
   ├── src.ai.llm.model_manager
   ├── src.analysis.graphify_adapter
-  ├── src.ai.testing.autonomous_tester
+  ├── src.ai.testing.red_tester
   └── subprocess → src/*/*.py
 
 src/api/main_api.py (FastAPI Facade :8001)
   ├── src.core.database_manager
   ├── src.core.ai_manager
   ├── src.api.synapse_routes
-  └── src.api.tester_routes
+  └── src.api.red_tester_routes
 
 src/ai/drl/talos_live_agent.py (CLI entry)
   ├── src.ai.drl.drl_agent
@@ -448,14 +448,14 @@ src/mcp_server.py
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-08-14 (v5.9.15 -- Έλεγχος Κώδικα & Συγχρονισμός Έκδοσης)
-> **Έκδοση Project:** v5.9.15
+> **Τελευταία ενημέρωση:** 2026-08-14 (v5.9.16 -- Αναβάθμιση Αυτόνομου Κόκκινου Ελεγκτή & Συγχρονισμός Έκδοσης)
+> **Έκδοση Project:** v5.9.16
 > **Συνολικά αρχεία που καλύπτονται:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### Νέο στην v5.9.9: Ενοποίηση Αναφορών
 > - **Όλες οι αναφορές** πλέον αποθηκεύονται στο **`data/reports/`** (όχι στη ρίζα `reports/`).
 > - Τα υποσυστήματα αναφορών (`reports/audits/`, `reports/authors/`, `reports/citations/`, `reports/general/`, `reports/general_status_report/`, `reports/grey_literature/`, `reports/knowledge_paths/`, `reports/recommendations/`, `reports/trends/`) μεταφέρθηκαν όλα στο `data/reports/`.
 > - **8 scripts ανάλυσης** (`src/analysis/`) ενημερώθηκαν για να γράφουν στο `data/reports/`.
-> - O **Αυτόνομος Ελεγκτής** (`autonomous_tester.py`) γράφει στο `data/reports/autonomous_tester/`.
-> - Το REST API tester routes διαβάζει από `data/reports/autonomous_tester/`.
+> - Ο **Αυτόνομος Κόκκινος Ελεγκτής** (`red_tester.py`) γράφει στο `data/reports/red_tester/`.
+> - Το REST API `red_tester_routes` διαβάζει από `data/reports/red_tester/`.
 > - Ολόκληρος ο κατάλογος root `reports/` διαγράφηκε -- καθαρή ρίζα έργου.

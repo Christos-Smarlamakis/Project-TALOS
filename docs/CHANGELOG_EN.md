@@ -2,6 +2,23 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.9.16] - 2026-08-14 -- Autonomous Red Tester Upgrade (Rename, Deep API Fuzzing & Context Truncation)
+
+### Added
+- **Deep API Fuzzing**: The Red Tester now discovers hybrid test arms -- CLI targets plus four API fuzzing arms against the local FastAPI (`POST /api/v1/synapse/webhook` malformed JSON, `GET /api/v1/papers/-999`, `POST /api/v1/search/semantic` empty body, `POST /api/v1/scrape/trigger` invalid source). Graceful rejections (400/404/422) are passes; HTTP 5xx and timeouts are crashes (reward +50).
+- **LLM Context Truncation**: Crash error output sent to the Fast Edge LLM is clipped to the last 2,000 characters via `_protect_context_window()`, preventing context window overflow (OOM) on massive stack traces.
+
+### Changed
+- **Renamed `autonomous_tester.py` to `red_tester.py`** and `tester_routes.py` to `red_tester_routes.py`. The `run_autonomous_tester()` entry point is now `run_red_tester()`. The endpoint prefix `/api/v1/tester` is preserved for frontend compatibility.
+- **Persistence paths renamed**: Q-table `data/red_tester_q_table.json`, reports `data/reports/red_tester/` (existing artifacts migrated).
+- **Version strings synced across 5 code files and 15 documentation files** to v5.9.16.
+- **`tests/test_multi_tier.py`**: `test_talos_version` assertion updated to "5.9.16".
+
+### Verification
+- `python -m compileall` passed on all Python files.
+- Full test suite (180+ tests) and smoke test pass.
+- Zero emojis protocol strictly enforced across all code and documentation.
+
 ## [v5.9.15] - 2026-08-14 -- RL & Daemon Hardening, Zero-Click Model Provisioning, Silent Fast Boot & Dependency Map Reconciliation
 
 ### Added
