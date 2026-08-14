@@ -1,4 +1,4 @@
-# TALOS v5.8.2 — Docker image
+# TALOS v5.9.14 — Docker image
 # Multi-tier LLM routing with FastAPI on port 8001.
 FROM python:3.11-slim
 
@@ -14,8 +14,14 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code.
+# Copy application code (see .dockerignore for exclusions).
 COPY . .
+
+# Bootstrap a default runtime configuration from the template when config.json is
+# absent (config.json is intentionally excluded from the image via .dockerignore).
+RUN if [ ! -f config.json ] && [ -f config.template.json ]; then \
+        cp config.template.json config.json; \
+    fi
 
 # Environment variables.
 ENV PYTHONUNBUFFERED=1

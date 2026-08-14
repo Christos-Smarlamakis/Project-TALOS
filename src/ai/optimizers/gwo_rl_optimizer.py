@@ -89,7 +89,7 @@ def calculate_fitness(wolf_position):
     epsilon), so the hyperparameters causally affect fitness."""
     lr, gamma, eps_decay = decode_wolf(wolf_position)
     env = TalosEnv()
-    import core.drl_agent as da
+    from src.ai.drl import drl_agent as da
     old_lr, old_gamma = da.LR, da.GAMMA
     # Monkey-patch module globals — learn() reads GAMMA at call time.
     da.LR, da.GAMMA = lr, gamma
@@ -277,7 +277,7 @@ def main():
     parser.add_argument('--live', action='store_true',
                         help='Write per-iteration progress to models/gwo_progress.json for GUI')
     args = parser.parse_args()
-    import scripts.gwo_rl_optimizer as _self
+    import src.ai.optimizers.gwo_rl_optimizer as _self
     _self.DEFAULT_RL_EPISODES = args.rl_episodes
     run_gwo(args.wolves, args.iters, live=args.live)
 

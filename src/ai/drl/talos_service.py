@@ -91,7 +91,7 @@ signal.signal(signal.SIGTERM, _handle_signal)
 from src.core.notifier import TalosNotifier
 from src.ai.drl.drl_agent import TalosDRLAgent, DEVICE
 # Use OfflineTalosEnv for real database scores
-from scripts.train_agent import OfflineTalosEnv
+from src.ai.drl.train_agent import OfflineTalosEnv
 
 
 def format_paper_alert(paper_title, score, source, action_taken):

@@ -39,7 +39,7 @@ import numpy as np
 # ── Add project root to Python's import path ────────────────────────────────
 from src.ai.drl.talos_env import TalosEnv
 from src.ai.drl.drl_agent import TalosDRLAgent, Transition, DEVICE
-import core.drl_agent as da  # For patching hyperparameters
+from src.ai.drl import drl_agent as da  # For patching hyperparameters
 
 # ── Default training parameters ──────────────────────────────────────────────
 DEFAULT_EPISODES = 500

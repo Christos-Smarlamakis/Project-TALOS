@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.13</title>
+<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.14</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -287,7 +287,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.13</h1>
+<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.14</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -301,8 +301,8 @@
   <strong>Document ID:</strong> TALOS-SYS-CAP-001 &nbsp;|&nbsp;
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
-  <strong>Last Updated:</strong> 2026-08-04 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.9.13 -- Academic Print Theme Injection for AST Graphs
+  <strong>Last Updated:</strong> 2026-08-14 &nbsp;|&nbsp;
+  <strong>Version:</strong> v5.9.14 -- Docker Infrastructure Fix & Usage Reference
 </div>
 
 <!-- ===================================================================== -->
@@ -895,7 +895,7 @@
   <tbody>
     <tr><td>Development</td><td>FastAPI with reload</td><td><code>uvicorn src.api.main_api:app --reload --port 8001</code></td></tr>
     <tr><td>Production</td><td>FastAPI on port 8001</td><td><code>uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001</code></td></tr>
-    <tr><td>Docker</td><td>Containerized with GPU passthrough</td><td><code>docker-compose up --build</code></td></tr>
+    <tr><td>Docker</td><td>Headless FastAPI container (host Ollama via host-gateway)</td><td><code>docker compose up -d --build</code></td></tr>
   </tbody>
 </table>
 
@@ -912,9 +912,11 @@
 
 <h3 id="s12-3">12.3 Docker Support</h3>
 <ul>
-  <li><code>Dockerfile</code>: Multi-stage Python 3.11 with CUDA 12.1</li>
-  <li><code>docker-compose.yml</code>: FastAPI + Ollama services, HEALTHCHECK at /api/v1/health</li>
+  <li><code>Dockerfile</code>: Single-stage <code>python:3.11-slim</code> image (matches the dev environment, Python 3.11) with a <code>config.json</code> bootstrap from <code>config.template.json</code></li>
+  <li><code>docker-compose.yml</code>: FastAPI service on port 8001 with persistent volumes (<code>data/</code>, <code>models/</code>, <code>logs/</code>, <code>_profiles/</code>) and host Ollama access via <code>host.docker.internal</code></li>
   <li><code>restart: unless-stopped</code> for production resilience</li>
+  <li><code>HEALTHCHECK</code> at <code>/api/v1/health</code></li>
+  <li>Full usage reference: <code>docs/DOCKER.md</code></li>
 </ul>
 
 <!-- ===================================================================== -->
@@ -1004,7 +1006,7 @@
 </ul>
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.13</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.14</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

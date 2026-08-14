@@ -90,13 +90,22 @@ Project TALOS is designed to run seamlessly across all operating systems. Choose
 
 ### Method A: Docker (Recommended)
 Run TALOS in a completely isolated environment without installing Python or dependencies.
-1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/).
-2. Create your `.env` file (see `example.env`).
-3. Open your terminal in the project folder and run:
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Docker Compose v2 on Linux).
+2. Create your `.env` file from `example.env`.
+3. Start the headless FastAPI server (port 8001):
    ```bash
-   docker-compose run --rm talos
+   docker compose up -d --build
    ```
-*(If you launch the interactive dashboard via this menu, it will be available at `http://localhost:5000`)*
+4. Verify it is healthy:
+   ```bash
+   curl http://localhost:8001/api/v1/health
+   ```
+5. To run the interactive TALOS menu (search, analysis, DRL, autonomous research) inside the container:
+   ```bash
+   docker compose run --rm talos python talos.py
+   ```
+
+For the full Docker reference (host Ollama connectivity, GPU notes, volumes, environment variables, and troubleshooting), see **[docs/DOCKER.md](docs/DOCKER.md)**.
 
 ### Method B: 1-Click Launcher (Windows)
 For users without Docker.
@@ -236,12 +245,22 @@ The Lead Architect and Author, **Christos Smarlamakis**, is an officially select
 
 #### Μέθοδος Α: Docker (Προτεινόμενη)
 Εκτελέστε το TALOS σε πλήρως απομονωμένο περιβάλλον χωρίς εγκατάσταση Python ή εξαρτήσεων.
-1. Εγκαταστήστε το [Docker Desktop](https://www.docker.com/products/docker-desktop/).
-2. Δημιουργήστε το αρχείο `.env` (δείτε το `example.env`).
-3. Ανοίξτε το τερματικό στον φάκελο του project και εκτελέστε:
+1. Εγκαταστήστε το [Docker Desktop](https://www.docker.com/products/docker-desktop/) (ή Docker Engine + Docker Compose v2 σε Linux).
+2. Δημιουργήστε το αρχείο `.env` από το `example.env`.
+3. Εκκινήστε τον headless FastAPI server (θύρα 8001):
    ```bash
-   docker-compose run --rm talos
+   docker compose up -d --build
    ```
+4. Επαληθεύστε ότι λειτουργεί:
+   ```bash
+   curl http://localhost:8001/api/v1/health
+   ```
+5. Για το διαδραστικό μενού TALOS (αναζήτηση, ανάλυση, DRL, αυτόνομη έρευνα) μέσα στο container:
+   ```bash
+   docker compose run --rm talos python talos.py
+   ```
+
+Για τον πλήρη οδηγό Docker (σύνδεση με host Ollama, σημειώσεις GPU, volumes, μεταβλητές περιβάλλοντος, αντιμετώπιση προβλημάτων), δείτε το **[docs/DOCKER.md](docs/DOCKER.md)**.
 
 #### Μέθοδος Β: 1-Click Launcher (Windows)
 1. Συμπληρώστε το αρχείο `.env`.

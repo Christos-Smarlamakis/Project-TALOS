@@ -1,4 +1,4 @@
-# TALOS v5.8.2 — Docker build exclusions
+# TALOS v5.9.14 — Docker build exclusions
 # These files and directories are excluded from the Docker build context
 # to keep the image small, fast, and free of sensitive data.
 
@@ -15,7 +15,7 @@ models/
 # Research profiles (per-topic isolated databases and configs)
 _profiles/
 
-# Generated documentation (regenerate with: python scripts/generate_docs.py)
+# Generated documentation (regenerate with: python src/utils/generate_docs.py)
 docs/
 
 # Frontend UI directories (standalone projects, not part of the API image)
@@ -30,11 +30,8 @@ venv/
 .git/
 .gitignore
 
-# Dev utilities (not needed at runtime)
+# Agent instruction file (development only)
 .clinerules
-_bump.py
-_git_status.ps1
-reference_code/
 
 # IDE
 .vscode/

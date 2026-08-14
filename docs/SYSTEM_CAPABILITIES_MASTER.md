@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.13
+# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.14
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-08-04
-> **Version:** v5.9.13 -- Academic Print Theme Injection for AST Graphs
+> **Last Updated:** 2026-08-14
+> **Version:** v5.9.14 -- Docker Infrastructure Fix & Usage Reference
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -590,7 +590,7 @@ For each evaluated paper, the AI generates:
 |------|-----------|---------|
 | Development | FastAPI with reload | `uvicorn src.api.main_api:app --reload --port 8001` |
 | Production | FastAPI on port 8001 | `uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001` |
-| Docker | Containerized with GPU passthrough | `docker-compose up --build` |
+| Docker | Headless FastAPI container (host Ollama via host-gateway) | `docker compose up -d --build` |
 | Kubernetes | Cluster with Ollama sidecar | `kubectl apply -f k8s/` |
 
 ### 12.2 Hardware Requirements
@@ -603,10 +603,11 @@ For each evaluated paper, the AI generates:
 
 ### 12.3 Docker Support
 
-- `Dockerfile`: Multi-stage Python 3.11 build with CUDA 12.1 support
-- `docker-compose.yml`: FastAPI service (port 8001) + Ollama services with shared volumes
+- `Dockerfile`: Single-stage `python:3.11-slim` image (matches the dev environment, Python 3.11) with a `config.json` bootstrap from `config.template.json`
+- `docker-compose.yml`: FastAPI service on port 8001 with persistent volumes (`data/`, `models/`, `logs/`, `_profiles/`) and host Ollama access via `host.docker.internal`
 - `restart: unless-stopped` for production resilience
 - `HEALTHCHECK` at `/api/v1/health`
+- Full usage reference: `docs/DOCKER.md`
 
 ---
 

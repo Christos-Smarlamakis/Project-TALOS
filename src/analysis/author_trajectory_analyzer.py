@@ -37,7 +37,7 @@ from typing import Tuple, Union, List, Dict, Any
 
 from src.core.ai_manager import AIManager
 # Νέα εισαγωγή: χρειαζόμαστε τον profiler για την ταυτοποίηση
-from scripts.author_profiler import UnifiedProfiler
+from src.analysis.author_profiler import UnifiedProfiler
 
 class TrajectoryAnalyzer:
     def __init__(self, config: Dict[str, Any]):

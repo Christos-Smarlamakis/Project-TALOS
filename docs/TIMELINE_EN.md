@@ -4,7 +4,15 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-04 (v5.9.14 -- Documentation & Version Sync)
+> **Last Updated:** 2026-08-14 (v5.9.14 -- Docker Infrastructure Fix & Usage Reference)
+
+---
+
+## Phase 25: Docker Infrastructure Fix & Usage Reference (v5.9.14)
+
+### Status: COMPLETED (2026-08-14)
+
+- [x] **Fix stale Docker files and add detailed usage instructions** -- Corrected v5.8.2 headers in `Dockerfile`, `docker-compose.yml`, `.dockerignore`, and `example.env` to v5.9.14. Added a `config.json` bootstrap from `config.template.json`, the `_profiles/` volume, removed the deprecated Compose `version:` key, and defaulted local-model URLs to `host.docker.internal`. Added `docs/DOCKER.md` and corrected the README Docker instructions.
 
 ---
 

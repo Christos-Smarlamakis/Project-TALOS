@@ -11,6 +11,7 @@ All notable changes to the TALOS project will be documented in this file. The pr
 ### Changed
 - **Documentation Generator**: Updated `src/utils/generate_docs.py` to output language-specific directories directly into `docs/generated/`.
 - **15-File Sync Protocol**: Updated `.clinerules` path definitions to point to the new isolated directory structures.
+- **Docker Infrastructure Fix & Usage Reference**: Corrected stale v5.8.2 headers in `Dockerfile`, `docker-compose.yml`, `.dockerignore`, and `example.env` to v5.9.14. Added a `config.json` bootstrap from `config.template.json`, added the `_profiles/` volume, removed the deprecated Compose `version:` key, and defaulted local-model URLs to `host.docker.internal`. Added a comprehensive `docs/DOCKER.md` usage reference and corrected the README Docker instructions.
 
 ## [v5.9.13] - 2026-08-02 -- Academic Print Theme (Light Mode) Injection
 

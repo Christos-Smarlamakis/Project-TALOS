@@ -1,11 +1,12 @@
-# TALOS v5.8.2 — Docker Compose configuration
-# Multi-tier LLM routing with dedicated FastAPI container on port 8001.
-version: '3.8'
+# TALOS v5.9.14 — Docker Compose configuration
+# Headless FastAPI service on port 8001. Local Ollama runs on the host and is
+# reached through host.docker.internal (see docs/DOCKER.md for full instructions).
 
 services:
-  talos_api:
+  talos:
     build: .
-    container_name: talos_api_v5.8.2
+    image: talos:5.9.14
+    container_name: talos_api
     stdin_open: true
     tty: true
     ports:
@@ -14,11 +15,17 @@ services:
       - ./data:/app/data
       - ./models:/app/models
       - ./logs:/app/logs
+      - ./_profiles:/app/_profiles
     extra_hosts:
       - "host.docker.internal:host-gateway"
     env_file:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
+      - PYTHONIOENCODING=utf-8
       - TALOS_API_PORT=8001
+      # Reach the host-side local model services from inside the container.
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - FAST_EDGE_BASE_URL=http://host.docker.internal:11435/v1
+      - LOCAL_MODEL_BASE_URL=http://host.docker.internal:11434/v1
     restart: unless-stopped
