@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: trend_analyzer.py (v1.0 - Scientometrics Module)
-Project: TALOS v4.8.5
+Project: TALOS v5.9.15
 
 Description:
     Generates interactive HTML scientometrics reports with statistical

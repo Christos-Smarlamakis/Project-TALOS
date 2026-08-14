@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Project TALOS v5.9.14 -- Research Intelligence Dashboard
+title Project TALOS v5.9.15 -- Research Intelligence Dashboard
 
 REM ---------------------------------------------------------------------------
 REM [ INIT ] Enforce Terminal Viewport Dimensions
@@ -12,7 +12,7 @@ chcp 65001 >nul 2>&1
 
 REM ===========================================================================
 REM script         : run_talos.bat
-REM version        : v5.9.14 (Sealed Architecture)
+REM version        : v5.9.15 (Sealed Architecture)
 REM description    : Advanced System Dashboard and Execution Matrix for Project TALOS.
 REM                  Implements Two-Column UI, IEEE WEIGD standard telemetry,
 REM                  defensive error handling, solid-block Unicode rendering,
@@ -103,7 +103,7 @@ echo %C_IEEE_LIGHT%             ██    ███████ ██      █�
 echo %C_IEEE_LIGHT%             ██    ██   ██ ██      ██    ██     ██  %C_RESET%
 echo %C_IEEE_LIGHT%             ██    ██   ██ ███████  ██████  ██████  %C_RESET%
 echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
-echo  %C_CYAN%Project TALOS v5.9.14 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)%C_RESET%
+echo  %C_CYAN%Project TALOS v5.9.15 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)%C_RESET%
 echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
 echo  [ SYSTEM TELEMETRY ]    API (8001): %API_STATUS%   ^|   BUS (8000): %SYNAPSE_STATUS%   ^|   EDGE (11435): %EDGE_STATUS%
 echo %C_IEEE_DARK%-----------------------------------------------------------------------------------------------------%C_RESET%
@@ -184,7 +184,20 @@ call :LOG_SUCCESS "All dependencies successfully integrated."
 
 call :LOG_INFO "Triggering Frontend Provisioner..."
 python src/utils/frontend_provisioner.py
-call :LOG_SUCCESS "TALOS v5.9.13 deployment finalized."
+
+echo [5/5] Provisioning Local AI Models (Air-Gap Readiness)...
+call :LOG_INFO "Pulling Fast Edge Model (fermionresearch/Neutrino-8B)..."
+fermion pull fermionresearch/Neutrino-8B >nul 2>&1
+
+where ollama >nul 2>&1
+if %ERRORLEVEL% equ 0 (
+    call :LOG_INFO "Pulling Heavy Reasoning Model (qwen2.5:14b)..."
+    ollama pull qwen2.5:14b
+) else (
+    call :LOG_WARN "Ollama not found in PATH. Skipping GPU model pull."
+)
+
+call :LOG_SUCCESS "TALOS v5.9.15 deployment finalized."
 pause
 goto MAIN_MENU
 

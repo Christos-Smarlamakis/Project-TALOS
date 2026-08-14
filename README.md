@@ -1,4 +1,4 @@
-# Project TALOS (v5.9.14)
+# Project TALOS (v5.9.15)
 
 ### **Tactical Agentic Literature Orchestration System**
 
@@ -57,7 +57,7 @@ TALOS acts as an autonomous "Research Architect," filtering noise and highlighti
   - Vendored Graphify engine invoked as subprocess for pure-local AST extraction
   - Generates interactive HTML knowledge graph with D3.js visualization
   - Auto-executes cluster-only command for `GRAPH_REPORT.md` and community labels
-  - **Academic Print Mode (Light/Dark Toggle)** injected automatically into `graph.html` -- NEW in v5.9.13
+  - **Academic Print Mode (Light/Dark Toggle)** injected automatically into `graph.html` -- NEW in v5.9.15
   - All operations 100% air-gapped (no LLM calls required)
 - **SYNAPSE Event-Driven Protocol** (`src/integration/synapse_client.py`, `src/api/synapse_routes.py`)
   - Thread-safe EventEmitter pushes JSON events (paper_discovered, paper_evaluated, etc.) to the SYNAPSE bus
@@ -135,7 +135,7 @@ Requires **Ollama** for running locally the `gemma4` model.
 This software is part of ongoing research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.13, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.15, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -144,7 +144,7 @@ This software is part of ongoing research. If you use **TALOS** in your work, pl
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.9.13},
+  version = {v5.9.15},
   year = {2026}
 }
 ```
@@ -214,7 +214,7 @@ The Lead Architect and Author, **Christos Smarlamakis**, is an officially select
   - Vendored μηχανή Graphify που καλείται ως υποδιεργασία για αμιγώς τοπική εξαγωγή AST
   - Παράγει διαδραστικό γράφο γνώσης HTML με οπτικοποίηση D3.js
   - Αυτόματη εκτέλεση cluster-only για `GRAPH_REPORT.md` και ετικέτες κοινοτήτων
-  - **Λειτουργία Ακαδημαϊκής Εκτύπωσης (Εναλλαγή Light/Dark)** που εισάγεται αυτόματα στο `graph.html` -- ΝΕΟ στην v5.9.13
+  - **Λειτουργία Ακαδημαϊκής Εκτύπωσης (Εναλλαγή Light/Dark)** που εισάγεται αυτόματα στο `graph.html` -- ΝΕΟ στην v5.9.15
   - Όλες οι λειτουργίες 100% εκτός σύνδεσης (air-gapped, χωρίς κλήσεις LLM)
 - **Πρωτόκολλο SYNAPSE** (`src/integration/synapse_client.py`, `src/api/synapse_routes.py`)
   - Thread-safe EventEmitter προωθεί γεγονότα JSON (paper_discovered, paper_evaluated, κ.λπ.) στον δίαυλο SYNAPSE
@@ -287,7 +287,7 @@ python src/utils/generate_docs.py
 Αυτό το λογισμικό αποτελεί μέρος εν εξελίξει έρευνας. Εάν χρησιμοποιήσετε το **TALOS** στην εργασία σας, παρακαλούμε να το αναφέρετε ως εξής:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.13, Αύγουστος 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.9.15, Αύγουστος 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -296,7 +296,7 @@ python src/utils/generate_docs.py
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.9.13},
+  version = {v5.9.15},
   year = {2026}
 }
 ```

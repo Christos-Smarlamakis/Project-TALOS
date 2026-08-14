@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: architecture_intelligence_report.py (v1.0)
-Project: TALOS v4.11.0
+Project: TALOS v5.9.15
 Description:
     Feeds PROJECT_MAP.md, dependency audit JSON, and architecture graph data
     to an LLM (Gemini Pro) to generate a comprehensive Architecture

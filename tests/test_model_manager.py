@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_model_manager.py
-Project: TALOS v5.8.0
+Project: TALOS v5.9.15
 Description:
     Unit tests for the TUI model manager helper functions (model_manager.py).
     Tests cover: Ollama connectivity checks, quantization tag categorization,

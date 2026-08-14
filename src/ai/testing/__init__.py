@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: __init__.py
-Project: TALOS v5.9.4
+Project: TALOS v5.9.15
 Description:
     Package initializer for the Autonomous System Tester (RL-Driven Chaos Engineering)
     subpackage. Provides the non-stationary multi-armed bandit testing daemon that

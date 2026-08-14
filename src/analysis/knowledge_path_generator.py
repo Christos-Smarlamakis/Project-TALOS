@@ -11,7 +11,7 @@
 
 """
 Module: knowledge_path_generator.py (v1.9 - Final Bugfix)
-Project: TALOS v5.3.8 - 
+Project: TALOS v5.9.15 - 
 
 Description:
 This module implements the KnowledgePathGenerator class, which is responsible for generating a structured knowledge path 
@@ -83,7 +83,7 @@ class KnowledgePathGenerator:
         return goal
 
     def _find_relevant_papers(self, goal_text: str, top_k: int = 100) -> pd.DataFrame:
-        print(f"\n🔎 [1/5] Εκτέλεση σημασιολογικής αναζήτησης για '{goal_text[:50]}...'")
+        print(f"\n[1/5] Εκτέλεση σημασιολογικής αναζήτησης για '{goal_text[:50]}...'")
         query_vector_list = self.ai_manager.generate_embeddings([goal_text], task_type="RETRIEVAL_QUERY")
         if not query_vector_list: return pd.DataFrame()
         query_vector = np.array(query_vector_list[0])
@@ -115,7 +115,7 @@ class KnowledgePathGenerator:
         return ", ".join([feature_names[i] for i in top_term_indices])
 
     def _structure_knowledge(self, df: pd.DataFrame, num_clusters=4, min_score=7.0) -> dict:
-        print("🔎 [3/5] Δόμηση της γνώσης (Foundational, Thematic, State-of-the-Art)...")
+        print("[3/5] Δόμηση της γνώσης (Foundational, Thematic, State-of-the-Art)...")
         cols_to_keep = ['title', 'publication_year', 'url', 'doi', 'overall_score']
         elite_papers = df[df['overall_score'] >= min_score].copy()
         sorted_by_year = elite_papers.sort_values(by='publication_year', ascending=True)

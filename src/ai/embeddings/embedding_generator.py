@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: embedding_generator.py (v4.0 — Multi-Model Seed All)
-Project: TALOS v5.0.0
+Project: TALOS v5.9.15
 Description:
     Generates semantic embeddings using all available providers.
 

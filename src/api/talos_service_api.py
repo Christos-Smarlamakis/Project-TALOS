@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: talos_service_api.py (v1.0)
-Project: TALOS v5.0.0 — Phase 4
+Project: TALOS v5.9.15
 Description:
     Micro-Flask API server for the TALOS Autonomous Research Service.
     Provides a lightweight HTTP interface to query the service's status,
@@ -19,7 +19,7 @@ Description:
     - Single-file, minimal dependencies, starts in <1 second.
 
     Usage:
-        python scripts/talos_service_api.py
+        python src/api/talos_service_api.py
 """
 import os
 import sys
@@ -38,8 +38,8 @@ app = Flask(__name__)
 
 # ── Report root directory ───────────────────────────────────────────────────
 REPORTS_ROOT = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-    "reports", "argus"
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+    "data", "reports", "argus"
 )
 
 
@@ -72,8 +72,8 @@ def api_status():
     stats = {"total": 0, "elite": 0, "avg_score": 0.0}
     try:
         import sqlite3
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        db_path = os.path.join(project_root, "talos_research.db")
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        db_path = os.path.join(project_root, "data", "talos_research.db")
         if not os.path.exists(db_path):
             profile_db = os.path.join(project_root, "_profiles", "default_drones", "talos_research.db")
             if os.path.exists(profile_db):

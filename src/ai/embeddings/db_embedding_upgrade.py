@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: db_embedding_upgrade.py (v2.0)
-Project: TALOS v5.0.0
+Project: TALOS v5.9.15
 Description:
     Phase 0: Database schema upgrade for Multi-Provider Hybrid Embeddings.
 
@@ -28,7 +28,7 @@ import pickle
 from pathlib import Path
 from datetime import datetime
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 
@@ -48,7 +48,7 @@ def get_db_path() -> str:
                 return str(profile_db)
         except Exception:
             pass
-    root_db = PROJECT_ROOT / "talos_research.db"
+    root_db = PROJECT_ROOT / "data" / "talos_research.db"
     return str(root_db)
 
 

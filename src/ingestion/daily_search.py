@@ -11,7 +11,7 @@
 
 """
 Module: daily_search.py (Quad-Layer & Rate Limit Safe)
-Project: TALOS v5.3.7
+Project: TALOS v5.9.15
 
 Description:
     The daily search orchestrator. Fetches new papers from all 14 configured
@@ -106,7 +106,7 @@ def post_report_to_discord(config: dict, markdown_content: str, filename: str):
     payload = {"content": f"TALOS Daily Briefing\nToday's report is ready."}
     files = {'file': (filename, markdown_content, 'text/markdown')}
     try:
-        response = requests.post(webhook_url, data=payload, files=files)
+        response = requests.post(webhook_url, data=payload, files=files, timeout=30)
         response.raise_for_status()
         print("  > Report sent to Discord successfully!")
     except requests.exceptions.RequestException as e:

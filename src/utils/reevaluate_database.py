@@ -11,7 +11,7 @@
 
 """
 Module: reevaluate_database.py (v5.0 - Quad-Layer Update)
-Project: TALOS v4.0
+Project: TALOS v5.9.15
 
 Description:
 Η πλήρως αναβαθμισμένη έκδοση του script επανα-αξιολόγησης για την v4.0.

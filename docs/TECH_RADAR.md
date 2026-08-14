@@ -1,67 +1,77 @@
-# ?? TALOS Tech Radar & Ecosystem Map
+# TALOS Tech Radar & Ecosystem Map
 
-���� �� ������� ���������� �� �� "������ �����������" ��� ��� ������� ��� Project TALOS ��� ��� ������������ ������� ��� Drone Swarms. ���������� �������� ������ (State-of-the-Art) ��� ������������ ��� �� ���������� ������ ����������� ����.
+This document is the technology radar of Project TALOS. It catalogues the development stack, the agentic architecture, the document-comprehension tooling, and the simulation capabilities that surround the core TALOS research intelligence system. It tracks State-of-the-Art (SOTA) technologies and maps the surrounding research-intelligence ecosystem.
 
 ---
 
-## ??? 1. Development Stack (��� �������� ��� ������)
-*�������� ��� �������������� ����� (�� developers) ��� �� �������� ��� TALOS 100 ����� ��� �������, ����� ������.*
+## 1. Development Stack (The Tools That Build TALOS)
+
+The development tooling that lets developers iterate on TALOS quickly and safely.
 
 *   **Free Claude Code (via NVIDIA NIM / Ollama)**
-    *   **�� �����:** Proxy ��� ��������� �� ������ ����� ��� ��������� AI coder (Claude Code) ��� ���������.
-    *   **��� �� ��������������:** �� ��� ������ ��� "Junior Developer". ��� ������ �� ������ �� Python scripts (�.�. ��� PDF Downloader ��� v4.9.0) ����������� ��� ������ ��� ������.
+    *   **What it is:** A local proxy for running an AI coding assistant (Claude Code) with no per-token cost.
+    *   **Role in TALOS:** Acts as a junior developer. Writes and edits Python scripts (for example, the PDF Downloader in v4.9.0) under human review.
+
 *   **Spec Kit (Spec-Driven Development)**
-    *   **�� �����:** �������� ��� ���������� �� ������� AI coding �� ������� �������� ����������.
-    *   **��� �� ��������������:** ���� �� �� Claude Code. �������� ����� ��� ������������ (Constitution/Plan) ��� ����������� �� AI �� ��� ����������� �����, ��� �� ��� ����������� �� ������� ������ ��� TALOS.
+    *   **What it is:** A spec-driven workflow that turns natural-language specifications into AI coding tasks.
+    *   **Role in TALOS:** Complements Claude Code. Produces a specification (Constitution/Plan) that the AI follows so changes stay deterministic and auditable.
+
 *   **LeanKG**
-    *   **�� �����:** ������� ������ ������ (Knowledge Graph) ��� ��� ������ ���.
-    *   **��� �� ��������������:** ���� � TALOS ��������� ����, �� LeanKG �� ����� ��� Claude Code ���� �� ������ ��� ����������, ����������� ����� ��� tokens.
+    *   **What it is:** A lightweight knowledge-graph engine for project memory.
+    *   **Role in TALOS:** Stores what TALOS already knows so Claude Code can retrieve relevant context without re-reading files, saving tokens.
+
 *   **Mini-Wiki (Plugin: paper-drafter)**
-    *   **�� �����:** �������� ��� �������� ������ ��� ������ documentation / LaTeX papers.
-    *   **��� �� ��������������:** ���� ����� � ��� �� �������� �� paper ��� ��� TALOS, �� �� ������� �� ��� ������ �� ����� Draft (IMRaD) ��� �� ��� ������ �� ������������� ����������� (Mermaid graphs) ��������.
+    *   **What it is:** A wiki-style plugin for generating documentation and LaTeX papers.
+    *   **Role in TALOS:** Drafts papers from TALOS results, producing an IMRaD draft with Mermaid diagrams for visualization.
 
 ---
 
-## ?? 2. Agentic & Core Architecture (� v5.0 ��� TALOS)
-*�������� ��� �� ������������ ��� TALOS ��� "Script" �� "������ ���������" (Agent Swarm).*
+## 2. Agentic & Core Architecture (TALOS v5.0)
+
+The architecture that turns TALOS from a script into an agent swarm.
 
 *   **AgentScope**
-    *   **�� �����:** Production-ready framework ��� Multi-Agent ��������� �� ������������ Reinforcement Learning (Agentic RL).
-    *   **��� �� ��������������:** �� ����� � "�������" ��� v5.0. �� �������������� �� ����������� scripts �� ��������� ��� ������������ ������ ���� ��� ��������� ��� �� ���� ����.
+    *   **What it is:** A production-ready Multi-Agent framework with Agentic Reinforcement Learning.
+    *   **Role in TALOS:** Serves as the backbone of v5.0. Orchestrates the scripts into an agent swarm where each agent decides which API to query next.
 
 ---
 
-## ?? 3. Document Comprehension & RAG (��� �������� � TALOS)
-*�������� ��� �� ������� ��� TALOS �� �������� �� ������ ������� ��� PDF.*
+## 3. Document Comprehension & RAG (Reading What TALOS Finds)
+
+Tools for reading and understanding the papers TALOS ingests, including PDFs.
 
 *   **RAG-Anything / LightRAG (GraphRAG)**
-    *   **�� �����:** ������� ��� �������� ������� ��� �������� ��������� ������ (Knowledge Graphs), ��� ���� ����������.
-    *   **��� �� ��������������:** ���� � TALOS ��������� �� PDF, �� �� �������� ��� ��� �� ������� ������ ��������� ������ ������������.
+    *   **What it is:** Retrieval-Augmented Generation that builds a knowledge graph over retrieved documents.
+    *   **Role in TALOS:** When TALOS ingests a PDF, these tools extract structured, graph-based knowledge from it.
+
 *   **OpenRAG**
-    *   **�� �����:** ������������, ������� ��������� RAG ��� ������ �������� (�� UI).
-    *   **��� �� ��������������:** ����������� ���� (� Web UI) ��� �� "������" ��� TALOS ��������� ���� ��� ����������� papers, ��������� ������ ������� (����� API costs).
+    *   **What it is:** An open-source, pluggable RAG pipeline with a UI.
+    *   **Role in TALOS:** Provides an alternative (with a web UI) for reading TALOS-ingested papers, keeping retrieval costs low.
 
 ---
 
-## ?? 4. Simulation & Playground (�� ����� ������� ��� Drones)
-*�������� ��� ��� �������� �������� ��� ������� ��� Drone Swarms.*
+## 4. Simulation & Playground (The World of the Drones)
+
+Simulation and rendering tooling for the Drone Swarms research domain.
 
 *   **Urbanity**
-    *   **�� �����:** �������� ��� ���������� OpenStreetMap �������� ������ �� ������� (Networks) �������� ��� AI.
-    *   **��� �� ��������������:** ��� �� ����������� "������������" �������� ������ (������, ���, ������) ���� ����� ������� �� ���������� ���� ����������� ��������� (Path Planning) ��� ������ ���.
+    *   **What it is:** A Python library for generating OpenStreetMap-derived street networks for AI.
+    *   **Role in TALOS:** Provides realistic urban environments (buildings, streets, parks) for drone-swarm path-planning simulations.
+
 *   **forge3d**
-    *   **�� �����:** Python ���������� ��� 3D GPU-accelerated rendering.
-    *   **��� �� ��������������:** ��� �� ��������� "Publication-Quality" (4K) ������� 3D ������������� ��� drones ���, ����������� ���������� �� ������� ��� ������������ ���.
+    *   **What it is:** A Python library for 3D GPU-accelerated rendering.
+    *   **Role in TALOS:** Produces publication-quality (4K) 3D visualizations of drone swarms for reports and papers.
 
 ---
 
-## ?? 5. Related Works & Competitors (��� �� Papers ���)
-*�������� ��� ������ �� ���������� �� "������� ������������" ��� �� �������� ��� ������� �� ������� ���� ����.*
+## 5. Related Works & Competitors (The Papers and Projects Nearby)
 
-*   **AutoResearchClaw:** Autonomous pipeline ��� ������ papers ��� �� ����� (End-to-End). (�� �� ����������� �� ��� TALOS ��� �������� ���� *����������* ��� �������������).
-*   **Hermes Agent Ecosystem:** Agent �� "built-in learning loop" ��� skills marketplace. 
-*   **OnionClaw:** Autonomous agent ��� �� Dark Web/Tor (�� �� ���������� ��� �������� "Future Work / Security in Swarms" �� �������� Threat Intelligence).
+Related systems and competitors that TALOS is evaluated against, tracked to keep the roadmap honest.
+
+*   **AutoResearchClaw:** An autonomous end-to-end pipeline for reading papers. Compared to TALOS to highlight the value of the human-in-the-loop approach.
+*   **Hermes Agent Ecosystem:** An agent with a built-in learning loop and a skills marketplace.
+*   **OnionClaw:** An autonomous agent for Dark Web/Tor research. Tracked under "Future Work / Security in Swarms" for threat intelligence.
 
 ---
 
-> **Project Version:** v5.9.2 | **Last Updated:** 2026-08-01
+> **Project Version:** v5.9.15 | **Last Updated:** 2026-08-14

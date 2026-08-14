@@ -6,7 +6,7 @@
 #
 """
 Module: ai_manager.py (v3.8 - 2D Execution Matrix & Cross-Environment Fallback)
-Project: TALOS v5.9.4
+Project: TALOS v5.9.15
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture
@@ -900,28 +900,28 @@ class AIManager:
     # ==================================================================
 
     def _ensure_local_model(self):
-        """Verify and auto-install required local models for Ollama."""
-        print("\n[Verifying local models...]")
+        """Verify required local Ollama models are present (non-blocking).
+
+        v5.9.15: this method no longer auto-pulls models. It only reports
+        missing models; installation is handled on-demand by
+        src/ai/llm/model_manager.py (Option 1). Skips silently when Ollama
+        is unreachable or when verification already happened.
+        """
         base = "http://localhost:11434"
         try:
             resp = requests.get(f"{base}/api/tags", timeout=5)
             if resp.status_code != 200:
-                print("WARNING: Ollama not reachable.")
                 return
             models = [m['name'] for m in resp.json().get('models', [])]
 
             local_model = os.getenv("LOCAL_MODEL_NAME", "gemma3:12b")
             local_embedding = os.getenv("LOCAL_EMBEDDING_MODEL", "nomic-embed-text")
 
-            for model in [local_model, local_embedding]:
-                found = any(m == model or m.startswith(model) for m in models)
-                if not found:
-                    print(f"  >> Pulling {model}...")
-                    import subprocess
-                    subprocess.run(["ollama", "pull", model], check=True)
-                else:
-                    print(f"  >> {model} already installed.")
+            missing = [m for m in (local_model, local_embedding)
+                       if not any(x == m or x.startswith(m) for x in models)]
+            if missing:
+                print(f"WARNING: Missing local models: {', '.join(missing)}. "
+                      f"Install them via Model Manager (Option 1).")
             os.environ["TALOS_MODELS_VERIFIED"] = "1"
-            print("[All local models ready.]")
-        except Exception as e:
-            print(f"WARNING: Model verification failed: {e}")
+        except Exception:
+            pass

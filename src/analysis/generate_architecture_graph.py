@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: generate_architecture_graph.py (v2.0)
-Project: TALOS v4.11.0
+Project: TALOS v5.9.15
 Description:
     Auto-generates the architecture graph data file with ALL imports
     (including standard library and third-party packages).
@@ -19,11 +19,9 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 OUTPUT_DATA = PROJECT_ROOT / "templates" / "architecture_graph_data.json"
-SCRIPTS_DIR = PROJECT_ROOT / "scripts"
-CORE_DIR = PROJECT_ROOT / "core"
-SOURCES_DIR = PROJECT_ROOT / "sources"
+SRC_DIR = PROJECT_ROOT / "src"
 
 SKIP_FILES = {
     "__init__.py",
@@ -152,10 +150,16 @@ def extract_imports(py_file):
     for node in ast.walk(tree):
         if isinstance(node, ast.Import):
             for alias in node.names:
-                imports.add(alias.name.split(".")[0])  # top-level module only
+                if alias.name.startswith("src."):
+                    imports.add(alias.name)
+                else:
+                    imports.add(alias.name.split(".")[0])
         elif isinstance(node, ast.ImportFrom):
             if node.module:
-                imports.add(node.module.split(".")[0])
+                if node.module.startswith("src."):
+                    imports.add(node.module)
+                else:
+                    imports.add(node.module.split(".")[0])
 
     return sorted(imports)
 
@@ -179,23 +183,12 @@ def get_module_label(module_name, layer):
 
 
 def scrape_all_imports():
-    """Collect raw import data from all files."""
+    """Collect raw import data from all src/ and root files."""
     data = {}
-    for py_file in sorted(SCRIPTS_DIR.glob("*.py")):
-        fname = py_file.name
-        if fname in SKIP_FILES:
+    for py_file in sorted(SRC_DIR.rglob("*.py")):
+        if py_file.name in SKIP_FILES or py_file.name == "__init__.py":
             continue
-        data[fname] = extract_imports(py_file)
-    for py_file in sorted(CORE_DIR.glob("*.py")):
-        fname = py_file.name
-        if fname in SKIP_FILES:
-            continue
-        data[f"core/{fname}"] = extract_imports(py_file)
-    for py_file in sorted(SOURCES_DIR.glob("*.py")):
-        fname = py_file.name
-        if fname in SKIP_FILES:
-            continue
-        data[f"sources/{fname}"] = extract_imports(py_file)
+        data[py_file.name] = extract_imports(py_file)
     for py_file in sorted(PROJECT_ROOT.glob("*.py")):
         fname = py_file.name
         if fname.startswith("_") or fname in SKIP_FILES:
@@ -219,18 +212,19 @@ def build_elements(raw_imports):
         "thirdparty": set(),
     }
 
-    # Collect scripts and sources
-    for py_file in sorted(SCRIPTS_DIR.glob("*.py")):
+    # Collect scripts and sources from the DDD src/ tree
+    for py_file in sorted(SRC_DIR.rglob("*.py")):
         fname = py_file.name
-        if fname in SKIP_FILES or fname == "generate_architecture_graph.py":
+        if fname in SKIP_FILES or fname == "__init__.py":
             continue
-        all_layers["script"].append(fname)
-
-    for py_file in sorted(SOURCES_DIR.glob("*.py")):
-        fname = py_file.name
-        if fname in SKIP_FILES:
+        if fname == "generate_architecture_graph.py":
             continue
-        all_layers["source"].append(f"sources/{fname}")
+        if fname.endswith("_source.py"):
+            all_layers["source"].append(fname)
+        elif fname in CORE_MODULES:
+            continue  # core modules are handled separately
+        else:
+            all_layers["script"].append(fname)
 
     # ── Build nodes ──────────────────────────────────────────────────────
     def add_node(node_id, label, layer, desc=""):
@@ -312,13 +306,11 @@ def build_elements(raw_imports):
 
         for imp in imports:
             # TALOS file import
-            if imp.startswith("core.") or imp.startswith("scripts.") or imp.startswith("sources."):
+            if imp.startswith(("core.", "scripts.", "sources.", "src.")):
                 parts = imp.split(".")
                 if len(parts) >= 2:
-                    target = parts[1] + ".py"
+                    target = parts[-1] + ".py"
                     add_edge(fname_clean, target, "import")
-                elif imp == "core":
-                    pass  # bare 'import core' — skip
                 continue
 
             # External service mapping
@@ -347,9 +339,7 @@ def build_elements(raw_imports):
     # Core → stdlib/third-party
     for fname in all_layers["core"]:
         label_clean = fname.replace("core/", "")
-        if label_clean in raw_imports.get(f"core/{fname}", raw_imports.get(fname, [])):
-            pass
-        for imp in raw_imports.get(f"core/{fname}", []):
+        for imp in raw_imports.get(label_clean, []):
             tp = classify_module(imp)
             if tp:
                 add_edge(label_clean, imp, "import")

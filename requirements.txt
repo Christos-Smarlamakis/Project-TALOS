@@ -1,4 +1,4 @@
-# TALOS v5.9.11 -- Dependencies
+# TALOS v5.9.14 -- Dependencies
 # Install: pip install -r requirements.txt
 
 # === Core: API Framework & Networking ===
@@ -26,7 +26,7 @@ pyzotero                    # Zotero Web API client
 
 # === Data Science: Analysis & ML ===
 numpy                       # Numerical operations & embedding calculations
-pandas>=2.1.0               # Data manipulation (DataFrames)
+pandas>=2.1.0,<3.0          # Data manipulation (DataFrames)
 scikit-learn                # Machine learning (clustering, TF-IDF)
 psutil                      # Process & system monitoring (daemon, VRAM queries)
 

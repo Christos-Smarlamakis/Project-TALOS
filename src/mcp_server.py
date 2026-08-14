@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: mcp_server.py
-Project: TALOS v5.8.3
+Project: TALOS v5.9.15
 Description:
     Official MCP (Model Context Protocol) Server for the TALOS Ecosystem.
     This module exposes TALOS capabilities as MCP tools via stdio transport,

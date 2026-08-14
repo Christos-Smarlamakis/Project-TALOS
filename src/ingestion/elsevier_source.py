@@ -11,7 +11,7 @@
 
 """
 Module: elsevier_source.py
-Project: TALOS v5.8.8
+Project: TALOS v5.9.15
 
 Description:
     Search agent for the Elsevier Scopus API via the elsapy library.

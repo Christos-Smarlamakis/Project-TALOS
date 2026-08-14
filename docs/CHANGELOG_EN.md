@@ -2,6 +2,26 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.9.15] - 2026-08-14 -- RL & Daemon Hardening, Zero-Click Model Provisioning, Silent Fast Boot & Dependency Map Reconciliation
+
+### Added
+- **`docs/TECH_RADAR_GR.md`**: Complete Greek translation of the Technology Radar and Ecosystem Map, adhering to the pure Greek unicode protocol.
+- **Zero-Click Local AI Model Provisioning in Launchers**: Added step [5/5] in `run_talos.bat` and `run_talos.sh` setup pipelines to automatically execute `fermion pull fermionresearch/Neutrino-8B` and `ollama pull qwen2.5:14b` during initial installation.
+- **Silent Fast Boot**: Purged the legacy startup model verification (`_verify_local_models` in `talos.py`). The CLI now boots silently and instantly into the Rich dashboard; model inspection and installation are on-demand in Model Manager (Option 1).
+
+### Changed
+- **Section 7 Dependency Graph Reconciled** (`docs/PROJECT_MAP.md`, `docs/PROJECT_MAP_EN.md`): Rebuilt the architectural dependency graph using the modern `src.*` Domain-Driven Design package hierarchy, eliminating legacy drift warnings.
+- **`verify_dependency_map.py` DDD Reconciliation**: Migrated `IMPORT_TO_DOC_MAP` and `COVERED_BY_PARENT` to `src.*` names and added internal-package classification so `--ci` reports zero missing drift.
+- **DRL & Daemon Subsystem Hardened**: Full audit and verification across all 10 RL/Daemon modules (`talos_env.py`, `drl_agent.py`, `drl_networks.py`, `drl_trainer.py`, `live_agent_sources.py`, `live_agent_orchestrator.py`, `talos_live_agent.py`, `talos_service.py`, `gwo_rl_optimizer.py`, `autonomous_tester.py`).
+- **Version strings synced across 5 code files and 15 documentation files** to v5.9.15.
+- **`tests/test_multi_tier.py`**: `test_talos_version` assertion updated from "5.9.14" to "5.9.15".
+
+### Verification
+- `python -m compileall` passed on all Python files.
+- Full test suite: 180 passed, 0 failed (`pytest -v`).
+- `test_smoke.py`: 445 passed, 0 failed.
+- Zero emojis protocol strictly enforced across all code and documentation.
+
 ## [v5.9.14] - 2026-08-02 -- Documentation Governance Restructuring
 
 ### Added

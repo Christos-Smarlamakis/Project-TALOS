@@ -11,7 +11,7 @@
 
 """
 Module: interactive_dashboard.py (v2.2 - Soft Shutdown)
-Project: TALOS v4.8.5
+Project: TALOS v5.9.15
 
 Description:
     Flask web server powering the TALOS Interactive Dashboard. Serves a

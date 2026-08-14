@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.9.14
+Project: TALOS v5.9.15
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -637,20 +637,10 @@ def profile_settings_menu(python_exe):
         elif c.startswith("6."): run_script("research_pivot.py", python_exe)
         safe_pause("\nPress Enter...")
 
-def _verify_local_models():
-    import requests
-    print("\n[Verifying local models...]")
-    try:
-        r = requests.get("http://localhost:11434/api/tags", timeout=5)
-        if r.status_code != 200: return
-        models = [m['name'] for m in r.json().get('models', [])]
-        for m in ["gemma3:12b", "nomic-embed-text"]:
-            if m not in models:
-                print(f"  >> Pulling {m}...")
-                subprocess.run(["ollama", "pull", m], check=True)
-            else: print(f"  >> {m} installed.")
-        os.environ["TALOS_MODELS_VERIFIED"] = "1"
-    except Exception: pass
+# -- v5.9.15: Silent Fast Boot --
+# The legacy startup model verifier (_verify_local_models) has been removed.
+# Local model inspection and installation is now strictly on-demand via
+# src/ai/llm/model_manager.py (Option 1: Configure AI Models).
 
 
 # ---------------------------------------------------------------------------
@@ -931,8 +921,9 @@ def main_menu():
     # TALOS now reads TALOS_USE_LOCAL from .env directly via config/settings.py
     # and AIManager. The legacy interactive LOCAL/CLOUD prompt has been purged.
     USE_LOCAL_MODEL = os.environ.get("TALOS_USE_LOCAL", "").lower() in ("1", "true", "yes")
-    if USE_LOCAL_MODEL:
-        _verify_local_models()
+    # -- v5.9.15: Silent Fast Boot -- skip model verification at startup.
+    # Model checks are on-demand only (Model Manager, Option 1).
+    os.environ["TALOS_MODELS_VERIFIED"] = "1"
 
     # -- v5.9.2: Dynamic Focus Summarization --
     # If config.json lacks active_focus_summary but has queries/goal,

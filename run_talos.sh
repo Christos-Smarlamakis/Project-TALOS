@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ===========================================================================
 # script         : run_talos.sh
-# version        : v5.9.14 (Sealed Architecture)
+# version        : v5.9.15 (Sealed Architecture)
 # description    : Cross-Platform POSIX Dashboard for Project TALOS.
 #                  Implements Two-Column UI, IEEE WEIGD standard telemetry,
 #                  defensive error handling, Universal ASCII rendering, and
@@ -115,7 +115,7 @@ show_menu() {
     echo -e "${C_IEEE_LIGHT}             ##      ##    ##  ##        ##    ##       ## ${C_RESET}"
     echo -e "${C_IEEE_LIGHT}             ##      ##    ##  ########   ######   ######  ${C_RESET}"
     echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
-    echo -e "  ${C_CYAN}Project TALOS v5.9.14 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)${C_RESET}"
+    echo -e "  ${C_CYAN}Project TALOS v5.9.15 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)${C_RESET}"
     echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
     echo -e "  [ SYSTEM TELEMETRY ]    API (8001): ${API_STATUS}   |   BUS (8000): ${SYNAPSE_STATUS}   |   EDGE (11435): ${EDGE_STATUS}"
     echo -e "${C_IEEE_DARK}-----------------------------------------------------------------------------------------------------${C_RESET}"
@@ -190,7 +190,19 @@ do_setup() {
 
     log_info "Triggering Frontend Provisioner..."
     $PYTHON_CMD src/utils/frontend_provisioner.py
-    log_success "TALOS v5.9.13 deployment finalized."
+
+    echo "[5/5] Provisioning Local AI Models (Air-Gap Readiness)..."
+    log_info "Pulling Fast Edge Model (fermionresearch/Neutrino-8B)..."
+    fermion pull fermionresearch/Neutrino-8B >/dev/null 2>&1 || log_warn "Fermion pull skipped or offline."
+
+    if command -v ollama >/dev/null 2>&1; then
+        log_info "Pulling Heavy Reasoning Model (qwen2.5:14b)..."
+        ollama pull qwen2.5:14b || log_warn "Ollama pull skipped."
+    else
+        log_warn "Ollama not found on PATH. Skipping GPU model pull."
+    fi
+
+    log_success "TALOS v5.9.15 deployment finalized."
     press_enter
 }
 
@@ -323,7 +335,7 @@ while true; do
         10)
             echo ""
             echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
-            echo -e "  Closing Project TALOS v5.9.14..."
+            echo -e "  Closing Project TALOS v5.9.15..."
             echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
             # Reset viewport constraint on exit
             printf '\033[8;24;80t' >/dev/null 2>&1 || true

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: drl_agent.py (v2.0 — Dynamic N-Source Agent)
-Project: TALOS v5.2.0
+Project: TALOS v5.9.15
 Description:
     Deep Reinforcement Learning agent for TALOS API source selection.
     Implements Double Dueling DQN with an LSTM-based neural network that

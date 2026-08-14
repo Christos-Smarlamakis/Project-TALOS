@@ -4,9 +4,20 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-14 (v5.9.14 -- Docker Infrastructure Fix & Usage Reference)
+> **Last Updated:** 2026-08-14 (v5.9.15 -- RL & Daemon Hardening, Zero-Click Model Provisioning, Silent Fast Boot & Dependency Map Reconciliation)
 
 ---
+
+## Phase 26: RL & Daemon Hardening, Zero-Click Model Provisioning, Silent Fast Boot & Dependency Map Reconciliation (v5.9.15)
+
+### Status: COMPLETED (2026-08-14)
+
+- [x] **Full audit of DRL and daemon subsystems** -- Audited all 10 RL and daemon scripts across `src/ai/drl/`, `src/ai/optimizers/`, and `src/ai/testing/`. Confirmed hour normalization `/24.0`, Gymnasium time-limit truncation, soft updates, GWO canonical formulation, and MAB chaos fuzzer integrity.
+- [x] **Reconcile Section 7 Dependency Graph in PROJECT_MAP files** -- Rebuilt Section 7 with the modern `src.*` DDD layout, clearing legacy drift warnings.
+- [x] **Silent Fast Boot** -- Removed legacy startup model verification so `talos.py` boots directly into the Rich dashboard.
+- [x] **Add Zero-Click local AI model provisioning to launchers** -- `run_talos.bat` and `run_talos.sh` pull Neutrino-8B and Qwen2.5:14b during setup.
+- [x] **Create docs/TECH_RADAR_GR.md** -- Full pure Greek translation of the Tech Radar.
+- [x] **Sync all 5 code files and 15 documentation files to v5.9.15**
 
 ## Phase 25: Docker Infrastructure Fix & Usage Reference (v5.9.14)
 

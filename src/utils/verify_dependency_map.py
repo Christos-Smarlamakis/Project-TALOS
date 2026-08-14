@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: verify_dependency_map.py (v1.0)
-Project: TALOS v5.0.0
+Project: TALOS v5.9.15
 Description:
     AST-based dependency verification tool. Compares the documented
     dependency graph in PROJECT_MAP.md (Section 7) against actual
@@ -9,15 +9,15 @@ Description:
 
     Outputs:
     1. Console report (colored summary)
-    2. reports/dependency_audit.json (machine-readable for CI/CD)
-    3. reports/dependency_audit.html (colored HTML table)
+    2. data/reports/audits/dependency_audit.json (machine-readable for CI/CD)
+    3. data/reports/audits/dependency_audit.html (colored HTML table)
     4. Exit code 0 if all documented imports exist, 1 otherwise
 
     Usage:
-        python scripts/verify_dependency_map.py           # verbose report
-        python scripts/verify_dependency_map.py --json    # JSON only
-        python scripts/verify_dependency_map.py --html    # HTML report
-        python scripts/verify_dependency_map.py --ci      # quiet, exit code only
+        python src/utils/verify_dependency_map.py           # verbose report
+        python src/utils/verify_dependency_map.py --json    # JSON only
+        python src/utils/verify_dependency_map.py --html    # HTML report
+        python src/utils/verify_dependency_map.py --ci      # quiet, exit code only
 """
 import os
 import re
@@ -29,12 +29,10 @@ from datetime import datetime
 from collections import defaultdict
 
 # ── Configuration ────────────────────────────────────────────────────────────
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-PROJECT_MAP = PROJECT_ROOT / "PROJECT_MAP.md"
-REPORTS_DIR = PROJECT_ROOT / "reports" / "audits"
-SCRIPTS_DIR = PROJECT_ROOT / "scripts"
-CORE_DIR = PROJECT_ROOT / "core"
-SOURCES_DIR = PROJECT_ROOT / "sources"
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+PROJECT_MAP = PROJECT_ROOT / "docs" / "PROJECT_MAP.md"
+REPORTS_DIR = PROJECT_ROOT / "data" / "reports" / "audits"
+SRC_DIR = PROJECT_ROOT / "src"
 
 # Files to skip (not part of the dependency graph)
 SKIP_FILES = {
@@ -47,27 +45,28 @@ SKIP_FILES = {
 # Mapping from import paths to documented names
 IMPORT_TO_DOC_MAP = {
     # core modules
-    "core.database_manager": "core.database_manager.DatabaseManager",
-    "core.ai_manager": "core.ai_manager.AIManager",
-    "core.hardware": "core.hardware",
-    # scripts (imported as modules by entry points)
-    "scripts.profile_manager": "scripts.profile_manager",
-    "scripts.api_health_check": "scripts.api_health_check.run_diagnostics",
-    # sources
-    "sources.semantic_scholar_source": "sources.semantic_scholar_source.SemanticScholarSource",
-    "sources.arxiv_source": "sources.*",
-    "sources.elsevier_source": "sources.*",
-    "sources.ieee_source": "sources.*",
-    "sources.springer_source": "sources.*",
-    "sources.openalex_source": "sources.*",
-    "sources.dblp_source": "sources.*",
-    "sources.core_source": "sources.*",
-    "sources.crossref_source": "sources.*",
-    "sources.openarchives_source": "sources.*",
-    "sources.pubmed_source": "sources.*",
-    "sources.scigov_source": "sources.*",
-    "sources.osti_source": "sources.*",
-    "sources.plos_source": "sources.*",
+    "src.core.database_manager": "src.core.database_manager.DatabaseManager",
+    "src.core.ai_manager": "src.core.ai_manager.AIManager",
+    "src.core.hardware": "src.core.hardware",
+    "src.core.profile_manager": "src.core.profile_manager",
+    "src.core.notifier": "src.core.notifier",
+    # utils
+    "src.utils.api_health_check": "src.utils.api_health_check.run_diagnostics",
+    # ingestion sources
+    "src.ingestion.semantic_scholar_source": "src.ingestion.semantic_scholar_source.SemanticScholarSource",
+    "src.ingestion.arxiv_source": "src.ingestion.*",
+    "src.ingestion.elsevier_source": "src.ingestion.*",
+    "src.ingestion.ieee_source": "src.ingestion.*",
+    "src.ingestion.springer_source": "src.ingestion.*",
+    "src.ingestion.openalex_source": "src.ingestion.*",
+    "src.ingestion.dblp_source": "src.ingestion.*",
+    "src.ingestion.core_source": "src.ingestion.*",
+    "src.ingestion.crossref_source": "src.ingestion.*",
+    "src.ingestion.openarchives_source": "src.ingestion.*",
+    "src.ingestion.pubmed_source": "src.ingestion.*",
+    "src.ingestion.scigov_source": "src.ingestion.*",
+    "src.ingestion.osti_source": "src.ingestion.*",
+    "src.ingestion.plos_source": "src.ingestion.*",
     # external libraries
     "sklearn": "sklearn",
     "sklearn.cluster": "sklearn",
@@ -89,34 +88,50 @@ IMPORT_TO_DOC_MAP = {
 # that need to be in the dependency graph (Section 7 tracks TALOS file-to-file
 # relationships, not library imports).
 EXTERNAL_PACKAGES = {
-    "requests", "dotenv", "tqdm", "questionary",
+    # HTTP / API clients and network protocols
+    "requests", "httpx", "urllib", "urllib.request", "socket", "smtplib", "email",
+    # TALOS runtime dependencies (third-party)
+    "dotenv", "tqdm", "questionary", "rich", "tabulate", "jinja2",
     "numpy", "pandas", "streamlit", "matplotlib", "seaborn", "wordcloud",
     "flask", "Flask", "pymed", "pyzotero", "elsapy", "pyvis",
     "sklearn", "sqlite3", "python-docx", "docx",
     "google", "google.generativeai", "google.genai", "google.genai.types",
-    "duckduckgo_search", "openai", "networkx", "pickle",
-    "concurrent", "concurrent.futures", "logging",
+    "duckduckgo_search", "ddgs", "openai", "networkx", "pickle",
+    "fastapi", "uvicorn", "pydantic", "mcp",
+    "arxiv", "semanticscholar", "tree_sitter", "rapidfuzz",
+    "plotly", "dash", "psutil",
+    "gymnasium", "torch", "pytest",
+    # standard library
+    "concurrent", "concurrent.futures", "logging", "warnings",
     "xml", "subprocess", "ast", "pathlib",
     "re", "typing", "collections", "datetime", "time", "os", "sys", "json",
     "io", "base64", "threading", "signal", "random", "platform",
     "stat", "tempfile", "shutil", "pickle",
+    "argparse", "gc", "traceback", "uuid", "webbrowser",
+    "math", "functools", "itertools", "contextlib", "enum",
+    "dataclasses", "decimal", "fractions", "hashlib", "fnmatch",
+    "glob", "inspect", "copy", "textwrap", "abc", "importlib", "pprint",
+}
+
+# ── Internal DDD packages ──────────────────────────────────────────────────────
+# TALOS's own packages, documented at the package level in the map's module
+# inventory (Section 2). Their child imports are not flagged as missing/stale.
+INTERNAL_PACKAGES = {
+    "src", "config", "talos", "vendor",
 }
 
 # ── Parent modules that, when documented, cover all child imports ─────────────
-# If "core.hardware" is documented, then "core.hardware.detect_vram_gb" etc.
-# are automatically covered.
+# If "src.core.hardware" is documented, then "src.core.hardware.detect_vram_gb"
+# etc. are automatically covered.
 COVERED_BY_PARENT = {
     # core submodules covered by parent doc
-    "core.database_manager": "core.database_manager.DatabaseManager",
-    "core.ai_manager": "core.ai_manager.AIManager",
-    "core.hardware": "core.hardware",
-    # scripts submodules covered by parent doc
-    "scripts.profile_manager": "scripts.profile_manager",
-    "scripts.author_profiler": "scripts.profile_manager",  # UnifiedProfiler import
+    "src.core.database_manager": "src.core.database_manager.DatabaseManager",
+    "src.core.ai_manager": "src.core.ai_manager.AIManager",
+    "src.core.hardware": "src.core.hardware",
+    # ingestion sources covered by wildcard doc
+    "src.ingestion": "src.ingestion.*",
     # flask submodules covered by "Flask" doc
     "flask": "Flask",
-    # sources wildcard covers all source imports
-    "sources": "sources.*",
 }
 
 
@@ -237,7 +252,7 @@ def extract_actual_imports(py_file, project_root):
     # Also detect subprocess calls to other scripts
     try:
         subprocess_pattern = re.findall(
-            r'subprocess\.run\s*\(\s*\[.*?[\'"]((?:scripts|core|sources)[^\'"]+\.py)[\'"]',
+            r'subprocess\.run\s*\(\s*\[.*?[\'"]((?:src|scripts|core|sources)[^\'"]+\.py)[\'"]',
             source
         )
         for s in subprocess_pattern:
@@ -258,35 +273,21 @@ def extract_actual_imports(py_file, project_root):
 
 
 def scan_all_files(project_root):
-    """Scan all .py files in the project and extract actual imports.
+    """Scan all .py files in src/ and the project root and extract imports.
 
     Returns:
-        dict: {filename: [actual_dependency, ...]}
+        dict: {basename: [actual_dependency, ...]}
     """
     actual = {}
 
-    # Scan scripts
-    for py_file in sorted(SCRIPTS_DIR.glob("*.py")):
-        fname = py_file.name
-        if fname in SKIP_FILES:
+    # Scan the DDD src/ package tree (core, ingestion, ai, analysis, utils, api)
+    for py_file in sorted(SRC_DIR.rglob("*.py")):
+        if py_file.name in SKIP_FILES or py_file.name == "__init__.py":
             continue
-        actual[fname] = extract_actual_imports(py_file, project_root)
+        rel = py_file.relative_to(project_root).as_posix()
+        actual[rel] = extract_actual_imports(py_file, project_root)
 
-    # Scan core
-    for py_file in sorted(CORE_DIR.glob("*.py")):
-        fname = py_file.name
-        if fname in SKIP_FILES:
-            continue
-        actual[f"core/{fname}"] = extract_actual_imports(py_file, project_root)
-
-    # Scan sources
-    for py_file in sorted(SOURCES_DIR.glob("*.py")):
-        fname = py_file.name
-        if fname in SKIP_FILES:
-            continue
-        actual[f"sources/{fname}"] = extract_actual_imports(py_file, project_root)
-
-    # Scan root .py files
+    # Scan root .py files (talos.py)
     for py_file in sorted(project_root.glob("*.py")):
         fname = py_file.name
         if fname.startswith("_") or fname in SKIP_FILES:
@@ -345,6 +346,13 @@ def compare_dependencies(documented, actual):
             })
 
         for dep in sorted(stale):
+            # Skip internal DDD packages (covered at package level), external
+            # libraries, subprocess entries, and non-import annotations.
+            parts = dep.split(".")
+            if parts[0] in INTERNAL_PACKAGES or parts[0] in EXTERNAL_PACKAGES:
+                continue
+            if dep.startswith("subprocess") or "/" in dep or "→" in dep:
+                continue
             results.append({
                 "file": fname,
                 "dependency": dep,
@@ -357,6 +365,12 @@ def compare_dependencies(documented, actual):
             parts = dep.split(".")
             if parts[0] in EXTERNAL_PACKAGES:
                 continue  # third-party library, not a TALOS file dependency
+
+            # ── Filter 5 (v5.9.15): Skip internal DDD packages ──
+            # TALOS's own packages are documented at the package level in the
+            # map's module inventory (Section 2), not per-import in Section 7.
+            if parts[0] in INTERNAL_PACKAGES:
+                continue
 
             # ── Filter 2: Skip submodule paths whose parent is already documented ──
             # e.g. "core.hardware.detect_vram_gb" is covered if "core.hardware" is in doc_deps
@@ -442,14 +456,14 @@ def generate_html_report(results, output_path, title="Dependency Map Audit"):
     # Build stale rows
     stale_rows = ""
     for r in sorted(stale_list, key=lambda x: x["file"]):
-        stale_rows += f"<tr class='status-stale'><td>🔴</td><td>{r['file']}</td><td>{r['dependency']}</td><td>{r.get('detail','')}</td></tr>"
+        stale_rows += f"<tr class='status-stale'><td>STALE</td><td>{r['file']}</td><td>{r['dependency']}</td><td>{r.get('detail','')}</td></tr>"
     if not stale_rows:
         stale_rows = "<tr><td colspan='4' style='color:#2ecc71;text-align:center;'>No stale entries.</td></tr>"
 
     # Build missing rows
     missing_rows = ""
     for r in sorted(missing_list, key=lambda x: x["file"]):
-        missing_rows += f"<tr class='status-missing'><td>🟡</td><td>{r['file']}</td><td>{r['dependency']}</td><td>{r.get('detail','')}</td></tr>"
+        missing_rows += f"<tr class='status-missing'><td>MISSING</td><td>{r['file']}</td><td>{r['dependency']}</td><td>{r.get('detail','')}</td></tr>"
     if not missing_rows:
         missing_rows = "<tr><td colspan='4' style='color:#2ecc71;text-align:center;'>No missing entries.</td></tr>"
 

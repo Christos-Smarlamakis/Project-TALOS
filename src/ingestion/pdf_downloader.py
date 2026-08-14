@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: pdf_downloader.py (v1.0)
-Project: TALOS v4.10.0
+Project: TALOS v5.9.15
 Description:
     Zero-Config PDF Downloader for Open Access papers.
     Queries Unpaywall (requires email) and OpenAlex (keyless) for OA PDF URLs.

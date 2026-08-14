@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.9.9
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.9.15
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-02 (v5.9.9 -- Report Path Consolidation & Data Directory Isolation)
+> **Last Updated:** 2026-08-14 (v5.9.15 -- Code Audit & Version Sync)
 
 ---
 
@@ -340,45 +340,54 @@ active_profile.txt
 
 ---
 
-## 7. Dependency Graph (v5.3.1)
+## 7. Dependency Graph (v5.9.15 DDD Layout)
 
 ```
-talos_live_agent.py (thin entry, v3.1)
-  ├── core.drl_agent.TalosDRLAgent
-  ├── core.ai_manager.AIManager
-  ├── core.talos_env (_load_source_list, _try_load_config)
-  ├── core.live_agent_sources (build_source_map)
-  └── core.live_agent_orchestrator (run_live_loop)
+talos.py (Rich TUI Master)
+  ├── src.ai.llm.model_manager
+  ├── src.analysis.graphify_adapter
+  ├── src.ai.testing.autonomous_tester
+  └── subprocess → src/*/*.py
 
-talos.py → subprocess → scripts/*.py
-app.py → subprocess → scripts/*.py
+src/api/main_api.py (FastAPI Facade :8001)
+  ├── src.core.database_manager
+  ├── src.core.ai_manager
+  ├── src.api.synapse_routes
+  └── src.api.tester_routes
 
-drl_trainer.py
-  ├── core.talos_env.TalosEnv
-  └── core.drl_agent
+src/ai/drl/talos_live_agent.py (CLI entry)
+  ├── src.ai.drl.drl_agent
+  ├── src.core.ai_manager
+  ├── src.ai.drl.talos_env
+  ├── src.ai.drl.live_agent_sources
+  └── src.ai.drl.live_agent_orchestrator
 
-daily_search.py / historic_search.py
-  ├── core.database_manager, core.ai_manager
-  └── sources.* (14 imports)
+src/ai/drl/drl_trainer.py
+  ├── src.ai.drl.talos_env
+  └── src.ai.drl.drl_agent
 
-knowledge_path_generator.py (CHIRON)
-  ├── core.database_manager, core.ai_manager
-  └── sklearn (KMeans, TfidfVectorizer)
+src/ai/optimizers/gwo_rl_optimizer.py
+  ├── src.ai.drl.talos_env
+  └── src.ai.drl.drl_agent
 
-citation_analyzer.py (ORPHEUS)
-  ├── core.ai_manager, core.database_manager
-  ├── sources.semantic_scholar_source
-  └── pyvis.network.Network
+src/ingestion/daily_search.py / historic_search.py
+  ├── src.core.database_manager
+  ├── src.core.ai_manager
+  └── src.ingestion.*
 
-recommender.py → sqlite3 (direct), sklearn, python-docx
-grey_literature_miner.py → google.genai
-query_translator.py (PYTHIA) → core.ai_manager
-profile_manager.py → subprocess → query_translator.py
-metadata_enricher.py (APOLLO) → core.database_manager, 4 sources
-model_manager.py → core.hardware, requests
-interactive_dashboard.py → core.database_manager, core.ai_manager, Flask
-verify_dependency_map.py → ast → reports/audits/
-generate_docs.py → requests, dotenv, tqdm
+src/analysis/citation_analyzer.py
+  ├── src.core.ai_manager
+  ├── src.core.database_manager
+  └── src.ingestion.semantic_scholar_source
+
+src/analysis/graphify_adapter.py
+  └── vendor.graphify
+
+src/integration/synapse_client.py
+  └── requests
+
+src/mcp_server.py
+  └── requests
 ```
 
 ---
@@ -430,8 +439,8 @@ generate_docs.py → requests, dotenv, tqdm
 
 ---
 
-> **Last Updated:** 2026-08-02 (v5.9.9 -- Report Path Consolidation & Data Directory Isolation)
-> **Project Version:** v5.9.9
+> **Last Updated:** 2026-08-14 (v5.9.15 -- Code Audit & Version Sync)
+> **Project Version:** v5.9.15
 > **Total Files Covered:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### New in v5.9.9: Report Path Consolidation

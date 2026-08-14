@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: generate_baseline_report.py (v1.1 — Academic Style)
-Project: TALOS v5.0.0
+Project: TALOS v5.9.15
 Description:
     Automated reporting module that generates a comprehensive baseline
     snapshot of the TALOS knowledge base BEFORE the DRL agent alters the
@@ -110,7 +110,7 @@ def resolve_db_path():
     Returns:
         str: Absolute path to the SQLite database.
     """
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parent.parent.parent
     profile_dir = project_root / "_profiles"
     active_file = profile_dir / "active_profile.txt"
 
@@ -122,7 +122,7 @@ def resolve_db_path():
                 return str(profile_db)
         except Exception:
             pass
-    root_db = project_root / "talos_research.db"
+    root_db = project_root / "data" / "talos_research.db"
     return str(root_db)
 
 
@@ -586,7 +586,7 @@ def main():
         apply_academic_style()
 
     print("=" * 65)
-    print("  TALOS Baseline Report Generator — v5.1.0" +
+    print("  TALOS Baseline Report Generator — v5.9.15" +
           (" (Academic Style)" if args.academic else ""))
     print("=" * 65)
 
@@ -595,7 +595,7 @@ def main():
     timestamp = now.strftime("%Y%m%d_%H%M")
     date_folder = now.strftime("%Y-%m-%d")
     report_base = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
         "data", "reports", "general_status_report"
     )
     outdir = os.path.join(report_base, date_folder)

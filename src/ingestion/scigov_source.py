@@ -11,7 +11,7 @@
 
 """
 Module: scigov_source.py
-Project: TALOS v5.3.7
+Project: TALOS v5.9.15
 
 Description:
 Η πλήρως αναβαθμισμένη έκδοση του "Πράκτορα" για το Science.gov, εναρμονισμένη

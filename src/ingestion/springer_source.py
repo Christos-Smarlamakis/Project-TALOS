@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: springer_source.py
-Project: TALOS v5.3.7
+Project: TALOS v5.9.15
 
 Description:
     Search agent for the Springer Nature API (api.springernature.com).

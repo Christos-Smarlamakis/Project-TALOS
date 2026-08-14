@@ -1,6 +1,6 @@
 """
 Module: generate_docs.py (v2.0)
-Project: TALOS v5.3.0 — Multi-Language Codebase Documentation Builder
+Project: TALOS v5.9.15 — Multi-Language Codebase Documentation Builder
 Description:
     Fully interactive script that documents the ENTIRE TALOS codebase (93+ files)
     in any of 18 languages using a local Ollama instance. No CLI arguments needed
@@ -69,14 +69,15 @@ LANGUAGES: Dict[str, Tuple[str, str]] = {
     "fa": ("فارسی (Persian/Farsi)", "PERSIAN"),
 }
 
-# Directory groups for the checkbox menu
+# Directory groups for the checkbox menu (Domain-Driven Design layout)
 DIRECTORY_GROUPS = [
-    ("core/", "core", "Core modules (7 .py files)"),
-    ("scripts/", "scripts", "Scripts (35 .py files)"),
-    ("sources/", "sources", "Search agents (14 .py files)"),
-    ("templates/", "templates", "Templates (7 files — HTML, CSS, JS, JSON)"),
-    ("reference_code/", "reference_code", "Reference code (17 .py files)"),
-    ("Root files", "ROOT", "Root files (talos.py, app.py, Dockerfile, ...)"),
+    ("src/core/", "src/core", "Core modules (database, AI manager, hardware)"),
+    ("src/ingestion/", "src/ingestion", "Search agents and ingestion pipelines"),
+    ("src/ai/", "src/ai", "AI modules (DRL, embeddings, LLM, optimizers, testing)"),
+    ("src/analysis/", "src/analysis", "Analysis modules (recommender, citation, trends)"),
+    ("src/utils/", "src/utils", "Utility modules (docs, stats, health checks)"),
+    ("src/api/", "src/api", "API modules (FastAPI facade, service API)"),
+    ("Root files", "ROOT", "Root files (talos.py, Dockerfile, ...)"),
 ]
 
 # ── Prompt template ───────────────────────────────────────────────────────────
@@ -135,6 +136,30 @@ def load_configuration() -> Dict[str, str]:
     return {"ollama_model": ollama_model, "ollama_url": ollama_url}
 
 
+def _is_excluded(path_str: str) -> bool:
+    """Return True if a path should be excluded from documentation.
+
+    Matches directory names by whole path component and file extensions
+    by suffix, avoiding false positives such as "data" inside a filename.
+
+    Args:
+        path_str: absolute or relative path to a file.
+
+    Returns:
+        True if the path matches an exclusion pattern, False otherwise.
+    """
+    norm = path_str.replace("\\", "/")
+    parts = norm.split("/")
+    for pat in EXCLUDE_PATTERNS:
+        if pat.startswith("."):
+            if norm.endswith(pat):
+                return True
+        else:
+            if pat in parts:
+                return True
+    return False
+
+
 def get_code_files(selected_dirs: List[str]) -> List[str]:
     """
     Recursively collect all code/text files from selected directories.
@@ -148,25 +173,17 @@ def get_code_files(selected_dirs: List[str]) -> List[str]:
     Returns:
         Sorted list of absolute file paths.
     """
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parent.parent.parent
     collected: List[str] = []
 
     for sel in selected_dirs:
         if sel == "ROOT":
-            # Collect files directly in the project root (non-directory, non-hidden-dir)
+            # Collect files directly in the project root
             for item in sorted(project_root.iterdir()):
                 if item.is_file():
-                    name = item.name
-                    # Skip excluded patterns
-                    skip = False
-                    for pat in EXCLUDE_PATTERNS:
-                        if pat.replace("/", "").replace("\\", "") in name or name.endswith(pat):
-                            skip = True
-                            break
-                    if skip:
+                    if item.name.endswith(".md"):
                         continue
-                    # Skip .md files (already documentation)
-                    if name.endswith(".md"):
+                    if _is_excluded(str(item)):
                         continue
                     collected.append(str(item))
         else:
@@ -177,12 +194,7 @@ def get_code_files(selected_dirs: List[str]) -> List[str]:
             for file_path in dir_path.rglob("*"):
                 if file_path.is_file():
                     path_str = str(file_path)
-                    skip = False
-                    for pat in EXCLUDE_PATTERNS:
-                        if pat in path_str:
-                            skip = True
-                            break
-                    if skip:
+                    if _is_excluded(path_str):
                         continue
                     collected.append(path_str)
 
@@ -279,7 +291,7 @@ def save_documentation(
         output_dir: base output directory (e.g., "docs").
         lang_code: 2-letter language code (e.g., "el", "en").
     """
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parent.parent.parent
     lang_dir = project_root / output_dir / lang_code
     lang_dir.mkdir(parents=True, exist_ok=True)
 
@@ -322,7 +334,7 @@ def main() -> None:
     # ── Step 1: Ollama health check ─────────────────────────────────────────
     base_url = ollama_url.replace("/api/generate", "")
     print("=" * 72)
-    print("  TALOS v5.3.0 — Multi-Language Documentation Builder")
+    print("  TALOS v5.9.15 — Multi-Language Documentation Builder")
     print(f"  Model:  {model}")
     print(f"  Ollama: {base_url}")
     print("=" * 72)
@@ -362,7 +374,7 @@ def main() -> None:
         questionary.Choice(
             title=f"{desc}",
             value=key,
-            checked=(key != "reference_code"),  # default: all except reference_code
+            checked=True,  # default: all directories selected
         )
         for desc, key, _ in DIRECTORY_GROUPS
     ]
@@ -385,7 +397,7 @@ def main() -> None:
     info = estimate_file_info(file_paths)
 
     # ── Step 5: summary & confirmation ─────────────────────────────────────
-    project_root = Path(__file__).resolve().parent.parent
+    project_root = Path(__file__).resolve().parent.parent.parent
     output_path = project_root / OUTPUT_DIR / lang_code
 
     print("\n" + "═" * 60)
@@ -403,7 +415,7 @@ def main() -> None:
         hours = est_minutes // 60
         mins = est_minutes % 60
         print(f"  Est. time:     ~{hours}ώ {mins}λ")
-    print(f"  💰 Cost:       €0.00 (τοπικό Ollama — zero cloud tokens)")
+    print(f"  Cost:          €0.00 (τοπικό Ollama — zero cloud tokens)")
     print("═" * 60)
 
     confirmed = questionary.confirm("Proceed with generation?", default=True).ask()
@@ -453,7 +465,7 @@ def main() -> None:
     print(f"  Success:   {success_count}")
     print(f"  Failed:    {fail_count}")
     print(f"  Output:    {output_path}")
-    print(f"  💰 Cost:   €0.00 (100% local Ollama)")
+    print(f"  Cost:     €0.00 (100% local Ollama)")
     print("=" * 72)
 
 
