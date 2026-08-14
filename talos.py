@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -20,6 +20,10 @@ Description:
     Configuration, Search & Ingestion, Analysis & Topologies, Daemons &
     CI/CD, and Diagnostics & Exit. Includes the new Vendored Graphify
 AST Knowledge Graph adapter (v5.9.12).
+
+    v5.10.0: Academic Ingestion Expansion -- OpenReview and OpenAIRE source
+    agents added (16-source ingestion). OpenReview peer-review decisions and
+    OpenAIRE grant/funding metadata are appended to abstracts.
 
     v5.9.18: Universal Cloud Mesh -- Model Manager Cloud Configuration expanded
     to a nine-provider registry (Gemini primary + 8-provider OpenAI-compatible

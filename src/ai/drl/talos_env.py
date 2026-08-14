@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: talos_env.py (v3.1 — Time-limit truncation fix)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     Gymnasium reinforcement learning environment for TALOS API source selection.
     Supports ALL 14 academic sources dynamically (not just the original 3).

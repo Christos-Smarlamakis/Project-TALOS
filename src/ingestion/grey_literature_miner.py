@@ -11,7 +11,7 @@
 
 """
 Module: grey_literature_miner.py (v2.1 — Batch 3 hotfix)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 
 Description:
     Autonomous web research agent focusing on "Grey Literature" — open source

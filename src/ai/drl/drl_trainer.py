@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: drl_trainer.py (v1.3 — Batch 2 TUI hardening)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     Training script for the TALOS Deep Reinforcement Learning agent. Runs
     multiple episodes where the agent interacts with the TalosEnv gymnasium

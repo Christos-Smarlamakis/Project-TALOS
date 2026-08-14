@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: synapse_routes.py
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     FastAPI APIRouter exposing the SYNAPSE webhook endpoint for inbound
     commands from external microservices in the ALEXANDRIA ecosystem.

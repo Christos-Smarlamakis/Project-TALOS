@@ -6,7 +6,7 @@
 #
 """
 Module: ai_manager.py (v3.9 - Universal Cloud Mesh & 2D Execution Matrix)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture

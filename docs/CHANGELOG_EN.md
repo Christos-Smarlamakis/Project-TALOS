@@ -2,6 +2,27 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.0] - 2026-08-14 -- Academic Ingestion Expansion (OpenReview & OpenAIRE Integration)
+
+### Added
+- **OpenReview source (`src/ingestion/openreview.py`)**: New `OpenReviewSource` agent querying the OpenReview API V2 (https://api2.openreview.net) for forum notes. Uses an authenticated `openreview.api.OpenReviewClient` when `OPENREVIEW_USERNAME`/`OPENREVIEW_PASSWORD` are present and falls back gracefully to guest/public notes access otherwise. Maps notes to the standard `{doi, url, title, authors_str, publication_year, abstract, source="OpenReview"}` schema and appends peer-review decisions, ratings, recommendations, and venue metadata to the abstract field.
+- **OpenAIRE source (`src/ingestion/openaire.py`)**: New `OpenAIRESource` agent querying the OpenAIRE Research Graph API v11.3.0 (`/search/researchProducts`). Supports the optional `Authorization: Bearer` header when `OPENAIRE_TOKEN` or `OPENAIRE_API_KEY` is present and falls back to public unauthenticated requests. Maps results to the standard schema (`source="OpenAIRE"`) and appends project grant/funding metadata to the abstract field.
+- **16-source ingestion**: `daily_search.py` and `historic_search.py` now import and execute both new sources. The daily pipeline also gains `CORESource` (previously imported but never instantiated), restoring the documented 14-source baseline and bringing both pipelines to 16 active sources.
+- **Unit tests for the new sources**: `tests/test_openreview_source.py` (13 tests) and `tests/test_openaire_source.py` (21 tests) -- hermetic, mock-first coverage of initialization, content-field extraction, standardized formatting, peer-review/funding enrichment, and graceful degradation.
+
+### Changed
+- **`requirements.txt`**: Added `openreview-py` under the Academic APIs section; header bumped to v5.10.0.
+- **`example.env`**: Added `OPENREVIEW_USERNAME=`, `OPENREVIEW_PASSWORD=`, `OPENAIRE_TOKEN=`; header bumped to v5.10.0.
+- **`config.template.json` / `config.json`**: Added `openreview_query`, `openaire_query`, and `max_results_config` entries (`openreview`, `openaire`).
+- **`verify_dependency_map.py`**: Registered the two new source modules in `IMPORT_TO_DOC_MAP`.
+- **Global header sweep**: every `Project: TALOS v5.9.18` module docstring synced to `v5.10.0` across 72 files in `src/`, `config/`, and `tests/` -- including the Autonomous Red Tester subsystem (`red_tester.py`, `red_tester_routes.py`, `src/ai/testing/__init__.py`) and user-facing version strings (Red Tester report footer and TUI title, baseline report generator, graphify adapter).
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- Full test suite (225 tests, including 34 new source-agent tests) and smoke test pass.
+- Zero emojis protocol strictly enforced; pure Greek unicode maintained in all `_GR.md` files.
+
+
 ## [v5.9.18] - 2026-08-14 -- Universal Cloud Mesh & Multi-Provider Redundancy Expansion
 
 ### Added

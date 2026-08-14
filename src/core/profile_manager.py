@@ -11,7 +11,7 @@
 
 """
 Module: profile_manager.py (v2.1 - Auto-Save Fix)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 
 Description:
 Διαχειρίζεται τα ερευνητικά προφίλ και ενσωματώνει τη διαδικασία ρύθμισης (PYTHIA).

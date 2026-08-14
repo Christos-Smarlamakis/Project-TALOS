@@ -11,10 +11,10 @@
 
 """
 Module: daily_search.py (Quad-Layer & Rate Limit Safe)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 
 Description:
-    The daily search orchestrator. Fetches new papers from all 14 configured
+    The daily search orchestrator. Fetches new papers from all 16 configured
     source agents, deduplicates them by DOI/URL, and runs a two-stage AI
     evaluation pipeline: fast pre-screening (Flash model) for all new papers,
     followed by deep analysis (Pro model) for papers that exceed the minimum
@@ -49,6 +49,8 @@ from src.ingestion.pubmed_source import PubMedSource
 from src.ingestion.scigov_source import ScienceGovSource
 from src.ingestion.osti_source import OSTISource
 from src.ingestion.plos_source import PLOSSource
+from src.ingestion.openreview import OpenReviewSource
+from src.ingestion.openaire import OpenAIRESource
 
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
@@ -158,7 +160,10 @@ def main():
         PubMedSource(config),
         OSTISource(config),
         ScienceGovSource(config),
-        PLOSSource(config)
+        PLOSSource(config),
+        CORESource(config),
+        OpenReviewSource(config),
+        OpenAIRESource(config)
     ]
     import logging
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")

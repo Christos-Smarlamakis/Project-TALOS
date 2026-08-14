@@ -52,7 +52,9 @@
     "osti": 50,
     "scigov": 50,
     "core": 50,
-    "plos": 100
+    "plos": 100,
+    "openreview": 50,
+    "openaire": 50
   },
 
   "arxiv_query": "all:\"artificial intelligence\"",
@@ -69,6 +71,8 @@
   "osti_query": "\"artificial intelligence\"",
   "scigov_query": "\"artificial intelligence\"",
   "plos_query": "\"artificial intelligence\"",
+  "openreview_query": "\"artificial intelligence\"",
+  "openaire_query": "\"artificial intelligence\"",
 
   "phd_focus_system_prompt": "**Act as an expert Research Analyst.** Analyze the paper's relevance to the user's research goal. Output strictly JSON.",
   "pre_screening_prompt": "**Act as a screening AI.** Filter papers based on relevance. Output strictly JSON.",

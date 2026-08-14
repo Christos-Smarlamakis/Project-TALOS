@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: gwo_rl_optimizer.py (v2.0 — Real Fitness + Canonical GWO)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     Grey Wolf Optimizer (GWO) for TALOS DRL hyperparameter tuning.
     v1.1 adds: --live flag for real-time GUI progress, _write_live_progress(),

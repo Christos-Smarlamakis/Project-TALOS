@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: verify_dependency_map.py (v1.0)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     AST-based dependency verification tool. Compares the documented
     dependency graph in PROJECT_MAP.md (Section 7) against actual
@@ -67,6 +67,8 @@ IMPORT_TO_DOC_MAP = {
     "src.ingestion.scigov_source": "src.ingestion.*",
     "src.ingestion.osti_source": "src.ingestion.*",
     "src.ingestion.plos_source": "src.ingestion.*",
+    "src.ingestion.openreview": "src.ingestion.*",
+    "src.ingestion.openaire": "src.ingestion.*",
     # external libraries
     "sklearn": "sklearn",
     "sklearn.cluster": "sklearn",
@@ -98,7 +100,7 @@ EXTERNAL_PACKAGES = {
     "google", "google.generativeai", "google.genai", "google.genai.types",
     "duckduckgo_search", "ddgs", "openai", "networkx", "pickle",
     "fastapi", "uvicorn", "pydantic", "mcp",
-    "arxiv", "semanticscholar", "tree_sitter", "rapidfuzz",
+    "arxiv", "semanticscholar", "openreview", "tree_sitter", "rapidfuzz",
     "plotly", "dash", "psutil",
     "gymnasium", "torch", "pytest",
     # standard library

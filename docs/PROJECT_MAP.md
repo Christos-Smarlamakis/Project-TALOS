@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.9.18
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.0
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.9.18 -- Καθολικό Πλέγμα Νέφους & Επέκταση Πολυπαρόχου Εφεδρείας)
+> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.10.0 -- Επέκταση Ακαδημαϊκής Κατάποσης: Ενσωμάτωση OpenReview & OpenAIRE)
 
 ---
 
@@ -43,9 +43,9 @@
 │                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                    src/ingestion/ (21 αρχεία)                    │
-│  14 APIs: arxiv  elsevier  semantic_scholar  ieee  springer     │
+│  16 APIs: arxiv  elsevier  semantic_scholar  ieee  springer     │
 │           openalex  dblp  core  crossref  openarchives  pubmed  │
-│           scigov  osti  plos                                    │
+│           scigov  osti  plos  openreview  openaire              │
 │  7 pipelines: daily_search  historic_search  grey_lit  pdf      │
 │               zotero  metadata_enricher  data_enricher          │
 │  Standardized output: {doi, url, title, authors_str,            │
@@ -237,7 +237,7 @@ Batch script για εκκίνηση του TALOS CLI.
 ## 4. Scripts (21 αρχεία)
 
 ### 4.1 Search Scripts
-- `daily_search.py` (v5.4) — Καθημερινή αναζήτηση σε 14 APIs
+- `daily_search.py` (v5.4) — Καθημερινή αναζήτηση σε 16 APIs
 - `historic_search.py` (v5.5) — Deep archive search
 - `grey_literature_miner.py` (v2.1) — Grey literature με Gemini Search Grounding. **v2.1 (Batch 3):** `ddgs` import με fallback στο legacy `duckduckgo_search`· το missing GEMINI_API_KEY δεν είναι πλέον fatal (τρέχει με AIManager fallback + DuckDuckGo grounding).
 
@@ -288,7 +288,7 @@ Interactive Research Pivot Wizard.
 
 ---
 
-## 5. Sources (14 APIs)
+## 5. Sources (16 APIs)
 
 | Source | Αρχείο | API Key | Query Key |
 |--------|--------|---------|-----------|
@@ -306,6 +306,8 @@ Interactive Research Pivot Wizard.
 | Science.gov | `scigov_source.py` | ❌ | `scigov_query` |
 | Semantic Scholar | `semantic_scholar_source.py` | ⚠️ | `semantic_scholar_query` |
 | Springer | `springer_source.py` | ✅ | `springer_query` |
+| OpenAIRE | `openaire.py` | Optional | `openaire_query` |
+| OpenReview | `openreview.py` | Optional | `openreview_query` |
 
 ---
 
@@ -331,7 +333,7 @@ Interactive Research Pivot Wizard.
   "pre_screening_model": "gemini-2.5-flash",
   "min_pre_screening_score": 6,
   "max_results_config": { ... },
-  "<source>_query": "...",     // 14 queries (all 14 sources)
+  "<source>_query": "...",     // 16 queries (all 16 sources)
   "phd_focus_system_prompt": "...",
   ...
 }
@@ -355,7 +357,7 @@ active_profile.txt
 
 ---
 
-## 7. Dependency Graph (v5.9.18 DDD Layout)
+## 7. Dependency Graph (v5.10.0 DDD Layout)
 
 ```
 src/core/ai_manager.py (Universal Cloud Mesh, v5.9.18)
@@ -465,8 +467,8 @@ src/utils/logger.py (Enterprise Logging)
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-08-14 (v5.9.18 -- Καθολικό Πλέγμα Νέφους & Επέκταση Πολυπαρόχου Εφεδρείας)
-> **Έκδοση Project:** v5.9.18
+> **Τελευταία ενημέρωση:** 2026-08-14 (v5.10.0 -- Επέκταση Ακαδημαϊκής Κατάποσης: Ενσωμάτωση OpenReview & OpenAIRE)
+> **Έκδοση Project:** v5.10.0
 > **Συνολικά αρχεία που καλύπτονται:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### Νέο στην v5.9.9: Ενοποίηση Αναφορών

@@ -1,5 +1,5 @@
 # TALOS Project Instructions for AI Coding Agents
-# Version: v5.9.18
+# Version: v5.10.0
 
 ## CONSTITUTION v2.0 — The 8-Point Master Initialization Standard
 
@@ -174,7 +174,7 @@
 - **Streamlit has been fully deprecated in v5.6.0.** The sole frontend is React 18 + Tailwind CSS + Shadcn UI.
 - **Synapse Protocol (NEW in v5.7.0):** `src/integration/synapse_client.py` (event emitter) + `src/api/synapse_routes.py` (webhook receiver). TALOS FastAPI runs on port 8001; Synapse bus on port 8000.
 - Core modules: `src/core/ai_manager.py` (multi-provider LLM), `src/core/database_manager.py` (SQLite + embeddings), `src/core/hardware.py` (GPU detection)
-- Ingestion agents: `src/ingestion/*.py` (14 APIs, standardized output format)
+- Ingestion agents: `src/ingestion/*.py` (16 APIs, standardized output format)
 - Integration layer: `src/integration/synapse_client.py` (EventEmitter for SYNAPSE bus)
 - Feature scripts: `src/ai/*.py`, `src/analysis/*.py`, `src/utils/*.py`
 - Configuration: `config.json` (queries, prompts)
@@ -280,8 +280,8 @@
 
 ---
 
-> **Last Updated:** 2026-08-14 (v5.9.18 -- Universal Cloud Mesh & Multi-Provider Redundancy Expansion)
-> **Project Version:** v5.9.18
+> **Last Updated:** 2026-08-14 (v5.10.0 -- Academic Ingestion Expansion: OpenReview & OpenAIRE Integration)
+> **Project Version:** v5.10.0
 
 ---
 

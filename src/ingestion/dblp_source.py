@@ -11,7 +11,7 @@
 
 """
 Module: dblp_source.py
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 
 Description:
     Search agent for the DBLP Computer Science Bibliography API

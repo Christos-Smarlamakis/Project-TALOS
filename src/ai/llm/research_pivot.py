@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: research_pivot.py (v1.0)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     Interactive Research Pivot Wizard for TALOS.  Guides the user through
     recalibrating the system when their research interests have shifted.

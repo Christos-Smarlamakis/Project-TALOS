@@ -11,7 +11,7 @@
 
 """
 Module: openalex_source.py
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 
 Description:
     Search agent for the OpenAlex API (https://openalex.org), a free and open

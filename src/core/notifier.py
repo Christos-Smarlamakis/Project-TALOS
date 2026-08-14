@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: notifier.py (v1.0)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     Multi-channel notification system for the TALOS daemon. Sends alerts
     via Telegram (Bot API), Discord (Webhooks), and Email (SMTP). All

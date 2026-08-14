@@ -1,6 +1,6 @@
 """
 Module: generate_docs.py (v2.0)
-Project: TALOS v5.9.18 — Multi-Language Codebase Documentation Builder
+Project: TALOS v5.10.0 — Multi-Language Codebase Documentation Builder
 Description:
     Fully interactive script that documents the ENTIRE TALOS codebase (93+ files)
     in any of 18 languages using a local Ollama instance. No CLI arguments needed

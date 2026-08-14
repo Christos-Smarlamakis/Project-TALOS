@@ -11,7 +11,7 @@
 
 """
 Module: arxiv_source.py
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 
 Description:
     Search agent for the arXiv API (export.arxiv.org). Reads the search query

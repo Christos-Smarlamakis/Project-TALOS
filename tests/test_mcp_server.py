@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_mcp_server.py
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     Unit tests for the MCP Server module (src/mcp_server.py). Uses pytest
     with unittest.mock to verify tool registration, correct tool behavior,

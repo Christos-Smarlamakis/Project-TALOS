@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.18
+# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.0
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-08-14
-> **Version:** v5.9.18 -- Universal Cloud Mesh & Multi-Provider Redundancy Expansion
+> **Version:** v5.10.0 -- Academic Ingestion Expansion: OpenReview & OpenAIRE Integration
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.9.18" | `config/settings.py` |
+| TALOS_VERSION | "5.10.0" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -77,7 +77,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 ### 2.1 The "Genesis" Operation
 
-TALOS ingests academic literature from **14 independent APIs**, each implemented as a standalone source agent under `src/ingestion/`. Every agent conforms to a standardized output format:
+TALOS ingests academic literature from **16 independent APIs**, each implemented as a standalone source agent under `src/ingestion/`. Every agent conforms to a standardized output format:
 
 ```json
 {
@@ -91,7 +91,7 @@ TALOS ingests academic literature from **14 independent APIs**, each implemented
 }
 ```
 
-### 2.2 Source Agent Inventory (14 APIs)
+### 2.2 Source Agent Inventory (16 APIs)
 
 | Source | Module | Auth Model | Rate Limit Handling |
 |--------|--------|-----------|---------------------|
@@ -109,10 +109,12 @@ TALOS ingests academic literature from **14 independent APIs**, each implemented
 | Sci.gov | `src/ingestion/scigov.py` | Public API | Basic rate limit |
 | OSTI.gov | `src/ingestion/osti.py` | Public API | Basic rate limit |
 | PLOS | `src/ingestion/plos.py` | Public API | Basic rate limit |
+| OpenReview | `src/ingestion/openreview.py` | Public API (optional credentials) | Rate limit + backoff |
+| OpenAIRE | `src/ingestion/openaire.py` | Public API (optional bearer token) | Rate limit + backoff |
 
 ### 2.3 Ingestion Pipelines
 
-- **Daily Search** (`src/ingestion/daily_search.py`): Concurrent 14-source fetch with deduplication and two-stage AI evaluation (Flash pre-screen, Pro deep analysis)
+- **Daily Search** (`src/ingestion/daily_search.py`): Concurrent 16-source fetch with deduplication and two-stage AI evaluation (Flash pre-screen, Pro deep analysis)
 - **Historical Search** (`src/ingestion/historic_search.py`): Year-by-year backfill with epoch deduplication logic
 - **Grey Literature Miner** (`src/ingestion/grey_literature_miner.py`): DuckDuckGo web search for preprints, technical reports, and white papers
 - **PDF Downloader** (`src/ingestion/pdf_downloader.py`): ThreadPoolExecutor-batched Open Access PDF retrieval (15 workers)
@@ -370,7 +372,7 @@ The API defines 16 Pydantic v2 models:
 - **Task Lifecycle:** `queued -> running -> completed|failed`
 - **Task ID:** 8-character hex UUID prefix
 - **Polling:** `GET /api/v1/tasks/{task_id}` for individual status, `GET /api/v1/tasks` for all tasks
-- **Long-Running Tasks:** Daily scrape (14 APIs), GWO optimization (minutes), Single-paper evaluation, Bulk score recalculation
+- **Long-Running Tasks:** Daily scrape (16 APIs), GWO optimization (minutes), Single-paper evaluation, Bulk score recalculation
 
 ### 6.4 Interactive Documentation
 
@@ -570,6 +572,13 @@ For each evaluated paper, the AI generates:
 - **`src/core/ai_manager.py`** -- `OPENAI_COMPATIBLE_REGISTRY` (dictionary-driven init), unified `_execute_openai_compatible_request()`, independent 5-failure circuit breakers, registry-driven `_execute_cloud_chain()`.
 - **`src/ai/llm/model_manager.py`** -- Cloud Configuration TUI renders a Rich table of all 9 providers (Provider Name, Env Key, Status, Default Model, Base URL) via `CLOUD_PROVIDER_CATALOG` and `get_cloud_provider_rows()`.
 - **`config.json` / `config.template.json` / `example.env`** -- `ai_provider_priority` updated to `["local", "nvidia", "groq", "cerebras", "github", "gemini", "deepseek", "mistral", "openrouter", "huggingface"]`; 6 new API-key template entries; `failure_threshold` = 5.
+
+
+### 10.6 Academic Ingestion Expansion -- OpenReview & OpenAIRE Integration (v5.10.0)
+
+- **`src/ingestion/openreview.py`** -- new `OpenReviewSource` agent for the OpenReview API V2 with authenticated/guest `OpenReviewClient` fallback; peer-review decisions, ratings, recommendations, and venue metadata appended to abstracts.
+- **`src/ingestion/openaire.py`** -- new `OpenAIRESource` agent for the OpenAIRE Research Graph API v11.3.0 with optional bearer token; project grant/funding metadata appended to abstracts.
+- **16-source ingestion** -- `daily_search.py` and `historic_search.py` now run both new sources (plus `CORESource` restored to the daily pipeline); `requirements.txt` gains `openreview-py`; `example.env` gains `OPENREVIEW_USERNAME`, `OPENREVIEW_PASSWORD`, `OPENAIRE_TOKEN`; config gains `openreview_query`/`openaire_query` and `max_results_config` entries.
 
 
 ---

@@ -11,10 +11,10 @@
 
 """
 Module: historic_search.py (v5.5 - Final Quad-Layer & Rate Limit)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 
 Description:
-    The deep archive search orchestrator. Fetches papers from all 14 configured
+    The deep archive search orchestrator. Fetches papers from all 16 configured
     source agents spanning a multi-year window (configurable via
     ``days_to_search_historic``, default ~6 years), deduplicates by DOI/URL,
     and evaluates all new papers with the Flash model using Quad-Layer scoring.
@@ -46,6 +46,8 @@ from src.ingestion.osti_source import OSTISource
 from src.ingestion.scigov_source import ScienceGovSource
 from src.ingestion.plos_source import PLOSSource
 from src.ingestion.core_source import CORESource
+from src.ingestion.openreview import OpenReviewSource
+from src.ingestion.openaire import OpenAIRESource
 
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
@@ -103,7 +105,9 @@ def main():
         ScienceGovSource(historic_config),
         OSTISource(historic_config),
         PLOSSource(historic_config),
-        CORESource(historic_config)
+        CORESource(historic_config),
+        OpenReviewSource(historic_config),
+        OpenAIRESource(historic_config)
     ]
 
     import logging

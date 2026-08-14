@@ -11,7 +11,7 @@
 
 """
 Module: knowledge_path_generator.py (v1.9 - Final Bugfix)
-Project: TALOS v5.9.18 - 
+Project: TALOS v5.10.0 - 
 
 Description:
 This module implements the KnowledgePathGenerator class, which is responsible for generating a structured knowledge path 

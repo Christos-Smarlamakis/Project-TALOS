@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: talos_live_agent.py (v3.2 — Batch 2 TUI hardening)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     Thin entry point for the TALOS Live DRL Agent. All heavy logic is
     now in core/ modules:

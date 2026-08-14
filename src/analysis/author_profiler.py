@@ -11,7 +11,7 @@
 
 """
 Module: author_profiler.py (v3.9 - Intelligent Input & Final)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 
 Description:
 Η τελική, πλήρως λειτουργική έκδοση του Unified Profiler.

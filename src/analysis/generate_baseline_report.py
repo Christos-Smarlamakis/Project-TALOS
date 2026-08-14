@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: generate_baseline_report.py (v1.1 — Academic Style)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     Automated reporting module that generates a comprehensive baseline
     snapshot of the TALOS knowledge base BEFORE the DRL agent alters the
@@ -586,7 +586,7 @@ def main():
         apply_academic_style()
 
     print("=" * 65)
-    print("  TALOS Baseline Report Generator — v5.9.18" +
+    print("  TALOS Baseline Report Generator — v5.10.0" +
           (" (Academic Style)" if args.academic else ""))
     print("=" * 65)
 

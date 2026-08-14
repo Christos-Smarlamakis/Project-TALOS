@@ -4,9 +4,22 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-14 (v5.9.18 -- Universal Cloud Mesh & Multi-Provider Redundancy Expansion)
+> **Last Updated:** 2026-08-14 (v5.10.0 -- Academic Ingestion Expansion: OpenReview & OpenAIRE Integration)
 
 ---
+
+## Phase 30: Academic Ingestion Expansion - OpenReview & OpenAIRE Integration (v5.10.0)
+
+### Status: COMPLETED (2026-08-14)
+
+- [x] **OpenReview source (`src/ingestion/openreview.py`)** -- `OpenReviewSource` agent for the OpenReview API V2 with authenticated/guest client fallback and peer-review decision/rating summary appended to abstracts.
+- [x] **OpenAIRE source (`src/ingestion/openaire.py`)** -- `OpenAIRESource` agent for the OpenAIRE Research Graph API v11.3.0 with optional bearer token and grant/funding metadata appended to abstracts.
+- [x] **16-source ingestion** -- `daily_search.py` and `historic_search.py` now run both new sources; `CORESource` restored to the daily pipeline (previously imported but uninstantiated).
+- [x] **Config & Env Templates** -- `example.env` gained `OPENREVIEW_USERNAME`, `OPENREVIEW_PASSWORD`, `OPENAIRE_TOKEN`; `requirements.txt` gained `openreview-py`; `config.template.json`/`config.json` gained `openreview_query`, `openaire_query`, and `max_results_config` entries.
+- [x] **Dependency map** -- `verify_dependency_map.py` `IMPORT_TO_DOC_MAP` registered the two new source modules.
+- [x] **Unit tests** -- `tests/test_openreview_source.py` (13 tests) and `tests/test_openaire_source.py` (21 tests) added for hermetic, mock-first coverage of the new sources.
+- [x] **Sync all 6 code files and 15 documentation files to v5.10.0** plus a global header sweep across 72 files in `src/`, `config/`, and `tests/` (Autonomous Red Tester subsystem included).
+
 
 ## Phase 29: Universal Cloud Mesh & Multi-Provider Redundancy Expansion (v5.9.18)
 

@@ -11,7 +11,7 @@
 
 """
 Module: db_stats.py (v1.0 - The Metrics Update)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 
 Description:
 Ένα εργαλείο αναφοράς που παρέχει μια γρήγορη, οπτική επισκόπηση της

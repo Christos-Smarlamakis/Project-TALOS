@@ -11,7 +11,7 @@
 
 """
 Module: recommender.py (v4.1 - Structured Reports Update)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 
 Description:
 Αναβαθμισμένη έκδοση του Στρατηγικού Αναλυτή.

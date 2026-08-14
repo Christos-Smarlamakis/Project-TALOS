@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_synapse.py
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     Unit tests for the SYNAPSE Event-Driven Protocol components: EventEmitter
     (synapse_client.py) and Synapse webhook routes (synapse_routes.py).

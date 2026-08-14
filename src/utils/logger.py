@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: logger.py
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     Enterprise logging configuration for TALOS. Provides a single
     get_logger(name) factory that attaches two primary handlers to a shared

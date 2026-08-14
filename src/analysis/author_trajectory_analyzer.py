@@ -11,7 +11,7 @@
 
 """
 Module: author_trajectory_analyzer.py (v3.2 - Unified Input)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 
 Description:
 Η τελική, πλήρως λειτουργική έκδοση του αναλυτή ερευνητικής πορείας.

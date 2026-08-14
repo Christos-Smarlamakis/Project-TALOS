@@ -1,4 +1,4 @@
-# TALOS v5.9.18 -- Dependencies
+# TALOS v5.10.0 -- Dependencies
 # Install: pip install -r requirements.txt
 
 # === Core: API Framework & Networking ===
@@ -23,6 +23,7 @@ semanticscholar             # Semantic Scholar API client
 elsapy                      # Elsevier/Scopus API client
 pymed                       # PubMed API client
 pyzotero                    # Zotero Web API client
+openreview-py               # OpenReview API V2 client (optional, degrades to guest access)
 
 # === Data Science: Analysis & ML ===
 numpy                       # Numerical operations & embedding calculations

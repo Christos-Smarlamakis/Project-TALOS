@@ -5,7 +5,7 @@
 #  This program is free software...
 """
 Module: database_manager.py (v5.0 - Multi-Provider Hybrid Embeddings)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 """
 import sqlite3
 import os

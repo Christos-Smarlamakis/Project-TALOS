@@ -11,7 +11,7 @@
 
 """
 Module: migrate_database_schema.py (v2.2 - Final Migration Fix)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 
 Description:
 Η τελική, διορθωμένη έκδοση του εργαλείου μετάβασης. Διορθώνει το σφάλμα

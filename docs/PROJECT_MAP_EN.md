@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.9.18
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.0
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-14 (v5.9.18 -- Universal Cloud Mesh & Multi-Provider Redundancy Expansion)
+> **Last Updated:** 2026-08-14 (v5.10.0 -- Academic Ingestion Expansion: OpenReview & OpenAIRE Integration)
 
 ---
 
@@ -48,9 +48,10 @@
                            │ import
                            ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    SOURCES (14 APIs)                            │
+│                    SOURCES (16 APIs)                            │
 │  arxiv  elsevier  semantic_scholar  ieee  springer  openalex    │
 │  dblp  core  crossref  openarchives  pubmed  scigov  osti  plos │
+│  openreview  openaire                                           │
 │                                                                 │
 │  Standardized output: {doi, url, title, authors_str,            │
 │                        publication_year, abstract, source}      │
@@ -231,7 +232,7 @@ Batch script for launching Streamlit GUI.
 ## 4. Scripts (21 files)
 
 ### 4.1 Search Scripts
-- `daily_search.py` (v5.4) — Daily search across 14 APIs
+- `daily_search.py` (v5.4) — Daily search across 16 APIs
 - `historic_search.py` (v5.5) — Deep archive search
 - `grey_literature_miner.py` (v2.1) — Grey literature with Gemini Search Grounding. **v2.1 (Batch 3):** `ddgs` import with fallback to legacy `duckduckgo_search`; missing GEMINI_API_KEY is no longer fatal (runs on AIManager fallback + DuckDuckGo grounding).
 
@@ -282,7 +283,7 @@ Interactive Research Pivot Wizard.
 
 ---
 
-## 5. Sources (14 APIs)
+## 5. Sources (16 APIs)
 
 | Source | File | API Key | Query Key |
 |--------|------|---------|-----------|
@@ -300,6 +301,8 @@ Interactive Research Pivot Wizard.
 | Science.gov | `scigov_source.py` | ❌ | `scigov_query` |
 | Semantic Scholar | `semantic_scholar_source.py` | ⚠️ | `semantic_scholar_query` |
 | Springer | `springer_source.py` | ✅ | `springer_query` |
+| OpenAIRE | `openaire.py` | Optional | `openaire_query` |
+| OpenReview | `openreview.py` | Optional | `openreview_query` |
 
 ---
 
@@ -325,7 +328,7 @@ Interactive Research Pivot Wizard.
   "pre_screening_model": "gemini-2.5-flash",
   "min_pre_screening_score": 6,
   "max_results_config": { ... },
-  "<source>_query": "...",     // 14 queries (all 14 sources)
+  "<source>_query": "...",     // 16 queries (all 16 sources)
   "phd_focus_system_prompt": "...",
   ...
 }
@@ -349,7 +352,7 @@ active_profile.txt
 
 ---
 
-## 7. Dependency Graph (v5.9.18 DDD Layout)
+## 7. Dependency Graph (v5.10.0 DDD Layout)
 
 ```
 src/core/ai_manager.py (Universal Cloud Mesh, v5.9.18)
@@ -456,8 +459,8 @@ src/utils/logger.py (Enterprise Logging)
 
 ---
 
-> **Last Updated:** 2026-08-14 (v5.9.18 -- Universal Cloud Mesh & Multi-Provider Redundancy Expansion)
-> **Project Version:** v5.9.18
+> **Last Updated:** 2026-08-14 (v5.10.0 -- Academic Ingestion Expansion: OpenReview & OpenAIRE Integration)
+> **Project Version:** v5.10.0
 > **Total Files Covered:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### New in v5.9.9: Report Path Consolidation

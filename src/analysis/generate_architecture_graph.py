@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: generate_architecture_graph.py (v2.0)
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     Auto-generates the architecture graph data file with ALL imports
     (including standard library and third-party packages).

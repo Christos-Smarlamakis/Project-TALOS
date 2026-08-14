@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.9.18</title>
+<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.0</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -223,7 +223,7 @@
   <a href="#s1-5" class="sub-link">1.5 System Constants</a>
   <a href="#s2" class="section-link">2. Multi-Source Ingestion Engine</a>
   <a href="#s2-1" class="sub-link">2.1 Standardized Output Format</a>
-  <a href="#s2-2" class="sub-link">2.2 Source Agent Inventory (14 APIs)</a>
+  <a href="#s2-2" class="sub-link">2.2 Source Agent Inventory (16 APIs)</a>
   <a href="#s2-3" class="sub-link">2.3 Ingestion Pipelines</a>
   <a href="#s3" class="section-link">3. AI Provider System & Multi-Tier LLM Routing</a>
   <a href="#s3-1" class="sub-link">3.1 Provider Architecture</a>
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.9.18</h1>
+<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.10.0</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-08-14 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.9.18 -- Universal Cloud Mesh & Multi-Provider Redundancy Expansion
+  <strong>Version:</strong> v5.10.0 -- Academic Ingestion Expansion: OpenReview & OpenAIRE Integration
 </div>
 
 <!-- ===================================================================== -->
@@ -378,7 +378,7 @@
 
 <h3 id="s2-1">2.1 Standardized Output Format</h3>
 
-<p>TALOS ingests academic literature from <strong>14 independent APIs</strong>, each implemented as a standalone source agent under <code>src/ingestion/</code>. Every agent conforms to:</p>
+<p>TALOS ingests academic literature from <strong>16 independent APIs</strong>, each implemented as a standalone source agent under <code>src/ingestion/</code>. Every agent conforms to:</p>
 
 <pre><code>{
   "doi": "string or null",
@@ -390,7 +390,7 @@
   "source": "string"
 }</code></pre>
 
-<h3 id="s2-2">2.2 Source Agent Inventory (14 APIs)</h3>
+<h3 id="s2-2">2.2 Source Agent Inventory (16 APIs)</h3>
 
 <table>
   <thead><tr><th>Source</th><th>Module</th><th>Auth Model</th><th>Rate Limit Handling</th></tr></thead>
@@ -409,12 +409,14 @@
     <tr><td>Sci.gov</td><td><code>src/ingestion/scigov.py</code></td><td>Public API</td><td>Basic rate limit</td></tr>
     <tr><td>OSTI.gov</td><td><code>src/ingestion/osti.py</code></td><td>Public API</td><td>Basic rate limit</td></tr>
     <tr><td>PLOS</td><td><code>src/ingestion/plos.py</code></td><td>Public API</td><td>Basic rate limit</td></tr>
+    <tr><td>OpenReview</td><td><code>src/ingestion/openreview.py</code></td><td>Public API (optional credentials)</td><td>Rate limit + backoff</td></tr>
+    <tr><td>OpenAIRE</td><td><code>src/ingestion/openaire.py</code></td><td>Public API (optional bearer token)</td><td>Rate limit + backoff</td></tr>
   </tbody>
 </table>
 
 <h3 id="s2-3">2.3 Ingestion Pipelines</h3>
 <ul>
-  <li><strong>Daily Search</strong> (<code>src/ingestion/daily_search.py</code>): Concurrent 14-source fetch with deduplication and two-stage AI evaluation (Flash pre-screen, Pro deep analysis)</li>
+  <li><strong>Daily Search</strong> (<code>src/ingestion/daily_search.py</code>): Concurrent 16-source fetch with deduplication and two-stage AI evaluation (Flash pre-screen, Pro deep analysis)</li>
   <li><strong>Historical Search</strong> (<code>src/ingestion/historic_search.py</code>): Year-by-year backfill with epoch deduplication logic</li>
   <li><strong>Grey Literature Miner</strong> (<code>src/ingestion/grey_literature_miner.py</code>): DuckDuckGo web search for preprints, technical reports, and white papers</li>
   <li><strong>PDF Downloader</strong> (<code>src/ingestion/pdf_downloader.py</code>): ThreadPoolExecutor-batched Open Access PDF retrieval (15 workers)</li>
@@ -698,7 +700,7 @@
   <li><strong>Task Lifecycle:</strong> <code>queued -> running -> completed|failed</code></li>
   <li><strong>Task ID:</strong> 8-character hex UUID prefix</li>
   <li><strong>Polling:</strong> <code>GET /api/v1/tasks/{task_id}</code> for individual status, <code>GET /api/v1/tasks</code> for all</li>
-  <li><strong>Long-Running Tasks:</strong> Daily scrape (14 APIs), GWO optimization (minutes), Single-paper evaluation, Bulk score recalculation</li>
+  <li><strong>Long-Running Tasks:</strong> Daily scrape (16 APIs), GWO optimization (minutes), Single-paper evaluation, Bulk score recalculation</li>
 </ul>
 
 <p>Auto-generated OpenAPI docs at <code>http://localhost:8001/docs</code> (Swagger UI) and <code>http://localhost:8001/redoc</code> (ReDoc).</p>
@@ -882,6 +884,13 @@
   <li><strong>Config & env templates</strong> -- <code>ai_provider_priority</code> updated to the 10-item local-first list; 6 new API-key template entries; <code>failure_threshold</code> = 5.</li>
 </ul>
 
+<h3 id="s10-6">10.6 Academic Ingestion Expansion -- OpenReview & OpenAIRE Integration (v5.10.0)</h3>
+<ul>
+  <li><strong><code>src/ingestion/openreview.py</code></strong> -- new <code>OpenReviewSource</code> agent for the OpenReview API V2 with authenticated/guest <code>OpenReviewClient</code> fallback; peer-review decisions, ratings, recommendations, and venue metadata appended to abstracts.</li>
+  <li><strong><code>src/ingestion/openaire.py</code></strong> -- new <code>OpenAIRESource</code> agent for the OpenAIRE Research Graph API v11.3.0 with optional bearer token; project grant/funding metadata appended to abstracts.</li>
+  <li><strong>16-source ingestion</strong> -- <code>daily_search.py</code> and <code>historic_search.py</code> now run both new sources (plus <code>CORESource</code> restored to the daily pipeline); <code>requirements.txt</code> gains <code>openreview-py</code>; <code>example.env</code> gains <code>OPENREVIEW_USERNAME</code>, <code>OPENREVIEW_PASSWORD</code>, <code>OPENAIRE_TOKEN</code>; config gains <code>openreview_query</code>/<code>openaire_query</code> and <code>max_results_config</code> entries.</li>
+</ul>
+
 <!-- ===================================================================== -->
 <h2 id="s11">Section 11: Configuration & Environment</h2>
 
@@ -1037,7 +1046,7 @@
 </ul>
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.9.18</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.0</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

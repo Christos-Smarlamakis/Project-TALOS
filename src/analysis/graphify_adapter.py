@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: graphify_adapter.py
-Project: TALOS v5.9.18
+Project: TALOS v5.10.0
 Description:
     Adapter module that wraps the vendored Graphify AST engine (located at
     vendor/graphify/) for use within the TALOS ecosystem. Provides a single
@@ -438,7 +438,7 @@ def _inject_light_mode_toggle(output_dir: str) -> None:
     # styles produced by Graphify's internal JS visualization.
     light_mode_css = """
 <style id="talos-light-mode-style">
-/* TALOS v5.9.18 -- Academic Print Mode (Light Theme) Override */
+/* TALOS v5.10.0 -- Academic Print Mode (Light Theme) Override */
 /* Injected automatically by graphify_adapter.py post-processing step.  */
 
 body.light-mode {
