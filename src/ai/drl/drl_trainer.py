@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: drl_trainer.py (v1.3 — Batch 2 TUI hardening)
-Project: TALOS v5.10.0
+Module: drl_trainer.py (v1.4 — DRL Environment Scaling)
+Project: TALOS v5.10.1
 Description:
     Training script for the TALOS Deep Reinforcement Learning agent. Runs
     multiple episodes where the agent interacts with the TalosEnv gymnasium
@@ -35,7 +35,10 @@ import numpy as np
 from src.ai.drl.talos_env import TalosEnv
 from src.ai.drl.drl_agent import TalosDRLAgent, Transition, DEVICE
 
-# ── Training hyperparameters ─────────────────────────────────────────────────
+# ── Training hyperparameters (GWO-optimized, v5.10.1) ────────────────────────
+# LR = 3.361e-05 and GAMMA = 0.6983 live in drl_agent.py; combined with the
+# three values below they form the complete GWO-optimized hyperparameter set
+# used for retraining the 23-dim / 17-action agent.
 EPS_START = 1.0        # Initial exploration rate (100% random)
 EPS_END = 0.01         # Minimum exploration rate (1% random)
 EPS_DECAY = 0.9202     # GWO-optimized epsilon decay

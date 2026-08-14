@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.0</title>
+<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.1</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.10.0</h1>
+<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.10.1</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-08-14 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.10.0 -- Academic Ingestion Expansion: OpenReview & OpenAIRE Integration
+  <strong>Version:</strong> v5.10.1 -- DRL Environment Scaling & Retraining: 17 Action Space
 </div>
 
 <!-- ===================================================================== -->
@@ -311,7 +311,7 @@
 
 <h3 id="s1-1">1.1 Foundational Principle</h3>
 
-<p>TALOS is an autonomous Research Intelligence Platform that ingests, evaluates, synthesizes, and visualizes scientific knowledge across 14 academic sources. It replaces manual systematic literature review workflows with an AI-driven, DRL-orchestrated pipeline that maintains a human-in-the-loop at every critical decision boundary. The system operates as a microservice within the broader ALEXANDRIA Ecosystem -- a distributed research intelligence mesh that communicates via the SYNAPSE Event-Driven Protocol. Starting in v5.9.10, TALOS also introspects its own codebase through a vendored Graphify AST Knowledge Graph engine, generating interactive dependency visualizations and architectural intelligence reports directly from source code.</p>
+<p>TALOS is an autonomous Research Intelligence Platform that ingests, evaluates, synthesizes, and visualizes scientific knowledge across 16 academic sources. It replaces manual systematic literature review workflows with an AI-driven, DRL-orchestrated pipeline that maintains a human-in-the-loop at every critical decision boundary. The system operates as a microservice within the broader ALEXANDRIA Ecosystem -- a distributed research intelligence mesh that communicates via the SYNAPSE Event-Driven Protocol. Starting in v5.9.10, TALOS also introspects its own codebase through a vendored Graphify AST Knowledge Graph engine, generating interactive dependency visualizations and architectural intelligence reports directly from source code.</p>
 
 <h3 id="s1-2">1.2 Architectural Pillars</h3>
 
@@ -537,8 +537,8 @@
   <thead><tr><th>Component</th><th>Value</th></tr></thead>
   <tbody>
     <tr><td>Network Architecture</td><td>DuelingLSTM (3-layer LSTM 128->64->32 + LayerNorm + dueling V/A heads)</td></tr>
-    <tr><td>State Space</td><td>Provider-aware: 1 + N_sources + 2 + 4 (providers) = 21 dimensions</td></tr>
-    <tr><td>Action Space</td><td>N sources + 1 sleep (14+1 = 15 actions)</td></tr>
+    <tr><td>State Space</td><td>Provider-aware: 1 + 16 sources + 2 streaks + 4 providers = 23 dimensions</td></tr>
+    <tr><td>Action Space</td><td>16 sources + 1 sleep = 17 actions (indices 0..15 = sources, 16 = sleep)</td></tr>
     <tr><td>Reward Signal</td><td>+20 (score >= 8.0), +5 (score >= 6.0), -10 (score < 6.0)</td></tr>
     <tr><td>Exploration</td><td>Epsilon-greedy with exponential decay</td></tr>
     <tr><td>GWO-Optimized Hyperparameters</td><td>LR=3.361e-05, GAMMA=0.6983, EPS_DECAY=0.9202</td></tr>
@@ -552,12 +552,12 @@
 <table>
   <thead><tr><th>Module</th><th>Purpose</th></tr></thead>
   <tbody>
-    <tr><td><code>src/ai/drl/talos_env.py</code> (v3.1)</td><td>Gymnasium-compliant N-source environment with provider-aware observation space</td></tr>
+    <tr><td><code>src/ai/drl/talos_env.py</code> (v3.2)</td><td>Gymnasium-compliant 16-source environment with 23-dim provider-aware observation space and 17-action space</td></tr>
     <tr><td><code>src/ai/drl/drl_networks.py</code> (v1.0)</td><td>Pluggable network architectures: DuelingLSTM with common interface</td></tr>
-    <tr><td><code>src/ai/drl/drl_agent.py</code> (v2.3)</td><td>Double Dueling DQN with <code>network_class</code> dependency injection</td></tr>
+    <tr><td><code>src/ai/drl/drl_agent.py</code> (v2.1)</td><td>Double Dueling DQN with <code>network_class</code> dependency injection and auto-reconstruction for 23/17 dimensions</td></tr>
     <tr><td><code>src/ai/drl/drl_trainer.py</code> (v1.4)</td><td>Epsilon-greedy training with Ctrl+C graceful partial save</td></tr>
-    <tr><td><code>src/ai/drl/live_agent_sources.py</code> (v1.0)</td><td>Dynamic source discovery via module scanning</td></tr>
-    <tr><td><code>src/ai/drl/live_agent_orchestrator.py</code> (v1.1)</td><td>Main loop with cooldown, provider tracking, reward calculation</td></tr>
+    <tr><td><code>src/ai/drl/live_agent_sources.py</code> (v1.1)</td><td>Dynamic source discovery via module scanning (16 sources)</td></tr>
+    <tr><td><code>src/ai/drl/live_agent_orchestrator.py</code> (v1.2)</td><td>Main loop with cooldown, provider tracking, reward calculation, 23-dim state</td></tr>
     <tr><td><code>src/ai/drl/talos_live_agent.py</code> (v3.2)</td><td>CLI entry for live API-fetching DRL agent with argparse</td></tr>
     <tr><td><code>src/ai/drl/talos_service.py</code> (v2.0)</td><td>24/7 autonomous research daemon with Telegram/Discord/Email notifications</td></tr>
   </tbody>
@@ -921,7 +921,7 @@
 <ul>
   <li><code>active_focus_summary</code>: 6-10 word LLM-generated research focus title</li>
   <li><code>user_research_goal</code>, <code>phd_focus_system_prompt</code>, <code>pre_screening_prompt</code></li>
-  <li><code>*_query</code> (14 keys): Boolean search queries for each source</li>
+  <li><code>*_query</code> (16 keys): Boolean search queries for each source</li>
   <li><code>ai_provider_priority</code>, <code>failure_threshold</code>, <code>provider_limits</code>, <code>gemini_tier</code></li>
 </ul>
 
@@ -1046,7 +1046,7 @@
 </ul>
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.0</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.1</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

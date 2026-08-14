@@ -4,9 +4,21 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-14 (v5.10.0 -- Academic Ingestion Expansion: OpenReview & OpenAIRE Integration)
+> **Last Updated:** 2026-08-14 (v5.10.1 -- DRL Environment Scaling & Retraining: 17 Action Space)
 
 ---
+
+## Phase 31: DRL Environment Scaling & Action Space Expansion (v5.10.1)
+
+### Status: COMPLETED (2026-08-14)
+
+- [x] **DRL environment scaling (`src/ai/drl/talos_env.py` v3.2)** -- state space scaled to 23 dimensions (1 hour + 16 source ratios + 2 streaks + 4 provider ratios) and action space scaled to 17 actions (16 sources + sleep).
+- [x] **Canonical 16-source discovery** -- `_load_source_list()` guarantees `openreview` and `openaire` are present and falls back to the full 16-source `ALL_KNOWN_SOURCES` list.
+- [x] **DDDQN retraining readiness** -- `drl_agent.py` (v2.1) auto-reconstructs networks for input_dim=23 / action_dim=17; GWO-optimized hyperparameters (LR=3.361e-05, GAMMA=0.6983, EPS_DECAY=0.9202) documented in `drl_trainer.py` (v1.4).
+- [x] **Live orchestrator mapping** -- `live_agent_sources.py` (v1.1) and `live_agent_orchestrator.py` (v1.2) align source mapping and the 23-dim `calculate_state()`.
+- [x] **DRL environment verification tests** -- `TestDRLEnvironment` in `tests/test_multi_tier.py` asserting `(23,)` observation shape and `Discrete(17)` action space.
+- [x] **Sync all 6 code files and 15 documentation files to v5.10.1**.
+
 
 ## Phase 30: Academic Ingestion Expansion - OpenReview & OpenAIRE Integration (v5.10.0)
 

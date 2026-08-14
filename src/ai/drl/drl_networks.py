@@ -21,7 +21,7 @@ Description:
       each network class, not applied as a wrapper. This gives each
       architecture full control over how value and advantage are computed.
     - All networks accept (input_dim, output_dim) at construction so the
-      agent can vary dimensions dynamically (3 sources vs 14 sources).
+      agent can vary dimensions dynamically (3 sources vs 16 sources).
 """
 import torch as T
 import torch.nn as nn

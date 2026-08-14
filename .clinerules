@@ -1,5 +1,5 @@
 # TALOS Project Instructions for AI Coding Agents
-# Version: v5.10.0
+# Version: v5.10.1
 
 ## CONSTITUTION v2.0 — The 8-Point Master Initialization Standard
 
@@ -280,13 +280,13 @@
 
 ---
 
-> **Last Updated:** 2026-08-14 (v5.10.0 -- Academic Ingestion Expansion: OpenReview & OpenAIRE Integration)
-> **Project Version:** v5.10.0
+> **Last Updated:** 2026-08-14 (v5.10.1 -- DRL Environment Scaling & Retraining: 17 Action Space)
+> **Project Version:** v5.10.1
 
 ---
 
 ## CRITICAL: Exhaustive Capabilities Sync Rule (v5.9.3)
-- **During every version bump, the AI must scan the changelogs and codebase to ensure `SYSTEM_CAPABILITIES_MASTER.md` and `.html` are ultra-detailed, covering 100% of all current system endpoints, agents, routing matrices, and integrations.** This includes: all REST API endpoints with full path/method/description tables, all MCP server tools with schemas, all Synapse event types and payloads, all RL/DRL components (DDDQN, GWO, Autonomous Tester Non-Stationary MAB), the 4-Way Execution Mode Matrix with per-tier routing, all 14 ingestion sources, all analysis modules, and all system constants. The capabilities documents MUST be complete technical whitepapers suitable for a new developer to understand the entire system without reading source code.
+- **During every version bump, the AI must scan the changelogs and codebase to ensure `SYSTEM_CAPABILITIES_MASTER.md` and `.html` are ultra-detailed, covering 100% of all current system endpoints, agents, routing matrices, and integrations.** This includes: all REST API endpoints with full path/method/description tables, all MCP server tools with schemas, all Synapse event types and payloads, all RL/DRL components (DDDQN, GWO, Autonomous Tester Non-Stationary MAB), the 4-Way Execution Mode Matrix with per-tier routing, all 16 ingestion sources, all analysis modules, and all system constants. The capabilities documents MUST be complete technical whitepapers suitable for a new developer to understand the entire system without reading source code.
 
 ## CRITICAL: Code Version Synchronicity Rule
 - **During any version bump, the version string inside the core executable launchers and code entry points MUST be synchronized exactly to the target version.** The affected files are:

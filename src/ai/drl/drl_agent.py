@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: drl_agent.py (v2.0 — Dynamic N-Source Agent)
-Project: TALOS v5.10.0
+Module: drl_agent.py (v2.1 — 16-Source Scaling)
+Project: TALOS v5.10.1
 Description:
     Deep Reinforcement Learning agent for TALOS API source selection.
     Implements Double Dueling DQN with an LSTM-based neural network that
@@ -22,6 +22,11 @@ Description:
       reset CuDNN memory pointers.
     - save() stores metadata (state_space, action_space, source_names)
       alongside weights for reproducibility.
+
+    v2.1 (DRL Environment Scaling & Retraining):
+    - Default dimensions are now input_dim=23 (state) and action_dim=17.
+    - load() auto-reconstructs the online/target networks whenever the saved
+      model dimensions differ from the current environment dimensions.
 """
 import os, sys
 _P = os.path.abspath(os.path.dirname(__file__))
@@ -57,9 +62,9 @@ try:
     STATE_SPACE = get_default_state_space()
     ACTION_SPACE = get_default_action_space()
 except Exception:
-    # Fallback: original 3 sources + sleep = 4 actions, 6-dim observation
-    STATE_SPACE = 6
-    ACTION_SPACE = 4
+    # Fallback: canonical 16 sources + sleep = 17 actions, 23-dim observation
+    STATE_SPACE = 23
+    ACTION_SPACE = 17
 
 # ── Named tuple for storing experiences in replay memory ────────────────────
 # Each experience captures: state before action, action taken, reward received,
@@ -131,7 +136,7 @@ class TalosDRLAgent:
     Q-value targets do not oscillate wildly during training.
 
     Action/observation dimensions are determined at construction time
-    and can change per-profile (e.g., 3 sources vs 14 sources).
+    and can change per-profile (e.g., 3 sources vs 16 sources).
 
     Attributes:
         state_dim (int): Observation vector size.
@@ -343,7 +348,7 @@ class TalosDRLAgent:
 
         If the saved file includes metadata, the state/action dimensions
         are updated to match.  If the architecture doesn't match (e.g.,
-        loading a 3-source model when 14 sources are configured), a
+        loading a 3-source model when 16 sources are configured), a
         warning is printed but loading proceeds (mismatched sizes will
         cause a runtime error from PyTorch).
 

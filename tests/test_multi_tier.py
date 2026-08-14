@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_multi_tier.py
-Project: TALOS v5.10.0
+Project: TALOS v5.10.1
 Description:
     Unit tests for the multi-tier LLM routing architecture (v5.7.1). Tests cover:
     - Fast tier routing via HTTP POST to FAST_EDGE_BASE_URL with Neutrino-8B.
@@ -337,9 +337,9 @@ class TestSettingsResolution:
         assert DEFAULT_TIER == "fast"
 
     def test_talos_version(self):
-        """Verify the TALOS_VERSION is v5.10.0."""
+        """Verify the TALOS_VERSION is v5.10.1."""
         from config.settings import TALOS_VERSION
-        assert TALOS_VERSION == "5.10.0"
+        assert TALOS_VERSION == "5.10.1"
 
     def test_talos_api_port(self):
         """Verify the default TALOS_API_PORT is 8001."""
@@ -495,3 +495,56 @@ class TestCloudMeshRegistry:
                     result = mgr._execute_cloud_chain("test prompt", "pro", "json")
                     assert result == {"score": 9}
                     assert mgr.last_provider_used == "deepseek"
+
+
+# ------------------------------------------------------------------
+# -- DRL Environment Scaling Tests (v5.10.1) --
+# ------------------------------------------------------------------
+
+class TestDRLEnvironment:
+    """Tests for the 23-dim / 17-action TalosEnv environment scaling."""
+
+    # Canonical 16-source list (order-independent for shape assertions).
+    SOURCE_NAMES = [
+        "arxiv", "openalex", "semantic_scholar", "crossref", "dblp",
+        "pubmed", "plos", "core", "osti", "scigov",
+        "openarchives", "ieee", "elsevier", "springer",
+        "openreview", "openaire",
+    ]
+
+    def test_observation_space_is_23_dims(self):
+        """Verify TalosEnv exposes a 23-dimensional observation space."""
+        from src.ai.drl.talos_env import TalosEnv
+        env = TalosEnv(source_names=self.SOURCE_NAMES)
+        assert env.observation_space.shape == (23,)
+
+    def test_action_space_is_discrete_17(self):
+        """Verify TalosEnv exposes a Discrete(17) action space."""
+        from src.ai.drl.talos_env import TalosEnv
+        from gymnasium import spaces
+        env = TalosEnv(source_names=self.SOURCE_NAMES)
+        assert env.action_space.n == 17
+        assert isinstance(env.action_space, spaces.Discrete)
+
+    def test_reset_observation_has_23_dims(self):
+        """Verify reset() returns a 23-element observation vector."""
+        from src.ai.drl.talos_env import TalosEnv
+        env = TalosEnv(source_names=self.SOURCE_NAMES)
+        obs, _ = env.reset()
+        assert obs.shape == (23,)
+
+    def test_sleep_action_index_is_16(self):
+        """Verify the sleep action is index 16 (the 17th action)."""
+        from src.ai.drl.talos_env import TalosEnv
+        env = TalosEnv(source_names=self.SOURCE_NAMES)
+        assert env.SLEEP_ACTION == 16
+
+    def test_default_state_space_is_23(self):
+        """Verify get_default_state_space() returns 23 for the 16-source baseline."""
+        from src.ai.drl.talos_env import get_default_state_space
+        assert get_default_state_space() == 23
+
+    def test_default_action_space_is_17(self):
+        """Verify get_default_action_space() returns 17 for the 16-source baseline."""
+        from src.ai.drl.talos_env import get_default_action_space
+        assert get_default_action_space() == 17

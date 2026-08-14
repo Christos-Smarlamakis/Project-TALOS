@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Project TALOS v5.10.0 -- Research Intelligence Dashboard
+title Project TALOS v5.10.1 -- Research Intelligence Dashboard
 
 REM ---------------------------------------------------------------------------
 REM [ INIT ] Enforce Terminal Viewport Dimensions
@@ -12,7 +12,7 @@ chcp 65001 >nul 2>&1
 
 REM ===========================================================================
 REM script         : run_talos.bat
-REM version        : v5.10.0 (Academic Ingestion Expansion)
+REM version        : v5.10.1 (DRL Environment Scaling and Retraining)
 REM description    : Advanced System Dashboard and Execution Matrix for Project TALOS.
 REM                  Implements Two-Column UI, IEEE WEIGD standard telemetry,
 REM                  defensive error handling, solid-block Unicode rendering,
@@ -103,7 +103,7 @@ echo %C_IEEE_LIGHT%             ██    ███████ ██      █�
 echo %C_IEEE_LIGHT%             ██    ██   ██ ██      ██    ██     ██  %C_RESET%
 echo %C_IEEE_LIGHT%             ██    ██   ██ ███████  ██████  ██████  %C_RESET%
 echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
-echo  %C_CYAN%Project TALOS v5.10.0 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)%C_RESET%
+echo  %C_CYAN%Project TALOS v5.10.1 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)%C_RESET%
 echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
 echo  [ SYSTEM TELEMETRY ]    API (8001): %API_STATUS%   ^|   BUS (8000): %SYNAPSE_STATUS%   ^|   EDGE (11435): %EDGE_STATUS%
 echo %C_IEEE_DARK%-----------------------------------------------------------------------------------------------------%C_RESET%
@@ -197,7 +197,7 @@ if %ERRORLEVEL% equ 0 (
     call :LOG_WARN "Ollama not found in PATH. Skipping GPU model pull."
 )
 
-call :LOG_SUCCESS "TALOS v5.10.0 deployment finalized."
+call :LOG_SUCCESS "TALOS v5.10.1 deployment finalized."
 pause
 goto MAIN_MENU
 

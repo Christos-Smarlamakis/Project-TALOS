@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.10.0
+Project: TALOS v5.10.1
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -20,6 +20,11 @@ Description:
     Configuration, Search & Ingestion, Analysis & Topologies, Daemons &
     CI/CD, and Diagnostics & Exit. Includes the new Vendored Graphify
 AST Knowledge Graph adapter (v5.9.12).
+
+    v5.10.1: DRL Environment Scaling & Retraining -- the TALOS DRL agent
+    environment scaled to a 23-dimensional state space (16 source usage
+    ratios + 2 streaks + 4 provider ratios) and a 17-action space (16 sources
+    + sleep). DDDQN auto-reconstructs networks for the new dimensions.
 
     v5.10.0: Academic Ingestion Expansion -- OpenReview and OpenAIRE source
     agents added (16-source ingestion). OpenReview peer-review decisions and

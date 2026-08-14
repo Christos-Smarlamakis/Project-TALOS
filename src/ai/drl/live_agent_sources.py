@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: live_agent_sources.py (v1.0)
-Project: TALOS v5.10.0
+Module: live_agent_sources.py (v1.1)
+Project: TALOS v5.10.1
 Description:
     Source discovery and management for the TALOS Live DRL Agent.
     Handles auto-detection of configured API sources from config.json,
@@ -25,7 +25,7 @@ def import_source_class(source_name):
 
     Instead of guessing the class name, this function imports the module
     and scans it for a class ending in "Source". This handles mixed naming
-    conventions across all 14 source modules (acronyms, compound names).
+    conventions across all 16 source modules (acronyms, compound names).
 
     Args:
         source_name (str): Source key (e.g., "arxiv", "dblp", "openalex").

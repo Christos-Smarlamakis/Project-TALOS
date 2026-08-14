@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.0
+# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.1
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-08-14
-> **Version:** v5.10.0 -- Academic Ingestion Expansion: OpenReview & OpenAIRE Integration
+> **Version:** v5.10.1 -- DRL Environment Scaling & Retraining: 17 Action Space
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -14,7 +14,7 @@
 
 ### 1.1 Foundational Principle
 
-TALOS is an autonomous Research Intelligence Platform that ingests, evaluates, synthesizes, and visualizes scientific knowledge across 14 academic sources. It replaces manual systematic literature review workflows with an AI-driven, DRL-orchestrated pipeline that maintains a human-in-the-loop at every critical decision boundary. The system operates as a microservice within the broader ALEXANDRIA Ecosystem -- a distributed research intelligence mesh that communicates via the SYNAPSE Event-Driven Protocol. Starting in v5.9.10, TALOS also introspects its own codebase through a vendored Graphify AST Knowledge Graph engine, generating interactive dependency visualizations and architectural intelligence reports directly from source code.
+TALOS is an autonomous Research Intelligence Platform that ingests, evaluates, synthesizes, and visualizes scientific knowledge across 16 academic sources. It replaces manual systematic literature review workflows with an AI-driven, DRL-orchestrated pipeline that maintains a human-in-the-loop at every critical decision boundary. The system operates as a microservice within the broader ALEXANDRIA Ecosystem -- a distributed research intelligence mesh that communicates via the SYNAPSE Event-Driven Protocol. Starting in v5.9.10, TALOS also introspects its own codebase through a vendored Graphify AST Knowledge Graph engine, generating interactive dependency visualizations and architectural intelligence reports directly from source code.
 
 ### 1.2 Architectural Pillars
 
@@ -224,8 +224,8 @@ The TALOS DRL Agent (`src/ai/drl/`) employs a **Double Dueling Deep Q-Network wi
 | Component | Value |
 |-----------|-------|
 | Network Architecture | DuelingLSTM (3-layer LSTM 128->64->32 + LayerNorm + dueling V/A heads) |
-| State Space | Provider-aware: 1 + N_sources + 2 + 4 (providers) = 21 dimensions |
-| Action Space | N sources + 1 sleep (14+1 = 15 actions) |
+| State Space | Provider-aware: 1 + 16 sources + 2 streaks + 4 providers = 23 dimensions |
+| Action Space | 16 sources + 1 sleep = 17 actions (indices 0..15 = sources, 16 = sleep) |
 | Reward Signal | Paper quality score mapped via brackets: +20 (score >= 8.0), +5 (score >= 6.0), -10 (score < 6.0) |
 | Exploration | Epsilon-greedy with exponential decay |
 | GWO-Optimized Hyperparameters | LR=3.361e-05, GAMMA=0.6983, EPS_DECAY=0.9202 |
@@ -236,12 +236,12 @@ The TALOS DRL Agent (`src/ai/drl/`) employs a **Double Dueling Deep Q-Network wi
 
 | Module | Purpose |
 |--------|---------|
-| `src/ai/drl/talos_env.py` (v3.1) | Gymnasium-compliant N-source environment with provider-aware observation space, time-limit truncation fix |
+| `src/ai/drl/talos_env.py` (v3.2) | Gymnasium-compliant 16-source environment with 23-dim provider-aware observation space and 17-action space |
 | `src/ai/drl/drl_networks.py` (v1.0) | Pluggable network architectures: DuelingLSTM with common (input_dim, output_dim) interface |
-| `src/ai/drl/drl_agent.py` (v2.3) | Double Dueling DQN with `network_class` dependency injection |
+| `src/ai/drl/drl_agent.py` (v2.1) | Double Dueling DQN with `network_class` dependency injection and auto-reconstruction for 23/17 dimensions |
 | `src/ai/drl/drl_trainer.py` (v1.4) | Epsilon-greedy training with Ctrl+C graceful partial save |
-| `src/ai/drl/live_agent_sources.py` (v1.0) | Dynamic source discovery via module scanning |
-| `src/ai/drl/live_agent_orchestrator.py` (v1.1) | Main loop with cooldown, provider tracking, reward calculation |
+| `src/ai/drl/live_agent_sources.py` (v1.1) | Dynamic source discovery via module scanning (16 sources) |
+| `src/ai/drl/live_agent_orchestrator.py` (v1.2) | Main loop with cooldown, provider tracking, reward calculation, 23-dim state |
 | `src/ai/drl/talos_live_agent.py` (v3.2) | CLI entry for live API-fetching DRL agent with argparse |
 | `src/ai/drl/talos_service.py` (v2.0) | 24/7 autonomous research daemon with Telegram/Discord/Email notifications |
 
@@ -614,7 +614,7 @@ For each evaluated paper, the AI generates:
 - `phd_focus_system_prompt`: System prompt for AI evaluation persona
 - `pre_screening_prompt`: Prompt for flash tier pre-screening
 - `query_translator_prompt`: Meta-prompt for PYTHIA Query Translator
-- `*_query` (14 keys): Boolean search queries for each academic source
+- `*_query` (16 keys): Boolean search queries for each academic source
 - `ai_provider_priority`: Ordered list of provider names
 - `failure_threshold`: Circuit breaker failure threshold
 - `provider_limits`: Per-provider rate limits (rpm, rpd, tpm)

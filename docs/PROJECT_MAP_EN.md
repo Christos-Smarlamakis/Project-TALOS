@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.0
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.1
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-14 (v5.10.0 -- Academic Ingestion Expansion: OpenReview & OpenAIRE Integration)
+> **Last Updated:** 2026-08-14 (v5.10.1 -- DRL Environment Scaling & Retraining: 17 Action Space)
 
 ---
 
@@ -76,9 +76,11 @@ Data Flow:
 
 ## 2. Core Modules
 
-### 2.0 `core/talos_env.py` — Gymnasium Environment (v3.1, Time-limit Truncation Fix)
+### 2.0 `core/talos_env.py` — Gymnasium Environment (v3.2, 16-source / 23-dim scaling)
 
 **v3.1 (Batch 1 audit):** The 200-step cutoff is now reported as `truncated=True` (not `terminated`) per Gymnasium time-limit semantics, so Bellman targets bootstrap across the artificial cutoff.
+
+**v3.2 (v5.10.1):** Environment scaled to a **23-dimensional state space** (1 hour + 16 source ratios + 2 streaks + 4 provider ratios) and a **17-action space** (16 sources + sleep). `_load_source_list()` guarantees `openreview` and `openaire` are present.
 
 **Role:** RL environment for API source selection. **V2.1:** Fixed hour normalization `/23.0` → `/24.0`. **v3.0:** Provider-aware observation — state vector includes 4 provider ratios (gemini, deepseek, huggingface, local) for the DRL agent.
 
@@ -91,12 +93,12 @@ Data Flow:
 | `_load_source_list` | `(config=None) -> list` | Reads source list from config.json (source_names or auto-detect from _query keys). |
 | `_try_load_config` | `() -> dict or None` | Loads config.json from project root. |
 | `_load_source_limits` | `(source_names, config=None) -> np.ndarray` | Reads per-source API limits from config. |
-| `__init__` | `(self, source_names=None, source_limits=None, config=None)` | Dynamic init with N sources. Obs size = 1 + N + 2 + 4 (providers). |
+| `__init__` | `(self, source_names=None, source_limits=None, config=None)` | Dynamic init with N sources. Obs size = 1 + N + 2 + 4 (providers) = 23 for 16 sources. |
 | `reset` | `(seed=None, options=None) -> (obs, info)` | Resets all counters. |
 | `step` | `(action) -> (obs, reward, terminated, truncated, info)` | Executes action. Actions 0..N-1 = query source, N = sleep. |
-| `_build_obs` | `() -> np.ndarray` | v3.0: [hour/24, usage_ratios..., low/10, err/10, 4x zeros] — provider zeros during training. |
-| `get_default_state_space` | `() -> int` | v3.0: 1 + N + 2 + 4. |
-| `get_default_action_space` | `() -> int` | N + 1 sleep. |
+| `_build_obs` | `() -> np.ndarray` | v3.2: [hour/24, 16 usage_ratios..., low/10, err/10, 4 provider ratios] — 23 dimensions. |
+| `get_default_state_space` | `() -> int` | v3.2: 23 (1 + 16 + 2 + 4). |
+| `get_default_action_space` | `() -> int` | v3.2: 17 (16 sources + 1 sleep). |
 
 ### 2.1 `core/ai_manager.py` — Class `AIManager` (v3.9)
 
@@ -459,8 +461,8 @@ src/utils/logger.py (Enterprise Logging)
 
 ---
 
-> **Last Updated:** 2026-08-14 (v5.10.0 -- Academic Ingestion Expansion: OpenReview & OpenAIRE Integration)
-> **Project Version:** v5.10.0
+> **Last Updated:** 2026-08-14 (v5.10.1 -- DRL Environment Scaling & Retraining: 17 Action Space)
+> **Project Version:** v5.10.1
 > **Total Files Covered:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### New in v5.9.9: Report Path Consolidation

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Module: talos_env.py (v3.1 — Time-limit truncation fix)
-Project: TALOS v5.10.0
+Module: talos_env.py (v3.2 — 16-source / 23-dim scaling)
+Project: TALOS v5.10.1
 Description:
     Gymnasium reinforcement learning environment for TALOS API source selection.
-    Supports ALL 14 academic sources dynamically (not just the original 3).
+    Supports ALL 16 academic sources dynamically (not just the original 3).
     The agent chooses which API to query next from N sources plus a "sleep"
     option. Each source has a daily call limit read from config.json.
 
@@ -12,10 +12,17 @@ Description:
     - On init, reads the list of sources from a well-known config key
       ("source_names") or auto-detects them from config keys ending in "_query".
     - For each source, reads its per-day API limit from config (defaults to 100).
-    - Action indices 0..N-1 correspond to the N sources.
-    - Action N is the sleep/cooldown action.
-    - Observation vector: [hour/23, usage_ratio_0, ..., usage_ratio_N-1,
-      low_score_streak/10, error_streak/10] — fully dynamic.
+    - Action indices 0..15 correspond to the 16 sources.
+    - Action 16 is the sleep/cooldown action.
+    - Observation vector (23 dims): [hour/24.0, usage_ratio_0, ...,
+      usage_ratio_15, low_score_streak/10, error_streak/10,
+      provider_ratio_0, ..., provider_ratio_3] — fully dynamic.
+
+    v3.2 (DRL Environment Scaling & Retraining):
+    - State space scaled to 23 dimensions (1 hour + 16 source ratios + 2
+      streaks + 4 provider ratios).
+    - Action space scaled to 17 actions (16 sources + sleep).
+    - openreview and openaire are guaranteed members of the source list.
 
     Key design decisions:
     - All source state is stored in parallel numpy arrays (calls, limits) so
@@ -42,11 +49,12 @@ from gymnasium import spaces
 # ── Default API limit when config doesn't specify one ────────────────────────
 DEFAULT_SOURCE_LIMIT = 100
 
-# ── Known 14-source list (used as fallback when config doesn't define them) ───
+# ── Known 16-source list (used as fallback when config doesn't define them) ───
 ALL_KNOWN_SOURCES = [
     "arxiv", "openalex", "semantic_scholar", "crossref", "dblp",
     "pubmed", "plos", "core", "osti", "scigov",
     "openarchives", "ieee", "elsevier", "springer",
+    "openreview", "openaire",
 ]
 
 # ── Provider names for observation vector (v3.0 — Provider-Aware) ─────────────
@@ -62,7 +70,11 @@ def _load_source_list(config=None):
       1. Look for a "source_names" key in config (explicit list).
       2. Auto-detect: scan all config keys ending in "_query", extract the
          source name before "_query", and sort alphabetically for determinism.
-      3. If neither works (no config file at all), return the 3 original sources.
+      3. If neither works (no config file at all), return the canonical
+         16-source list (including openreview and openaire).
+
+    v3.2 guarantee: openreview and openaire are always appended if missing,
+    so the action space is stable at 16 sources + sleep = 17 actions.
 
     Args:
         config (dict, optional): Loaded config.json as a dict.
@@ -75,20 +87,27 @@ def _load_source_list(config=None):
 
     # ── Explicit source_names list ───────────────────────────────────────────
     if config and "source_names" in config:
-        return list(config["source_names"])
-
-    # ── Auto-detect from _query keys ────────────────────────────────────────
-    if config:
-        detected = sorted([
+        names = list(config["source_names"])
+    elif config:
+        # ── Auto-detect from _query keys ─────────────────────────────────────
+        names = sorted([
             k.replace("_query", "")
             for k in config.keys()
             if k.endswith("_query") and k != "query_translator_prompt"
         ])
-        if detected:
-            return detected
+    else:
+        names = []
 
-    # ── Fallback to the original 3 sources ──────────────────────────────────
-    return ["arxiv", "openalex", "semantic_scholar"]
+    # ── Fallback to the canonical 16-source list when discovery is empty ─────
+    if not names:
+        names = list(ALL_KNOWN_SOURCES)
+
+    # ── Guarantee openreview and openaire are always present ─────────────────
+    for required in ("openreview", "openaire"):
+        if required not in names:
+            names.append(required)
+
+    return names
 
 
 def _try_load_config():
@@ -371,14 +390,15 @@ class TalosEnv(gym.Env):
         """
         Construct the normalized observation vector from current state.
 
-        Structure:
-            [0]           hour / 23.0  (0.0–1.0)
+        Structure (v3.2 — 23 dims for 16 sources):
+            [0]           hour / 24.0  (0.0–1.0)
             [1 .. N]       usage ratio per source (calls/limit, 0.0–1.0)
             [N+1]          consecutive_low_scores / 10.0
             [N+2]          consecutive_errors / 10.0
+            [N+3 .. N+6]   provider usage ratios (gemini, deepseek, hf, local)
 
         Returns:
-            np.ndarray: Shape (1 + num_sources + 2,) float32 array.
+            np.ndarray: Shape (1 + num_sources + 2 + 4,) float32 array.
         """
         # ── Usage ratios: calls / limit, safe-division ──────────────────────
         ratios = self.source_calls / np.maximum(self.source_limits, 1.0)
@@ -451,7 +471,8 @@ def get_default_state_space():
     """
     Return the STATE_SPACE size for the default auto-detected source count.
 
-    v3.0: Includes 4 provider ratios in the observation vector.
+    v3.2: 16 sources -> 1 (hour) + 16 (source ratios) + 2 (streaks) + 4
+    (provider ratios) = 23 dimensions.
 
     Returns:
         int: Default observation vector length (1 + num_sources + 2 + 4).
@@ -463,6 +484,9 @@ def get_default_state_space():
 def get_default_action_space():
     """
     Return the ACTION_SPACE size for the default auto-detected source count.
+
+    v3.2: 16 sources -> 16 query actions (indices 0..15) + 1 sleep action
+    (index 16) = 17 actions.
 
     Returns:
         int: Default number of actions (num_sources + 1 sleep).

@@ -2,6 +2,25 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.1] - 2026-08-14 -- DRL Environment Scaling & Retraining (17 Action Space)
+
+### Added
+- **DRL environment scaling (`src/ai/drl/talos_env.py` v3.2)**: The Gymnasium `TalosEnv` state space was scaled to 23 dimensions -- 1 normalized hour (/24.0) + 16 source usage ratios + 2 streaks (low_score/10, error/10) + 4 provider ratios (gemini, deepseek, huggingface, local). The action space was scaled to 17 actions -- actions 0..15 map to the 16 sources, action 16 is sleep.
+- **Canonical 16-source discovery**: `_load_source_list()` now guarantees `openreview` and `openaire` are present (appended if missing) and falls back to the full 16-source `ALL_KNOWN_SOURCES` list when no config is available.
+- **DRL environment verification tests (`tests/test_multi_tier.py`)**: New `TestDRLEnvironment` class asserting `TalosEnv` produces a `(23,)` observation shape and a `Discrete(17)` action space, plus `get_default_state_space() == 23` and `get_default_action_space() == 17`.
+
+### Changed
+- **`src/ai/drl/drl_agent.py` (v2.1)**: Import-time dimension fallback updated from (6, 4) to (23, 17); `load()` auto-reconstruction documented for the new dimensions.
+- **`src/ai/drl/drl_trainer.py` (v1.4)**: GWO-optimized hyperparameters documented (LR=3.361e-05, GAMMA=0.6983, EPS_DECAY=0.9202).
+- **`src/ai/drl/live_agent_sources.py` (v1.1)** and **`src/ai/drl/live_agent_orchestrator.py` (v1.2)**: Source mapping and docstrings aligned to 16 sources and the 23-dim state vector.
+- **Version strings synced across 6 code files and 15 documentation files** to v5.10.1.
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- Full test suite (including the new DRL environment scaling tests) and smoke test pass.
+- Zero emojis protocol strictly enforced; pure Greek unicode maintained in all `_GR.md` files.
+
+
 ## [v5.10.0] - 2026-08-14 -- Academic Ingestion Expansion (OpenReview & OpenAIRE Integration)
 
 ### Added

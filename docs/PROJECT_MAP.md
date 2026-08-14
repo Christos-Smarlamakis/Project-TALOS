@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.0
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.1
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.10.0 -- Επέκταση Ακαδημαϊκής Κατάποσης: Ενσωμάτωση OpenReview & OpenAIRE)
+> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.10.1 -- Κλιμάκωση Περιβάλλοντος DRL & Επανεκπαίδευση: Χώρος Δράσης 17)
 
 ---
 
@@ -72,9 +72,9 @@ Data Flow:
 
 ## 2. Core Modules
 
-### 2.0 `core/talos_env.py` — Gymnasium Environment (v3.1, Time-limit Truncation Fix)
+### 2.0 `core/talos_env.py` — Gymnasium Environment (v3.2, 16-source / 23-dim scaling)
 
-**Ρόλος:** RL environment για API source selection. **V2.1:** Fixed hour normalization `/23.0` → `/24.0`. **v3.0:** Provider-aware observation — state vector includes 4 provider ratios (gemini, deepseek, huggingface, local) για τον DRL agent. **v3.1 (Batch 1 audit):** Το 200-step cutoff επιστρέφεται πλέον ως `truncated=True` (όχι `terminated`) — Gymnasium time-limit semantics, ώστε το Bellman target να κάνει bootstrap πέρα από το τεχνητό όριο.
+**Ρόλος:** RL environment για API source selection. **V2.1:** Fixed hour normalization `/23.0` → `/24.0`. **v3.0:** Provider-aware observation — state vector includes 4 provider ratios (gemini, deepseek, huggingface, local) για τον DRL agent. **v3.1 (Batch 1 audit):** Το 200-step cutoff επιστρέφεται πλέον ως `truncated=True` (όχι `terminated`) — Gymnasium time-limit semantics, ώστε το Bellman target να κάνει bootstrap πέρα από το τεχνητό όριο. **v3.2 (v5.10.1):** Κλιμάκωση περιβάλλοντος σε **23 διαστάσεις κατάστασης** (1 ώρα + 16 λόγοι πηγών + 2 σερί + 4 λόγοι παρόχων) και **17 δράσεις** (16 πηγές + ύπνος). Η `_load_source_list()` εγγυάται την παρουσία των `openreview` και `openaire`.
 
 **Module-level constants:**
 - `_PROVIDER_NAMES` = ["gemini", "deepseek", "huggingface", "local"]
@@ -85,12 +85,12 @@ Data Flow:
 | `_load_source_list` | `(config=None) -> list` | Διαβάζει τη λίστα πηγών από config.json (source_names ή auto-detect από _query keys). |
 | `_try_load_config` | `() -> dict or None` | Φορτώνει config.json από το project root. |
 | `_load_source_limits` | `(source_names, config=None) -> np.ndarray` | Διαβάζει per-source API limits από config. |
-| `__init__` | `(self, source_names=None, source_limits=None, config=None)` | Dynamic init με N πηγές. Obs size = 1 + N + 2 + 4 (providers). |
+| `__init__` | `(self, source_names=None, source_limits=None, config=None)` | Dynamic init με N πηγές. Obs size = 1 + N + 2 + 4 (providers) = 23 για 16 πηγές. |
 | `reset` | `(seed=None, options=None) -> (obs, info)` | Μηδενίζει όλους τους counters. |
 | `step` | `(action) -> (obs, reward, terminated, truncated, info)` | Εκτελεί action. Actions 0..N-1 = query πηγή, N = sleep. |
-| `_build_obs` | `() -> np.ndarray` | v3.0: [hour/24, usage_ratios..., low/10, err/10, 4x zeros] — provider zeros during training. |
-| `get_default_state_space` | `() -> int` | v3.0: 1 + N + 2 + 4. |
-| `get_default_action_space` | `() -> int` | N + 1 sleep. |
+| `_build_obs` | `() -> np.ndarray` | v3.2: [hour/24, 16 usage_ratios..., low/10, err/10, 4 provider ratios] — 23 διαστάσεις. |
+| `get_default_state_space` | `() -> int` | v3.2: 23 (1 + 16 + 2 + 4). |
+| `get_default_action_space` | `() -> int` | v3.2: 17 (16 πηγές + 1 sleep). |
 
 ### 2.1 `core/ai_manager.py` — Κλάση `AIManager` (v3.9)
 
@@ -467,8 +467,8 @@ src/utils/logger.py (Enterprise Logging)
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-08-14 (v5.10.0 -- Επέκταση Ακαδημαϊκής Κατάποσης: Ενσωμάτωση OpenReview & OpenAIRE)
-> **Έκδοση Project:** v5.10.0
+> **Τελευταία ενημέρωση:** 2026-08-14 (v5.10.1 -- Κλιμάκωση Περιβάλλοντος DRL & Επανεκπαίδευση: Χώρος Δράσης 17)
+> **Έκδοση Project:** v5.10.1
 > **Συνολικά αρχεία που καλύπτονται:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### Νέο στην v5.9.9: Ενοποίηση Αναφορών
