@@ -1,10 +1,10 @@
-﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.2
+﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.3
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-14 (v5.10.2 -- LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI)
+> **Last Updated:** 2026-08-14 (v5.10.3 -- Hierarchical DRL Orchestration: Daemon & Foraging Sub-Agent Integration)
 
 ---
 
@@ -261,9 +261,9 @@ Batch script for launching Streamlit GUI.
 **Functions:** `main()`, `run_gwo()`, `calculate_fitness()`, `find_best_three_wolves()`, `update_wolf_position()`, `GWOForagingHyperparameterTuner.optimize()`.
 **Imports:** `core.talos_env.TalosEnv`, `core.drl_agent`
 
-#### `src/ai/drl/llm_router_subagent.py` (v5.10.2 — LLM Router Sub-Agent)
-**Purpose:** `LLMRouterSubAgent` selects the optimal active provider for an inference request. Loads reward weights from `models/gwo_llm_router_reward_weights.json` (Pareto fallback), evaluates prompt token length, rate-limit status, and latency against a static `PROVIDER_PROFILES` table, and returns the provider maximizing `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Integrated into `AIManager`.
-**Functions:** `LLMRouterSubAgent` (`select_provider()`, `estimate_signals()`, `score_provider()`, `load_weights()`, `set_weights()`).
+#### `src/ai/drl/llm_router_subagent.py` (v5.10.3 — LLM Router Sub-Agent)
+**Purpose:** `LLMRouterSubAgent` selects the optimal active provider for an inference request. Loads reward weights from `models/gwo_llm_router_reward_weights.json` (Pareto fallback), evaluates prompt token length, rate-limit status, and latency against a static `PROVIDER_PROFILES` table, and returns the provider maximizing `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Integrated into `AIManager`. v5.10.3: added the `foraging_evaluation` task modifier and the shared `estimate_prompt_tokens()` helper; now invoked directly by the live DRL foraging orchestrator, the 24/7 daemon, and the search pipelines.
+**Functions:** `LLMRouterSubAgent` (`select_provider()`, `estimate_signals()`, `score_provider()`, `load_weights()`, `set_weights()`), module-level `estimate_prompt_tokens()`.
 **Imports:** `numpy`, `json`
 
 #### `src/ai/optimizers/gwo_llm_router_reward_shaper.py` (v5.10.2 — Bi-Level Reward Shaping)
@@ -479,8 +479,8 @@ src/utils/logger.py (Enterprise Logging)
 
 ---
 
-> **Last Updated:** 2026-08-14 (v5.10.2 -- LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI)
-> **Project Version:** v5.10.2
+> **Last Updated:** 2026-08-14 (v5.10.3 -- Hierarchical DRL Orchestration: Daemon & Foraging Sub-Agent Integration)
+> **Project Version:** v5.10.3
 > **Total Files Covered:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### New in v5.9.9: Report Path Consolidation

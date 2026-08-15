@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_llm_router_subagent.py
-Project: TALOS v5.10.2
+Project: TALOS v5.10.3
 Description:
     Hermetic unit tests for the LLMRouterSubAgent provider-selection delegate.
     Covers weight loading with Pareto fallback, signal estimation bounds,
@@ -28,6 +28,8 @@ from src.ai.drl.llm_router_subagent import (
     DEFAULT_WEIGHTS,
     DEFAULT_PROFILE,
     PROVIDER_PROFILES,
+    TASK_MODIFIERS,
+    estimate_prompt_tokens,
 )
 
 
@@ -108,3 +110,29 @@ class TestSignals:
             assert 0.0 <= latency <= 1.0
             assert 0.0 <= cost <= 1.0
             assert 0.0 <= penalty <= 1.0
+
+
+class TestForagingEvaluationTask:
+    """Tests for the v5.10.3 foraging_evaluation routing task type."""
+
+    def test_foraging_evaluation_task_modifier_exists(self):
+        """Verify the foraging_evaluation task modifier is registered."""
+        assert "foraging_evaluation" in TASK_MODIFIERS
+
+    def test_select_provider_foraging_evaluation_returns_valid_provider(self):
+        """Verify foraging_evaluation routing yields a canonical provider."""
+        agent = LLMRouterSubAgent(weights_path="__missing_weights__.json")
+        provider = agent.select_provider(1024, "foraging_evaluation")
+        assert provider in PROVIDER_PROFILES
+
+
+class TestEstimatePromptTokens:
+    """Tests for the shared prompt-length estimator."""
+
+    def test_empty_text_returns_one(self):
+        """Verify empty input returns the minimum token count."""
+        assert estimate_prompt_tokens("") == 1
+
+    def test_returns_char_quarters(self):
+        """Verify the four-characters-per-token heuristic."""
+        assert estimate_prompt_tokens("a" * 400) == 100

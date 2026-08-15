@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.10.2
+Project: TALOS v5.10.3
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -31,6 +31,11 @@ AST Knowledge Graph adapter (v5.9.12).
     delegate, the GWOLLMRouterRewardShaper optimizer, and renamed
     gwo_rl_optimizer.py to gwo_foraging_hyperparameter_tuner.py. Options 3a/3b
     now prompt a questionary checkbox over all 16 academic sources.
+
+    v5.10.3: Hierarchical DRL Orchestration (Daemon & Foraging Sub-Agent
+    Integration) -- the LLMRouterSubAgent is now invoked directly by the live
+    DRL foraging orchestrator, the 24/7 autonomous daemon, and the
+    daily/historic search pipelines for optimal provider selection.
 
     v5.10.0: Academic Ingestion Expansion -- OpenReview and OpenAIRE source
     agents added (16-source ingestion). OpenReview peer-review decisions and

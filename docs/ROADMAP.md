@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward.
 
-> **Current Version:** v5.10.2 (LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI)
+> **Current Version:** v5.10.3 (Hierarchical DRL Orchestration: Daemon & Foraging Sub-Agent Integration)
 > **Last Updated:** 2026-08-14
 
 ---

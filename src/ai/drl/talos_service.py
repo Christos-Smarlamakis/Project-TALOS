@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: talos_service.py (v2.0 — Profile-Aware, Dynamic N Sources)
-Project: TALOS v5.10.0 — Phase 5
+Module: talos_service.py (v2.1 — Profile-Aware, Dynamic N Sources)
+Project: TALOS v5.10.3 — Phase 5
 Description:
     24/7 autonomous research service. Runs continuously on weak hardware
     (Raspberry Pi, old laptop, etc.) using the trained DRL agent to
@@ -246,6 +246,74 @@ Project: <a href="https://github.com/Christos-Smarlamakis/Project-TALOS">github.
 # MAIN DAEMON LOOP
 # ═══════════════════════════════════════════════════════════════════════════════
 
+# -- v5.10.3: LLM Router Sub-Agent (daemon provider-routing delegate) --
+_DAEMON_ROUTER = None
+_DAEMON_ROUTER_IMPORT_FAILED = False
+_DAEMON_NOMINAL_PROMPT_LENGTH = 512
+
+
+def _get_daemon_router():
+    """Return a cached LLMRouterSubAgent instance, or None when unavailable.
+
+    Returns:
+        LLMRouterSubAgent | None: The provider-selection sub-agent.
+    """
+    global _DAEMON_ROUTER, _DAEMON_ROUTER_IMPORT_FAILED
+    if _DAEMON_ROUTER is None and not _DAEMON_ROUTER_IMPORT_FAILED:
+        try:
+            from src.ai.drl.llm_router_subagent import LLMRouterSubAgent
+            _DAEMON_ROUTER = LLMRouterSubAgent()
+        except Exception:
+            _DAEMON_ROUTER_IMPORT_FAILED = True
+            _DAEMON_ROUTER = None
+    return _DAEMON_ROUTER
+
+
+def _log_router_decision(source_name, provider, prompt_length):
+    """Append a [DAEMON/ROUTER] decision to data/logs/talos_system.log.
+
+    Args:
+        source_name (str): Name of the source that produced the paper.
+        provider (str | None): The provider selected by the sub-agent.
+        prompt_length (int): Estimated prompt token length.
+    """
+    try:
+        project_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+        logs_dir = os.path.join(project_root, 'data', 'logs')
+        os.makedirs(logs_dir, exist_ok=True)
+        log_path = os.path.join(logs_dir, 'talos_system.log')
+        provider_str = provider if provider else "none"
+        timestamp = datetime.now().isoformat()
+        with open(log_path, 'a', encoding='utf-8') as handle:
+            handle.write(
+                f"[{timestamp}] [DAEMON/ROUTER] source={source_name} "
+                f"task_type=foraging_evaluation prompt_length={prompt_length} "
+                f"provider={provider_str}\n"
+            )
+    except Exception:
+        pass
+
+
+def route_daemon_evaluation(source_name, prompt_length=_DAEMON_NOMINAL_PROMPT_LENGTH):
+    """Route a background paper evaluation through the LLMRouterSubAgent.
+
+    Args:
+        source_name (str): Name of the source that produced the paper.
+        prompt_length (int): Estimated prompt token length.
+
+    Returns:
+        str | None: The selected provider, or None if the router is unavailable.
+    """
+    router = _get_daemon_router()
+    chosen = None
+    if router is not None:
+        chosen = router.select_provider(
+            prompt_length, task_type="foraging_evaluation")
+    _log_router_decision(source_name, chosen, prompt_length)
+    return chosen
+
+
 def main():
     """
     Run the TALOS autonomous research daemon (v5.2.0 — profile-aware).
@@ -410,6 +478,13 @@ def main():
                     time.sleep(3600)
                     obs = next_obs
                     continue
+
+                # -- v5.10.3: route the paper evaluation through the LLM Router Sub-Agent --
+                routed_source = info.get("source", "unknown")
+                routed_provider = route_daemon_evaluation(
+                    routed_source, prompt_length=_DAEMON_NOMINAL_PROMPT_LENGTH)
+                if verbose and routed_provider:
+                    print(f"  [DAEMON/ROUTER] {routed_source} -> provider={routed_provider}")
 
                 # ── Throttle: mandatory cooldown between API calls ─────────
                 # This keeps CPU at ~0% and gives APIs time to breathe.

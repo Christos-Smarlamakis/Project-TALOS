@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: live_agent_orchestrator.py (v1.2 — 16-Source Scaling)
-Project: TALOS v5.10.1
+Module: live_agent_orchestrator.py (v1.3 — 16-Source Scaling)
+Project: TALOS v5.10.3
 Description:
     Main orchestration loop for the TALOS Live DRL Agent. Handles the
     full cycle: state calculation → action selection → API fetch →
@@ -25,9 +25,13 @@ import os
 import sys
 import json
 import time
+import logging
 import requests
 import numpy as np
 from datetime import datetime
+
+# -- v5.10.3: module logger for router decision telemetry --
+logger = logging.getLogger(__name__)
 
 # ── Configuration constants ──────────────────────────────────────────────────
 MAX_CALLS_PER_SOURCE = 100      # Default API call limit per source per "day"
@@ -182,9 +186,28 @@ def execute_live_fetch(action, action_map, config):
     return papers, error_occurred, source_name
 
 
+def _estimate_prompt_tokens(text):
+    """Approximate the token length of a prompt from its character count.
+
+    Uses the common four-characters-per-token heuristic.
+
+    Args:
+        text (str): The prompt text.
+
+    Returns:
+        int: Estimated token count (minimum 1).
+    """
+    if not text:
+        return 1
+    return max(1, int(len(str(text)) / 4))
+
+
 def evaluate_paper(paper, ai_manager, provider_call_counts):
     """
     Evaluate a fetched paper using the AI Manager and return a score.
+
+    v5.10.3: consults the LLMRouterSubAgent (``ai_manager.router``) to select
+    the optimal LLM provider before triggering the evaluation request.
 
     Args:
         paper (dict): Standardized paper dictionary.
@@ -196,6 +219,24 @@ def evaluate_paper(paper, ai_manager, provider_call_counts):
         float: Overall score (0-10), or 0.0 if evaluation failed.
     """
     content = f"Title: {paper.get('title', 'N/A')}\nAbstract: {paper.get('abstract', '')}"
+    # -- v5.10.3: consult the LLMRouterSubAgent for optimal provider selection --
+    router = getattr(ai_manager, "router", None)
+    prompt_length = _estimate_prompt_tokens(content)
+    routed_provider = None
+    if router is not None:
+        try:
+            routed_provider = router.select_provider(
+                prompt_length, task_type="foraging_evaluation"
+            )
+        except Exception as exc:
+            print(f"    [WARN] Router selection failed: {exc}")
+    logger.info(
+        "[FORAGING/ROUTER] task_type=foraging_evaluation prompt_length=%s provider=%s",
+        prompt_length, routed_provider,
+    )
+    print(f"    [ROUTER] Foraging evaluation: prompt_length={prompt_length} "
+          f"-> provider={routed_provider}")
+
     try:
         evaluation = ai_manager.evaluate_paper_json(content, model_type='flash')
         if evaluation:

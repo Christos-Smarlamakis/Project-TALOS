@@ -1,10 +1,10 @@
-﻿# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.2
+﻿# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.3
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.10.2 -- Υποπράκτορας Δρομολογητή LLM, Διεπίπεδη Διαμόρφωση Ανταμοιβής GWO & Διαδραστικό TUI Πλαισίων Επιλογής 16 Πηγών)
+> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.10.3 -- Ιεραρχική Ενορχήστρωση DRL: Ενσωμάτωση Δαίμονα & Υποπράκτορα Αναζήτησης)
 
 ---
 
@@ -264,9 +264,9 @@ Batch script για εκκίνηση του TALOS CLI.
 **Συναρτήσεις:** `main()`, `run_gwo()`, `calculate_fitness()`, `find_best_three_wolves()`, `update_wolf_position()`, `GWOForagingHyperparameterTuner.optimize()`.
 **Imports:** `core.talos_env.TalosEnv`, `core.drl_agent`
 
-#### `src/ai/drl/llm_router_subagent.py` (v5.10.2 — LLM Router Sub-Agent)
-**Σκοπός:** Ο `LLMRouterSubAgent` επιλέγει τον βέλτιστο ενεργό πάροχο για ένα αίτημα συμπερασμού. Φορτώνει βάρη ανταμοιβής από το `models/gwo_llm_router_reward_weights.json` (με εφεδρεία Pareto), αξιολογεί μήκος tokens, κατάσταση rate-limit και καθυστέρηση έναντι στατικού πίνακα `PROVIDER_PROFILES`, και επιστρέφει τον πάροχο που μεγιστοποιεί το `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Ενσωματώθηκε στον `AIManager`.
-**Συναρτήσεις:** `LLMRouterSubAgent` (`select_provider()`, `estimate_signals()`, `score_provider()`, `load_weights()`, `set_weights()`).
+#### `src/ai/drl/llm_router_subagent.py` (v5.10.3 — LLM Router Sub-Agent)
+**Σκοπός:** Ο `LLMRouterSubAgent` επιλέγει τον βέλτιστο ενεργό πάροχο για ένα αίτημα συμπερασμού. Φορτώνει βάρη ανταμοιβής από το `models/gwo_llm_router_reward_weights.json` (με εφεδρεία Pareto), αξιολογεί μήκος tokens, κατάσταση rate-limit και καθυστέρηση έναντι στατικού πίνακα `PROVIDER_PROFILES`, και επιστρέφει τον πάροχο που μεγιστοποιεί το `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Ενσωματώθηκε στον `AIManager`. Στην v5.10.3 προστέθηκαν ο τροποποιητής εργασίας `foraging_evaluation` και ο κοινός βοηθός `estimate_prompt_tokens()`· καλείται πλέον απευθείας από τον ζωντανό ενορχηστρωτή, τον δαίμονα 24/7 και τους αγωγούς αναζήτησης.
+**Συναρτήσεις:** `LLMRouterSubAgent` (`select_provider()`, `estimate_signals()`, `score_provider()`, `load_weights()`, `set_weights()`), module-level `estimate_prompt_tokens()`.
 **Imports:** `numpy`, `json`
 
 #### `src/ai/optimizers/gwo_llm_router_reward_shaper.py` (v5.10.2 — Bi-Level Reward Shaping)
@@ -485,8 +485,8 @@ src/utils/logger.py (Enterprise Logging)
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-08-14 (v5.10.2 -- Υποπράκτορας Δρομολογητή LLM, Διεπίπεδη Διαμόρφωση Ανταμοιβής GWO & Διαδραστικό TUI Πλαισίων Επιλογής 16 Πηγών)
-> **Έκδοση Project:** v5.10.2
+> **Τελευταία ενημέρωση:** 2026-08-14 (v5.10.3 -- Ιεραρχική Ενορχήστρωση DRL: Ενσωμάτωση Δαίμονα & Υποπράκτορα Αναζήτησης)
+> **Έκδοση Project:** v5.10.3
 > **Συνολικά αρχεία που καλύπτονται:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### Νέο στην v5.9.9: Ενοποίηση Αναφορών

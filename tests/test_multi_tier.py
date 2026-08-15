@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_multi_tier.py
-Project: TALOS v5.10.2
+Project: TALOS v5.10.3
 Description:
     Unit tests for the multi-tier LLM routing architecture (v5.7.1). Tests cover:
     - Fast tier routing via HTTP POST to FAST_EDGE_BASE_URL with Neutrino-8B.
@@ -337,9 +337,9 @@ class TestSettingsResolution:
         assert DEFAULT_TIER == "fast"
 
     def test_talos_version(self):
-        """Verify the TALOS_VERSION is v5.10.2."""
+        """Verify the TALOS_VERSION is v5.10.3."""
         from config.settings import TALOS_VERSION
-        assert TALOS_VERSION == "5.10.2"
+        assert TALOS_VERSION == "5.10.3"
 
     def test_talos_api_port(self):
         """Verify the default TALOS_API_PORT is 8001."""
@@ -548,3 +548,73 @@ class TestDRLEnvironment:
         """Verify get_default_action_space() returns 17 for the 16-source baseline."""
         from src.ai.drl.talos_env import get_default_action_space
         assert get_default_action_space() == 17
+
+
+# ------------------------------------------------------------------
+# -- LLM Router Sub-Agent Pipeline Integration Tests (v5.10.3) --
+# ------------------------------------------------------------------
+
+class TestLLMRouterSubAgentPipelineIntegration:
+    """Verify orchestrator, daemon, and search pipelines invoke the router."""
+
+    def test_orchestrator_evaluate_paper_invokes_router(self):
+        """Verify live_agent_orchestrator.evaluate_paper queries select_provider."""
+        from src.ai.drl import live_agent_orchestrator as orchestrator
+        router = MagicMock()
+        router.select_provider.return_value = "local"
+        ai_manager = MagicMock()
+        ai_manager.router = router
+        ai_manager.evaluate_paper_json.return_value = {"overall_score": 8.0}
+        ai_manager.last_provider_used = "local"
+
+        score = orchestrator.evaluate_paper(
+            {"title": "A test paper", "abstract": "Abstract text."},
+            ai_manager, {})
+
+        assert score == 8.0
+        router.select_provider.assert_called_once()
+        assert router.select_provider.call_args[1]["task_type"] == "foraging_evaluation"
+
+    def test_daemon_route_evaluation_invokes_router(self, monkeypatch):
+        """Verify talos_service.route_daemon_evaluation queries select_provider."""
+        from src.ai.drl import talos_service as service
+        router = MagicMock()
+        router.select_provider.return_value = "groq"
+        monkeypatch.setattr(service, "_get_daemon_router", lambda: router)
+        monkeypatch.setattr(service, "_log_router_decision", lambda *a, **k: None)
+
+        chosen = service.route_daemon_evaluation("arxiv", prompt_length=512)
+
+        assert chosen == "groq"
+        router.select_provider.assert_called_once_with(
+            512, task_type="foraging_evaluation")
+
+    def test_daily_search_route_invokes_router(self):
+        """Verify daily_search.route_evaluation_provider queries select_provider."""
+        from src.ingestion import daily_search
+        router = MagicMock()
+        router.select_provider.return_value = "local"
+        ai_manager = MagicMock()
+        ai_manager.router = router
+
+        chosen = daily_search.route_evaluation_provider(
+            ai_manager, "Title Abstract", task_type="fast_screening")
+
+        assert chosen == "local"
+        router.select_provider.assert_called_once()
+        assert router.select_provider.call_args[1]["task_type"] == "fast_screening"
+
+    def test_historic_search_route_invokes_router(self):
+        """Verify historic_search.route_evaluation_provider queries select_provider."""
+        from src.ingestion import historic_search
+        router = MagicMock()
+        router.select_provider.return_value = "gemini"
+        ai_manager = MagicMock()
+        ai_manager.router = router
+
+        chosen = historic_search.route_evaluation_provider(
+            ai_manager, "Title Abstract", task_type="fast_screening")
+
+        assert chosen == "gemini"
+        router.select_provider.assert_called_once()
+        assert router.select_provider.call_args[1]["task_type"] == "fast_screening"

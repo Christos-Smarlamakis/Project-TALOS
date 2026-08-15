@@ -1,10 +1,10 @@
-﻿# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.2
+﻿# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.3
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-08-14
-> **Version:** v5.10.2 -- LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI
+> **Version:** v5.10.3 -- Hierarchical DRL Orchestration: Daemon & Foraging Sub-Agent Integration
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.10.2" | `config/settings.py` |
+| TALOS_VERSION | "5.10.3" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -759,6 +759,14 @@ For each evaluated paper, the AI generates:
 - `gwo_rl_optimizer.py` renamed to `gwo_foraging_hyperparameter_tuner.py` (class `GWOForagingHyperparameterTuner`); best-parameters export renamed to `models/gwo_foraging_hyperparameters.json`.
 - `talos.py` Options 3a/3b now prompt a `questionary.checkbox()` over all 16 academic sources (all pre-selected) passed to the search scripts via `--sources`.
 - `daily_search.py` / `historic_search.py` gain a canonical `SOURCE_REGISTRY`, `ALL_SOURCE_NAMES`, and `build_sources()` helper with `--sources` argparse filtering.
+
+### 15.9 Hierarchical DRL Orchestration - Daemon & Foraging Sub-Agent Integration (v5.10.3)
+
+- `LLMRouterSubAgent` is now invoked directly by the live DRL foraging orchestrator (`live_agent_orchestrator.py` v1.3), the 24/7 autonomous daemon (`talos_service.py` v2.1), and the daily/historic search pipelines for optimal provider selection before each paper evaluation.
+- New `foraging_evaluation` task modifier in `TASK_MODIFIERS` (`prompt_scale=1.0`, `quality_bias=0.02`) plus a shared `estimate_prompt_tokens()` helper (four-characters-per-token heuristic).
+- Daemon logs `[DAEMON/ROUTER]` routing decisions to `data/logs/talos_system.log`; orchestrator logs `[ROUTER]` choices to the live-agent console and module logger.
+- Search pipelines route Fast Edge pre-screening (`fast_screening`) and Heavy Reasoning deep analysis (`deep_research`) through `route_evaluation_provider()`.
+- New hermetic tests in `tests/test_multi_tier.py` (`TestLLMRouterSubAgentPipelineIntegration`) and `tests/test_llm_router_subagent.py` verify that orchestrator, daemon, and search pipelines invoke `LLMRouterSubAgent.select_provider()`.
 
 ---
 

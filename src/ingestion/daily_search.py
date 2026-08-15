@@ -11,7 +11,7 @@
 
 """
 Module: daily_search.py (Quad-Layer & Rate Limit Safe)
-Project: TALOS v5.10.0
+Project: TALOS v5.10.3
 
 Description:
     The daily search orchestrator. Fetches new papers from all 16 configured
@@ -55,6 +55,7 @@ from src.ingestion.openaire import OpenAIRESource
 
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
+from src.ai.drl.llm_router_subagent import estimate_prompt_tokens
 
 
 # -- v5.10.2: Canonical 16-source registry for the checkbox TUI and --sources --
@@ -77,6 +78,28 @@ SOURCE_REGISTRY = [
     ("openaire", OpenAIRESource),
 ]
 ALL_SOURCE_NAMES = [name for name, _ in SOURCE_REGISTRY]
+
+
+# -- v5.10.3: LLM Router Sub-Agent (two-stage provider selection) --
+def route_evaluation_provider(ai_manager, content, task_type="default"):
+    """Query the LLMRouterSubAgent for the optimal provider for an evaluation.
+
+    Args:
+        ai_manager (AIManager): AI manager exposing a ``router`` sub-agent.
+        content (str): The title + abstract prompt text.
+        task_type (str): Router task modifier key (``fast_screening`` or
+            ``deep_research``).
+
+    Returns:
+        str | None: The selected provider name, or None when no router exists.
+    """
+    router = getattr(ai_manager, "router", None)
+    if router is None:
+        return None
+    prompt_length = estimate_prompt_tokens(content)
+    chosen = router.select_provider(prompt_length, task_type=task_type)
+    print(f"  [ROUTER] {task_type}: prompt_length={prompt_length} -> provider={chosen}")
+    return chosen
 
 
 def build_sources(config, selected=None):
@@ -249,6 +272,8 @@ def main(sources=None):
         print(f"-> Pre-screening {i+1}/{len(papers_to_process)}: '{paper['title'][:80]}...'")
         content_for_ai = f"Title: {paper['title']}\nAbstract: {paper.get('abstract', '')}"
 
+        route_evaluation_provider(ai_manager, content_for_ai, task_type="fast_screening")
+
         evaluation_data = ai_manager.evaluate_paper_json(content_for_ai, model_type='flash')
         api_calls_made += 1
 
@@ -279,6 +304,8 @@ def main(sources=None):
 
         print(f"-> Deep Analysis {i+1}/{len(promising_papers)}: '{paper['title'][:80]}...'")
         content_for_ai = f"Title: {paper['title']}\nAbstract: {paper.get('abstract', '')}"
+
+        route_evaluation_provider(ai_manager, content_for_ai, task_type="deep_research")
 
         deep_evaluation_data = ai_manager.evaluate_paper_json(content_for_ai, model_type='pro')
         pro_calls_made += 1

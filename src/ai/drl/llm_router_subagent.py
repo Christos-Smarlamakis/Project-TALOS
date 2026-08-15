@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: llm_router_subagent.py
-Project: TALOS v5.10.2
+Project: TALOS v5.10.3
 Description:
     LLM Router Sub-Agent that selects the optimal active provider for a given
     inference request. It loads the multi-objective reward weights produced by
@@ -88,9 +88,27 @@ PROVIDER_PROFILES = {
 TASK_MODIFIERS = {
     "deep_research":    {"prompt_scale": 1.4, "quality_bias": 0.05},
     "fast_screening":   {"prompt_scale": 0.6, "quality_bias": -0.02},
+    "foraging_evaluation": {"prompt_scale": 1.0, "quality_bias": 0.02},
     "air_gapped_local": {"prompt_scale": 0.8, "quality_bias": 0.00},
     "default":          {"prompt_scale": 1.0, "quality_bias": 0.00},
 }
+
+
+def estimate_prompt_tokens(text):
+    """Approximate the token length of a prompt from its character count.
+
+    Uses the common four-characters-per-token heuristic, which is conservative
+    for scientific abstracts and structured prompts.
+
+    Args:
+        text (str): The prompt text.
+
+    Returns:
+        int: Estimated token count (minimum 1).
+    """
+    if not text:
+        return 1
+    return max(1, int(len(str(text)) / 4))
 
 
 class LLMRouterSubAgent:

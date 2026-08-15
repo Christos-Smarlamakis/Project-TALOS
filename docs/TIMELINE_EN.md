@@ -4,9 +4,21 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-14 (v5.10.2 -- LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI)
+> **Last Updated:** 2026-08-14 (v5.10.3 -- Hierarchical DRL Orchestration: Daemon & Foraging Sub-Agent Integration)
 
 ---
+
+## Phase 33: Hierarchical DRL Orchestration - Daemon & Foraging Sub-Agent Integration (v5.10.3)
+
+### Status: COMPLETED (2026-08-14)
+
+- [x] **Live DRL foraging orchestrator integration** -- `evaluate_paper()` in `src/ai/drl/live_agent_orchestrator.py` (v1.3) consults `LLMRouterSubAgent.select_provider()` with task type `foraging_evaluation` before evaluation, logging the routing choice to console and module logger.
+- [x] **Autonomous research daemon integration** -- `src/ai/drl/talos_service.py` (v2.1) routes all background paper evaluations through `route_daemon_evaluation()`, logging `[DAEMON/ROUTER]` decisions to `data/logs/talos_system.log`.
+- [x] **Search pipeline integration** -- `daily_search.py` and `historic_search.py` query the router via `route_evaluation_provider()` for Fast Edge (`fast_screening`) and Heavy Reasoning (`deep_research`) provider selection.
+- [x] **Router enhancements** -- `foraging_evaluation` task modifier and shared `estimate_prompt_tokens()` helper added to `llm_router_subagent.py`.
+- [x] **Unit tests** -- new `TestLLMRouterSubAgentPipelineIntegration` and router/estimator tests verify that orchestrator, daemon, and search pipelines invoke `select_provider()`.
+- [x] **Sync all 6 code files and 15 documentation files to v5.10.3**.
+
 
 ## Phase 32: LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI (v5.10.2)
 

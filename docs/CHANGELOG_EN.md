@@ -2,6 +2,26 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.3] - 2026-08-14 -- Hierarchical DRL Orchestration (Daemon & Foraging Sub-Agent Integration)
+
+### Added
+- **Hierarchical DRL Orchestration**: The `LLMRouterSubAgent` is now invoked directly by the live DRL foraging orchestrator, the 24/7 autonomous research daemon, and the daily/historic search pipelines for optimal provider selection before every paper evaluation.
+- **`foraging_evaluation` task modifier** (`src/ai/drl/llm_router_subagent.py`): New routing task type registered in `TASK_MODIFIERS` with `prompt_scale=1.0` and `quality_bias=0.02`, giving foraging evaluations a dedicated signal profile.
+- **`estimate_prompt_tokens()`** (`src/ai/drl/llm_router_subagent.py`): Shared four-characters-per-token prompt-length estimator consumed by the orchestrator, daemon, and search pipelines.
+
+### Changed
+- **`src/ai/drl/live_agent_orchestrator.py` (v1.3)**: `evaluate_paper()` now consults `ai_manager.router.select_provider(prompt_length, task_type="foraging_evaluation")` before triggering evaluation, logging the routing choice to the console (`[ROUTER]`) and a module logger.
+- **`src/ai/drl/talos_service.py` (v2.1)**: The 24/7 daemon now routes every background paper evaluation through `route_daemon_evaluation()`, which queries the `LLMRouterSubAgent` and logs decisions to `data/logs/talos_system.log` under the `[DAEMON/ROUTER]` tag.
+- **`src/ingestion/daily_search.py` / `src/ingestion/historic_search.py`**: Added `route_evaluation_provider()`; the two-stage evaluation process (Fast Edge pre-screening via `fast_screening`, Heavy Reasoning deep analysis via `deep_research`) now queries the router for provider selection.
+- **Version strings synced across 6 code files and 15 documentation files** to v5.10.3.
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest -v` full suite passes (245+ tests, including the new router pipeline integration tests).
+- `python tests/test_smoke.py` passes.
+- `python src/utils/verify_dependency_map.py --ci` reports 0 stale and 0 missing dependencies.
+
+
 ## [v5.10.2] - 2026-08-14 -- LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI
 
 ### Added

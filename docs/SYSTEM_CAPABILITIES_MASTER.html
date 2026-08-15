@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.2</title>
+<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.3</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -1054,8 +1054,18 @@
   <li><strong>Source filtering</strong> -- <code>SOURCE_REGISTRY</code> + <code>build_sources()</code> + <code>--sources</code> argparse in <code>daily_search.py</code> / <code>historic_search.py</code>.</li>
 </ul>
 
+<h3 id="s15-9">15.9 Hierarchical DRL Orchestration - Daemon &amp; Foraging Sub-Agent Integration (v5.10.3)</h3>
+<ul>
+  <li><strong><code>LLMRouterSubAgent</code> orchestration</strong> -- invoked directly by <code>live_agent_orchestrator.py</code> (v1.3), <code>talos_service.py</code> (v2.1), and <code>daily_search.py</code>/<code>historic_search.py</code> for optimal provider selection before each paper evaluation.</li>
+  <li><strong>Router enhancements</strong> -- new <code>foraging_evaluation</code> task modifier (<code>prompt_scale=1.0</code>, <code>quality_bias=0.02</code>) and shared <code>estimate_prompt_tokens()</code> helper (four-characters-per-token heuristic).</li>
+  <li><strong>Daemon logging</strong> -- <code>[DAEMON/ROUTER]</code> decisions written to <code>data/logs/talos_system.log</code>; orchestrator logs <code>[ROUTER]</code> choices to console and module logger.</li>
+  <li><strong>Two-stage routing</strong> -- search pipelines route Fast Edge pre-screening (<code>fast_screening</code>) and Heavy Reasoning deep analysis (<code>deep_research</code>) through <code>route_evaluation_provider()</code>.</li>
+  <li><strong>Tests</strong> -- <code>TestLLMRouterSubAgentPipelineIntegration</code> and router/estimator tests verify orchestrator, daemon, and search pipelines invoke <code>LLMRouterSubAgent.select_provider()</code>.</li>
+</ul>
+
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.2</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.3</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>
