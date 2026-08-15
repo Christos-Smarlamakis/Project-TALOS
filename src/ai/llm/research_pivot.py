@@ -35,7 +35,7 @@ TALOS_QUESTIONARY_STYLE = Style([
     ('answer', 'fg:#4a9eff bold'),
     ('pointer', 'fg:#4a9eff bold'),
     ('highlighted', 'fg:#4a9eff bold noinherit'),
-    ('selected', 'fg:#28a745 bold'),
+    ('selected', 'fg:#28a745 bold noinherit'),
     ('separator', 'fg:#6b7280'),
     ('instruction', 'fg:#6b7280 italic'),
     ('text', 'fg:#c9cdd4'),

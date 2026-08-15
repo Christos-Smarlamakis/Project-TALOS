@@ -68,7 +68,8 @@ class TestInit:
 
 
 class TestHelpers:
-    """Tests for the _first, _extract_result, and _extract_funding helpers."""
+    """Tests for the _first, _normalize_keywords, _extract_result, and
+    _extract_funding helpers."""
 
     def test_first_with_list(self):
         assert OpenAIRESource._first(["", "x", "y"]) == "x"
@@ -89,6 +90,21 @@ class TestHelpers:
     def test_extract_result_missing_returns_empty(self):
         src = OpenAIRESource({"openaire_query": "q"})
         assert src._extract_result({}) == {}
+
+    def test_normalize_keywords_single_term(self):
+        assert OpenAIRESource._normalize_keywords("drone") == "drone"
+
+    def test_normalize_keywords_collapses_whitespace(self):
+        assert OpenAIRESource._normalize_keywords("  drone    swarm  ") == "drone swarm"
+
+    def test_normalize_keywords_truncates_to_max_terms(self):
+        assert OpenAIRESource._normalize_keywords(
+            "reinforcement learning cooperative task allocation drone swarm"
+        ) == "reinforcement learning cooperative"
+
+    def test_normalize_keywords_empty_returns_empty(self):
+        assert OpenAIRESource._normalize_keywords("") == ""
+        assert OpenAIRESource._normalize_keywords(None) == ""
 
     def test_extract_funding_empty(self):
         src = OpenAIRESource({"openaire_query": "q"})
@@ -180,4 +196,17 @@ class TestFetchAndSearch:
         src = OpenAIRESource({"openaire_query": "q"})
         with patch("requests.get",
                    side_effect=requests.exceptions.ConnectionError("boom")):
+            assert src.search_papers("query") == []
+
+    def test_fetch_new_papers_null_response_returns_empty(self):
+        src = OpenAIRESource({"openaire_query": "q"})
+        with patch("requests.get",
+                   return_value=self._mock_response({"response": None})):
+            assert src.fetch_new_papers() == []
+
+    def test_search_papers_null_results_returns_empty(self):
+        src = OpenAIRESource({"openaire_query": "q"})
+        with patch("requests.get",
+                   return_value=self._mock_response(
+                       {"response": {"results": None}})):
             assert src.search_papers("query") == []

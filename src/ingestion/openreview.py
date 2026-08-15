@@ -42,6 +42,7 @@ from typing import List, Dict, Any
 # -- Optional dependency guard (Constitution II: air-gapped, local-first) --
 try:
     import openreview  # type: ignore
+    import openreview.api  # type: ignore
     OPENREVIEW_AVAILABLE = True
 except ImportError:  # pragma: no cover - depends on optional package
     openreview = None  # type: ignore
@@ -90,12 +91,15 @@ class OpenReviewSource:
                     baseurl=self.BASE_URL, username=username, password=password
                 )
             else:
+                # -- Guest access is fully supported for public notes. --
                 self.client = openreview.api.OpenReviewClient(baseurl=self.BASE_URL)
+            self.enabled = True
             print("INFO: OpenReviewSource initialized.")
         except Exception as e:
             print(f"WARNING [OpenReview]: Client init failed ({e}). Falling back to guest access.")
             try:
                 self.client = openreview.api.OpenReviewClient(baseurl=self.BASE_URL)
+                self.enabled = True
             except Exception:
                 self.client = None
                 self.enabled = False

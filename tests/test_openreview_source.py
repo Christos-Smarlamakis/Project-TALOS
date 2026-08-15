@@ -80,10 +80,11 @@ class TestInit:
             with patch.object(openreview_source, "openreview") as mock_lib, \
                     patch.dict(os.environ, {}, clear=True):
                 mock_lib.api.OpenReviewClient = mock_client_cls
-                openreview_source.OpenReviewSource({})
+                src = openreview_source.OpenReviewSource({})
         mock_client_cls.assert_called_once_with(
             baseurl=openreview_source.OpenReviewSource.BASE_URL
         )
+        assert src.enabled is True
 
     def test_authenticated_client_with_credentials(self):
         env = {"OPENREVIEW_USERNAME": "u", "OPENREVIEW_PASSWORD": "p"}

@@ -11,7 +11,7 @@
 
 """
 Module: openaire.py
-Project: TALOS v5.10.0
+Project: TALOS v5.10.5
 
 Description:
     Search agent for the OpenAIRE Research Graph API (v11.3.0,
@@ -57,6 +57,13 @@ class OpenAIRESource:
 
     BASE_URL = "https://api.openaire.eu/search/researchProducts"
 
+    # -- OpenAIRE's `keywords` parameter splits on whitespace and ANDs every
+    # term. It does NOT support boolean OR/AND operators (those raise an HTTP
+    # 409 SOLR parse error), so a long natural-language query requires every
+    # term to co-occur in a single record and reliably matches zero records.
+    # We therefore cap the number of ANDed terms sent to the API. --
+    MAX_AND_TERMS = 3
+
     def __init__(self, config: Dict[str, Any]):
         """Initialize the OpenAIRE agent from configuration.
 
@@ -91,6 +98,27 @@ class OpenAIRESource:
             return default
         return values if values else default
 
+    @staticmethod
+    def _normalize_keywords(query: str) -> str:
+        """Normalize a query for OpenAIRE's AND-only `keywords` parameter.
+
+        OpenAIRE tokenizes `keywords` on whitespace and ANDs every term, and it
+        does not support boolean OR/AND operators (they raise an HTTP 409 SOLR
+        parse error). A long query therefore requires every term to co-occur in
+        a single record, which reliably yields zero results. This helper caps
+        the query to a small number of leading terms so that discovery queries
+        remain broad enough to return results while staying on-topic.
+
+        Args:
+            query (str): Raw query string from config or a paper title.
+
+        Returns:
+            str: Whitespace-normalized query with at most MAX_AND_TERMS terms.
+        """
+        if not query:
+            return ""
+        return " ".join(query.split()[: OpenAIRESource.MAX_AND_TERMS])
+
     def _extract_result(self, item: Dict[str, Any]) -> Dict[str, Any]:
         """Navigate the nested OpenAIRE result payload to the oaf:result node.
 
@@ -121,7 +149,7 @@ class OpenAIRESource:
 
         while len(all_papers) < self.total_max_results:
             params = {
-                "keywords": self.query,
+                "keywords": self._normalize_keywords(self.query),
                 "fromDateAccepted": cutoff,
                 "format": "json",
                 "size": per_page,
@@ -139,21 +167,23 @@ class OpenAIRESource:
                 print(f"   ERROR [OpenAIRE]: Fetch failed: {e}")
                 break
 
-            results = data.get("response", {}).get("results", {})
-            items = results.get("result", [])
-            if isinstance(items, dict):
-                items = [items]
-            if not items:
+            resp_obj = data.get("response") or {}
+            results_obj = resp_obj.get("results") or {}
+            result_list = results_obj.get("result") or []
+            # -- OpenAIRE returns a single dict (not a list) for a lone result. --
+            if isinstance(result_list, dict):
+                result_list = [result_list]
+            if not result_list:
                 break
 
-            for item in items:
+            for item in result_list:
                 formatted = self._format_paper(item)
                 if formatted:
                     all_papers.append(formatted)
                 if len(all_papers) >= self.total_max_results:
                     break
 
-            total = results.get("total")
+            total = results_obj.get("total")
             if isinstance(total, dict):
                 total = total.get("$", 0)
             try:
@@ -179,16 +209,18 @@ class OpenAIRESource:
         Returns:
             list of dict: Standardized paper dictionaries.
         """
-        params = {"keywords": query, "format": "json", "size": limit, "page": 1}
+        params = {"keywords": self._normalize_keywords(query), "format": "json", "size": limit, "page": 1}
         try:
             response = requests.get(self.BASE_URL, params=params, headers=self.headers, timeout=15)
             response.raise_for_status()
             data = response.json()
-            items = data.get("response", {}).get("results", {}).get("result", [])
-            if isinstance(items, dict):
-                items = [items]
+            resp_obj = data.get("response") or {}
+            results_obj = resp_obj.get("results") or {}
+            result_list = results_obj.get("result") or []
+            if isinstance(result_list, dict):
+                result_list = [result_list]
             results = []
-            for item in items:
+            for item in result_list:
                 paper = self._format_paper(item)
                 if paper:
                     results.append(paper)
