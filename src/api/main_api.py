@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.10.3
+Project: TALOS v5.10.5
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -9,7 +9,7 @@ Description:
     Tailwind CSS + Shadcn UI frontend. All endpoints wrap existing synchronous
     core functions -- no logic is rewritten.
 
-    Endpoints (18 total -- 100% ecosystem coverage + Synapse protocol + capabilities + tester):
+    Endpoints (19 total -- 100% ecosystem coverage + Synapse protocol + capabilities + tester):
     - GET  /api/v1/health              -> system health, DB stats, embedding coverage
     - GET  /api/v1/papers              -> paginated paper list
     - GET  /api/v1/papers/{paper_id}   -> full paper detail
@@ -26,6 +26,7 @@ Description:
     - GET  /api/v1/tasks               -> list all background tasks
     - GET  /api/v1/capabilities        -> serve System Capabilities Master Reference HTML
     - POST /api/v1/synapse/webhook     -> SYNAPSE protocol inbound command receiver
+    - GET  /api/v1/synapse/status        -> SYNAPSE bus reachability, queue health, event types
     - GET  /api/v1/tester/status       -> Autonomous Red Tester Q-table status
     - GET  /api/v1/tester/reports      -> list crash report metadata
 
@@ -91,8 +92,8 @@ logger = get_logger("api")
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-description="Facade REST API for the TALOS autonomous research platform (v5.10.3 -- Hierarchical DRL Orchestration: Daemon & Foraging Sub-Agent Integration)",
-version="5.10.3",
+description="Facade REST API for the TALOS autonomous research platform (v5.10.5 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine)",
+version="5.10.5",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -348,7 +349,7 @@ class EvaluatePaperRequest(BaseModel):
 @app.on_event("startup")
 def on_startup():
     """Pre-warm singletons and log readiness."""
-    logger.info("TALOS FastAPI v5.10.3 starting up (Hierarchical DRL Orchestration: Daemon & Foraging Sub-Agent Integration, port 8001)...")
+    logger.info("TALOS FastAPI v5.10.5 starting up (Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")

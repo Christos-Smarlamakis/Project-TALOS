@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.10.3
+Project: TALOS v5.10.5
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -20,6 +20,19 @@ Description:
     Configuration, Search & Ingestion, Analysis & Topologies, Daemons &
     CI/CD, and Diagnostics & Exit. Includes the new Vendored Graphify
 AST Knowledge Graph adapter (v5.9.12).
+
+    v5.10.5: Universal Dynamic Model Provisioner & Self-Healing Redundancy
+    Engine -- added the ModelProvisioner (src/utils/model_provisioner.py) with
+    3-tier local path resolution, JIT auto-pull for Ollama and HuggingFace Hub,
+    and a self-healing fallback cascade; integrated into the SETUP routine and
+    the Model Manager TUI.
+
+    v5.10.4: Dynamic Model Discovery Engine & SYNAPSE Protocol
+    Interoperability -- added ModelDiscoveryEngine
+    (src/ai/llm/model_discovery.py) with an air-gapped JSON benchmark registry
+    (data/model_benchmarks.json), dynamic relative quality scoring Q_p, and the
+    SYNAPSE GET /api/v1/synapse/status endpoint plus model_discovered and
+    router_decision event types.
 
     v5.10.1: DRL Environment Scaling & Retraining -- the TALOS DRL agent
     environment scaled to a 23-dimensional state space (16 source usage

@@ -1,10 +1,10 @@
-﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.3
+﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.5
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-14 (v5.10.3 -- Hierarchical DRL Orchestration: Daemon & Foraging Sub-Agent Integration)
+> **Last Updated:** 2026-08-15 (v5.10.5 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine)
 
 ---
 
@@ -263,8 +263,17 @@ Batch script for launching Streamlit GUI.
 
 #### `src/ai/drl/llm_router_subagent.py` (v5.10.3 — LLM Router Sub-Agent)
 **Purpose:** `LLMRouterSubAgent` selects the optimal active provider for an inference request. Loads reward weights from `models/gwo_llm_router_reward_weights.json` (Pareto fallback), evaluates prompt token length, rate-limit status, and latency against a static `PROVIDER_PROFILES` table, and returns the provider maximizing `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Integrated into `AIManager`. v5.10.3: added the `foraging_evaluation` task modifier and the shared `estimate_prompt_tokens()` helper; now invoked directly by the live DRL foraging orchestrator, the 24/7 daemon, and the search pipelines.
-**Functions:** `LLMRouterSubAgent` (`select_provider()`, `estimate_signals()`, `score_provider()`, `load_weights()`, `set_weights()`), module-level `estimate_prompt_tokens()`.
+**Functions:** `LLMRouterSubAgent` (`select_provider()`, `estimate_signals()`, `score_provider()`, `load_weights()`, `set_weights()`), module-level `estimate_prompt_tokens()`, `relative_quality()`.
+
+#### `src/ai/llm/model_discovery.py` (v5.10.4 — Dynamic Model Discovery Engine)
+**Purpose:** `ModelDiscoveryEngine` dynamically discovers active LLM models across the local Ollama tier (GET /api/tags) and optional cloud providers (NVIDIA NIM, Groq, OpenRouter, Gemini), with an air-gapped fallback to the local `data/model_benchmarks.json` registry. Computes normalized quality scores `Q_p = raw / max(raw)` and aggregates to provider level for the router.
+**Functions:** `ModelDiscoveryEngine` (`discover_active_models()`, `get_normalized_quality_scores()`, `get_provider_quality_scores()`, `_discover_local_models()`, `_discover_cloud_models()`), module-level `get_discovery_engine()`.
 **Imports:** `numpy`, `json`
+
+#### `src/utils/model_provisioner.py` (v5.10.5 — Universal Dynamic Model Provisioner)
+**Purpose:** `ModelProvisioner` guarantees a model is available before routing. Deterministic `detect_protocol()` (cloud prefixes, Ollama colon, HuggingFace Hub slash), 3-tier `resolve_local_model_path()` (`FAST_EDGE_MODEL_PATH`, in-tree `models/<sanitized_name>`, network), and `ensure_model_available()` for JIT pull (`ollama pull` / `huggingface_hub.snapshot_download`) with self-healing fallback.
+**Functions:** `ModelProvisioner` (`detect_protocol()`, `resolve_local_model_path()`, `ensure_model_available()`, `check_available()`, `_ollama_list()`, `_ollama_pull()`, `_ensure_cloud()`, `_ensure_ollama()`, `_ensure_huggingface()`), module-level `main()`.
+**Imports:** `subprocess`, `dotenv`, `huggingface_hub` (optional)
 
 #### `src/ai/optimizers/gwo_llm_router_reward_shaper.py` (v5.10.2 — Bi-Level Reward Shaping)
 **Purpose:** `GWOLLMRouterRewardShaper` bi-level multi-objective optimizer for the LLM Router reward weights `[w_quality, w_latency, w_cost, w_penalty]` (simplex-projected). Outer GWO loop + inner router evaluation under `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Exports `models/gwo_llm_router_reward_weights.json`.
@@ -397,6 +406,10 @@ src/ai/drl/drl_trainer.py
 src/ai/drl/llm_router_subagent.py
   └── numpy
 
+src/ai/llm/model_discovery.py
+  ├── requests
+  └── config.settings
+
 src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py
   ├── src.ai.drl.talos_env
   └── src.ai.drl.drl_agent
@@ -427,6 +440,12 @@ src/mcp_server.py
 src/utils/logger.py (Enterprise Logging)
   ├── rich.logging
   └── logging.handlers
+
+src/utils/model_provisioner.py (Universal Model Provisioner)
+  ├── src.utils.logger
+  ├── config.settings
+  ├── dotenv
+  └── huggingface_hub (optional)
 ```
 
 ---
@@ -446,6 +465,7 @@ src/utils/logger.py (Enterprise Logging)
 | **Autonomous Research Service** | `scripts/talos_service.py` | 24/7 background research daemon with Telegram/Discord/Email notifications |
 | **MCP Server** | `src/mcp_server.py` | Native MCP (Model Context Protocol) stdio server exposing 4 tools (system_status, semantic_search, paper_details, trigger_scrape) via MCPServer v2.0.0. Decoupled architecture: tools delegate to FastAPI backend via HTTP. |
 | **Enterprise Logger** | `src/utils/logger.py` | Central `get_logger(name)` factory -- `rich.logging.RichHandler` console + `RotatingFileHandler` to `data/logs/talos_system.log` (10 MB, 5 backups) |
+| **Universal Model Provisioner** | `src/utils/model_provisioner.py` | Deterministic model provisioning (Ollama / HuggingFace Hub / cloud) with 3-tier local path resolution and self-healing fallback |
 
 ---
 
@@ -479,8 +499,8 @@ src/utils/logger.py (Enterprise Logging)
 
 ---
 
-> **Last Updated:** 2026-08-14 (v5.10.3 -- Hierarchical DRL Orchestration: Daemon & Foraging Sub-Agent Integration)
-> **Project Version:** v5.10.3
+> **Last Updated:** 2026-08-15 (v5.10.5 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine)
+> **Project Version:** v5.10.5
 > **Total Files Covered:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### New in v5.9.9: Report Path Consolidation

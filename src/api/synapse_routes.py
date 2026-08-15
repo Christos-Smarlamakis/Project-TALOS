@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Module: synapse_routes.py
-Project: TALOS v5.10.0
+Project: TALOS v5.10.4
 Description:
-    FastAPI APIRouter exposing the SYNAPSE webhook endpoint for inbound
+    FastAPI APIRouter exposing the SYNAPSE webhook receiver and status endpoint for inbound
     commands from external microservices in the ALEXANDRIA ecosystem.
     This module implements the receiver side of the SYNAPSE Event-Driven
     Protocol -- TALOS listens on POST /api/v1/synapse/webhook for commands
@@ -34,6 +34,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 import logging
+import os
 
 logger = logging.getLogger("talos.synapse_routes")
 
@@ -135,7 +136,7 @@ def register_handler(command: str, handler: Any):
 
 def _handle_get_status(params: Dict[str, Any]) -> tuple:
     """Return basic TALOS status information."""
-    return ("acknowledged", "TALOS v5.7.0 is running. Synapse webhook operational.")
+    return ("acknowledged", "TALOS v5.10.4 is running. Synapse webhook operational.")
 
 
 def _handle_shutdown(params: Dict[str, Any]) -> tuple:
@@ -233,3 +234,54 @@ def synapse_webhook(request: SynapseWebhookRequest):
         status=status,
         message=message,
     )
+
+
+# ------------------------------------------------------------------
+# -- Status Endpoint (v5.10.4) --
+# ------------------------------------------------------------------
+
+def _check_bus_reachability(bus_url, timeout=0.5):
+    """Check whether the SYNAPSE bus is reachable via a TCP connection.
+
+    Args:
+        bus_url (str): The SYNAPSE bus URL.
+        timeout (float): Connection timeout in seconds.
+
+    Returns:
+        bool: True when a TCP connection to the bus host/port succeeds.
+    """
+    try:
+        import socket
+        from urllib.parse import urlparse
+        parsed = urlparse(bus_url)
+        host = parsed.hostname or "localhost"
+        port = parsed.port or 8000
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except Exception:
+        return False
+
+
+@router.get("/status")
+def synapse_status():
+    """Report SYNAPSE bus reachability, queue health, and supported event types.
+
+    Returns:
+        dict: Status payload with source, bus, bus_url, supported_event_types,
+            queue_health, subscribers, subscriber_tracking, and timestamp.
+    """
+    from src.integration.synapse_client import EventEmitter, get_emission_stats
+
+    bus_url = os.getenv("SYNAPSE_BUS_URL", "http://localhost:8000/api/v1/events")
+    bus_reachable = _check_bus_reachability(bus_url)
+    return {
+        "source": "talos",
+        "bus": "reachable" if bus_reachable else "unreachable",
+        "bus_url": bus_url,
+        "supported_event_types": sorted(EventEmitter.VALID_EVENT_TYPES),
+        "queue_health": get_emission_stats(),
+        "subscribers": [],
+        "subscriber_tracking": "owned_by_synapse_bus",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+

@@ -11,7 +11,7 @@
 
 """
 Module: daily_search.py (Quad-Layer & Rate Limit Safe)
-Project: TALOS v5.10.3
+Project: TALOS v5.10.4
 
 Description:
     The daily search orchestrator. Fetches new papers from all 16 configured
@@ -81,6 +81,27 @@ ALL_SOURCE_NAMES = [name for name, _ in SOURCE_REGISTRY]
 
 
 # -- v5.10.3: LLM Router Sub-Agent (two-stage provider selection) --
+def _emit_router_decision_synapse(provider, task_type, prompt_length):
+    """Emit a non-blocking router_decision Synapse event (best-effort).
+
+    Args:
+        provider (str | None): The selected provider name.
+        task_type (str): The routing task type.
+        prompt_length (int): The estimated prompt length in tokens.
+    """
+    if provider is None:
+        return
+    try:
+        from src.integration.synapse_client import synapse_emitter
+        synapse_emitter.emit("router_decision", {
+            "provider": provider,
+            "task_type": task_type,
+            "prompt_length": int(prompt_length or 0),
+        })
+    except Exception:
+        pass
+
+
 def route_evaluation_provider(ai_manager, content, task_type="default"):
     """Query the LLMRouterSubAgent for the optimal provider for an evaluation.
 
@@ -98,6 +119,7 @@ def route_evaluation_provider(ai_manager, content, task_type="default"):
         return None
     prompt_length = estimate_prompt_tokens(content)
     chosen = router.select_provider(prompt_length, task_type=task_type)
+    _emit_router_decision_synapse(chosen, task_type, prompt_length)
     print(f"  [ROUTER] {task_type}: prompt_length={prompt_length} -> provider={chosen}")
     return chosen
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: live_agent_orchestrator.py (v1.3 — 16-Source Scaling)
-Project: TALOS v5.10.3
+Project: TALOS v5.10.4
 Description:
     Main orchestration loop for the TALOS Live DRL Agent. Handles the
     full cycle: state calculation → action selection → API fetch →

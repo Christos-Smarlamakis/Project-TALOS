@@ -91,7 +91,7 @@ IMPORT_TO_DOC_MAP = {
 # relationships, not library imports).
 EXTERNAL_PACKAGES = {
     # HTTP / API clients and network protocols
-    "requests", "httpx", "urllib", "urllib.request", "socket", "smtplib", "email",
+    "requests", "httpx", "urllib", "urllib.request", "socket", "smtplib", "email", "huggingface_hub",
     # TALOS runtime dependencies (third-party)
     "dotenv", "tqdm", "questionary", "rich", "tabulate", "jinja2",
     "numpy", "pandas", "streamlit", "matplotlib", "seaborn", "wordcloud",

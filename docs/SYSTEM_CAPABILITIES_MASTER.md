@@ -1,10 +1,10 @@
-﻿# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.3
+﻿# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.5
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-08-14
-> **Version:** v5.10.3 -- Hierarchical DRL Orchestration: Daemon & Foraging Sub-Agent Integration
+> **Last Updated:** 2026-08-15
+> **Version:** v5.10.5 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -23,7 +23,7 @@ The system operates as a five-layer architecture:
 | Layer | Component | Role |
 |-------|-----------|------|
 | **Frontend** | React 18 with Tailwind CSS and Shadcn UI | User-facing dashboard leveraging the REST API |
-| **Backend** | `src/api/main_api.py` (18 endpoints) | Headless FastAPI facade exposing all core capabilities |
+| **Backend** | `src/api/main_api.py` (19 endpoints) | Headless FastAPI facade exposing all core capabilities |
 | **AI Core** | `src/core/ai_manager.py` (9 providers -- Universal Cloud Mesh + circuit breaker + 2D matrix) | Multi-provider LLM orchestration with hardware-aware routing and interactive cloud fallback |
 | **Persistence** | `src/core/database_manager.py` | SQLite + multi-model vector embeddings (Ollama + Gemini) |
 | **Integration** | `src/integration/synapse_client.py` + `src/mcp_server.py` + `src/analysis/graphify_adapter.py` | SYNAPSE Event Bus + MCP Tool Server + AST Knowledge Graph Intelligence |
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.10.3" | `config/settings.py` |
+| TALOS_VERSION | "5.10.5" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -215,6 +215,14 @@ For backward compatibility, the system also supports four distinct routing combi
 
 ---
 
+### 3.4 Dynamic Model Discovery Engine (v5.10.4)
+
+`src/ai/llm/model_discovery.py` (`ModelDiscoveryEngine`) discovers active LLM models across Ollama (GET /api/tags) and cloud providers (NVIDIA NIM, Groq, OpenRouter, Gemini GET /v1/models), with an air-gapped fallback to `data/model_benchmarks.json`. It computes `Q_p = raw / max(raw)` normalized quality scores and `get_provider_quality_scores()` for the router. `LLMRouterSubAgent.refresh_quality_scores()` / `load_quality_scores()` consume these dynamic signals.
+
+### 3.5 Universal Dynamic Model Provisioner (v5.10.5)
+
+`src/utils/model_provisioner.py` (`ModelProvisioner`) guarantees a model is available before routing. Deterministic `detect_protocol()` (cloud prefixes, Ollama colon, HuggingFace Hub slash) and a 3-tier `resolve_local_model_path()` (`FAST_EDGE_MODEL_PATH`, in-tree `models/<sanitized_name>`, network). `ensure_model_available()` performs JIT `ollama pull` / `huggingface_hub.snapshot_download` with a self-healing fallback that logs `[WARNING] Auto-provisioning failed ... Reverting to baseline model.` and returns `False` without crashing. Integrated into the SETUP routine and the Model Manager TUI.
+
 ## Section 4: Deep Reinforcement Learning & Optimization (DDDQN + GWO)
 
 ### 4.1 DRL Agent Architecture
@@ -309,6 +317,8 @@ TALOS participates in the ALEXANDRIA Ecosystem via the SYNAPSE Event-Driven Prot
 | `gwo_optimized` | GWO run complete | Best params, best reward, iterations |
 | `agent_step` | DRL agent takes an action | Episode, step, action, reward |
 | `agent_episode_end` | DRL episode terminates | Episode, total reward, epsilon |
+| `model_discovered` | Model Discovery Engine finds an active model | Model name, provider, scores |
+| `router_decision` | LLM Router selects a provider | Provider, task type, prompt length, score |
 
 ### 5.3 Event Schema (Mandatory Fields)
 
@@ -316,7 +326,7 @@ TALOS participates in the ALEXANDRIA Ecosystem via the SYNAPSE Event-Driven Prot
 {
   "event_id": "UUID4",
   "timestamp": "ISO 8601",
-  "event_type": "paper_discovered | paper_evaluated | search_completed | gwo_optimized | agent_step | agent_episode_end",
+  "event_type": "paper_discovered | paper_evaluated | search_completed | gwo_optimized | agent_step | agent_episode_end | model_discovered | router_decision",
   "source": "talos",
   "payload": {}
 }
@@ -333,9 +343,11 @@ TALOS participates in the ALEXANDRIA Ecosystem via the SYNAPSE Event-Driven Prot
 | `get_status` | `{}` | Returns system health |
 | `shutdown` | `{}` | Graceful process shutdown |
 
+`GET /api/v1/synapse/status` reports bus reachability, queue health (emission counters), supported event types, and subscriber status.
+
 ---
 
-## Section 6: REST API Reference (18 Endpoints)
+## Section 6: REST API Reference (19 Endpoints)
 
 ### 6.1 Endpoint Catalog
 
@@ -359,6 +371,7 @@ TALOS participates in the ALEXANDRIA Ecosystem via the SYNAPSE Event-Driven Prot
 | E16 | POST | `/api/v1/synapse/webhook` | SYNAPSE protocol inbound command receiver | `SynapseWebhookResponse` |
 | E17 | GET | `/api/v1/tester/status` | Autonomous Red Tester Q-table status (70+ arms) | `TesterStatusResponse` |
 | E18 | GET | `/api/v1/tester/reports` | List crash report metadata from data/reports/ | `List[CrashReport]` |
+| E19 | GET | `/api/v1/synapse/status` | SYNAPSE bus reachability, queue health, event types | `dict` |
 
 ### 6.2 Pydantic v2 Model Inventory
 
@@ -755,6 +768,7 @@ For each evaluated paper, the AI generates:
 ### 15.8 LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI (v5.10.2)
 
 - `src/ai/drl/llm_router_subagent.py` -- `LLMRouterSubAgent` selects the optimal active provider from `models/gwo_llm_router_reward_weights.json` weights (Pareto fallback), scoring quality/latency/cost/rate-limit signals; `AIManager` delegates cloud/legacy provider selection to it via `_get_router_ordered_providers`.
+- **Relative min-max quality normalization** -- each `PROVIDER_PROFILES` entry stores a raw SWE-bench Verified score (`swe_bench_score`); the quality signal is derived dynamically as `Q_p = Score(p) / max_k Score(k)`, so the top-benchmark provider receives exactly `Q_p = 1.0` and every other provider scales proportionally.
 - `src/ai/optimizers/gwo_llm_router_reward_shaper.py` -- `GWOLLMRouterRewardShaper` bi-level multi-objective optimizer: canonical GWO outer loop over a simplex-projected 4D weight vector `[w_quality, w_latency, w_cost, w_penalty]` plus an inner LLM Router evaluation under `R = w_quality*QualityScore - w_latency*LatencyRatio - w_cost*CostRatio - w_penalty*RateLimitPenalty`. Exports `models/gwo_llm_router_reward_weights.json` with convergence trajectory and three Pareto profiles (Deep Research, Fast Screening, Air-Gapped Local).
 - `gwo_rl_optimizer.py` renamed to `gwo_foraging_hyperparameter_tuner.py` (class `GWOForagingHyperparameterTuner`); best-parameters export renamed to `models/gwo_foraging_hyperparameters.json`.
 - `talos.py` Options 3a/3b now prompt a `questionary.checkbox()` over all 16 academic sources (all pre-selected) passed to the search scripts via `--sources`.
@@ -767,6 +781,22 @@ For each evaluated paper, the AI generates:
 - Daemon logs `[DAEMON/ROUTER]` routing decisions to `data/logs/talos_system.log`; orchestrator logs `[ROUTER]` choices to the live-agent console and module logger.
 - Search pipelines route Fast Edge pre-screening (`fast_screening`) and Heavy Reasoning deep analysis (`deep_research`) through `route_evaluation_provider()`.
 - New hermetic tests in `tests/test_multi_tier.py` (`TestLLMRouterSubAgentPipelineIntegration`) and `tests/test_llm_router_subagent.py` verify that orchestrator, daemon, and search pipelines invoke `LLMRouterSubAgent.select_provider()`.
+
+### 15.10 Dynamic Model Discovery Engine & SYNAPSE Protocol Interoperability (v5.10.4)
+
+- `src/ai/llm/model_discovery.py` (`ModelDiscoveryEngine`) with air-gapped `data/model_benchmarks.json` registry and `Q_p = raw / max(raw)` quality scoring.
+- `LLMRouterSubAgent.refresh_quality_scores()` / `load_quality_scores()` and non-blocking `router_decision` Synapse emission.
+- `GET /api/v1/synapse/status` endpoint, `model_discovered` / `router_decision` event types, and emission statistics.
+- `tests/test_model_discovery.py` (15 hermetic tests).
+
+---
+
+### 15.11 Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine (v5.10.5)
+
+- `src/utils/model_provisioner.py` (`ModelProvisioner`) with deterministic protocol detection and 3-tier local path resolution (`FAST_EDGE_MODEL_PATH`, in-tree `models/<sanitized_name>`, network).
+- JIT auto-pull for Ollama (`ollama pull`) and HuggingFace Hub (`huggingface_hub.snapshot_download`) with self-healing fallback (`[WARNING] Auto-provisioning failed ... Reverting to baseline model.`).
+- `run_talos.bat` / `run_talos.sh` step [5/5] execute the provisioner; `model_manager.py` `_provision_model()` routes uninstalled models through it.
+- `tests/test_model_provisioner.py` (22 hermetic tests).
 
 ---
 

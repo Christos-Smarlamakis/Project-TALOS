@@ -333,6 +333,39 @@ def pull_model(full_name):
 # -- Model Catalogues (cloud provider model lists) --
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# -- Universal Model Provisioner integration (v5.10.5) --
+# ---------------------------------------------------------------------------
+
+def _provision_model(model_name):
+    """Provision an uninstalled model via the appropriate delivery protocol.
+
+    Ollama models use the interactive `pull_model()` with real-time progress.
+    HuggingFace Hub and cloud models are delegated to the Universal Model
+    Provisioner with Rich status feedback.
+
+    Args:
+        model_name (str): Fully qualified model name to provision.
+
+    Returns:
+        bool: True when the model became available, False otherwise.
+    """
+    try:
+        from src.utils.model_provisioner import ModelProvisioner
+    except ImportError:
+        ModelProvisioner = None
+
+    protocol = ModelProvisioner().detect_protocol(model_name) if ModelProvisioner else "ollama"
+    if protocol == "ollama":
+        return pull_model(model_name)
+
+    with console.status(
+        f"[bold cyan]Provisioning[/] [white]{model_name}[/] [dim]({protocol})[/] ...",
+        spinner="dots",
+    ):
+        return ModelProvisioner().ensure_model_available(model_name, silent=True)
+
+
 GEMINI_MODELS = [
     ("gemini-2.5-flash-lite", "Fast, lightweight (free tier)"),
     ("gemini-2.5-flash", "Fast, balanced"),
@@ -734,7 +767,7 @@ def _install_if_needed(final_model, installed_models, vram_limit):
         default=True
     ).ask()
     if do_pull:
-        return pull_model(final_model)
+        return _provision_model(final_model)
     else:
         console.print("  [dim]Skipping download. Model not changed.[/]")
         console.input("[dim]Press Enter to continue...[/]")
@@ -1401,7 +1434,7 @@ def select_embedding_model(env_path):
     if model_name not in installed:
         do_pull = questionary.confirm(f"Download {model_name}?", default=True).ask()
         if do_pull:
-            if not pull_model(model_name):
+            if not _provision_model(model_name):
                 console.input("\n[dim]Press Enter to continue...[/]")
                 return
 
@@ -1527,7 +1560,7 @@ def main():
         elif choice.startswith("6"):
             model = questionary.text("Enter model to pull (e.g., gemma3:12b):").ask()
             if model and model.strip():
-                pull_model(model.strip())
+                _provision_model(model.strip())
                 console.input("\n[dim]Press Enter to continue...[/]")
 
 

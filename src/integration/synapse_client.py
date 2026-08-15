@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 """
 Module: synapse_client.py
-Project: TALOS v5.10.0
+Project: TALOS v5.10.4
 Description:
     EventEmitter class for the SYNAPSE Event-Driven Protocol. This module
     provides a thread-safe, non-blocking client that pushes JSON-structured
     events from TALOS to the SYNAPSE event bus at http://localhost:8000/api/v1/events.
 
     Event types emitted: paper_discovered, paper_evaluated, search_completed,
-    gwo_optimized, agent_step, agent_episode_end.
+    gwo_optimized, agent_step, agent_episode_end, model_discovered,
+    router_decision.
 
     Each event carries mandatory fields: event_id (UUID4), timestamp (ISO 8601),
     event_type (string enum), source ("talos"), payload (dict).
@@ -39,6 +40,30 @@ from datetime import datetime, timezone
 from typing import Optional, Callable, Dict, Any
 
 logger = logging.getLogger("talos.synapse")
+
+# -- Emission statistics (v5.10.4): shared counters for queue-health reporting --
+_EMISSION_STATS = {"total": 0, "success": 0, "failure": 0}
+_EMISSION_STATS_LOCK = threading.Lock()
+
+
+def get_emission_stats():
+    """Return a copy of the current emission statistics.
+
+    Returns:
+        dict: Counters with keys total, success, and failure.
+    """
+    with _EMISSION_STATS_LOCK:
+        return dict(_EMISSION_STATS)
+
+
+def _record_emission(counter):
+    """Increment a named emission counter (thread-safe).
+
+    Args:
+        counter (str): One of total, success, or failure.
+    """
+    with _EMISSION_STATS_LOCK:
+        _EMISSION_STATS[counter] = _EMISSION_STATS.get(counter, 0) + 1
 
 # -- Optional requests import with graceful fallback --
 try:
@@ -76,6 +101,8 @@ class EventEmitter:
         "gwo_optimized",
         "agent_step",
         "agent_episode_end",
+        "model_discovered",
+        "router_decision",
     })
 
     def __init__(
@@ -108,7 +135,7 @@ class EventEmitter:
             self._session = requests.Session()
             self._session.headers.update({
                 "Content-Type": "application/json",
-                "User-Agent": f"TALOS-SynapseClient/5.7.0",
+                "User-Agent": f"TALOS-SynapseClient/5.10.4",
             })
 
         logger.info(
@@ -205,7 +232,9 @@ class EventEmitter:
             event: Fully constructed event envelope.
             callback: Optional post-emission callback.
         """
+        _record_emission("total")
         if not _REQUESTS_AVAILABLE or self._session is None:
+            _record_emission("success")
             # -- Local logging fallback --
             logger.info(
                 "SYNAPSE event (local log): type=%s, id=%s, payload_keys=%s",
@@ -233,6 +262,7 @@ class EventEmitter:
                     event["event_id"],
                     response.status_code,
                 )
+                _record_emission("success")
                 if callback:
                     callback(True, None)
                 return
@@ -283,6 +313,7 @@ class EventEmitter:
                 event["event_id"],
                 last_error,
             )
+        _record_emission("failure")
         if callback:
             callback(False, last_error)
 

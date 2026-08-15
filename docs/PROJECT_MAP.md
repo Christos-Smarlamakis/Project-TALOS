@@ -1,10 +1,10 @@
-﻿# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.3
+﻿# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.5
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-08-14 (v5.10.3 -- Ιεραρχική Ενορχήστρωση DRL: Ενσωμάτωση Δαίμονα & Υποπράκτορα Αναζήτησης)
+> **Τελευταία Ενημέρωση:** 2026-08-15 (v5.10.5 -- Καθολικός Δυναμικός Πάροχος Μοντέλων & Μηχανή Αυτοθεραπευόμενου Πλεονασμού)
 
 ---
 
@@ -266,8 +266,17 @@ Batch script για εκκίνηση του TALOS CLI.
 
 #### `src/ai/drl/llm_router_subagent.py` (v5.10.3 — LLM Router Sub-Agent)
 **Σκοπός:** Ο `LLMRouterSubAgent` επιλέγει τον βέλτιστο ενεργό πάροχο για ένα αίτημα συμπερασμού. Φορτώνει βάρη ανταμοιβής από το `models/gwo_llm_router_reward_weights.json` (με εφεδρεία Pareto), αξιολογεί μήκος tokens, κατάσταση rate-limit και καθυστέρηση έναντι στατικού πίνακα `PROVIDER_PROFILES`, και επιστρέφει τον πάροχο που μεγιστοποιεί το `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Ενσωματώθηκε στον `AIManager`. Στην v5.10.3 προστέθηκαν ο τροποποιητής εργασίας `foraging_evaluation` και ο κοινός βοηθός `estimate_prompt_tokens()`· καλείται πλέον απευθείας από τον ζωντανό ενορχηστρωτή, τον δαίμονα 24/7 και τους αγωγούς αναζήτησης.
-**Συναρτήσεις:** `LLMRouterSubAgent` (`select_provider()`, `estimate_signals()`, `score_provider()`, `load_weights()`, `set_weights()`), module-level `estimate_prompt_tokens()`.
+**Συναρτήσεις:** `LLMRouterSubAgent` (`select_provider()`, `estimate_signals()`, `score_provider()`, `load_weights()`, `set_weights()`), module-level `estimate_prompt_tokens()`, `relative_quality()`.
+
+#### `src/ai/llm/model_discovery.py` (v5.10.4 — Dynamic Model Discovery Engine)
+**Σκοπός:** Η `ModelDiscoveryEngine` ανακαλύπτει δυναμικά ενεργά μοντέλα LLM στο τοπικό επίπεδο Ollama (GET /api/tags) και στους προαιρετικούς παρόχους cloud (NVIDIA NIM, Groq, OpenRouter, Gemini), με εφεδρεία εκτός δικτύου στο τοπικό μητρώο `data/model_benchmarks.json`. Υπολογίζει κανονικοποιημένες βαθμολογίες ποιότητας `Q_p = raw / max(raw)` και συναθροίζει σε επίπεδο παρόχου για τον δρομολογητή.
+**Συναρτήσεις:** `ModelDiscoveryEngine` (`discover_active_models()`, `get_normalized_quality_scores()`, `get_provider_quality_scores()`, `_discover_local_models()`, `_discover_cloud_models()`), module-level `get_discovery_engine()`.
 **Imports:** `numpy`, `json`
+
+#### `src/utils/model_provisioner.py` (v5.10.5 — Universal Dynamic Model Provisioner)
+**Σκοπός:** Η κλάση `ModelProvisioner` εγγυάται τη διαθεσιμότητα ενός μοντέλου πριν τη δρομολόγησή του. Ανιχνεύει ντετερμινιστικά το πρωτόκολλο παράδοσης (`detect_protocol()`: προθέματα cloud, Ollama με άνω-κάτω τελεία, HuggingFace Hub με κάθετο), επιλύει τοπικά αντίγραφα μέσω κλιμάκωσης 3 επιπέδων (`resolve_local_model_path()`: `FAST_EDGE_MODEL_PATH`, ενσωματωμένο `models/<sanitized_name>`, δίκτυο) και εκτελεί `ensure_model_available()` για JIT λήψη (`ollama pull` / `huggingface_hub.snapshot_download`) με εφεδρεία αυτοθεραπείας χωρίς κατάρρευση.
+**Συναρτήσεις:** `ModelProvisioner` (`detect_protocol()`, `resolve_local_model_path()`, `ensure_model_available()`, `check_available()`, `_ollama_list()`, `_ollama_pull()`, `_ensure_cloud()`, `_ensure_ollama()`, `_ensure_huggingface()`), module-level `main()`.
+**Imports:** `subprocess`, `dotenv`, `huggingface_hub` (προαιρετικό)
 
 #### `src/ai/optimizers/gwo_llm_router_reward_shaper.py` (v5.10.2 — Bi-Level Reward Shaping)
 **Σκοπός:** Κλάση `GWOLLMRouterRewardShaper` για Διεπίπεδη Βελτιστοποίηση Ανταμοιβής Πολλαπλών Στόχων στα βάρη ανταμοιβής του Δρομολογητή LLM `[w_quality, w_latency, w_cost, w_penalty]` (προβολή simplex). Εξωτερικός βρόχος GWO + εσωτερική αξιολόγηση δρομολογητή υπό `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Εξάγει `models/gwo_llm_router_reward_weights.json`.
@@ -400,6 +409,10 @@ src/ai/drl/drl_trainer.py
 src/ai/drl/llm_router_subagent.py
   └── numpy
 
+src/ai/llm/model_discovery.py
+  ├── requests
+  └── config.settings
+
 src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py
   ├── src.ai.drl.talos_env
   └── src.ai.drl.drl_agent
@@ -430,6 +443,12 @@ src/mcp_server.py
 src/utils/logger.py (Enterprise Logging)
   ├── rich.logging
   └── logging.handlers
+
+src/utils/model_provisioner.py (Universal Model Provisioner)
+  ├── src.utils.logger
+  ├── config.settings
+  ├── dotenv
+  └── huggingface_hub (optional)
 ```
 
 ---
@@ -449,6 +468,7 @@ src/utils/logger.py (Enterprise Logging)
 | **Autonomous Research Service** | `scripts/talos_service.py` | 24/7 background research daemon with Telegram/Discord/Email notifications |
 | **MCP Server** | `src/mcp_server.py` | Native MCP (Model Context Protocol) stdio server που εκθέτει 4 tools (system_status, semantic_search, paper_details, trigger_scrape) μέσω MCPServer v2.0.0. Decoupled αρχιτεκτονική: τα tools καλούν το FastAPI backend μέσω HTTP. |
 | **Enterprise Logger** | `src/utils/logger.py` | Central `get_logger(name)` factory -- `rich.logging.RichHandler` console + `RotatingFileHandler` to `data/logs/talos_system.log` (10 MB, 5 backups) |
+| **Universal Model Provisioner** | `src/utils/model_provisioner.py` | Deterministic model provisioning (Ollama / HuggingFace Hub / cloud) with 3-tier local path resolution and self-healing fallback |
 
 ---
 
@@ -485,8 +505,8 @@ src/utils/logger.py (Enterprise Logging)
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-08-14 (v5.10.3 -- Ιεραρχική Ενορχήστρωση DRL: Ενσωμάτωση Δαίμονα & Υποπράκτορα Αναζήτησης)
-> **Έκδοση Project:** v5.10.3
+> **Τελευταία ενημέρωση:** 2026-08-15 (v5.10.5 -- Καθολικός Δυναμικός Πάροχος Μοντέλων & Μηχανή Αυτοθεραπευόμενου Πλεονασμού)
+> **Έκδοση Project:** v5.10.5
 > **Συνολικά αρχεία που καλύπτονται:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### Νέο στην v5.9.9: Ενοποίηση Αναφορών

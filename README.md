@@ -1,8 +1,8 @@
-﻿# Project TALOS (v5.10.3)
+﻿# Project TALOS (v5.10.5)
 
 ### **Tactical Agentic Literature Orchestration System**
 
-> **An Autonomous Research Intelligence Platform -- Multi-Tier LLM Routing (CPU/GPU/Cloud), Headless FastAPI Backend with 18 REST Endpoints, SYNAPSE Event-Driven Protocol, RL-Driven Autonomous Red Tester with LLM-as-a-Judge Diagnostics, Academic Print Mode for AST Knowledge Graphs, React 18 + Tailwind CSS + Shadcn UI Frontend.**
+> **An Autonomous Research Intelligence Platform -- Multi-Tier LLM Routing (CPU/GPU/Cloud), Headless FastAPI Backend with 19 REST Endpoints, SYNAPSE Event-Driven Protocol, RL-Driven Autonomous Red Tester with LLM-as-a-Judge Diagnostics, Academic Print Mode for AST Knowledge Graphs, React 18 + Tailwind CSS + Shadcn UI Frontend.**
 
 [![IEEE Computer Society](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
@@ -35,13 +35,13 @@ TALOS acts as an autonomous "Research Architect," filtering noise and highlighti
   - **Grey Wolf Optimizer** (`src/ai/optimizers/gwo_rl_optimizer.py`) for hyperparameter tuning
   - **24/7 Autonomous Service** (`src/ai/drl/talos_service.py`) -- background research agent with Telegram/Discord/Email notifications
 - **Flask API server** (`src/api/talos_service_api.py`) -- real-time service status at `localhost:5002/api/status`
-- **FastAPI REST API** (`src/api/main_api.py`) -- full REST facade with 18 endpoints at `localhost:8001`
+- **FastAPI REST API** (`src/api/main_api.py`) -- full REST facade with 19 endpoints at `localhost:8001`
   - Semantic search, paginated papers, scrape/GWO triggers with BackgroundTasks
   - Single-paper AI evaluation, natural-language to boolean query translation
   - GWO history for Recharts, architecture graph HTML, top authors for BarChart
   - Bulk score recalculation, DB health stats, System Capabilities Master Reference
   - **Autonomous Red Tester** (`GET /api/v1/tester/status`, `GET /api/v1/tester/reports`) -- Q-table status and crash report listing
-  - **SYNAPSE webhook receiver** (`POST /api/v1/synapse/webhook`) for ALEXANDRIA ecosystem interoperability
+  - **SYNAPSE webhook receiver** (`POST /api/v1/synapse/webhook`) and **SYNAPSE status endpoint** (`GET /api/v1/synapse/status`) for ALEXANDRIA ecosystem interoperability
   - **Port 8001** (port 8000 reserved for SYNAPSE event bus)
   - Auto-generated interactive docs at `http://localhost:8001/docs`
   - Models saved at `models/dddqn_trained.pth` and `models/talos_drl.pth`
@@ -144,7 +144,7 @@ This software is part of ongoing research. If you use **TALOS** in your work, pl
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.10.3},
+  version = {v5.10.5},
   year = {2026}
 }
 ```
@@ -296,7 +296,7 @@ python src/utils/generate_docs.py
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.10.3},
+  version = {v5.10.5},
   year = {2026}
 }
 ```

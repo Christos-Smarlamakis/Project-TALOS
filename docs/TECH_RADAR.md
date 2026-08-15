@@ -1,5 +1,7 @@
 # TALOS Tech Radar & Ecosystem Map
 
+> **Last Updated:** 2026-08-15 (v5.10.5 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine)
+
 This document is the technology radar of Project TALOS. It catalogues the development stack, the agentic architecture, the document-comprehension tooling, and the simulation capabilities that surround the core TALOS research intelligence system. It tracks State-of-the-Art (SOTA) technologies and maps the surrounding research-intelligence ecosystem.
 
 ---
@@ -74,4 +76,4 @@ Related systems and competitors that TALOS is evaluated against, tracked to keep
 
 ---
 
-> **Project Version:** v5.10.3 | **Last Updated:** 2026-08-14
+> **Project Version:** v5.10.5 | **Last Updated:** 2026-08-15

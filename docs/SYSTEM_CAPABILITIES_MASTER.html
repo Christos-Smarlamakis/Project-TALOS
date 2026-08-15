@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.3</title>
+<title>TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.5</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -244,7 +244,7 @@
   <a href="#s5-2" class="sub-link">5.2 Outbound Event Types</a>
   <a href="#s5-3" class="sub-link">5.3 Event Schema</a>
   <a href="#s5-4" class="sub-link">5.4 Inbound Commands (Webhook)</a>
-  <a href="#s6" class="section-link">6. REST API Reference (18 Endpoints)</a>
+  <a href="#s6" class="section-link">6. REST API Reference (19 Endpoints)</a>
   <a href="#s6-1" class="sub-link">6.1 Endpoint Catalog</a>
   <a href="#s6-2" class="sub-link">6.2 Pydantic v2 Model Inventory</a>
   <a href="#s6-3" class="sub-link">6.3 Background Task System</a>
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.10.1</h1>
+<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.10.5</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -302,8 +302,8 @@
   <strong>Document ID:</strong> TALOS-SYS-CAP-001 &nbsp;|&nbsp;
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
-  <strong>Last Updated:</strong> 2026-08-14 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.10.1 -- DRL Environment Scaling & Retraining: 17 Action Space
+  <strong>Last Updated:</strong> 2026-08-15 &nbsp;|&nbsp;
+  <strong>Version:</strong> v5.10.5 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine
 </div>
 
 <!-- ===================================================================== -->
@@ -321,7 +321,7 @@
   <thead><tr><th>Layer</th><th>Component</th><th>Role</th></tr></thead>
   <tbody>
     <tr><td><strong>Frontend</strong></td><td>React 18 with Tailwind CSS and Shadcn UI</td><td>User-facing dashboard leveraging the REST API</td></tr>
-    <tr><td><strong>Backend</strong></td><td><code>src/api/main_api.py</code> (18 endpoints)</td><td>Headless FastAPI facade exposing all core capabilities</td></tr>
+    <tr><td><strong>Backend</strong></td><td><code>src/api/main_api.py</code> (19 endpoints)</td><td>Headless FastAPI facade exposing all core capabilities</td></tr>
     <tr><td><strong>AI Core</strong></td><td><code>src/core/ai_manager.py</code> (4 providers + circuit breaker + 2D matrix)</td><td>Multi-provider LLM orchestration with hardware-aware routing and interactive cloud fallback</td></tr>
     <tr><td><strong>Persistence</strong></td><td><code>src/core/database_manager.py</code></td><td>SQLite + multi-model vector embeddings (Ollama + Gemini)</td></tr>
     <tr><td><strong>Integration</strong></td><td><code>src/integration/synapse_client.py</code> + <code>src/mcp_server.py</code> + <code>src/analysis/graphify_adapter.py</code></td><td>SYNAPSE Event Bus + MCP Tool Server + AST Knowledge Graph Intelligence</td></tr>
@@ -662,7 +662,7 @@
 </table>
 
 <!-- ===================================================================== -->
-<h2 id="s6">Section 6: REST API Reference (18 Endpoints)</h2>
+<h2 id="s6">Section 6: REST API Reference (19 Endpoints)</h2>
 
 <h3 id="s6-1">6.1 Endpoint Catalog</h3>
 
@@ -687,6 +687,7 @@
     <tr><td>E16</td><td><code>POST</code></td><td><code>/api/v1/synapse/webhook</code></td><td>SYNAPSE protocol inbound command receiver</td><td><code>SynapseWebhookResponse</code></td></tr>
     <tr><td>E17</td><td><code>GET</code></td><td><code>/api/v1/tester/status</code></td><td>Autonomous Red Tester Q-table status (70+ arms)</td><td><code>TesterStatusResponse</code></td></tr>
     <tr><td>E18</td><td><code>GET</code></td><td><code>/api/v1/tester/reports</code></td><td>List crash report metadata from data/reports/</td><td><code>List[CrashReport]</code></td></tr>
+    <tr><td>E19</td><td><code>GET</code></td><td><code>/api/v1/synapse/status</code></td><td>SYNAPSE bus reachability, queue health, event types</td><td><code>dict</code></td></tr>
   </tbody>
 </table>
 
@@ -1048,6 +1049,7 @@
 <h3 id="s15-8">15.8 LLM Router Sub-Agent, Bi-Level GWO Reward Shaping & Interactive 16-Source Checkbox TUI (v5.10.2)</h3>
 <ul>
   <li><strong><code>src/ai/drl/llm_router_subagent.py</code></strong> -- <code>LLMRouterSubAgent</code> selects the optimal active provider from <code>models/gwo_llm_router_reward_weights.json</code> weights (Pareto fallback), scoring quality/latency/cost/rate-limit signals; <code>AIManager</code> delegates cloud/legacy provider selection to it via <code>_get_router_ordered_providers</code>.</li>
+  <li><strong>Relative min-max quality normalization</strong> -- each <code>PROVIDER_PROFILES</code> entry stores a raw SWE-bench Verified score (<code>swe_bench_score</code>); quality is derived dynamically as <code>Q_p = Score(p) / max_k Score(k)</code>, so the top-benchmark provider receives exactly <code>Q_p = 1.0</code> and every other provider scales proportionally.</li>
   <li><strong><code>src/ai/optimizers/gwo_llm_router_reward_shaper.py</code></strong> -- <code>GWOLLMRouterRewardShaper</code> bi-level multi-objective optimizer (canonical GWO outer loop + inner LLM Router evaluation under <code>R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty</code>); simplex-projected weights, exports <code>models/gwo_llm_router_reward_weights.json</code> with convergence trajectory and three Pareto profiles.</li>
   <li><strong>GWO tuner rename</strong> -- <code>gwo_rl_optimizer.py</code> to <code>gwo_foraging_hyperparameter_tuner.py</code> (class <code>GWOForagingHyperparameterTuner</code>); export renamed to <code>models/gwo_foraging_hyperparameters.json</code>.</li>
   <li><strong>Interactive 16-Source Checkbox TUI</strong> -- <code>talos.py</code> Options 3a/3b prompt a <code>questionary.checkbox()</code> over all 16 sources (pre-selected) passed via <code>--sources</code>.</li>
@@ -1063,9 +1065,26 @@
   <li><strong>Tests</strong> -- <code>TestLLMRouterSubAgentPipelineIntegration</code> and router/estimator tests verify orchestrator, daemon, and search pipelines invoke <code>LLMRouterSubAgent.select_provider()</code>.</li>
 </ul>
 
+<h3 id="s15-10">15.10 Dynamic Model Discovery Engine and SYNAPSE Protocol Interoperability (v5.10.4)</h3>
+<ul>
+  <li><strong>ModelDiscoveryEngine</strong> -- src/ai/llm/model_discovery.py discovers active models across Ollama and cloud providers, with air-gapped data/model_benchmarks.json fallback and Q_p = raw / max(raw) scoring.</li>
+  <li><strong>Router integration</strong> -- refresh_quality_scores() / load_quality_scores() plus non-blocking router_decision emission.</li>
+  <li><strong>SYNAPSE readiness</strong> -- GET /api/v1/synapse/status endpoint, model_discovered / router_decision event types, emission statistics.</li>
+  <li><strong>Tests</strong> -- tests/test_model_discovery.py (15 hermetic tests).</li>
+</ul>
+
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.3</em></p>
+<h3 id="s15-11">15.11 Universal Dynamic Model Provisioner &amp; Self-Healing Redundancy Engine (v5.10.5)</h3>
+<ul>
+  <li><strong>ModelProvisioner</strong> -- src/utils/model_provisioner.py with deterministic detect_protocol() and 3-tier resolve_local_model_path() (FAST_EDGE_MODEL_PATH, in-tree models/, network).</li>
+  <li><strong>JIT provisioning</strong> -- ollama pull / huggingface_hub.snapshot_download with self-healing fallback.</li>
+  <li><strong>SETUP + Model Manager integration</strong> -- run_talos.bat / run_talos.sh step [5/5] and model_manager.py _provision_model().</li>
+  <li><strong>Tests</strong> -- tests/test_model_provisioner.py (22 hermetic tests).</li>
+</ul>
+
+<hr>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.5</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

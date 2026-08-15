@@ -2,6 +2,45 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.10.5] - 2026-08-15 -- Καθολικός Δυναμικός Πάροχος Μοντέλων & Μηχανή Αυτοθεραπευόμενου Πλεονασμού
+
+### Προστέθηκε
+- **Καθολικός Δυναμικός Πάροχος Μοντέλων** (`src/utils/model_provisioner.py`): Νέα κλάση `ModelProvisioner` με ντετερμινιστική `detect_protocol()` (προθέματα παρόχων cloud, Ollama με άνω-κάτω τελεία, HuggingFace Hub με κάθετο), κλιμάκωση τοπικής επίλυσης διαδρομής 3 επιπέδων (`resolve_local_model_path()`: `FAST_EDGE_MODEL_PATH`, στη συνέχεια ενσωματωμένο `models/<sanitized_name>`, στη συνέχεια δίκτυο) και `ensure_model_available()` που εκτελεί JIT αυτόματη λήψη για Ollama (`ollama pull`) και HuggingFace Hub (`huggingface_hub.snapshot_download`) με εφεδρεία αυτοθεραπείας που καταγράφει `[WARNING] Auto-provisioning failed ... Reverting to baseline model.` και επιστρέφει `False` χωρίς κατάρρευση.
+- **Αυτόνομο CLI** (`python src/utils/model_provisioner.py [--model <name>] [--check-only]`): παρέχει τα προεπιλεγμένα μοντέλα fast edge και heavy ή ελέγχει τη διαθεσιμότητα χωρίς μεταλλάξεις.
+- **Ενσωμάτωση ρουτίνας SETUP** (`run_talos.bat` / `run_talos.sh`): το βήμα [5/5] εκτελεί πλέον τον Καθολικό Πάροχο Μοντέλων για αυτόματη παροχή των προεπιλεγμένων μοντέλων fast edge και heavy.
+- **Ενσωμάτωση Διαχειριστή Μοντέλων** (`src/ai/llm/model_manager.py`): νέος βοηθός `_provision_model()` δρομολογεί τις επιλογές μη εγκατεστημένων μοντέλων Ollama και HuggingFace μέσω του παρόχου με ανατροφοδότηση κατάστασης Rich.
+- **Απομονωμένες δοκιμές** (`tests/test_model_provisioner.py`): 22 δοκιμές για ανίχνευση πρωτοκόλλου, προτεραιότητα επίλυσης διαδρομής, εικονική λήψη HuggingFace, εικονική λήψη Ollama και συμπεριφορά εφεδρείας αυτοθεραπείας.
+
+### Άλλαξε
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 6 αρχεία κώδικα και 15 αρχεία τεκμηρίωσης** σε v5.10.5.
+
+### Επαλήθευση
+- Το `python -m compileall src config tests talos.py` ολοκληρώθηκε με μηδέν σφάλματα.
+- Η πλήρης σουίτα `python -m pytest -v` περνά (272 δοκιμές).
+- Το `python tests/test_smoke.py` περνά με επιτυχία.
+- Το `python src/utils/verify_dependency_map.py --ci` αναφέρει 0 παλαιωμένες και 0 ελλείπουσες εξαρτήσεις.
+
+## [v5.10.4] - 2026-08-15 -- Δυναμική Μηχανή Ανακάλυψης Μοντέλων & Διαλειτουργικότητα Πρωτοκόλλου SYNAPSE
+
+### Προστέθηκε
+- **Δυναμική Μηχανή Ανακάλυψης Μοντέλων** (`src/ai/llm/model_discovery.py`): Νέα κλάση `ModelDiscoveryEngine` που ανακαλύπτει ενεργά μοντέλα LLM στο τοπικό επίπεδο Ollama (GET /api/tags) και στους προαιρετικούς παρόχους cloud (NVIDIA NIM, Groq, OpenRouter, Gemini GET /v1/models), με πλήρως απομονωμένη εφεδρεία σε τοπικό μητρώο JSON στο `data/model_benchmarks.json` (ακατέργαστες βαθμολογίες SWE-bench / MMLU-Pro, παράθυρα πλαισίου, επίπεδα τιμολόγησης· δημιουργείται αυτόματα αν απουσιάζει).
+- **Δυναμική σχετική βαθμολόγηση ποιότητας** -- η `get_normalized_quality_scores()` υπολογίζει `Q_p = raw_score(p) / max_k(raw_score(k))` επί του συνόλου ενεργών μοντέλων· η `get_provider_quality_scores()` συναθροίζει σε επίπεδο παρόχου για τον δρομολογητή.
+- **Δυναμική ενσωμάτωση ποιότητας στον Δρομολογητή LLM** (`src/ai/drl/llm_router_subagent.py`): Νέες μέθοδοι `refresh_quality_scores()` / `load_quality_scores()` επιτρέπουν στον `LLMRouterSubAgent` να υπερκαλύπτει τα στατικά σήματα `PROVIDER_PROFILES` με τιμές Q_p της μηχανής ανακάλυψης· η `select_provider()` εκπέμπει πλέον μη-μπλοκαριστό συμβάν `router_decision` Synapse.
+- **Endpoint κατάστασης SYNAPSE** (`src/api/synapse_routes.py`): Νέο `GET /api/v1/synapse/status` που επιστρέφει προσβασιμότητα διαύλου, υγεία ουράς (μετρητές εκπομπής), υποστηριζόμενους τύπους συμβάντων και κατάσταση συνδρομητών.
+- **Νέοι τύποι συμβάντων SYNAPSE** (`src/integration/synapse_client.py`): Οι `model_discovered` και `router_decision` προστέθηκαν στο `EventEmitter.VALID_EVENT_TYPES`, με στατιστικά εκπομπής ασφαλή ως προς νήματα (`get_emission_stats()`).
+- **Εκπομπή συμβάντων αγωγών** (`daily_search.py`, `ai_manager.py`): Μη-μπλοκαριστή εκπομπή `router_decision` στη δρομολόγηση παρόχου· το `red_tester.py` εκπέμπει ήδη `agent_episode_end` ανά κύκλο.
+- **Απομονωμένες δοκιμές** (`tests/test_model_discovery.py`): 15 δοκιμές για ανάλυση Ollama/cloud, εφεδρεία εκτός δικτύου, δυναμική βαθμολόγηση ποιότητας, συνάθροιση παρόχων και το endpoint κατάστασης.
+
+### Άλλαξε
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 6 αρχεία κώδικα και 15+ αρχεία τεκμηρίωσης** σε v5.10.4.
+- **Αριθμός endpoints 18 σε 19** με την προσθήκη του `GET /api/v1/synapse/status`.
+
+### Επαλήθευση
+- Το `python -m compileall src config tests talos.py` ολοκληρώθηκε με μηδέν σφάλματα.
+- Η πλήρης σουίτα `python -m pytest -v` περνά (253+ δοκιμές).
+- Το `python tests/test_smoke.py` περνά με επιτυχία.
+- Το `python src/utils/verify_dependency_map.py --ci` αναφέρει 0 παλαιωμένες και 0 ελλείπουσες εξαρτήσεις.
+
 ## [v5.10.3] - 2026-08-14 -- Ιεραρχική Ενορχήστρωση DRL (Ενσωμάτωση Δαίμονα & Υποπράκτορα Αναζήτησης)
 
 ### Προστέθηκε

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: llm_router_subagent.py
-Project: TALOS v5.10.3
+Project: TALOS v5.10.4
 Description:
     LLM Router Sub-Agent that selects the optimal active provider for a given
     inference request. It loads the multi-objective reward weights produced by
@@ -23,14 +23,32 @@ Description:
     deterministic: stochasticity is injected by callers.
 
     Key design decisions:
-    - A static ``PROVIDER_PROFILES`` table encodes base quality, latency, cost,
-      and rate-limit signals for the seven canonical providers (local, nvidia,
-      groq, cerebras, github, gemini, deepseek).
+    - A static ``PROVIDER_PROFILES`` table stores raw SWE-bench Verified scores
+      (``swe_bench_score``) plus latency, cost, and rate-limit signals for the
+      seven canonical providers (local, nvidia, groq, cerebras, github, gemini,
+      deepseek).
+    - Quality signals are derived dynamically via relative min-max
+      normalization (see the formula below) -- never hardcoded.
     - Prompt length and task type modulate the signals so longer prompts and
       deep-research tasks shift cost/latency/quality trade-offs realistically.
     - ``select_provider`` is constrained to an explicit active-provider list so
       the caller (AIManager) can restrict routing to configured, circuit-closed
       providers only.
+    - v5.10.4: provider quality signals can be overridden dynamically via
+      refresh_quality_scores(), which reads normalized Q_p scores from the
+      Model Discovery Engine (src/ai/llm/model_discovery.py).
+
+    Quality signal normalization (relative min-max):
+        Each provider carries a raw benchmark score ``swe_bench_score``. The
+        quality signal is computed dynamically as the ratio of the provider's
+        raw score to the maximum raw score across all providers::
+
+            Q_p = raw_score(p) / max_k(raw_score(k))
+
+        Consequently, the provider with the top benchmark score receives
+        exactly ``Q_p = 1.0``, while every other provider is scaled
+        proportionally (``0 < Q_p <= 1.0``). This deterministic, scale-invariant
+        mapping is fully traceable for thesis and journal publication.
 
 Dependencies:
     - json: Loading the optimized reward weights artifact.
@@ -69,18 +87,57 @@ DEFAULT_WEIGHTS = {
 # Default profile used when no task-specific override is requested.
 DEFAULT_PROFILE = "Fast Screening"
 
-# -- Static provider profiles (base signals, all in [0, 1]) -------------------
-# quality: higher is better. latency/cost/penalty: higher is worse.
+# -- Static provider profiles (raw SWE-bench scores + latency/cost/penalty) -------------------
+# swe_bench_score: raw SWE-bench Verified score (higher is better).
+# Quality is derived via relative min-max normalization (relative_quality()).
+# latency/cost/penalty: higher is worse.
 # penalty is the rate-limit penalty incurred by that provider.
+# Model-to-provider raw SWE-bench Verified score mapping:
+#   nvidia   -- NVIDIA NIM (Nemotron-70B)   -- 70.4  (top anchor, Q_p = 1.0)
+#   groq     -- Groq (Llama 3.3 70B)        -- 65.2
+#   cerebras -- Cerebras (Llama 3.3 70B)    -- 65.2
+#   gemini   -- Gemini 2.5 Pro              -- 63.8
+#   deepseek -- DeepSeek                    -- 60.5
+#   local    -- Ollama (Qwen 2.5 14B)       -- 55.1
+#   github   -- GitHub Models               -- 45.0
+#   (fast-edge Neutrino-8B, 42.0, is a dedicated CPU tier; not routed here.)
 PROVIDER_PROFILES = {
-    "local":    {"quality": 0.55, "latency": 0.35, "cost": 0.05, "penalty": 0.05},
-    "nvidia":   {"quality": 0.78, "latency": 0.30, "cost": 0.45, "penalty": 0.25},
-    "groq":     {"quality": 0.72, "latency": 0.10, "cost": 0.30, "penalty": 0.30},
-    "cerebras": {"quality": 0.74, "latency": 0.12, "cost": 0.35, "penalty": 0.28},
-    "github":   {"quality": 0.68, "latency": 0.40, "cost": 0.20, "penalty": 0.35},
-    "gemini":   {"quality": 0.85, "latency": 0.45, "cost": 0.40, "penalty": 0.40},
-    "deepseek": {"quality": 0.80, "latency": 0.50, "cost": 0.25, "penalty": 0.35},
+    "local":    {"swe_bench_score": 55.1, "latency": 0.35, "cost": 0.05, "penalty": 0.05},
+    "nvidia":   {"swe_bench_score": 70.4, "latency": 0.30, "cost": 0.45, "penalty": 0.25},
+    "groq":     {"swe_bench_score": 65.2, "latency": 0.10, "cost": 0.30, "penalty": 0.30},
+    "cerebras": {"swe_bench_score": 65.2, "latency": 0.12, "cost": 0.35, "penalty": 0.28},
+    "github":   {"swe_bench_score": 45.0, "latency": 0.40, "cost": 0.20, "penalty": 0.35},
+    "gemini":   {"swe_bench_score": 63.8, "latency": 0.45, "cost": 0.40, "penalty": 0.40},
+    "deepseek": {"swe_bench_score": 60.5, "latency": 0.50, "cost": 0.25, "penalty": 0.35},
 }
+
+# -- Relative min-max normalization denominator --------------------------------
+# The maximum raw SWE-bench score anchors the quality normalization so the top
+# provider receives exactly QualityScore = 1.0.
+MAX_SWE_BENCH_SCORE = float(max(
+    profile["swe_bench_score"] for profile in PROVIDER_PROFILES.values()
+))
+
+
+def relative_quality(raw_score):
+    """Normalize a raw benchmark score to a relative quality in [0, 1].
+
+    Implements dynamic relative min-max normalization::
+
+        Q_p = raw_score(p) / max_k(raw_score(k))
+
+    The provider holding the top benchmark score therefore maps to exactly 1.0,
+    while every other provider is scaled proportionally to its raw score.
+
+    Args:
+        raw_score (float): Raw SWE-bench Verified score for a provider.
+
+    Returns:
+        float: Relative quality signal in [0, 1].
+    """
+    if MAX_SWE_BENCH_SCORE <= 0.0:
+        return 0.0
+    return float(raw_score) / MAX_SWE_BENCH_SCORE
 
 # -- Task-type modifiers: prompt-length scale and quality bias ---------------
 # deep_research favors longer, higher-quality prompts; fast_screening favors
@@ -129,6 +186,10 @@ class LLMRouterSubAgent:
                 with graceful fallback to the default Pareto profile.
         """
         self.weights = self._normalize(self.load_weights(weights_path))
+        # -- v5.10.4: dynamic quality overrides from the Model Discovery Engine --
+        # Empty by default so the static PROVIDER_PROFILES normalization is
+        # used unless refresh_quality_scores() is called explicitly.
+        self._quality_overrides = {}
 
     @staticmethod
     def _normalize(weights_dict):
@@ -188,6 +249,9 @@ class LLMRouterSubAgent:
     def estimate_signals(self, prompt_length, task_type="default"):
         """Estimate per-provider (quality, latency, cost, penalty) signals.
 
+        The quality signal is derived dynamically via relative min-max
+        normalization (``relative_quality``): ``Q_p = raw / max(raw)``.
+
         Args:
             prompt_length (int): Prompt length in tokens.
             task_type (str): One of ``TASK_MODIFIERS`` keys.
@@ -203,7 +267,13 @@ class LLMRouterSubAgent:
 
         signals = {}
         for name, profile in PROVIDER_PROFILES.items():
-            quality = float(np.clip(profile["quality"] + modifier["quality_bias"], 0.0, 1.0))
+            base_quality = self._quality_overrides.get(
+                name, relative_quality(profile["swe_bench_score"])
+            )
+            quality = float(np.clip(
+                base_quality + modifier["quality_bias"],
+                0.0, 1.0
+            ))
             latency = float(np.clip(profile["latency"] * (0.6 + 0.8 * load), 0.0, 1.0))
             cost = float(np.clip(profile["cost"] * (0.5 + 0.5 * load), 0.0, 1.0))
             penalty = float(np.clip(profile["penalty"] * (0.7 + 0.6 * load), 0.0, 1.0))
@@ -225,6 +295,73 @@ class LLMRouterSubAgent:
                 - weights["w_latency"] * latency
                 - weights["w_cost"] * cost
                 - weights["w_penalty"] * penalty)
+
+
+    def load_quality_scores(self, quality_map):
+        """Override provider quality signals from an external quality map.
+
+        Args:
+            quality_map (dict[str, float] | None): Mapping of provider name to
+                normalized quality score Q_p in [0, 1]. None clears overrides.
+
+        Returns:
+            LLMRouterSubAgent: self, for chaining.
+        """
+        self._quality_overrides = {} if quality_map is None else dict(quality_map)
+        return self
+
+    def refresh_quality_scores(self, engine=None, online=None):
+        """Refresh provider quality signals from the Model Discovery Engine.
+
+        Lazily imports the engine and reads its provider-level normalized
+        quality scores (Q_p). This is best-effort: on any failure the static
+        PROVIDER_PROFILES normalization remains in effect.
+
+        Args:
+            engine (ModelDiscoveryEngine | None): Injectable engine for testing.
+                When None, a fresh engine is created lazily.
+            online (bool | None): Online discovery flag. When None, the engine
+                default (offline, air-gapped) is used.
+
+        Returns:
+            dict[str, float]: The refreshed quality override map (may be empty).
+        """
+        if engine is None:
+            try:
+                from src.ai.llm.model_discovery import ModelDiscoveryEngine
+                engine = ModelDiscoveryEngine()
+            except Exception:
+                return dict(self._quality_overrides)
+        try:
+            quality_map = engine.get_provider_quality_scores(online=online)
+            self._quality_overrides = dict(quality_map)
+        except Exception:
+            pass
+        return dict(self._quality_overrides)
+
+    def _emit_router_decision(self, provider, task_type, prompt_length, score):
+        """Emit a non-blocking router_decision Synapse event (best-effort).
+
+        Args:
+            provider (str): The selected provider name.
+            task_type (str): The routing task type.
+            prompt_length (int): The estimated prompt length in tokens.
+            score (float): The shaped reward score of the selected provider.
+
+        Returns:
+            None: Emission is best-effort and never raises.
+        """
+        try:
+            from src.integration.synapse_client import synapse_emitter
+            synapse_emitter.emit("router_decision", {
+                "provider": provider,
+                "task_type": task_type,
+                "prompt_length": int(prompt_length or 0),
+                "score": float(score),
+            })
+        except Exception:
+            pass
+
 
     def select_provider(self, prompt_length, task_type="default",
                         active_providers=None):
@@ -257,5 +394,7 @@ class LLMRouterSubAgent:
             if score > best_score:
                 best_score = score
                 best_provider = provider
+        if best_provider is not None:
+            self._emit_router_decision(best_provider, task_type, prompt_length, best_score)
         return best_provider
 

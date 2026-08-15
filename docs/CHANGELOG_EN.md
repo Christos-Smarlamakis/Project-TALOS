@@ -2,6 +2,45 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.5] - 2026-08-15 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine
+
+### Added
+- **Universal Dynamic Model Provisioner** (`src/utils/model_provisioner.py`): New `ModelProvisioner` class with deterministic `detect_protocol()` (cloud provider prefixes, Ollama colon, HuggingFace Hub slash), a 3-tier local path resolution cascade (`resolve_local_model_path()`: `FAST_EDGE_MODEL_PATH` then in-tree `models/<sanitized_name>` then network), and `ensure_model_available()` that performs JIT auto-pull for Ollama (`ollama pull`) and HuggingFace Hub (`huggingface_hub.snapshot_download`) with a self-healing fallback that logs `[WARNING] Auto-provisioning failed ... Reverting to baseline model.` and returns `False` without crashing.
+- **Standalone CLI** (`python src/utils/model_provisioner.py [--model <name>] [--check-only]`): provisions the default fast edge and heavy models, or audits availability non-mutatingly.
+- **SETUP routine integration** (`run_talos.bat` / `run_talos.sh`): step [5/5] now executes the Universal Model Provisioner to auto-provision the default fast edge and heavy models out of the box.
+- **Model Manager integration** (`src/ai/llm/model_manager.py`): new `_provision_model()` helper routes uninstalled Ollama and HuggingFace model selections through the provisioner with Rich status feedback.
+- **Hermetic tests** (`tests/test_model_provisioner.py`): 22 tests covering protocol detection, path resolution priority, mocked HuggingFace download, mocked Ollama pull, and self-healing fallback.
+
+### Changed
+- **Version strings synced across 6 code files and 15 documentation files** to v5.10.5.
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest -v` full suite passes (272 tests).
+- `python tests/test_smoke.py` passes.
+- `python src/utils/verify_dependency_map.py --ci` reports 0 stale and 0 missing dependencies.
+
+## [v5.10.4] - 2026-08-15 -- Dynamic Model Discovery Engine & SYNAPSE Protocol Interoperability
+
+### Added
+- **Dynamic Model Discovery Engine** (`src/ai/llm/model_discovery.py`): New `ModelDiscoveryEngine` class that discovers active LLM models across the local Ollama tier (GET /api/tags) and optional cloud providers (NVIDIA NIM, Groq, OpenRouter, Gemini GET /v1/models), with a fully air-gapped fallback to a local JSON benchmark registry at `data/model_benchmarks.json` (raw SWE-bench / MMLU-Pro scores, context windows, pricing tiers; auto-created when absent).
+- **Dynamic relative quality scoring** -- `get_normalized_quality_scores()` computes `Q_p = raw_score(p) / max_k(raw_score(k))` over the active model set; `get_provider_quality_scores()` aggregates to provider level for the router.
+- **LLM Router dynamic quality integration** (`src/ai/drl/llm_router_subagent.py`): New `refresh_quality_scores()` / `load_quality_scores()` methods let `LLMRouterSubAgent` override the static `PROVIDER_PROFILES` quality signals with discovery-engine Q_p values; `select_provider()` now emits a non-blocking `router_decision` Synapse event.
+- **SYNAPSE status endpoint** (`src/api/synapse_routes.py`): New `GET /api/v1/synapse/status` returning bus reachability, queue health (emission counters), supported event types, and subscriber status.
+- **New SYNAPSE event types** (`src/integration/synapse_client.py`): `model_discovered` and `router_decision` added to `EventEmitter.VALID_EVENT_TYPES`, plus thread-safe emission statistics (`get_emission_stats()`).
+- **Pipeline event emission** (`daily_search.py`, `ai_manager.py`): Non-blocking `router_decision` emission wired into provider routing; `red_tester.py` already emits `agent_episode_end` per cycle.
+- **Hermetic tests** (`tests/test_model_discovery.py`): 15 tests covering Ollama/cloud parsing, offline fallback, dynamic quality scoring, provider aggregation, and the status endpoint.
+
+### Changed
+- **Version strings synced across 6 code files and 15+ documentation files** to v5.10.4.
+- **Endpoint count 18 to 19** with the addition of `GET /api/v1/synapse/status`.
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest -v` full suite passes (253+ tests).
+- `python tests/test_smoke.py` passes.
+- `python src/utils/verify_dependency_map.py --ci` reports 0 stale and 0 missing dependencies.
+
 ## [v5.10.3] - 2026-08-14 -- Hierarchical DRL Orchestration (Daemon & Foraging Sub-Agent Integration)
 
 ### Added

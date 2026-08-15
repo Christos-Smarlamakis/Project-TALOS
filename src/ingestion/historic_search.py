@@ -11,7 +11,7 @@
 
 """
 Module: historic_search.py (v5.5 - Final Quad-Layer & Rate Limit)
-Project: TALOS v5.10.3
+Project: TALOS v5.10.4
 
 Description:
     The deep archive search orchestrator. Fetches papers from all 16 configured

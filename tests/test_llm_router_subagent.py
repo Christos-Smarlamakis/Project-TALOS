@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_llm_router_subagent.py
-Project: TALOS v5.10.3
+Project: TALOS v5.10.4
 Description:
     Hermetic unit tests for the LLMRouterSubAgent provider-selection delegate.
     Covers weight loading with Pareto fallback, signal estimation bounds,
@@ -29,7 +29,9 @@ from src.ai.drl.llm_router_subagent import (
     DEFAULT_PROFILE,
     PROVIDER_PROFILES,
     TASK_MODIFIERS,
+    MAX_SWE_BENCH_SCORE,
     estimate_prompt_tokens,
+    relative_quality,
 )
 
 
@@ -81,13 +83,15 @@ class TestSelectProvider:
         assert provider in ("groq", "cerebras")
 
     def test_quality_weighting_prefers_quality_provider(self):
-        """Verify a quality-only weight vector selects the highest-quality provider."""
+        """Verify a quality-only weight vector selects the top-benchmark provider."""
         agent = LLMRouterSubAgent(weights_path="__missing_weights__.json")
         agent.set_weights(
             {"w_quality": 1.0, "w_latency": 0.0, "w_cost": 0.0, "w_penalty": 0.0}
         )
         provider = agent.select_provider(512, "default")
-        assert provider == "gemini"
+        top = max(PROVIDER_PROFILES,
+                  key=lambda p: PROVIDER_PROFILES[p]["swe_bench_score"])
+        assert provider == top
 
     def test_select_provider_is_deterministic(self):
         """Verify identical inputs yield identical provider selections."""
@@ -136,3 +140,37 @@ class TestEstimatePromptTokens:
     def test_returns_char_quarters(self):
         """Verify the four-characters-per-token heuristic."""
         assert estimate_prompt_tokens("a" * 400) == 100
+
+
+class TestDynamicQualityNormalization:
+    """Tests for dynamic relative min-max quality normalization."""
+
+    def test_top_provider_quality_is_exactly_one(self):
+        """Verify the provider with the top SWE-bench score receives Q=1.0."""
+        agent = LLMRouterSubAgent(weights_path="__missing_weights__.json")
+        top = max(PROVIDER_PROFILES,
+                  key=lambda p: PROVIDER_PROFILES[p]["swe_bench_score"])
+        quality, _, _, _ = agent.estimate_signals(0, "default")[top]
+        assert quality == pytest.approx(1.0, abs=1e-9)
+
+    def test_quality_equals_raw_over_max(self):
+        """Verify every quality signal equals raw_score / max_score."""
+        agent = LLMRouterSubAgent(weights_path="__missing_weights__.json")
+        signals = agent.estimate_signals(0, "default")
+        for name, profile in PROVIDER_PROFILES.items():
+            expected = profile["swe_bench_score"] / MAX_SWE_BENCH_SCORE
+            quality, _, _, _ = signals[name]
+            assert quality == pytest.approx(expected, abs=1e-9)
+
+    def test_relative_quality_formula(self):
+        """Verify relative_quality() implements Q_p = raw / max."""
+        assert relative_quality(MAX_SWE_BENCH_SCORE) == pytest.approx(1.0, abs=1e-9)
+        assert relative_quality(MAX_SWE_BENCH_SCORE / 2.0) == pytest.approx(0.5, abs=1e-9)
+        assert relative_quality(0.0) == pytest.approx(0.0, abs=1e-9)
+
+    def test_all_quality_signals_within_unit_interval(self):
+        """Verify all derived quality signals stay within [0, 1]."""
+        agent = LLMRouterSubAgent(weights_path="__missing_weights__.json")
+        signals = agent.estimate_signals(512, "default")
+        for quality, _, _, _ in signals.values():
+            assert 0.0 <= quality <= 1.0

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: red_tester.py
-Project: TALOS v5.10.0
+Project: TALOS v5.10.4
 Description:
     Autonomous Red Tester (RL-Driven Chaos Engineering) that stress-tests TALOS
     system components using a Non-Stationary Multi-Armed Bandit (Epsilon-Greedy with
@@ -75,6 +75,26 @@ def _make_clickable_path(path_str: str) -> str:
     """
     abs_path = os.path.abspath(path_str).replace("\\", "/")
     return f"[link=file:///{abs_path}]{path_str}[/link]"
+
+def _safe_str(output) -> str:
+    """Coerce captured subprocess output to str regardless of its runtime type.
+
+    On Windows, subprocess.run() with encoding='utf-8' repopulates
+    TimeoutExpired.stdout/stderr as already-decoded str, while on POSIX they
+    remain bytes. This helper normalizes None, bytes, str, and any other
+    object into a plain str without raising AttributeError.
+
+    Args:
+        output: Captured stdout/stderr value (None, bytes, or str).
+
+    Returns:
+        str: The decoded/stringified output; empty string for None.
+    """
+    if output is None:
+        return ""
+    if isinstance(output, bytes):
+        return output.decode("utf-8", errors="replace")
+    return str(output)
 
 # -- Resolve project root (same pattern as all src/*.py modules) --
 _PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -410,8 +430,8 @@ def _execute_cli_arm(
             crashed = True
     except subprocess.TimeoutExpired as e:
         crashed = True
-        stdout_str = e.stdout.decode("utf-8", errors="replace") if e.stdout else ""
-        stderr_str = e.stderr.decode("utf-8", errors="replace") if e.stderr else ""
+        stdout_str = _safe_str(e.stdout)
+        stderr_str = _safe_str(e.stderr)
         if not stderr_str:
             stderr_str = f"Process timed out after {SUBPROCESS_TIMEOUT} seconds."
     except Exception as e:

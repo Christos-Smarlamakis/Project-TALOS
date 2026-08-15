@@ -6,7 +6,7 @@
 #
 """
 Module: ai_manager.py (v3.9 - Universal Cloud Mesh & 2D Execution Matrix)
-Project: TALOS v5.10.0
+Project: TALOS v5.10.4
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture
@@ -276,6 +276,27 @@ class AIManager:
             return "fast_screening"
         return "default"
 
+    def _emit_router_decision_synapse(self, provider, task_type, prompt_length):
+        """Emit a non-blocking router_decision Synapse event (best-effort).
+
+        Args:
+            provider (str | None): The selected provider name.
+            task_type (str): The routing task type.
+            prompt_length (int): The estimated prompt length in tokens.
+        """
+        if provider is None:
+            return
+        try:
+            from src.integration.synapse_client import synapse_emitter
+            synapse_emitter.emit("router_decision", {
+                "provider": provider,
+                "task_type": task_type,
+                "prompt_length": int(prompt_length or 0),
+            })
+        except Exception:
+            pass
+
+
     def _get_router_ordered_providers(self, prompt, task_type):
         """Return provider names with the router's preferred provider first.
 
@@ -299,6 +320,7 @@ class AIManager:
             return list(self.provider_priority)
         prompt_length = max(1, len(prompt) // 4)
         preferred = self.router.select_provider(prompt_length, task_type, active)
+        self._emit_router_decision_synapse(preferred, task_type, prompt_length)
         ordered = list(self.provider_priority)
         if preferred and preferred in ordered:
             ordered.remove(preferred)

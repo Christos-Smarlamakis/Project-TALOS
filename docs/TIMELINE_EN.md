@@ -4,9 +4,29 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-14 (v5.10.3 -- Hierarchical DRL Orchestration: Daemon & Foraging Sub-Agent Integration)
+> **Last Updated:** 2026-08-15 (v5.10.5 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine)
 
 ---
+
+## Phase 35: Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine (v5.10.5)
+
+### Status: COMPLETED (2026-08-15)
+
+- [x] **Universal Dynamic Model Provisioner** -- `src/utils/model_provisioner.py` `ModelProvisioner` with deterministic protocol detection (Ollama colon / HuggingFace slash / cloud prefixes), 3-tier local path resolution (`FAST_EDGE_MODEL_PATH` then in-tree `models/<sanitized_name>` then network), and `ensure_model_available()` for JIT Ollama pull and HuggingFace Hub snapshot download with self-healing fallback.
+- [x] **SETUP integration** -- `run_talos.bat` / `run_talos.sh` step [5/5] now executes the provisioner for out-of-the-box fast edge + heavy model provisioning.
+- [x] **Model Manager integration** -- `_provision_model()` routes uninstalled Ollama/HuggingFace selections through the provisioner with Rich status feedback.
+- [x] **Hermetic tests** -- `tests/test_model_provisioner.py` (22 tests).
+- [x] **Sync all 6 code files and 15 documentation files to v5.10.5**.
+
+## Phase 34: Dynamic Model Discovery Engine & SYNAPSE Protocol Interoperability (v5.10.4)
+
+### Status: COMPLETED (2026-08-15)
+
+- [x] **Dynamic Model Discovery Engine** -- `src/ai/llm/model_discovery.py` `ModelDiscoveryEngine` discovers active models across Ollama (GET /api/tags) and cloud providers (NVIDIA NIM, Groq, OpenRouter, Gemini), falling back to the air-gapped `data/model_benchmarks.json` registry; computes `Q_p = raw / max(raw)` normalized quality scores.
+- [x] **LLM Router integration** -- `refresh_quality_scores()` / `load_quality_scores()` overrides plus a non-blocking `router_decision` Synapse emission in `select_provider()`.
+- [x] **SYNAPSE readiness** -- new `model_discovered` / `router_decision` event types, emission statistics, and `GET /api/v1/synapse/status` endpoint; `daily_search.py` / `ai_manager.py` emit non-blocking `router_decision` events.
+- [x] **Hermetic tests** -- `tests/test_model_discovery.py` (15 tests).
+- [x] **Sync all 6 code files and 15+ documentation files to v5.10.4**.
 
 ## Phase 33: Hierarchical DRL Orchestration - Daemon & Foraging Sub-Agent Integration (v5.10.3)
 
