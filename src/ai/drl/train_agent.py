@@ -90,24 +90,9 @@ class OfflineTalosEnv(TalosEnv):
             list of dict: Paper records (title, authors_str, doi, url,
                 source, overall_score), or an empty list on failure.
         """
-        # -- Find the correct database path --
-        # We use the same profile-aware logic as DatabaseManager._resolve_profile_db
-        project_root = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), '..'))
-        profile_dir = os.path.join(project_root, "_profiles")
-        active_file = os.path.join(profile_dir, "active_profile.txt")
-
-        db_path = os.path.join(project_root, "talos_research.db")
-        if os.path.exists(active_file):
-            try:
-                with open(active_file, "r", encoding="utf-8") as f:
-                    active_profile = f.read().strip()
-                profile_db = os.path.join(
-                    profile_dir, active_profile, "talos_research.db")
-                if os.path.exists(profile_db):
-                    db_path = profile_db
-            except Exception:
-                pass
+        # -- Resolve the active profile's database path dynamically --
+        from src.core.database_manager import get_active_profile_db_path
+        db_path = get_active_profile_db_path()
 
         # -- Query full paper records from the database --
         try:

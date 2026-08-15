@@ -95,9 +95,16 @@ from src.ai.drl.train_agent import OfflineTalosEnv
 from config.settings import TALOS_VERSION
 from rich.console import Console
 from rich.panel import Panel
+from src.utils.logger import get_logger
 
 # -- Rich console instance for the daemon TUI --
 console = Console()
+
+# -- Structured logger (canonical factory) --
+logger = get_logger("talos_service")
+
+# -- 6-hour live search interval (seconds) --
+LIVE_SEARCH_INTERVAL_SECONDS = 6 * 3600
 
 
 def build_paper_alert(paper_data, source):
@@ -268,6 +275,34 @@ def route_daemon_evaluation(source_name, prompt_length=_DAEMON_NOMINAL_PROMPT_LE
     return chosen
 
 
+def _run_live_search():
+    """
+    Execute the live academic search (API foraging) across all sources.
+
+    Runs src/ingestion/daily_search.py in a child process so the
+    network-heavy search does not destabilize the daemon's memory or crash
+    the main loop. Blocking: the daemon pauses until the search finishes.
+
+    Returns:
+        bool: True if the search subprocess exited with code 0.
+    """
+    import subprocess
+    search_script = os.path.join(
+        os.path.dirname(__file__), '..', '..', 'ingestion', 'daily_search.py')
+    try:
+        result = subprocess.run(
+            [sys.executable, os.path.abspath(search_script)],
+            capture_output=True, text=True, timeout=3600)
+        if result.returncode == 0:
+            logger.info("Live academic search completed successfully.")
+            return True
+        logger.warning("Live academic search exited with code %s.", result.returncode)
+        return False
+    except Exception as e:
+        logger.warning("Live academic search failed: %s", e)
+        return False
+
+
 def main():
     """
     Run the TALOS autonomous research daemon (v5.10.5 — profile-aware).
@@ -334,6 +369,16 @@ def main():
     # ══════════════════════════════════════════════════════════════════════════
 
     # ── Create environment first (to get dimensions) ────────────────────────
+    # -- Resolve active-profile DB and ensure the schema exists --
+    try:
+        from src.core.database_manager import DatabaseManager, get_active_profile_db_path
+        _db_path = get_active_profile_db_path()
+        _db = DatabaseManager(db_path=_db_path)
+        _db.create_table()
+        print(f"  [INIT] Database ready: {_db_path}")
+    except Exception as e:
+        print(f"  [INIT] Database init skipped: {e}")
+
     print("  [INIT] Creating offline environment (real DB scores)...")
     env = OfflineTalosEnv()
 
@@ -383,6 +428,7 @@ def main():
     papers_discovered = 0
     high_score_count = 0
     last_digest_date = None
+    last_live_search = time.time()
 
     # ── Reporting summary ────────────────────────────────────────────────
     mode_label = "VERBOSE (every action)" if verbose else ("NORMAL (episode summaries)" if not silent else "SILENT (alerts only)")
@@ -398,6 +444,12 @@ def main():
     while not _shutdown_requested:
         try:
             # ── Reset environment at the start of each "day" ──────────────
+            # -- 6-hour live search trigger --
+            if time.time() - last_live_search >= LIVE_SEARCH_INTERVAL_SECONDS:
+                logger.info("[DAEMON] 6-hour interval reached. Triggering live academic search...")
+                if _run_live_search():
+                    last_live_search = time.time()
+
             obs, info = env.reset()
             agent.reset_hidden_states()
             episode_reward = 0.0
