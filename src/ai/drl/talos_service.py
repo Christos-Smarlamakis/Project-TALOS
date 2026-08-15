@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: talos_service.py (v2.1 — Profile-Aware, Dynamic N Sources)
-Project: TALOS v5.10.4 — Phase 5
+Project: TALOS v5.10.5 — Phase 5
 Description:
     24/7 autonomous research service. Runs continuously on weak hardware
     (Raspberry Pi, old laptop, etc.) using the trained DRL agent to
@@ -33,10 +33,10 @@ Description:
       buffer accumulation) to keep RAM low.
     - Notifications are fire-and-forget — if Telegram/Discord fail,
       the daemon continues uninterrupted.
-    - Weekly digest email is sent EXACTLY once per Friday.
+    - A daily digest email is sent once per day at 17:00.
     - Dynamic source names from env.info["source"] (not hardcoded {0: "ArXiv"...}).
 
-    ⚠️  This service runs INDEFINITELY. Use Ctrl+C to stop.
+      This service runs INDEFINITELY. Use Ctrl+C to stop.
 """
 import os
 import sys
@@ -80,7 +80,7 @@ def _handle_signal(signum, frame):
     """Set the shutdown flag when Ctrl+C or SIGTERM is received."""
     global _shutdown_requested
     _shutdown_requested = True
-    print("\n  ⏸️  Shutdown requested. Finishing current cycle...")
+    print("\nShutdown requested. Finishing current cycle...")
 
 
 # Register Ctrl+C (SIGINT) and SIGTERM handlers
@@ -92,40 +92,49 @@ from src.core.notifier import TalosNotifier
 from src.ai.drl.drl_agent import TalosDRLAgent, DEVICE
 # Use OfflineTalosEnv for real database scores
 from src.ai.drl.train_agent import OfflineTalosEnv
+from config.settings import TALOS_VERSION
+from rich.console import Console
+from rich.panel import Panel
+
+# -- Rich console instance for the daemon TUI --
+console = Console()
 
 
-def format_paper_alert(paper_title, score, source, action_taken):
+def build_paper_alert(paper_data, source):
     """
-    Format a notification message for a high-scoring paper.
+    Build the paper metadata dict shared by all notification channels.
+
+    Uses the full paper record sampled from the database (via
+    info["paper_data"]) when available; otherwise falls back to a
+    source-derived placeholder so notifications stay informative even
+    when the environment only supplies a score.
 
     Args:
-        paper_title (str): The paper's title.
-        score (float): Overall evaluation score.
+        paper_data (dict or None): Full paper metadata from the DRL
+            environment (title, authors_str, doi, url, source).
         source (str): API source name (e.g., "arxiv").
-        action_taken (int): DRL action index that found this paper.
 
     Returns:
-        str: Formatted alert message.
+        dict: Paper metadata with keys title, authors_str, doi, url, source.
     """
-    # ── Use the source name directly (dynamic, not hardcoded) ────────────────
     source_display = source.replace('_', ' ').title() if source else "Unknown"
+    paper_data = paper_data or {}
+    title = paper_data.get("title") or f"Paper from {source_display}"
+    return {
+        "title": title,
+        "authors_str": paper_data.get("authors_str") or paper_data.get("authors"),
+        "doi": paper_data.get("doi"),
+        "url": paper_data.get("url"),
+        "source": paper_data.get("source") or source_display,
+    }
 
-    return (
-        f"🧠 <b>TALOS Discovery Alert</b>\n\n"
-        f"<b>Score:</b> {score:.1f}/10\n"
-        f"<b>Source:</b> {source_display}\n"
-        f"<b>DRL Action:</b> {action_taken}\n"
-        f"<b>Title:</b> {paper_title[:500]}\n\n"
-        f"<i>— TALOS Autonomous Research Service v5.2.0</i>"
-    )
 
-
-def should_send_weekly_digest(last_sent_date):
+def should_send_daily_digest(last_sent_date):
     """
-    Check if it's time to send the weekly digest email.
+    Check if it is time to send the daily digest email.
 
-    Sends every Friday between 17:00 and 18:00. Returns True only
-    once per Friday (prevents duplicate emails within the same day).
+    Sends once per day at 17:00. Returns True only once per day (prevents
+    duplicate emails within the same day).
 
     Args:
         last_sent_date (datetime.date or None): Date the last digest was sent.
@@ -134,55 +143,35 @@ def should_send_weekly_digest(last_sent_date):
         bool: True if a digest should be sent now.
     """
     now = datetime.now()
-    # ── Only on Fridays, between 17:00 and 18:00 ──────────────────────────
-    if now.weekday() != 4:  # 4 = Friday
-        return False
+    # -- Only at 17:00 --
     if now.hour != 17:
         return False
-    # ── Don't send more than once per day ─────────────────────────────────
+    # -- Don't send more than once per day --
     if last_sent_date and last_sent_date == now.date():
         return False
     return True
 
 
-def get_database_stats_for_digest():
+def send_daily_digest(notifier):
     """
-    Collect basic database statistics for the weekly digest.
+    Query the database for elite papers added or updated in the last 24
+    hours and email them as the daily digest.
+
+    Args:
+        notifier (TalosNotifier): Configured notification sender.
 
     Returns:
-        dict: Basic stats (total papers, elite count, avg score).
+        list of dict: The elite papers included in the digest (possibly empty).
     """
-    # We use raw sqlite3 to keep the import light and avoid
-    # re-creating a full DatabaseManager instance.
-    import sqlite3
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    db_path = os.path.join(project_root, 'talos_research.db')
-    # ── Profile-aware path resolution ────────────────────────────────────
-    profile_active = os.path.join(project_root, '_profiles', 'active_profile.txt')
-    if os.path.exists(profile_active):
-        try:
-            with open(profile_active, 'r') as f:
-                profile_name = f.read().strip()
-            profile_db = os.path.join(project_root, '_profiles', profile_name, 'talos_research.db')
-            if os.path.exists(profile_db):
-                db_path = profile_db
-        except Exception:
-            pass
-
-    stats = {"total": 0, "elite": 0, "avg_score": 0.0}
+    papers = []
     try:
-        with sqlite3.connect(db_path) as conn:
-            c = conn.cursor()
-            c.execute("SELECT COUNT(*) FROM papers WHERE overall_score IS NOT NULL AND overall_score > 0")
-            stats["total"] = c.fetchone()[0]
-            c.execute("SELECT COUNT(*) FROM papers WHERE overall_score >= 8")
-            stats["elite"] = c.fetchone()[0]
-            c.execute("SELECT AVG(overall_score) FROM papers WHERE overall_score IS NOT NULL AND overall_score > 0")
-            avg = c.fetchone()[0]
-            stats["avg_score"] = round(avg, 2) if avg else 0.0
-    except sqlite3.Error as e:
-        print(f"  ⚠️  Could not read DB stats: {e}")
-    return stats
+        from src.core.database_manager import DatabaseManager
+        db = DatabaseManager()
+        papers = db.get_recent_elite_papers(hours=24, min_score=7.0)
+    except Exception as e:
+        console.print(f"Could not query papers for daily digest: {e}")
+    notifier.email_daily_digest(papers)
+    return papers
 
 
 def _save_daily_report(today_discoveries=None):
@@ -204,42 +193,7 @@ def _save_daily_report(today_discoveries=None):
             for entry in today_discoveries:
                 f.write(json.dumps(entry) + '\n')
     except Exception as e:
-        print(f"  ⚠️  Could not save daily report: {e}")
-
-
-def generate_weekly_digest_html(stats, papers_found_this_week):
-    """
-    Generate an HTML email body for the weekly digest.
-
-    Args:
-        stats (dict): Database statistics.
-        papers_found_this_week (int): How many papers the daemon discovered.
-
-    Returns:
-        str: HTML email body.
-    """
-    now = datetime.now()
-    return f"""<!DOCTYPE html>
-<html><body style="font-family:Arial,sans-serif;color:#333;line-height:1.6">
-<h2>🧠 TALOS Weekly Digest</h2>
-<p><strong>Week ending:</strong> {now.strftime('%Y-%m-%d')}</p>
-<hr>
-<h3>📊 Database Status</h3>
-<table style="border-collapse:collapse;width:100%">
-<tr><td style="padding:6px"><b>Total Papers:</b></td><td>{stats['total']:,}</td></tr>
-<tr><td style="padding:6px"><b>Elite Papers (≥8):</b></td><td>{stats['elite']:,}</td></tr>
-<tr><td style="padding:6px"><b>Average Score:</b></td><td>{stats['avg_score']:.2f}</td></tr>
-</table>
-<hr>
-<h3>🤖 Daemon Activity</h3>
-<p><b>Papers discovered this week:</b> {papers_found_this_week}</p>
-<p><b>DRL Agent:</b> LSTM-DDDQN running on {DEVICE}</p>
-<p><b>Priority:</b> LOW (background task)</p>
-<hr>
-<p style="color:#888;font-size:0.85em">
-<i>This is an automated message from the TALOS Autonomous Daemon v5.2.0.<br>
-Project: <a href="https://github.com/Christos-Smarlamakis/Project-TALOS">github.com/Christos-Smarlamakis/Project-TALOS</a></i></p>
-</body></html>"""
+        print(f"    Could not save daily report: {e}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -316,7 +270,7 @@ def route_daemon_evaluation(source_name, prompt_length=_DAEMON_NOMINAL_PROMPT_LE
 
 def main():
     """
-    Run the TALOS autonomous research daemon (v5.2.0 — profile-aware).
+    Run the TALOS autonomous research daemon (v5.10.5 — profile-aware).
 
     This function is designed to run INDEFINITELY (24/7). It:
     - Detects the active profile and loads profile-specific config.
@@ -324,7 +278,7 @@ def main():
     - Creates the offline environment with real DB scores.
     - Enters an infinite loop: observe → act → step → notify.
     - Uses dynamic source names from the environment.
-    - Sends weekly digest emails on Fridays at 17:00.
+    - Sends a daily digest email at 17:00.
     - Can only be stopped via Ctrl+C (SIGINT) or SIGTERM.
     """
     global _shutdown_requested
@@ -340,18 +294,17 @@ def main():
         except Exception:
             pass
 
-    print("=" * 65)
-    print("  TALOS Autonomous Research Service — v5.2.0")
-    print("  Profile-Aware Background Research Agent")
-    print("=" * 65)
-    print(f"  Profile: {active_profile}")
-    print(f"  Device: {DEVICE}")
-    print(f"  Priority: LOW (background)")
-    print(f"  Notifications: Telegram + Discord (score ≥ 8)")
-    print(f"  Weekly Digest: Email every Friday 17:00")
-    print(f"  Press Ctrl+C to stop")
-    print("=" * 65)
-    print()
+    console.print(Panel(
+        "Service Active / 24-7 Mode",
+        title="TALOS Autonomous Research Daemon",
+        border_style="#006699",
+        width=72,
+    ))
+    console.print(
+        f"  Version: [cyan]v{TALOS_VERSION}[/cyan]  |  Profile: [cyan]{active_profile}[/cyan]  |  Device: [cyan]{DEVICE}[/cyan]\n"
+        f"  Notifications: Telegram + Discord (score >= 8)\n"
+        f"  Daily Digest: Email at 17:00  |  Press Ctrl+C to stop\n"
+    )
 
     # ── Interactive reporting mode selection ───────────────────────────────
     try:
@@ -433,11 +386,10 @@ def main():
 
     # ── Reporting summary ────────────────────────────────────────────────
     mode_label = "VERBOSE (every action)" if verbose else ("NORMAL (episode summaries)" if not silent else "SILENT (alerts only)")
-    print(f"\n  📊 Reporting: {mode_label}")
-    print(f"  🔔 Alerts:    Telegram + Discord (score ≥ 8)")
-    print(f"  📧 Digest:    Email every Friday 17:00")
-    print(f"\n  [INIT] Daemon ready. Starting main loop.\n")
-    print("─" * 65)
+    console.print(f"[bold #006699]Reporting:[/] {mode_label}")
+    console.print(f"  Alerts: Telegram + Discord (score >= 8)")
+    console.print(f"  Digest: Email daily at 17:00")
+    console.print("[bold green][INIT] Daemon ready. Starting main loop.[/]")
 
     # ══════════════════════════════════════════════════════════════════════════
     # MAIN LOOP — runs FOREVER (until Ctrl+C)
@@ -473,9 +425,8 @@ def main():
                 # The agent decided to rest. Sleep for 1 hour to conserve
                 # API limits and system resources.
                 if action == sleep_action:
-                    if verbose:
-                        print(f"  😴 Action=SLEEP → sleeping 1 hour at {datetime.now().strftime('%H:%M')}")
-                    time.sleep(3600)
+                    with console.status("[bold #4a9eff]Waiting for next research cycle...[/]"):
+                        time.sleep(3600)
                     obs = next_obs
                     continue
 
@@ -498,22 +449,37 @@ def main():
                 # ── Notification: high-score alert ─────────────────────────
                 if score >= 8:
                     high_score_count += 1
-                    # ── Use the dynamic source name from the environment ───
+                    # -- Use the dynamic source name from the environment --
                     source_name = info.get("source", "unknown")
-                    alert_msg = format_paper_alert(
-                        f"Paper from {source_name}", score, source_name, action
-                    )
+                    paper_data = info.get("paper_data", {})
+                    paper_meta = build_paper_alert(paper_data, source_name)
                     # Track for daily report
                     today_discoveries.append({
-                        "title": f"Paper from {source_name}",
+                        "title": paper_meta["title"],
                         "score": score, "source": source_name,
                         "action": source_name,
                         "timestamp": datetime.now().strftime("%H:%M:%S")
                     })
-                    if verbose:
-                        print(f"  🚨 HIGH SCORE ({score}) from {source_name} — sending alerts!")
-                    notifier.telegram_send(alert_msg)
-                    notifier.discord_send(alert_msg)
+                    # -- Mute dummy/simulated alerts (no real metadata) --
+                    is_real_paper = (
+                        bool(paper_meta.get("authors_str"))
+                        and not paper_meta.get("title", "").startswith("Paper from")
+                    )
+                    if is_real_paper:
+                        # -- Rich console panel for the discovery --
+                        score_style = "[bold gold1]" if score >= 7.0 else "[bold #4a9eff]"
+                        panel_content = f"Title: {paper_meta['title']}\n"
+                        panel_content += f"Source: [magenta]{paper_meta['source']}[/magenta]"
+                        if routed_provider:
+                            panel_content += f"\nRouter Decision: [cyan]{routed_provider}[/cyan]"
+                        panel_content += f"\nScore: {score_style}{score}/10[/]"
+                        console.print(Panel(
+                            panel_content,
+                            title="Paper Discovered",
+                            border_style="gold1" if score >= 7.0 else "#4a9eff",
+                        ))
+                        notifier.telegram_send(paper_meta, score, action_taken=action)
+                        notifier.discord_send(paper_meta, score, action_taken=action)
                     papers_discovered += 1
 
                 elif verbose:
@@ -530,37 +496,27 @@ def main():
             # Daily report after each episode
             _save_daily_report(today_discoveries)
 
-            # ════════════════════════════════════════════════════════════════
-            # WEEKLY DIGEST CHECK — after each episode
-            # ════════════════════════════════════════════════════════════════
+            # -- DAILY DIGEST CHECK -- after each episode (17:00) --
 
-            if should_send_weekly_digest(last_digest_date):
-                print(f"\n  📧 Sending weekly digest email...")
-                stats = get_database_stats_for_digest()
-                html_body = generate_weekly_digest_html(stats, papers_discovered)
-                notifier.email_send(
-                    f"TALOS Weekly Digest — {datetime.now().strftime('%Y-%m-%d')}",
-                    html_body
-                )
+            if should_send_daily_digest(last_digest_date):
+                console.print("[bold #006699]Sending daily digest email...[/]")
+                send_daily_digest(notifier)
                 last_digest_date = datetime.now().date()
-                # Reset the weekly counter
-                papers_discovered = 0
 
-            # ── Episode summary ────────────────────────────────────────────
+            # -- Episode summary --
             if verbose:
-                print(f"\n  📊 Episode complete | Reward: {episode_reward:.0f} | "
-                      f"High-score alerts sent: {high_score_count}")
+                console.print(f"Episode complete | Reward: {episode_reward:.0f} | High-score alerts sent: {high_score_count}")
 
         except KeyboardInterrupt:
             # ── Graceful shutdown ──────────────────────────────────────────
-            print("\n  ⏸️  KeyboardInterrupt received. Shutting down...")
+            console.print("KeyboardInterrupt received. Shutting down...")
             break
         except Exception as e:
             # ── THE MASSIVE TRY/EXCEPT — nothing crashes the daemon ────────
-            print(f"\n  ❌ Unexpected error in main loop: {e}")
+            console.print(f"Unexpected error in main loop: {e}")
             import traceback
             traceback.print_exc()
-            print("  ⏳ Waiting 30 seconds before retrying...")
+            console.print("Waiting 30 seconds before retrying...")
             time.sleep(30)
             # Continue the loop — the daemon NEVER dies
             continue
@@ -569,12 +525,9 @@ def main():
     # SHUTDOWN
     # ══════════════════════════════════════════════════════════════════════════
 
-    print("\n" + "=" * 65)
-    print("  TALOS Autonomous Daemon — Shutdown Complete")
-    print(f"  Total high-score papers discovered: {high_score_count}")
-    print(f"  Uptime: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("  Bye bye! 👋")
-    print("=" * 65)
+    console.print("[bold #006699]TALOS Autonomous Daemon - Shutdown Complete[/]")
+    console.print(f"  Total high-score papers discovered: {high_score_count}")
+    console.print(f"  Uptime: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 
 if __name__ == "__main__":

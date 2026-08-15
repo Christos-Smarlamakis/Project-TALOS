@@ -72,21 +72,25 @@ class OfflineTalosEnv(TalosEnv):
         """
         super().__init__(*args, **kwargs)
 
-        # ── Load real scores from the SQLite database ──────────────────────
-        self.real_scores = self._load_scores_from_db()
+        # ── Load full paper metadata from the SQLite database ──────────────────────
+        self.papers = self._load_papers_from_db()
+        self.last_paper_data = None
 
     @staticmethod
-    def _load_scores_from_db():
+    def _load_papers_from_db():
         """
-        Read all overall_score values from the papers table.
+        Read full paper metadata from the papers table.
 
         Resolves the database path using the project's profile system.
-        Only loads scores that are valid (not NULL, not 0, in range 0-10).
+        Loads papers with a valid overall score (not NULL, not 0, in
+        range 0-10) together with their title, authors, DOI, URL and
+        source so the daemon can forward real metadata to notifications.
 
         Returns:
-            np.ndarray: Array of real paper scores, or empty array.
+            list of dict: Paper records (title, authors_str, doi, url,
+                source, overall_score), or an empty list on failure.
         """
-        # ── Find the correct database path ─────────────────────────────────
+        # -- Find the correct database path --
         # We use the same profile-aware logic as DatabaseManager._resolve_profile_db
         project_root = os.path.abspath(
             os.path.join(os.path.dirname(__file__), '..'))
@@ -105,40 +109,52 @@ class OfflineTalosEnv(TalosEnv):
             except Exception:
                 pass
 
-        # ── Query all scores from the database ─────────────────────────────
+        # -- Query full paper records from the database --
         try:
             with sqlite3.connect(db_path) as conn:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "SELECT overall_score FROM papers "
+                    "SELECT title, authors, doi, url, source, overall_score "
+                    "FROM papers "
                     "WHERE overall_score IS NOT NULL AND overall_score > 0 "
                     "AND overall_score <= 10"
                 )
                 rows = cursor.fetchall()
-                scores = np.array([row[0] for row in rows], dtype=np.float32)
-                return scores
+                return [
+                    {
+                        "title": row[0],
+                        "authors_str": row[1],
+                        "doi": row[2],
+                        "url": row[3],
+                        "source": row[4],
+                        "overall_score": row[5],
+                    }
+                    for row in rows
+                ]
         except sqlite3.Error as e:
-            print(f"  WARNING: Could not load scores from DB: {e}")
-            return np.array([], dtype=np.float32)
+            print(f"  WARNING: Could not load papers from DB: {e}")
+            return []
+
 
     def _simulate_score(self):
         """
         Return a real historical paper score from the database.
 
-        Randomly samples one score from the array loaded at startup.
-        If no scores are available (empty database), falls back to
-        the parent class's simulated score generator.
+        Randomly samples one paper record loaded at startup, stores the
+        full metadata on self.last_paper_data (so the environment injects
+        it into info), and returns its overall_score. Falls back to the
+        parent class's simulated score generator when the database is empty.
 
         Returns:
             float: A paper evaluation score between 0 and 10.
         """
-        if len(self.real_scores) > 0:
-            # ── Sample a random real score ─────────────────────────────────
-            # np.random.choice picks uniformly from the array.
-            return int(np.random.choice(self.real_scores))
-        else:
-            # ── Fallback to simulated scores ───────────────────────────────
-            return super()._simulate_score()
+        if self.papers:
+            paper = self.papers[np.random.randint(len(self.papers))]
+            self.last_paper_data = paper
+            return int(paper.get("overall_score") or 0)
+        self.last_paper_data = {}
+        return super()._simulate_score()
+
 
 
 def main():

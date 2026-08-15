@@ -234,6 +234,10 @@ class TalosEnv(gym.Env):
         # Convenience attribute: sleep action index = num_sources
         self.SLEEP_ACTION = self.num_sources
 
+        # -- Sampled paper metadata for the current step (set by DB-backed
+        # subclasses such as OfflineTalosEnv; injected into info)
+        self.last_paper_data = None
+
     # ── Public properties for external code that references old names ────────
     @property
     def arxiv_limit(self):
@@ -320,6 +324,8 @@ class TalosEnv(gym.Env):
                 info (dict): {'action', 'source', 'score'}.
         """
         self.current_step += 1
+        # -- Reset the sampled paper metadata for this step --
+        self.last_paper_data = None
         reward = 0.0
         score = 0
         source_name = "sleep"
@@ -382,7 +388,12 @@ class TalosEnv(gym.Env):
 
         # ── Build next observation ──────────────────────────────────────────
         obs = self._build_obs()
-        info = {"action": int(action), "source": source_name, "score": score}
+        info = {
+            "action": int(action),
+            "source": source_name,
+            "score": score,
+            "paper_data": self.last_paper_data or {},
+        }
 
         return obs, reward, terminated, truncated, info
 

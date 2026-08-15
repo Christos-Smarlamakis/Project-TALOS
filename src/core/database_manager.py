@@ -244,6 +244,16 @@ class DatabaseManager:
             conn.row_factory = sqlite3.Row
             return [dict(r) for r in conn.cursor().execute("SELECT title,doi,overall_score FROM papers WHERE overall_score>=? ORDER BY processed_at DESC LIMIT ?", (min_score, limit))]
 
+    def get_recent_elite_papers(self, hours=24, min_score=7.0):
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            cutoff = datetime.now() - timedelta(hours=hours)
+            return [dict(r) for r in conn.cursor().execute(
+                "SELECT title, doi, url, source, overall_score FROM papers "
+                "WHERE overall_score >= ? AND last_evaluated_at >= ? "
+                "ORDER BY overall_score DESC", (min_score, cutoff))]
+
+
     def get_embedding_model_stats(self):
         try:
             with sqlite3.connect(self.db_path) as conn:
