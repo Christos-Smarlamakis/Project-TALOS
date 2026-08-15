@@ -328,7 +328,7 @@ def talos_trigger_scrape(sources: Optional[List[str]] = None) -> str:
 
     Args:
         sources: Optional list of source names to query (e.g. ['arxiv', 'ieee']).
-                 If None or empty, all 14 configured sources are queried.
+                 If None or empty, all 16 configured sources are queried.
 
     Returns:
         str: Confirmation message with the background task ID, or an error
@@ -362,7 +362,7 @@ def talos_trigger_scrape(sources: Optional[List[str]] = None) -> str:
     status = data.get("status", "unknown")
     progress = data.get("progress", "")
 
-    source_info = ", ".join(sources) if sources else "all 14 sources"
+    source_info = ", ".join(sources) if sources else "all 16 sources"
     lines: List[str] = []
     lines.append("Background scrape task started successfully.")
     lines.append(f"  Task ID: {task_id}")

@@ -144,8 +144,8 @@ print("  6. SCRIPT MODULE IMPORTABILITY")
 print("=" * 60)
 
 SCRIPTS_TO_SKIP = {
-    "daily_search.py": "requires 14 API sources",
-    "historic_search.py": "requires 14 API sources",
+    "daily_search.py": "requires 16 API sources",
+    "historic_search.py": "requires 16 API sources",
     "grey_literature_miner.py": "requires google.genai",
     "citation_analyzer.py": "requires pyvis",
     "author_profiler.py": "requires questionary (patched via runner)",

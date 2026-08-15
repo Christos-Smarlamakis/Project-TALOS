@@ -90,7 +90,7 @@ FILE_DESCRIPTIONS = {
     "ai_manager.py": "AIManager — Multi-provider LLM (Gemini, DeepSeek, HF, Ollama) with circuit breaker",
     "database_manager.py": "DatabaseManager — SQLite + 4-layer scores + cosine similarity search",
     "hardware.py": "GPU detection — nvidia-smi, 30+ quantization formats, model recommendations",
-    "daily_search.py": "Daily Search — 14 APIs, two-stage AI eval, Markdown + Discord",
+    "daily_search.py": "Daily Search — 16 APIs, two-stage AI eval, Markdown + Discord",
     "historic_search.py": "Historical Deep Archive — Multi-year, database population",
     "grey_literature_miner.py": "Grey Literature — Gemini Search Grounding + DuckDuckGo",
     "knowledge_path_generator.py": "CHIRON — Semantic search + K-Means + AI narrative",

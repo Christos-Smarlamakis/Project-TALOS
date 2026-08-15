@@ -377,7 +377,7 @@ class TestTalosTriggerScrape:
     """Tests for the talos_trigger_scrape tool."""
 
     def test_success_all_sources(self, mock_requests_post):
-        """Verify confirmation message when scraping all 14 sources."""
+        """Verify confirmation message when scraping all 16 sources."""
         mock_resp = MagicMock()
         mock_resp.json.return_value = {
             "task_id": "abc12345",
@@ -393,7 +393,7 @@ class TestTalosTriggerScrape:
         assert isinstance(result, str)
         assert "started successfully" in result.lower()
         assert "abc12345" in result
-        assert "all 14 sources" in result
+        assert "all 16 sources" in result
         assert "running" in result
 
     def test_success_filtered_sources(self, mock_requests_post):
@@ -429,7 +429,7 @@ class TestTalosTriggerScrape:
 
         assert isinstance(result, str)
         assert "ghi11111" in result
-        assert "all 14 sources" in result
+        assert "all 16 sources" in result
 
     def test_offline_response(self, mock_requests_post, mock_connection_error):
         """Verify offline message when FastAPI is unreachable."""

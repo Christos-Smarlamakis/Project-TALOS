@@ -99,6 +99,21 @@ Dependencies:
     - python-dotenv: Environment variable loading.
 """
 import questionary
+from questionary import Style
+
+TALOS_QUESTIONARY_STYLE = Style([
+    ('qmark', 'fg:#006699 bold'),
+    ('question', 'bold fg:#e4e7ee'),
+    ('answer', 'fg:#4a9eff bold'),
+    ('pointer', 'fg:#4a9eff bold'),
+    ('highlighted', 'fg:#4a9eff bold noinherit'),
+    ('selected', 'fg:#28a745 bold'),
+    ('separator', 'fg:#6b7280'),
+    ('instruction', 'fg:#6b7280 italic'),
+    ('text', 'fg:#c9cdd4'),
+    ('disabled', 'fg:#6b7280 italic')
+])
+
 import os
 import subprocess
 import sys
@@ -281,13 +296,13 @@ def safe_select(message, choices):
     """Questionary select with graceful fallback.
     Returns None on Ctrl+C (all menus treat None as 'Back')."""
     try:
-        return questionary.select(message, choices=choices, use_indicator=True, pointer=">").ask()
+        return questionary.select(message, choices=choices, use_indicator=True, pointer=">", style=TALOS_QUESTIONARY_STYLE).ask()
     except KeyboardInterrupt:
         return None
     except Exception:
         # Fancy select failed (e.g. limited console) -- plain fallback.
         try:
-            return questionary.select(message, choices=choices).unsafe_ask()
+            return questionary.select(message, choices=choices, style=TALOS_QUESTIONARY_STYLE).unsafe_ask()
         except KeyboardInterrupt:
             return None
 
@@ -318,6 +333,7 @@ def prompt_source_selection():
             "Select academic sources to search (all pre-selected):",
             choices=[questionary.Choice(name, checked=True)
                      for name in ALL_ACADEMIC_SOURCES],
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
     except KeyboardInterrupt:
         return None
@@ -472,7 +488,7 @@ def check_first_run(python_exe):
             return
         if not os.path.exists("_profiles"): os.makedirs("_profiles")
         # .ask() returns None on Ctrl+C -- treat as "no" (skip config).
-        answer = questionary.confirm("Start configuration now?", default=True).ask()
+        answer = questionary.confirm("Start configuration now?", default=True, style=TALOS_QUESTIONARY_STYLE).ask()
         if answer:
             run_script("query_translator.py", python_exe)
             set_active_profile_name("default")
@@ -490,11 +506,11 @@ def author_tools_menu(python_exe):
     ])
     if choice is None or "Back" in choice: return
     if choice.startswith("1.") or choice.startswith("2."):
-        aid = questionary.text("Enter author name or ORCID iD:").ask()
+        aid = questionary.text("Enter author name or ORCID iD:", style=TALOS_QUESTIONARY_STYLE).ask()
         scr = "author_profiler.py" if "1." in choice else "author_trajectory_analyzer.py"
         if aid: run_script(scr, python_exe, args=[aid.strip()])
     elif choice.startswith("3."):
-        an = questionary.text("Enter author name:").ask()
+        an = questionary.text("Enter author name:", style=TALOS_QUESTIONARY_STYLE).ask()
         if an:
             result = run_script("author_profiler.py", python_exe, args=an.strip().split(), capture=True)
             if result and result.stdout:
@@ -563,7 +579,7 @@ def system_health_menu(python_exe):
         except Exception: pass
         webbrowser.open(f"http://localhost:{port}/architecture_graph.html")
     elif choice.startswith("4."):
-        if questionary.confirm("Start now? (may take 60s)", default=True).ask():
+        if questionary.confirm("Start now? (may take 60s)", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
             run_script("architecture_intelligence_report.py", python_exe)
     elif choice.startswith("5."):
         import webbrowser, socket
@@ -635,7 +651,7 @@ def system_health_menu(python_exe):
             "Produces detailed Markdown docs for every code file you select.",
             border_style="bright_blue",
         ))
-        if questionary.confirm("Launch documentation generator?", default=True).ask():
+        if questionary.confirm("Launch documentation generator?", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
             run_script("generate_docs.py", python_exe)
     console.print(); safe_pause("Press Enter...")
 
@@ -688,7 +704,7 @@ def api_keys_menu(python_exe):
             sel = safe_select("Key:", choices=flat)
             if sel and not sel.startswith("---") and sel != "Cancel":
                 k = sel.split()[0]; cv = vals.get(k, "")
-                nv = questionary.text(f"New value for {k}:", default=cv).ask()
+                nv = questionary.text(f"New value for {k}:", default=cv, style=TALOS_QUESTIONARY_STYLE).ask()
                 if nv is not None:
                     from dotenv import set_key
                     try:
@@ -916,7 +932,8 @@ def _view_and_pivot_research_focus(python_exe, project_root):
         # -- Prompt for new goal --
         new_goal = questionary.text(
             "Enter your new research goal (natural language):",
-            default=current_goal.strip() if current_goal.strip() else ""
+            default=current_goal.strip() if current_goal.strip() else "",
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
         if new_goal is None or not new_goal.strip():
             console.print("\n[yellow]Pivot cancelled -- no goal provided.[/yellow]")
@@ -946,12 +963,12 @@ def _view_and_pivot_research_focus(python_exe, project_root):
         info = _build_info_panel(
             "PYTHIA -- Query Translator",
             "Translates your natural-language research goal into optimized\n"
-            "boolean search queries for all 14 academic APIs.\n"
+            "boolean search queries for all 16 academic APIs.\n"
             "[dim]Uses the AI Manager with Research Architect persona.[/dim]",
             border_style="bright_magenta",
         )
         console.print(info)
-        if questionary.confirm("Proceed with Query Translation?", default=True).ask():
+        if questionary.confirm("Proceed with Query Translation?", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
             run_script("query_translator.py", python_exe)
             # -- Show success panel --
             success = _build_info_panel(
@@ -1118,7 +1135,7 @@ def main_menu():
             # -- CLI Research Search: open the full legacy search menu --
             choice2 = safe_select("CLI Research Search:", choices=[
                 questionary.Separator("  SEARCH & DISCOVERY"),
-                "3a. Daily Search (14 APIs)",
+                "3a. Daily Search (16 APIs)",
                 "3b. Historical Search (Deep Archive)",
                 "3c. Grey Literature / Web Horizon Scan",
                 questionary.Separator("  ANALYSIS & INSIGHTS"),
@@ -1142,7 +1159,7 @@ def main_menu():
                     run_script("daily_search.py", python_exe,
                                args=["--sources"] + selected)
             elif "3b" in choice2:
-                if questionary.confirm("This may take a long time. Sure?", default=False).ask():
+                if questionary.confirm("This may take a long time. Sure?", default=False, style=TALOS_QUESTIONARY_STYLE).ask():
                     selected = prompt_source_selection()
                     if selected is None:
                         console.print("[dim]Source selection cancelled.[/dim]")
@@ -1168,7 +1185,7 @@ def main_menu():
                     border_style="yellow",
                 )
                 console.print(info)
-                if questionary.confirm("Generate new baseline and compare?", default=True).ask():
+                if questionary.confirm("Generate new baseline and compare?", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
                     run_script("generate_baseline_report.py", python_exe, args=["--academic"])
                     rb = os.path.join(project_root, "reports", "general_status_report")
                     if os.path.exists(rb):
@@ -1256,7 +1273,7 @@ def main_menu():
             info = _build_info_panel(
                 "Live DRL Agent -- Real API Orchestration",
                 "The trained DRL agent selects the optimal API source in real-time\n"
-                "using the 14-source academic API environment.",
+                "using the 16-source academic API environment.",
                 border_style="cyan",
             )
             console.print(info)
@@ -1329,7 +1346,7 @@ def main_menu():
                 border_style="bright_blue",
             )
             console.print(info)
-            if questionary.confirm("Launch documentation generator?", default=True).ask():
+            if questionary.confirm("Launch documentation generator?", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
                 run_script("generate_docs.py", python_exe)
 
         if choice and "Exit" not in choice:

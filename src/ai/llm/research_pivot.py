@@ -27,6 +27,20 @@ import json
 import shutil
 import subprocess
 import questionary
+from questionary import Style
+
+TALOS_QUESTIONARY_STYLE = Style([
+    ('qmark', 'fg:#006699 bold'),
+    ('question', 'bold fg:#e4e7ee'),
+    ('answer', 'fg:#4a9eff bold'),
+    ('pointer', 'fg:#4a9eff bold'),
+    ('highlighted', 'fg:#4a9eff bold noinherit'),
+    ('selected', 'fg:#28a745 bold'),
+    ('separator', 'fg:#6b7280'),
+    ('instruction', 'fg:#6b7280 italic'),
+    ('text', 'fg:#c9cdd4'),
+    ('disabled', 'fg:#6b7280 italic')
+])
 
 # -- v5.9.17: Enterprise logging & Universal Rich TUI --
 from src.utils.logger import get_logger
@@ -130,7 +144,8 @@ def main():
         new_direction = questionary.text(
             "Describe your NEW research direction (what has changed?):",
             validate=lambda t: True if len(t.strip()) > 20
-            else "Please provide at least 20 characters."
+            else "Please provide at least 20 characters.",
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
 
         if not new_direction:
@@ -142,7 +157,8 @@ def main():
     if not auto_mode:
         run_pythia = questionary.confirm(
             "Step 2/4: Run PYTHIA to regenerate search queries and prompts?",
-            default=True
+            default=True,
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
 
     if run_pythia:
@@ -168,7 +184,8 @@ def main():
         run_reeval = questionary.confirm(
             "Step 3/4: Re-evaluate the database with the new criteria?\n"
             "   (This re-scores all papers using the updated prompts.)",
-            default=True
+            default=True,
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
 
     if run_reeval:
@@ -188,7 +205,8 @@ def main():
         run_retrain = questionary.confirm(
             "Step 4/4: Retrain the DRL agent with updated scores?\n"
             "   (Runs 500 episodes of DDQN training -- ~2-5 minutes on GPU.)",
-            default=False
+            default=False,
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
 
     if run_retrain:
@@ -197,7 +215,8 @@ def main():
             ep_input = questionary.text(
                 "How many training episodes?",
                 default="500",
-                validate=lambda t: t.isdigit() and int(t) > 0
+                validate=lambda t: t.isdigit() and int(t) > 0,
+                style=TALOS_QUESTIONARY_STYLE,
             ).ask()
             if ep_input:
                 episodes = int(ep_input)

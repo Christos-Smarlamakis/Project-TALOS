@@ -47,6 +47,21 @@ import subprocess
 import time
 import requests
 import questionary
+from questionary import Style
+
+TALOS_QUESTIONARY_STYLE = Style([
+    ('qmark', 'fg:#006699 bold'),
+    ('question', 'bold fg:#e4e7ee'),
+    ('answer', 'fg:#4a9eff bold'),
+    ('pointer', 'fg:#4a9eff bold'),
+    ('highlighted', 'fg:#4a9eff bold noinherit'),
+    ('selected', 'fg:#28a745 bold'),
+    ('separator', 'fg:#6b7280'),
+    ('instruction', 'fg:#6b7280 italic'),
+    ('text', 'fg:#c9cdd4'),
+    ('disabled', 'fg:#6b7280 italic')
+])
+
 from dotenv import dotenv_values, set_key as _set_key
 
 # -- Rich TUI imports (v5.8.6) --
@@ -460,7 +475,8 @@ def _confirm_setting_change(env_path, key_name, old_value, new_value):
     # -- Confirm with user --
     confirmed = questionary.confirm(
         "Apply this change to environment?",
-        default=True
+        default=True,
+        style=TALOS_QUESTIONARY_STYLE,
     ).ask()
 
     if confirmed:
@@ -608,6 +624,7 @@ def _browse_and_pick_ollama_model(vram_gb, vram_limit, env_path, current_model_k
         "Select a model:",
         choices=choices,
         use_indicator=True,
+        style=TALOS_QUESTIONARY_STYLE,
     ).ask()
 
     if selected == "__cancel__" or selected is None:
@@ -615,7 +632,7 @@ def _browse_and_pick_ollama_model(vram_gb, vram_limit, env_path, current_model_k
         return None
 
     if selected == "__custom__":
-        model_name = questionary.text("Enter model name (e.g., gemma3:12b):").ask()
+        model_name = questionary.text("Enter model name (e.g., gemma3:12b):", style=TALOS_QUESTIONARY_STYLE).ask()
         if not model_name or not model_name.strip():
             console.print("  [dim][[CANCELLED]][/] No name entered.")
             return None
@@ -727,6 +744,7 @@ def _pick_quantization(model_name, vram_limit, installed_models):
         f"Select quantization for [cyan]{base_name}[/]:",
         choices=quant_choices,
         use_indicator=True,
+        style=TALOS_QUESTIONARY_STYLE,
     ).ask()
 
     if selected == "__cancel__" or selected is None:
@@ -764,7 +782,8 @@ def _install_if_needed(final_model, installed_models, vram_limit):
     console.print("  [dim]Model is not installed.[/]")
     do_pull = questionary.confirm(
         f"Download {final_model} now? (ollama pull)",
-        default=True
+        default=True,
+        style=TALOS_QUESTIONARY_STYLE,
     ).ask()
     if do_pull:
         return _provision_model(final_model)
@@ -822,10 +841,11 @@ def select_fast_edge_model(env_path):
     console.print(f"  [dim]Current Fast Edge URL:  [/] [cyan]{current_edge_url}[/]")
 
     # -- Configure endpoint URL --
-    if questionary.confirm("Change Fast Edge endpoint URL?", default=False).ask():
+    if questionary.confirm("Change Fast Edge endpoint URL?", default=False, style=TALOS_QUESTIONARY_STYLE).ask():
         new_url = questionary.text(
             "Enter Fast Edge base URL:",
-            default=current_edge_url
+            default=current_edge_url,
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
         if new_url and new_url.strip():
             new_url_stripped = new_url.strip()
@@ -905,10 +925,11 @@ def select_heavy_model(env_path):
     console.print(f"  [dim]Current Ollama URL:           [/] [cyan]{current_heavy_url}[/]")
 
     # -- Configure endpoint URL --
-    if questionary.confirm("Change Heavy Reasoning endpoint URL?", default=False).ask():
+    if questionary.confirm("Change Heavy Reasoning endpoint URL?", default=False, style=TALOS_QUESTIONARY_STYLE).ask():
         new_url = questionary.text(
             "Enter Ollama base URL:",
-            default=current_heavy_url
+            default=current_heavy_url,
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
         if new_url and new_url.strip():
             normalized = new_url.strip().rstrip("/")
@@ -1038,7 +1059,7 @@ def select_cloud_models(env_path):
     choices = [questionary.Choice(title=r["display_name"], value=r["provider"]) for r in rows]
     choices.append(questionary.Separator())
     choices.append(questionary.Choice(title="[Cancel / Back]", value="__cancel__"))
-    selected = questionary.select("Select a provider to view or configure:", choices=choices).ask()
+    selected = questionary.select("Select a provider to view or configure:", choices=choices, style=TALOS_QUESTIONARY_STYLE).ask()
 
     if not selected or selected in ("__cancel__", "Cancel", "[Cancel / Back]"):
         console.input("\n[dim]Press Enter to return...[/]")
@@ -1056,9 +1077,9 @@ def select_cloud_models(env_path):
     console.print(f"  [dim]Base URL:[/]     [cyan]{meta['base_url']}[/]")
 
     # -- Configure / save API key --
-    if questionary.confirm(f"Save API key for {meta['display_name']}?", default=False).ask():
+    if questionary.confirm(f"Save API key for {meta['display_name']}?", default=False, style=TALOS_QUESTIONARY_STYLE).ask():
         current_key = os.getenv(meta["env_key"]) or values.get(meta["env_key"]) or ""
-        new_key = questionary.text(f"Enter {meta['env_key']} value:", default=current_key or "").ask()
+        new_key = questionary.text(f"Enter {meta['env_key']} value:", default=current_key or "", style=TALOS_QUESTIONARY_STYLE).ask()
         if new_key is not None and new_key.strip():
             _set_key(env_path, meta["env_key"], new_key.strip())
             os.environ[meta["env_key"]] = new_key.strip()
@@ -1067,8 +1088,8 @@ def select_cloud_models(env_path):
             console.print("  [dim][[CANCELLED]][/] No key entered.")
 
     # -- Modify default model --
-    if questionary.confirm(f"Modify default model for {meta['display_name']}?", default=False).ask():
-        new_model = questionary.text("Enter model name:", default=meta["model"]).ask()
+    if questionary.confirm(f"Modify default model for {meta['display_name']}?", default=False, style=TALOS_QUESTIONARY_STYLE).ask():
+        new_model = questionary.text("Enter model name:", default=meta["model"], style=TALOS_QUESTIONARY_STYLE).ask()
         if new_model and new_model.strip():
             _set_key(env_path, meta["model_env_key"], new_model.strip())
             os.environ[meta["model_env_key"]] = new_model.strip()
@@ -1173,6 +1194,7 @@ def select_execution_mode(env_path):
         "Select Network Strategy:",
         choices=network_choices,
         use_indicator=True,
+        style=TALOS_QUESTIONARY_STYLE,
     ).ask()
 
     if selected_network == "__cancel__" or selected_network is None:
@@ -1230,6 +1252,7 @@ def select_execution_mode(env_path):
             "Select Hardware Strategy:",
             choices=hardware_choices,
             use_indicator=True,
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
 
         if selected_hardware == "__cancel__" or selected_hardware is None:
@@ -1291,7 +1314,7 @@ def select_execution_mode(env_path):
     console.print()
     console.print(confirm_panel)
 
-    if not questionary.confirm("Apply this configuration?", default=True).ask():
+    if not questionary.confirm("Apply this configuration?", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
         console.print("  [dim][[CANCELLED]][/] No changes made.")
         console.input("\n[dim]Press Enter to continue...[/]")
         return
@@ -1414,14 +1437,14 @@ def select_embedding_model(env_path):
     choices.append(questionary.Separator())
     choices.append(questionary.Choice(title="[Cancel / Return to Main Menu]", value="__cancel__"))
 
-    sel = questionary.select("Select embedding model:", choices=choices).ask()
+    sel = questionary.select("Select embedding model:", choices=choices, style=TALOS_QUESTIONARY_STYLE).ask()
     if sel == "__cancel__" or sel is None:
         console.print("  [dim][[CANCELLED]][/] Returning to main menu.")
         console.input("\n[dim]Press Enter to continue...[/]")
         return
 
     if sel == "__custom__":
-        model_name = questionary.text("Enter model name:").ask()
+        model_name = questionary.text("Enter model name:", style=TALOS_QUESTIONARY_STYLE).ask()
         if not model_name or not model_name.strip():
             console.print("  [dim][[CANCELLED]][/] No model name entered.")
             console.input("\n[dim]Press Enter to continue...[/]")
@@ -1432,7 +1455,7 @@ def select_embedding_model(env_path):
 
     # Check and pull if needed
     if model_name not in installed:
-        do_pull = questionary.confirm(f"Download {model_name}?", default=True).ask()
+        do_pull = questionary.confirm(f"Download {model_name}?", default=True, style=TALOS_QUESTIONARY_STYLE).ask()
         if do_pull:
             if not _provision_model(model_name):
                 console.input("\n[dim]Press Enter to continue...[/]")
@@ -1541,6 +1564,7 @@ def main():
                 "7. Exit",
             ],
             use_indicator=True,
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
 
         if not choice or choice.startswith("7"):
@@ -1558,7 +1582,7 @@ def main():
         elif choice.startswith("5"):
             select_embedding_model(env_path)
         elif choice.startswith("6"):
-            model = questionary.text("Enter model to pull (e.g., gemma3:12b):").ask()
+            model = questionary.text("Enter model to pull (e.g., gemma3:12b):", style=TALOS_QUESTIONARY_STYLE).ask()
             if model and model.strip():
                 _provision_model(model.strip())
                 console.input("\n[dim]Press Enter to continue...[/]")
