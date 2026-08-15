@@ -1,6 +1,6 @@
 ﻿# Project TALOS -- Strategic Roadmap & Architecture Chronicle
 
-This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward.
+This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
 > **Current Version:** v5.10.5 (Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine)
 > **Last Updated:** 2026-08-15
@@ -14,171 +14,163 @@ Project TALOS was born from a simple question: **what if a literature review sys
 The exponential growth of academic publishing (over 5 million papers per year) has broken the traditional Systematic Literature Review (SLR) workflow. A PhD researcher simply cannot manually monitor, evaluate, and synthesize the firehose of daily publications. TALOS answers this challenge by evolving through three generations:
 
 1. **Gen 1 (v1-v4): The Aggregator** -- Searched 14 APIs, evaluated papers with AI, stored results in SQLite.
-2. **Gen 2 (v5.0): The Orchestrator** -- A Deep Reinforcement Learning agent that learns to select optimal APIs in real-time.
-3. **Gen 3 (v6.0+): The Ecosystem** -- A distributed microservice with RAG capabilities, cross-platform UI, and 3D knowledge visualization.
+2. **Gen 2 (v5.0-v5.9): The Orchestrator** -- A Deep Reinforcement Learning agent that learns to select optimal APIs in real-time, backed by Multi-Tier LLM routing and Autonomous Red Testing.
+3. **Gen 3 (v5.10-v6.0+): The Topological Ecosystem (Project ALEXANDRIA)** -- Automated PRISMA 2020 pipelines (PlanEval/DSPy), Bi-Level GWO AutoRL, Knowledge Graphs, and SYNAPSE Event Mesh interoperability.
 
 ---
 
 ## 2. v5.0.x -- The AI Core (COMPLETED)
 
-The v5.0 series represents a **paradigm shift** -- TALOS ceased being a passive aggregator and became an **active, learning orchestrator**. This was the largest single update in project history, spanning four major phases and adding over 5,000 lines of code.
+The v5.0 series represents a **paradigm shift** -- TALOS ceased being a passive aggregator and became an **active, learning orchestrator**.
 
 ### 2.1 Phase 0: Multi-Provider Hybrid Embeddings
-
-**The Semantic Brain** -- Before the agent could reason about papers, it needed to truly *understand* them through a dimension-agnostic embedding system.
-
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
 | **Ollama Embeddings** | `nomic-embed-text` (local) | Free, offline, zero-latency embeddings |
 | **Gemini Embeddings** | `gemini-embedding-001` (cloud) | High-precision 768-dim vectors, `RETRIEVAL_DOCUMENT` task type |
-| **Embeddings Table** | SQLite with B-tree indexes | Multi-model vector storage, backward-compatible with legacy `papers.embedding` column |
+| **Embeddings Table** | SQLite with B-tree indexes | Multi-model vector storage, backward-compatible |
 | **Migration Script** | `db_embedding_upgrade.py` | Seamlessly migrated 3,849 legacy records to the new schema |
-| **Google GenAI GA SDK** | `google.genai.Client` | Future-proof API (NOT deprecated `google.generativeai`) |
-
-**Key innovation:** The `semantic_search()` method filters cosine similarity by embedding model -- Ollama vectors are only compared against other Ollama vectors, Gemini against Gemini. This prevents cross-model semantic drift.
+| **Google GenAI GA SDK** | `google.genai.Client` | Future-proof API |
 
 ### 2.2 Phase 1: Deep Reinforcement Learning Stack
-
-**The Orchestrator's Brain** -- A Double Dueling DQN (DDDQN) with LSTM that learns API foraging strategies from experience.
-
 | Component | File | Description |
 |-----------|------|-------------|
-| **Gymnasium Environment** | `core/talos_env.py` | Observation Space (6-dim): normalized hour, 3 API usage ratios, error/low-score streaks. Action Space (4): ArXiv, OpenAlex, Semantic Scholar, Sleep. |
-| **DRL Agent** | `core/drl_agent.py` | 3-layer LSTM (128-64-32) with LayerNorm + Dueling heads (V + A). Online + Target networks, soft updates (t=1e-3), experience replay (deque, 10K capacity). |
-| **Training Loop** | `scripts/train_agent.py` | Interactive episode selection (50/100/500/1000), profile-aware DB, real-time timing with ETA. |
-| **GPU Acceleration** | RTX 4070, CUDA 12.1 | CuDNN optimization: `flatten_parameters()` before every LSTM forward pass, networks permanently in `.train()` mode to avoid mode-lock errors. **10x speedup** over CPU. |
+| **Gymnasium Environment** | `src/ai/drl/talos_env.py` | Observation Space (6-dim): normalized hour, API usage ratios, streaks. Action Space (4): ArXiv, OpenAlex, Semantic Scholar, Sleep. |
+| **DRL Agent** | `src/ai/drl/drl_agent.py` | 3-layer LSTM (128-64-32) with LayerNorm + Dueling heads (V + A). Double Dueling DQN, soft updates (t=1e-3), replay memory (10K). |
+| **Training Loop** | `src/ai/drl/drl_trainer.py` | Interactive episode selection, profile-aware DB, real-time timing. |
+| **GPU Acceleration** | RTX 4070, CUDA 12.1 | CuDNN optimization: `flatten_parameters()` before LSTM forward pass. **10x speedup** over CPU. |
 
 ---
 
 ## 3. v5.1.0 -- The Insights UI (COMPLETED)
-
-With the AI Core stable, v5.1.0 focused on **visibility and usability** -- bringing the DRL ecosystem to the user through both terminal and browser interfaces.
-
-| Section | Content |
-|---------|---------|
-| **GWO Optimization Results** | 4 metric cards (LR, Gamma, Epsilon Decay, Best Fitness) from `gwo_best_params.json` |
-| **Agent Training Status** | Checks for `dddqn_trained.pth`, shows success/warning with file size |
-| **Reward Progression** | Upward-trending chart simulating 500 training episodes |
-| **Training Details** | 2-column table: architecture, hyperparameters, GPU specs |
+- GWO optimization metrics display.
+- Agent training status and reward progression visualization.
+- Training details hardware table.
 
 ---
 
 ## 4. v5.2.x -- Onboarding & Dynamic Orchestration (COMPLETED)
-
-This version transforms TALOS into a **fully guided research platform** with a 4-step onboarding wizard, research pivot workflow, and a fundamentally upgraded DRL stack supporting all 14 sources dynamically.
-
-| Feature | Description | Status |
-|---------|-------------|--------|
-| **Onboarding Wizard** | 4-step guided wizard: Profile - Research Domain - PYTHIA - Launch | Complete |
-| **First-Run Detection** | Auto-detects new installations, wizard replaces dashboard | Complete |
-| **Research Pivot** | Interactive wizard for users whose research interests shifted | Complete |
-| **Dynamic DRL Stack** | Dynamic N-source environment (was hardcoded 3), 14-source agent | Complete |
+- 4-step guided onboarding wizard.
+- First-run auto-detection.
+- Interactive research pivot workflow (`src/ai/llm/research_pivot.py`).
+- Dynamic DRL stack supporting N sources dynamically.
 
 ---
 
 ## 5. v5.3.x -- DRL Scientific Integrity & UI Hardening (COMPLETED)
-
-| Version | Codename | Focus |
-|---------|----------|-------|
-| **v5.3.1** | DRL Live Agent | Provider-Aware Orchestration + GWO hyperparams |
-| **v5.3.2** | Pluggable Networks | DRL network architecture extraction |
-| **v5.3.3** | Light-Only Theme | Dark mode removal, universal docs rule |
-| **v5.3.4** | Descriptive Names | Mythological names replaced with academic module titles |
-| **v5.3.5** | DRL Sci. Integrity | GWO v2.0 real fitness, Canonical GWO, Batch 1 audit |
-| **v5.3.6** | TUI/CLI Hardening | Ctrl+C robustness, dead menu fix, Batch 2 audit |
-| **v5.3.7** | GWO Re-optimization | LR=3.361e-05, GAMMA=0.6983, 9.5h training |
+- **v5.3.1**: DRL Live Agent with provider-aware orchestration and 5-step cooldown lockout.
+- **v5.3.2**: Pluggable network architecture (`src/ai/drl/drl_networks.py`).
+- **v5.3.3**: Universal documentation rule, light-only UI theme.
+- **v5.3.4**: Mythological names replaced with academic module titles.
+- **v5.3.5**: GWO v2.0 real fitness evaluation (canonical Mirjalili 2014 algorithm).
+- **v5.3.6**: Ctrl+C robustness and CLI hardening across all entry points.
+- **v5.3.7**: Full 9.5-hour GWO hyperparameter optimization run (`LR=3.361e-05`, `GAMMA=0.6983`, `EPS_DECAY=0.9202`).
 
 ---
 
 ## 6. v5.4.x -- DDD Migration & Root Cleanup (COMPLETED)
-
-| Version | Codename | Focus |
-|---------|----------|-------|
-| **v5.4.0** | DDD Migration | `src/` package layout, all 55 files relocated |
-| **v5.4.1** | Root Cleanup | `docs/` + `tools/` dirs, .gitignore negate patterns |
+- **v5.4.0**: Domain-Driven Design package layout, all source files relocated to `src/` hierarchy (`src/core`, `src/ingestion`, `src/ai`, `src/analysis`, `src/utils`, `src/api`).
+- **v5.4.1**: Root directory cleanup, `docs/` and `tools/` structure.
 
 ---
 
 ## 7. v5.5.x -- FastAPI REST Facade & Ecosystem Coverage (COMPLETED)
-
-| Version | Codename | Focus |
-|---------|----------|-------|
-| **v5.5.0** | FastAPI + DB Fix | 8 REST endpoints (health, papers, semantic search, scrape/GWO triggers, task status) + Database path fix to `data/talos_research.db` |
-| **v5.5.1** | Frontend DX | +2 endpoints: GWO history for Recharts, architecture graph HTML via FileResponse |
-| **v5.5.2** | 100% Coverage | +4 endpoints: single-paper AI evaluation, query translation, top authors, bulk score recalculation -- **14 total endpoints (16 Pydantic models)** |
+- **v5.5.0**: FastAPI REST facade with 8 core endpoints, database path resolution fix.
+- **v5.5.1**: Frontend DX endpoints (GWO history for Recharts, architecture graph HTML).
+- **v5.5.2**: 100% ecosystem API coverage (14 total endpoints, 16 Pydantic models).
 
 ---
 
-## 8. v5.6.x -- Streamlit Deprecation & Documentation Enforcement (COMPLETED)
-
-| Version | Codename | Focus |
-|---------|----------|-------|
-| **v5.6.0** | Headless API + Docs | **BREAKING: Streamlit fully deprecated.** Deleted `app.py`, `.streamlit/`, `tools/_gui_runner.py`. Removed `streamlit` from `requirements.txt`. Sole frontend is React 18 + Tailwind CSS + Shadcn UI. FastAPI upgraded to 15 endpoints (+`/api/v1/capabilities`). Created `docs/SYSTEM_CAPABILITIES_MASTER.md` and `.html` (9-section structured reference). Enforced 12-file documentation sync rule in `.clinerules`. Created `docs/API_HANDOVER_FOTIS.md`, `docs/UX_UI_BLUEPRINT_FOTIS.md`, `docs/IP_PROTECTION_STRATEGY.md`. |
-
----
-
-## 9. v5.7.x -- Master Standard v2.0 Alignment & Synapse Protocol (CURRENT)
-
-| Version | Codename | Focus |
-|---------|----------|-------|
-| **v5.7.2** | Constitution v2.0 + Synapse | **Upgraded `.clinerules` to 8-Point Constitution v2.0.** Enforced 15-file documentation synchronization rule (added Timeline documents as files #8 and #9). Created `docs/TIMELINE_EN.md` and `docs/TIMELINE_GR.md` as authoritative historical records. **Scaffolded SYNAPSE Event-Driven Protocol:** `src/integration/synapse_client.py` (EventEmitter class) pushes JSON events to the SYNAPSE bus at port 8000; `src/api/synapse_routes.py` (FastAPI APIRouter) receives inbound commands via `POST /api/v1/synapse/webhook`. **Port reallocation:** TALOS FastAPI now on port 8001 (was 8000) to leave port 8000 for the SYNAPSE event bus. **Created `run_talos.bat`** at project root with 3-option menu (Full Setup, Start FastAPI Server on port 8001, Run Test Suite via pytest -v). Upgraded `src/api/main_api.py` module-level docstring to v5.7.2 standard with strict format. |
-
-| Feature | Description |
-|---------|-------------|
-| **8-Point Constitution v2.0** | Zero Emojis Protocol, Air-Gapped Local-First, VRAM Containment, Agentic Rails, Verification-First, 15-File Sync, Synapse Protocol, Strict Module-level Docstrings |
-| **Synapse Protocol** | EventEmitter (outbound: paper_discovered, paper_evaluated, etc.) + APIRouter (inbound webhook: trigger_search, trigger_evaluation, get_status, shutdown) for ALEXANDRIA ecosystem interoperability |
-| **Port Reallocation** | TALOS FastAPI: 8001, SYNAPSE event bus: 8000 |
-| **15-File Documentation Sync** | Upgraded from 12-file rule; Timeline documents (EN + GR) added as authoritative historical records |
-| **Automated Batch Runner** | `run_talos.bat` at project root with 3-option menu; legacy `tools/start_talos.bat` preserved |
-| **16 REST Endpoints** | 15 legacy endpoints + SYNAPSE webhook (`POST /api/v1/synapse/webhook`) |
+## 8. v5.6.x -- Streamlit Deprecation & Headless Modernization (COMPLETED)
+- **BREAKING**: Streamlit fully deprecated. Sole frontend: React 18 + Tailwind CSS + Shadcn UI.
+- FastAPI upgraded to 15 endpoints (+`/api/v1/capabilities`).
+- Created `docs/SYSTEM_CAPABILITIES_MASTER.md` and `.html`.
+- Enforced 12-file documentation synchronicity rule.
 
 ---
 
-## 10. v6.0.0+ -- The Distributed Ecosystem (FUTURE)
+## 9. v5.7.x -- Master Standard v2.0 & SYNAPSE Protocol (COMPLETED)
+- Upgraded `.clinerules` to 8-Point Constitution v2.0 and 15-file sync rule.
+- Scaffolded SYNAPSE Event-Driven Protocol (`src/integration/synapse_client.py`, `src/api/synapse_routes.py`).
+- Port reallocation: TALOS FastAPI on port 8001, SYNAPSE bus on port 8000.
+- Created `run_talos.bat` and `run_talos.sh` automated launchers.
 
-The v6.0 series represents the **third generation** of TALOS -- decoupling the monolith into a distributed microservice ecosystem with a modern cross-platform UI.
+---
+
+## 10. v5.8.x -- Multi-Tier LLM Routing, Launchers & Enterprise TUI (COMPLETED)
+- **v5.8.0 - v5.8.3**: Three-tier LLM routing (Fast Edge Neutrino-8B on port 11435, Heavy Reasoning Qwen2.5-14B on port 11434, Cloud Provider). Native MCP Server (`src/mcp_server.py`, 4 tools) for Cherry Studio. Isolated interim UI provisioner.
+- **v5.8.4 - v5.8.9**: Rich TUI Dashboard in `talos.py`. Model Manager CLI integration. Auto-Conda detection and detached POSIX daemons in launchers. Expanded test suite (96+ unit tests). 15-file sync rule solidified.
+
+---
+
+## 11. v5.9.x -- Chaos Engineering, Universal Cloud Mesh & Hardening (COMPLETED)
+- **v5.9.0 - v5.9.7**: Autonomous System Tester (`src/ai/testing/autonomous_tester.py`) with Non-Stationary Epsilon-Greedy MAB and LLM-as-a-Judge diagnostics. Scaled from 4 to 70+ dynamic test arms. Added `/api/v1/tester` REST endpoints.
+- **v5.9.8 - v5.9.13**: Clickable terminal hyperlinks. Local-to-local fallback (CPU tier -> GPU Ollama before cloud). Vendored Graphify AST engine integration (`src/analysis/graphify_adapter.py`) with Academic Print Light Mode CSS injection.
+- **v5.9.14 - v5.9.15**: Docker infrastructure overhaul (`host.docker.internal` local connectivity, `docs/DOCKER.md`). Fixed `pandas 3.0` DLL incompatibility. Silent fast boot (purged blocking startup model verification). Reconciled Section 7 dependency map.
+- **v5.9.16**: Renamed tester to **Autonomous Red Tester** (`src/ai/testing/red_tester.py`). Implemented Deep API Fuzzing arms and LLM Context Window Truncation (2,000 chars limit).
+- **v5.9.17**: Universal Rich TUI enforcement and Enterprise Logging (`src/utils/logger.py` with `RichHandler` and `RotatingFileHandler` to `data/logs/talos_system.log`).
+- **v5.9.18**: **Universal Cloud Mesh** -- unified 8 OpenAI-compatible cloud providers (NVIDIA NIM 1M, Groq LPU, Cerebras, GitHub Models, Mistral AI, OpenRouter, DeepSeek, HuggingFace) alongside Google Gemini SDK. Model Manager Cloud TUI with `[ACTIVE]` vs `[UNCONFIGURED]` status indicators.
+
+---
+
+## 12. v5.10.x -- The Topological Space & Ingestion Expansion (CURRENT PHASE)
+
+The v5.10.x series transitions Project TALOS from an aggregator to a fully adaptive, multi-agent cognitive architecture, paving the way for Project ALEXANDRIA.
+
+| Sub-Version | Codename | Focus | Status |
+|:------------|:---------|:------|:-------|
+| **v5.10.0** | Ingestion Expansion | Added OpenReview (Source #15, ICLR/NeurIPS peer reviews via `openreview-py`) and OpenAIRE (Source #16, EU Horizon open access). Expanded `daily_search` and `historic_search` to 16 sources. Added 34 unit tests. | Complete |
+| **v5.10.1** | DRL Environment Scaling | Scaled Gymnasium environment (`talos_env.py`) to **23 State Dimensions** and **17 Action Dimensions** (16 sources + Sleep). Dynamic DuelingLSTM network auto-reconstruction. | Complete |
+| **v5.10.2** | LLM Router & GWO Shaper | Created `LLMRouterSubAgent` (`src/ai/drl/llm_router_subagent.py`) implementing Contextual Bandit decision policy. Created `GWOLLMRouterRewardShaper` (`src/ai/optimizers/gwo_llm_router_reward_shaper.py`) for Bi-Level multi-objective reward weight optimization. Renamed hyperparameter tuner to `gwo_foraging_hyperparameter_tuner.py`. Implemented Interactive 16-Source Checkbox TUI in `talos.py`. | Complete |
+| **v5.10.3** | Hierarchical DRL | Integrated `LLMRouterSubAgent` directly into 24/7 research daemon (`talos_service.py`), live foraging orchestrator (`live_agent_orchestrator.py`), and search pipelines. Implemented dynamic SWE-bench relative quality normalization ($Q_p = \text{Score}_p / \max_k \text{Score}_k$). | Complete |
+| **v5.10.4** | Model Discovery & SYNAPSE | Created `ModelDiscoveryEngine` (`src/ai/llm/model_discovery.py`) with local `data/model_benchmarks.json` cache and live API model scanning. Exposed 19th REST endpoint `GET /api/v1/synapse/status`. | Complete |
+| **v5.10.5** | Dynamic Provisioner | Created `ModelProvisioner` (`src/utils/model_provisioner.py`) with 3-tier path resolution (custom vault `FAST_EDGE_MODEL_PATH`, in-tree `models/`, auto-download) and JIT auto-pull for Ollama and HuggingFace Hub with self-healing fallback. 296 Pytest tests passing. | Complete |
+| **v5.10.6** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline (`src/ai/dspy_prisma_pipeline.py`) leveraging PlanEval architecture (Fast Edge Planner/Evaluator + Heavy Reasoning Executor). | Next |
+| **v5.10.7** | CORTEX & n8n Gateway | Live arXiv RSS & text evaluation Discord Bot (`src/integration/discord_evaluator.py`) and SYNAPSE n8n Workflow Gateway templates (`templates/n8n_workflows/`). | Upcoming |
+
+---
+
+## 13. v6.0.0+ -- Project ALEXANDRIA: The Distributed Ecosystem (FUTURE)
+
+Project ALEXANDRIA marks the full desktop and distributed release of the platform:
 
 | Component | Technology | Description |
 |-----------|-----------|-------------|
-| **Headless Backend** | FastAPI | RESTful microservice with async endpoints (already started in v5.5.0, enhanced in v5.7.2, with multi-tier LLM routing in v5.8.9) |
-| **Database Layer** | PostgreSQL + pgvector | Migration from SQLite for concurrent access and vector similarity search |
-| **Cross-Platform Frontend** | Flutter | Desktop app (Windows, Linux, macOS, iOS, Android) |
-| **Local RAG** | Ollama + Chroma | Chat with your papers, PDF ingestion, knowledge graph |
-| **Advanced Viz** | Three.js / Deck.gl | 3D clustering, citation network graphs, timeline animations |
-| **Deployment** | PyInstaller | Standalone `.exe` for zero-touch installation |
+| **Desktop Application** | Tauri / Electron | 100% standalone offline `.exe` desktop application wrapping React 18 + Shadcn UI |
+| **Database Layer** | PostgreSQL + pgvector | High-concurrency vector database replacing local SQLite for multi-user labs |
+| **Semantic Knowledge Graphs** | Graphify AST + Leiden | Multi-document topological concept extraction and interactive 3D graph visualization |
+| **Offline Deep MoE Reasoning** | Kimi K3 C-Engine | 2.78-Trillion parameter MoE inference running on CPU in 8.24GB RAM for deep offline paper synthesis |
+| **Hardware Nexus** | AMD AI Halo (128GB UMA) | High-throughput local research workstation serving as the central compute node for TALOS, ALEXANDRIA, and ATHENA |
 
 ---
 
-## 11. Summary Version Table
+## 14. Summary Version Table
 
-| Version | Codename | Focus | Status |
-|:--------|:---------|:------|:-------|
-| **v1.0 - v4.11** | The Aggregator | Search, Evaluate, Store | Complete |
-| **v5.0.0** | The AI Core | Hybrid Embeddings + DRL Agent + GWO | Complete |
-| **v5.1.0** | The Insights UI | DRL Dashboard + TUI Reorganization | Complete |
-| **v5.2.0** | The Live Agent | Live API Routing + PDF Downloader | Complete |
-| **v5.2.1** | Academic Conf. | GUI Redesign, Bilingual (EN/GR), CSS Theme | Complete |
-| **v5.3.0** | Auto-Docs | 18-language documentation generator | Complete |
-| **v5.3.1** | DRL Live Agent | Provider-Aware Orchestration | Complete |
-| **v5.3.2** | Pluggable Nets | DRL network architecture extraction | Complete |
-| **v5.3.3** | Light-Only Theme | Dark mode removal, universal docs rule | Complete |
-| **v5.3.4** | Descriptive Names | Mythological to academic module titles | Complete |
-| **v5.3.5** | DRL Sci. Integrity | GWO v2.0, Canonical GWO, Batch 1 | Complete |
-| **v5.3.6** | TUI/CLI Hardening | Ctrl+C robustness, Batch 2 | Complete |
-| **v5.3.7** | GWO Re-optimize | LR=3.36e-05, GAMMA=0.698, 9.5h | Complete |
-| **v5.4.0** | DDD Migration | `src/` package layout, 55 files moved | Complete |
-| **v5.4.1** | Root Cleanup | `docs/` + `tools/` dirs, .gitignore | Complete |
-| **v5.5.0** | FastAPI + DB Fix | REST API (8 endpoints) + db path | Complete |
-| **v5.5.1** | Frontend DX | +2 endpoints: GWO history + graph HTML | Complete |
-| **v5.5.2** | 100% Coverage | +4 endpoints: eval + translate + authors + recalc | Complete |
-| **v5.6.0** | Headless API + Docs | Streamlit deprecated, 15 endpoints, 12-file sync | Complete |
-| **v5.8.9** | Multi-Tier TUI + Exec Modes | Model Manager Refactoring, Fast/Heavy/Cloud Tiers, System Execution Modes, Zero-Emojis, 29 tests | Complete |
-| **v5.8.9** | Launcher Automation | Auto-Conda Detection, Background Window Spawning, POSIX Virtualenv | Complete |
-| **v5.8.9** | Rich TUI + Model Manager | Rich Dashboard, Model Manager CLI Integration, 10-Option Menu, 173 Tests | Current |
-| **v6.0.0+** | Distributed Eco. | Flutter + RAG + 3D Viz + PyInstaller | Future |
+| Version | Codename | Primary Focus | Status |
+|:--------|:---------|:--------------|:-------|
+| **v1.0 - v4.11** | The Aggregator | 14-source scraping, Gemini AI evaluation, SQLite storage | Complete |
+| **v5.0.0** | The AI Core | Hybrid Embeddings, DDDQN Agent, GWO Hyperparameter Optimizer | Complete |
+| **v5.1.0** | The Insights UI | DRL Terminal & Browser Dashboard, GPU Acceleration | Complete |
+| **v5.2.0** | The Live Agent | 14-source Dynamic DRL live agent, Onboarding Wizard | Complete |
+| **v5.3.x** | Scientific Integrity | GWO v2.0 canonical math, DuelingLSTM extraction, CLI hardening | Complete |
+| **v5.4.x** | DDD Migration | Domain-Driven Design package layout (`src/` hierarchy) | Complete |
+| **v5.5.x** | REST API Facade | Headless FastAPI backend (14 endpoints, 16 Pydantic models) | Complete |
+| **v5.6.0** | Headless Standard | Streamlit fully deprecated, React 18 sole frontend, 15 endpoints | Complete |
+| **v5.7.2** | Constitution v2.0 | SYNAPSE Event Bus (:8000), FastAPI port 8001, 15-file sync rule | Complete |
+| **v5.8.x** | Multi-Tier TUI | 3-Tier LLM routing, Native MCP Server, Rich TUI Dashboard | Complete |
+| **v5.9.x** | Red Team & Mesh | Autonomous Red Tester (Deep Fuzzing), Universal Cloud Mesh (9 Providers), Enterprise Logger | Complete |
+| **v5.10.0** | Ingestion Expansion | 16 Academic Sources (+OpenReview, +OpenAIRE), 225 Pytest tests | Complete |
+| **v5.10.1** | DRL 17-Actions | 23 State Dimensions, 17 Action Dimensions, Environment Scaling | Complete |
+| **v5.10.2** | Sub-Agent & Shaper | `LLMRouterSubAgent` Contextual Bandit, Bi-Level GWO Reward Shaper, 16-Source Checkbox TUI | Complete |
+| **v5.10.3** | HMADRL Orchestrator | Hierarchical DRL coupling in Daemon, Live Agent, Search pipelines, Dynamic SWE-bench $Q_p$ | Complete |
+| **v5.10.4** | Model Discovery | `ModelDiscoveryEngine`, local JSON cache, 19th REST endpoint (`GET /api/v1/synapse/status`) | Complete |
+| **v5.10.5** | Dynamic Provisioner | `ModelProvisioner`, 3-tier path resolution (`FAST_EDGE_MODEL_PATH`), JIT auto-pull, 296 tests | Complete |
+| **v5.10.6** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline via PlanEval architecture | Next |
+| **v5.10.7** | CORTEX & n8n Gateway | Discord evaluation bot, SYNAPSE n8n workflow templates | Upcoming |
+| **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine | Future |
 
 ---
 
 > **Project TALOS** -- From Aggregator to Autonomous Research Architect.
-> Built in Kalamata, Greece.
+> Built in Greece.
 > (C) 2026 Christos Smarlamakis
