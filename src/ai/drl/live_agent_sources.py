@@ -21,41 +21,51 @@ Description:
 
 def import_source_class(source_name):
     """
-    Dynamically import a source class from `sources.<name>_source`.
+    Dynamically import a source class from the ingestion package.
 
-    Instead of guessing the class name, this function imports the module
-    and scans it for a class ending in "Source". This handles mixed naming
-    conventions across all 16 source modules (acronyms, compound names).
+    The 16 source modules follow two naming conventions: 14 use a `_source`
+    suffix (e.g. `arxiv_source.py`) while the v5.10.0 additions (`openaire.py`,
+    `openreview.py`) do not. This function first tries the suffixed module and
+    falls back to the unsuffixed name when the suffixed module does not exist,
+    so all 16 sources resolve and the DRL agent's state space keeps its full
+    dimensionality.
 
     Args:
-        source_name (str): Source key (e.g., "arxiv", "dblp", "openalex").
+        source_name (str): Source key (e.g., "arxiv", "openaire", "openreview").
 
     Returns:
         class or None: The source class, or None if import fails.
     """
-    module_name = f"src.ingestion.{source_name}_source"
-
+    suffixed_name = f"src.ingestion.{source_name}_source"
     try:
-        module = __import__(module_name, fromlist=["*"])
+        module = __import__(suffixed_name, fromlist=["*"])
+    except ModuleNotFoundError:
+        # -- Fallback: v5.10.0 sources (openaire, openreview) have no suffix --
+        fallback_name = f"src.ingestion.{source_name}"
+        try:
+            module = __import__(fallback_name, fromlist=["*"])
+        except ImportError as e:
+            print(f"  [WARN] Could not import module {fallback_name}: {e}")
+            return None
     except ImportError as e:
-        print(f"  ⚠️  Could not import module {module_name}: {e}")
+        print(f"  [WARN] Could not import module {suffixed_name}: {e}")
         return None
 
-    # ── Find any class in the module that ends with "Source" ────────────────
+    # -- Find any class in the module that ends with "Source" --
     for attr_name in dir(module):
         if attr_name.endswith("Source") and not attr_name.startswith("_"):
             cls = getattr(module, attr_name, None)
             if isinstance(cls, type):
                 return cls
 
-    # ── Fallback: try the naive .capitalize() guessing ─────────────────────
+    # -- Fallback: try the naive .capitalize() guessing --
     class_parts = [part.capitalize() for part in source_name.split("_")]
     class_name = "".join(class_parts) + "Source"
     cls = getattr(module, class_name, None)
     if cls is not None:
         return cls
 
-    print(f"  ⚠️  No *Source class found in {module_name}")
+    print(f"  [WARN] No *Source class found for source '{source_name}'")
     return None
 
 

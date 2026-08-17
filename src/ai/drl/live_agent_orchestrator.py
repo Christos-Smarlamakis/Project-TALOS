@@ -271,7 +271,7 @@ def calculate_reward(score):
 
 
 def run_live_loop(agent, action_map, working_source_names, config,
-                  ai_manager, verbose=False):
+                  ai_manager, verbose=False, episodes=None):
     """
     Run the main live DRL agent loop with real API calls.
 
@@ -285,6 +285,8 @@ def run_live_loop(agent, action_map, working_source_names, config,
         config (dict): Project configuration.
         ai_manager (AIManager): AI evaluation manager.
         verbose (bool): Whether to print detailed step info.
+        episodes (int | None): Maximum number of intelligent API actions
+            to perform before shutting down. None runs until interrupted.
 
     Returns:
         dict: Shutdown statistics.
@@ -319,8 +321,12 @@ def run_live_loop(agent, action_map, working_source_names, config,
     # ══════════════════════════════════════════════════════════════════════════
 
     shutdown_requested = False
+    steps_completed = 0
 
     while not shutdown_requested:
+        if episodes is not None and steps_completed >= episodes:
+            print(f"  [DONE] Episode limit reached ({episodes} API actions). Shutting down.")
+            break
         try:
             # ── Step 1: Calculate current state ────────────────────────────
             now = datetime.now()
@@ -465,6 +471,8 @@ def run_live_loop(agent, action_map, working_source_names, config,
             if total_papers_fetched > 0 and total_papers_fetched % 10 == 0:
                 print(f"\n  [STAT] {total_papers_fetched} papers fetched | "
                       f"{high_score_count} high-score | Reward: {episode_reward:.0f}")
+            # -- Count one completed API action (episode) --
+            steps_completed += 1
 
         except KeyboardInterrupt:
             print("\n  [STOP] KeyboardInterrupt received. Shutting down...")

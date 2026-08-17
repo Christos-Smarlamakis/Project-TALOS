@@ -335,31 +335,193 @@ def route_daemon_evaluation(source_name, prompt_length=_DAEMON_NOMINAL_PROMPT_LE
 
 def _run_live_search():
     """
-    Execute the live academic search (API foraging) across all sources.
+    Execute the intelligent live foraging pass via the TALOS Live DRL Agent.
 
-    Runs src/ingestion/daily_search.py in a child process so the
-    network-heavy search does not destabilize the daemon's memory or crash
-    the main loop. Blocking: the daemon pauses until the search finishes.
+    Spawns src/ai/drl/talos_live_agent.py in a child process so the
+    network-heavy foraging does not destabilize the daemon's memory or crash
+    the main loop. The agent runs autonomously for a bounded number of
+    episodes (--episodes 15) and streams its reasoning to the daemon's
+    terminal (stdout and stderr are inherited, not captured). Blocking: the
+    daemon pauses until the foraging pass finishes.
 
     Returns:
-        bool: True if the search subprocess exited with code 0.
+        bool: True if the live agent subprocess exited with code 0.
     """
     import subprocess
-    search_script = os.path.join(
-        os.path.dirname(__file__), '..', '..', 'ingestion', 'daily_search.py')
+    live_agent_script = os.path.join(os.path.dirname(__file__), 'talos_live_agent.py')
     try:
+        headless_env = os.environ.copy()
+        headless_env["TALOS_HEADLESS"] = "1"
         result = subprocess.run(
-            [sys.executable, os.path.abspath(search_script)],
-            capture_output=True, text=True, timeout=3600)
+            [sys.executable, os.path.abspath(live_agent_script),
+             "--episodes", "15", "--verbose"],
+            stdout=None, stderr=None, timeout=3600, env=headless_env)
         if result.returncode == 0:
-            logger.info("Live academic search completed successfully.")
+            logger.info("Live DRL foraging agent completed successfully.")
             return True
-        logger.warning("Live academic search exited with code %s.", result.returncode)
+        logger.warning("Live DRL foraging agent exited with code %s.", result.returncode)
         return False
     except Exception as e:
-        logger.warning("Live academic search failed: %s", e)
+        logger.warning("Live DRL foraging agent failed: %s", e)
         return False
 
+
+def _run_daemon_iteration(env, agent, notifier, sleep_action, verbose, epsilon,
+                          last_live_search, last_digest_date,
+                          papers_discovered, high_score_count):
+    """
+    Execute one full episode cycle of the daemon's main loop.
+
+    Encapsulates a single iteration of the `while True` loop so the
+    daemon's resilience can be exercised hermetically by the chaos tests.
+    The body is identical to the original inline loop: trigger the live
+    search when the interval elapses, reset the environment, run one
+    200-step episode, save the daily report, and optionally send the daily
+    digest email.
+
+    Args:
+        env: OfflineTalosEnv instance (or a test double) exposing reset()
+            and step().
+        agent: Trained DRL agent exposing act() and reset_hidden_states().
+        notifier: TalosNotifier instance (or a test double) for alerts.
+        sleep_action (int): Action index that maps to the sleep/cooldown.
+        verbose (bool): Whether to print per-action diagnostics.
+        epsilon (float): Exploration rate (0.0 for pure exploitation).
+        last_live_search (float): Unix timestamp of the last live search.
+        last_digest_date (date | None): Date of the last digest email.
+        papers_discovered (int): Cumulative discovered-paper counter.
+        high_score_count (int): Cumulative high-score alert counter.
+
+    Returns:
+        tuple: (last_live_search, last_digest_date, papers_discovered,
+            high_score_count) -- the updated tracking state.
+
+    Raises:
+        Any exception raised by env.step(), agent.act(), or the notification
+        layer propagates to the caller (the daemon's root try/except).
+    """
+    # -- Reset environment at the start of each "day" --
+    # -- 3-hour live search trigger --
+    if time.time() - last_live_search >= LIVE_SEARCH_INTERVAL_SECONDS:
+        logger.info("[DAEMON] 3-hour interval reached. Triggering live academic search...")
+        if _run_live_search():
+            last_live_search = time.time()
+
+    obs, info = env.reset()
+    agent.reset_hidden_states()
+    episode_reward = 0.0
+    episode_papers = []
+    today_discoveries = []
+
+    # -- One "day" = 200 steps (the episode limit) --
+    for step in range(200):
+        if _shutdown_requested:
+            break
+
+        # -- Agent chooses an action --
+        # The agent sees the current observation (hour, API usage ratios,
+        # error streaks) and decides which API to query.
+        action = agent.act(obs, epsilon)
+
+        # -- Execute the action in the environment --
+        # This simulates querying an API and getting a real paper score
+        # from the database.
+        next_obs, reward, terminated, truncated, info = env.step(action)
+        episode_reward += reward
+        score = info.get("score", 0)
+
+        # -- SLEEP action (dynamic index) --
+        # The agent decided to rest. Sleep for 1 hour to conserve
+        # API limits and system resources.
+        if action == sleep_action:
+            with console.status("[bold #4a9eff]Waiting for next research cycle...[/]"):
+                time.sleep(3600)
+            obs = next_obs
+            continue
+
+        # -- v5.10.3: route the paper evaluation through the LLM Router Sub-Agent --
+        routed_source = info.get("source", "unknown")
+        routed_provider = route_daemon_evaluation(
+            routed_source, prompt_length=_DAEMON_NOMINAL_PROMPT_LENGTH)
+        if verbose and routed_provider:
+            print(f"  [DAEMON/ROUTER] {routed_source} -> provider={routed_provider}")
+
+        # -- Throttle: mandatory cooldown between API calls --
+        # This keeps CPU at ~0% and gives APIs time to breathe.
+        time.sleep(5)
+
+        # -- Memory management: force garbage collection --
+        # Prevents RAM from growing over time due to Python's
+        # reference cycles.
+        gc.collect()
+
+        # -- Notification: high-score alert --
+        if score >= 8:
+            high_score_count += 1
+            # -- Use the dynamic source name from the environment --
+            source_name = info.get("source", "unknown")
+            paper_data = info.get("paper_data", {})
+            paper_meta = build_paper_alert(paper_data, source_name)
+            # Track for daily report
+            today_discoveries.append({
+                "title": paper_meta["title"],
+                "score": score, "source": source_name,
+                "action": source_name,
+                "timestamp": datetime.now().strftime("%H:%M:%S")
+            })
+            # -- Mute dummy/simulated alerts (no real metadata) --
+            is_real_paper = (
+                bool(paper_meta.get("authors_str"))
+                and not paper_meta.get("title", "").startswith("Paper from")
+            )
+            # -- Freshness filter: alert only on truly NEW discoveries --
+            # The offline RL agent re-samples OLD papers from previous
+            # days; those must remain visually silent.
+            if is_real_paper and not _is_fresh_paper(paper_meta):
+                is_real_paper = False
+            if is_real_paper:
+                # -- Rich console panel for the discovery --
+                score_style = "[bold gold1]" if score >= 7.0 else "[bold #4a9eff]"
+                panel_content = f"Title: {paper_meta['title']}\n"
+                panel_content += f"Source: [magenta]{paper_meta['source']}[/magenta]"
+                if routed_provider:
+                    panel_content += f"\nRouter Decision: [cyan]{routed_provider}[/cyan]"
+                panel_content += f"\nScore: {score_style}{score}/10[/]"
+                console.print(Panel(
+                    panel_content,
+                    title="Paper Discovered",
+                    border_style="gold1" if score >= 7.0 else "#4a9eff",
+                ))
+                notifier.telegram_send(paper_meta, score, action_taken=action)
+                notifier.discord_send(paper_meta, score, action_taken=action)
+            papers_discovered += 1
+
+        elif verbose:
+            source_name = info.get("source", "?")
+            print(f"  [{source_name}] score={score}  reward={reward:.0f}  "
+                  f"step={step+1}/200")
+
+        # -- Advance to the next observation --
+        obs = next_obs
+
+        if terminated or truncated:
+            break
+
+    # Daily report after each episode
+    _save_daily_report(today_discoveries)
+
+    # -- DAILY DIGEST CHECK -- after each episode (17:00) --
+
+    if should_send_daily_digest(last_digest_date):
+        console.print("[bold #006699]Sending daily digest email...[/]")
+        send_daily_digest(notifier)
+        last_digest_date = datetime.now().date()
+
+    # -- Episode summary --
+    if verbose:
+        console.print(f"Episode complete | Reward: {episode_reward:.0f} | High-score alerts sent: {high_score_count}")
+
+    return last_live_search, last_digest_date, papers_discovered, high_score_count
 
 def main():
     """
@@ -501,140 +663,25 @@ def main():
 
     while not _shutdown_requested:
         try:
-            # ── Reset environment at the start of each "day" ──────────────
-            # -- 3-hour live search trigger --
-            if time.time() - last_live_search >= LIVE_SEARCH_INTERVAL_SECONDS:
-                logger.info("[DAEMON] 3-hour interval reached. Triggering live academic search...")
-                if _run_live_search():
-                    last_live_search = time.time()
-
-            obs, info = env.reset()
-            agent.reset_hidden_states()
-            episode_reward = 0.0
-            episode_papers = []
-            today_discoveries = []
-
-            # ── One "day" = 200 steps (the episode limit) ─────────────────
-            for step in range(200):
-                if _shutdown_requested:
-                    break
-
-                # ── Agent chooses an action ───────────────────────────────
-                # The agent sees the current observation (hour, API usage ratios,
-                # error streaks) and decides which API to query.
-                action = agent.act(obs, epsilon)
-
-                # ── Execute the action in the environment ──────────────────
-                # This simulates querying an API and getting a real paper score
-                # from the database.
-                next_obs, reward, terminated, truncated, info = env.step(action)
-                episode_reward += reward
-                score = info.get("score", 0)
-
-                # ── SLEEP action (dynamic index) ──────────────────────────
-                # The agent decided to rest. Sleep for 1 hour to conserve
-                # API limits and system resources.
-                if action == sleep_action:
-                    with console.status("[bold #4a9eff]Waiting for next research cycle...[/]"):
-                        time.sleep(3600)
-                    obs = next_obs
-                    continue
-
-                # -- v5.10.3: route the paper evaluation through the LLM Router Sub-Agent --
-                routed_source = info.get("source", "unknown")
-                routed_provider = route_daemon_evaluation(
-                    routed_source, prompt_length=_DAEMON_NOMINAL_PROMPT_LENGTH)
-                if verbose and routed_provider:
-                    print(f"  [DAEMON/ROUTER] {routed_source} -> provider={routed_provider}")
-
-                # ── Throttle: mandatory cooldown between API calls ─────────
-                # This keeps CPU at ~0% and gives APIs time to breathe.
-                time.sleep(5)
-
-                # ── Memory management: force garbage collection ────────────
-                # Prevents RAM from growing over time due to Python's
-                # reference cycles.
-                gc.collect()
-
-                # ── Notification: high-score alert ─────────────────────────
-                if score >= 8:
-                    high_score_count += 1
-                    # -- Use the dynamic source name from the environment --
-                    source_name = info.get("source", "unknown")
-                    paper_data = info.get("paper_data", {})
-                    paper_meta = build_paper_alert(paper_data, source_name)
-                    # Track for daily report
-                    today_discoveries.append({
-                        "title": paper_meta["title"],
-                        "score": score, "source": source_name,
-                        "action": source_name,
-                        "timestamp": datetime.now().strftime("%H:%M:%S")
-                    })
-                    # -- Mute dummy/simulated alerts (no real metadata) --
-                    is_real_paper = (
-                        bool(paper_meta.get("authors_str"))
-                        and not paper_meta.get("title", "").startswith("Paper from")
-                    )
-                    # -- Freshness filter: alert only on truly NEW discoveries --
-                    # The offline RL agent re-samples OLD papers from previous
-                    # days; those must remain visually silent.
-                    if is_real_paper and not _is_fresh_paper(paper_meta):
-                        is_real_paper = False
-                    if is_real_paper:
-                        # -- Rich console panel for the discovery --
-                        score_style = "[bold gold1]" if score >= 7.0 else "[bold #4a9eff]"
-                        panel_content = f"Title: {paper_meta['title']}\n"
-                        panel_content += f"Source: [magenta]{paper_meta['source']}[/magenta]"
-                        if routed_provider:
-                            panel_content += f"\nRouter Decision: [cyan]{routed_provider}[/cyan]"
-                        panel_content += f"\nScore: {score_style}{score}/10[/]"
-                        console.print(Panel(
-                            panel_content,
-                            title="Paper Discovered",
-                            border_style="gold1" if score >= 7.0 else "#4a9eff",
-                        ))
-                        notifier.telegram_send(paper_meta, score, action_taken=action)
-                        notifier.discord_send(paper_meta, score, action_taken=action)
-                    papers_discovered += 1
-
-                elif verbose:
-                    source_name = info.get("source", "?")
-                    print(f"  [{source_name}] score={score}  reward={reward:.0f}  "
-                          f"step={step+1}/200")
-
-                # ── Advance to the next observation ────────────────────────
-                obs = next_obs
-
-                if terminated or truncated:
-                    break
-
-            # Daily report after each episode
-            _save_daily_report(today_discoveries)
-
-            # -- DAILY DIGEST CHECK -- after each episode (17:00) --
-
-            if should_send_daily_digest(last_digest_date):
-                console.print("[bold #006699]Sending daily digest email...[/]")
-                send_daily_digest(notifier)
-                last_digest_date = datetime.now().date()
-
-            # -- Episode summary --
-            if verbose:
-                console.print(f"Episode complete | Reward: {episode_reward:.0f} | High-score alerts sent: {high_score_count}")
-
+            (last_live_search, last_digest_date, papers_discovered,
+             high_score_count) = _run_daemon_iteration(
+                env, agent, notifier, sleep_action, verbose, epsilon,
+                last_live_search, last_digest_date, papers_discovered,
+                high_score_count)
         except KeyboardInterrupt:
-            # ── Graceful shutdown ──────────────────────────────────────────
+            # -- Graceful shutdown --
             console.print("KeyboardInterrupt received. Shutting down...")
             break
         except Exception as e:
-            # ── THE MASSIVE TRY/EXCEPT — nothing crashes the daemon ────────
+            # -- THE MASSIVE TRY/EXCEPT: nothing crashes the daemon --
             console.print(f"Unexpected error in main loop: {e}")
             import traceback
             traceback.print_exc()
             console.print("Waiting 30 seconds before retrying...")
             time.sleep(30)
-            # Continue the loop — the daemon NEVER dies
+            # Continue the loop: the daemon NEVER dies
             continue
+
 
     # ══════════════════════════════════════════════════════════════════════════
     # SHUTDOWN

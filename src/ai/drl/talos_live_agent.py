@@ -50,6 +50,9 @@ def _parse_args():
         description="TALOS Live DRL Agent — real-time academic API orchestration.")
     parser.add_argument("--verbose", action="store_true",
                         help="Print detailed per-step state and provider info.")
+    parser.add_argument("--episodes", type=int, default=None,
+                        help="Run a bounded number of intelligent API actions "
+                             "(default: run until interrupted).")
     return parser.parse_args()
 
 
@@ -87,6 +90,7 @@ def main():
         ("Actions", f"0..{num_working - 1} = sources, {num_working} = Sleep(1h)"),
         ("Mode", "epsilon=0.05 exploration + 5-step cooldown"),
         ("Verbose", "ON" if args.verbose else "OFF"),
+        ("Episodes", str(args.episodes) if args.episodes is not None else "unlimited"),
         ("Stop", "Press Ctrl+C"),
     ]
     for key, val in summary:
@@ -140,7 +144,8 @@ def main():
         print("  [INIT] No trained model found. Using untrained agent (random actions).")
 
     stats = run_live_loop(agent, action_map, working_source_names,
-                          config, ai_manager, verbose=verbose)
+                          config, ai_manager, verbose=verbose,
+                          episodes=args.episodes)
 
     print("\n" + "=" * 65)
     print("  TALOS Live DRL Agent -- Shutdown Complete")

@@ -1019,6 +1019,13 @@ class AIManager:
         Returns:
             None always. The caller should check env vars and retry.
         """
+        # -- Headless override: never block on an interactive prompt --
+        is_headless = os.environ.get("TALOS_HEADLESS") == "1"
+        if is_headless:
+            print(f"  [HEADLESS] Local {tier} connection failed. "
+                  f"Interactive fallback suppressed.")
+            return None
+
         # -- Non-interactive session: log and skip (no interactive prompt possible) --
         if not sys.stdin.isatty():
             print(f"  >!> Non-interactive session -- cloud fallback not available for {tier} tier.")
