@@ -103,8 +103,8 @@ console = Console()
 # -- Structured logger (canonical factory) --
 logger = get_logger("talos_service")
 
-# -- 6-hour live search interval (seconds) --
-LIVE_SEARCH_INTERVAL_SECONDS = 6 * 3600
+# -- 3-hour live search interval (seconds) --
+LIVE_SEARCH_INTERVAL_SECONDS = 3 * 3600
 
 
 def build_paper_alert(paper_data, source):
@@ -134,6 +134,64 @@ def build_paper_alert(paper_data, source):
         "url": paper_data.get("url"),
         "source": paper_data.get("source") or source_display,
     }
+
+
+def _is_fresh_paper(paper_meta):
+    """
+    Determine whether a sampled paper is a genuinely NEW discovery.
+
+    The offline DRL agent re-samples OLD papers already stored in the
+    database from previous days. Those papers must NOT trigger Discord or
+    Telegram alerts or Rich panels. A paper is considered fresh when it was
+    just added to the database (processed_at within the last 24 hours) or has
+    never been evaluated before (last_evaluated_at is NULL).
+
+    Args:
+        paper_meta (dict): Paper metadata dict (title, authors_str, doi, url,
+            source) built by build_paper_alert().
+
+    Returns:
+        bool: True if the paper is fresh and should alert; False otherwise.
+    """
+    doi = paper_meta.get("doi")
+    url = paper_meta.get("url")
+    if not doi and not url:
+        # No stable identifier available -- cannot verify freshness, stay silent.
+        return False
+    try:
+        import sqlite3 as _sqlite3
+        from src.core.database_manager import get_active_profile_db_path
+        db_path = get_active_profile_db_path()
+        with _sqlite3.connect(db_path) as conn:
+            conn.row_factory = _sqlite3.Row
+            if doi:
+                row = conn.cursor().execute(
+                    "SELECT processed_at, last_evaluated_at FROM papers WHERE doi = ?",
+                    (doi,)).fetchone()
+            else:
+                row = conn.cursor().execute(
+                    "SELECT processed_at, last_evaluated_at FROM papers WHERE url = ?",
+                    (url,)).fetchone()
+        if row is None:
+            # Not present in the database -- treat as not fresh.
+            return False
+        processed_at = row["processed_at"]
+        last_evaluated_at = row["last_evaluated_at"]
+        # -- Never evaluated before: treat as a brand-new discovery --
+        if not last_evaluated_at:
+            return True
+        # -- Added within the last 24 hours (date granularity) --
+        if processed_at:
+            try:
+                processed = datetime.strptime(str(processed_at)[:10], "%Y-%m-%d").date()
+                if (datetime.now().date() - processed).days <= 1:
+                    return True
+            except ValueError:
+                pass
+        return False
+    except Exception:
+        # Any database hiccup must not crash the daemon; default to silent.
+        return False
 
 
 def should_send_daily_digest(last_sent_date):
@@ -428,7 +486,7 @@ def main():
     papers_discovered = 0
     high_score_count = 0
     last_digest_date = None
-    last_live_search = time.time()
+    last_live_search = 0  # Start at 0 so the live search fires immediately on startup
 
     # ── Reporting summary ────────────────────────────────────────────────
     mode_label = "VERBOSE (every action)" if verbose else ("NORMAL (episode summaries)" if not silent else "SILENT (alerts only)")
@@ -444,9 +502,9 @@ def main():
     while not _shutdown_requested:
         try:
             # ── Reset environment at the start of each "day" ──────────────
-            # -- 6-hour live search trigger --
+            # -- 3-hour live search trigger --
             if time.time() - last_live_search >= LIVE_SEARCH_INTERVAL_SECONDS:
-                logger.info("[DAEMON] 6-hour interval reached. Triggering live academic search...")
+                logger.info("[DAEMON] 3-hour interval reached. Triggering live academic search...")
                 if _run_live_search():
                     last_live_search = time.time()
 
@@ -517,6 +575,11 @@ def main():
                         bool(paper_meta.get("authors_str"))
                         and not paper_meta.get("title", "").startswith("Paper from")
                     )
+                    # -- Freshness filter: alert only on truly NEW discoveries --
+                    # The offline RL agent re-samples OLD papers from previous
+                    # days; those must remain visually silent.
+                    if is_real_paper and not _is_fresh_paper(paper_meta):
+                        is_real_paper = False
                     if is_real_paper:
                         # -- Rich console panel for the discovery --
                         score_style = "[bold gold1]" if score >= 7.0 else "[bold #4a9eff]"

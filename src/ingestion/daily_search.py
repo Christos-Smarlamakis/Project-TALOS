@@ -56,6 +56,8 @@ from src.ingestion.openaire import OpenAIRESource
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
 from src.ai.drl.llm_router_subagent import estimate_prompt_tokens
+from rich.console import Console
+from rich.panel import Panel
 
 
 # -- v5.10.2: Canonical 16-source registry for the checkbox TUI and --sources --
@@ -245,6 +247,17 @@ def main(sources=None):
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     logger = logging.getLogger(__name__)
     
+    # -- Surface the exact query the daemon is foraging for --
+    console = Console()
+    research_topic = config.get("research_topic") or "Not configured"
+    openaire_query = config.get("openaire_query") or "Not configured"
+    console.print(Panel(
+        f"Research Topic: [cyan]{research_topic}[/cyan]\n"
+        f"OpenAIRE Query: [cyan]{openaire_query}[/cyan]",
+        title="Live Foraging Query",
+        border_style="#006699",
+    ))
+
     all_new_papers = []
     for source in sources_to_search:
         if not getattr(source, "enabled", True):
@@ -300,11 +313,16 @@ def main(sources=None):
         api_calls_made += 1
 
         if evaluation_data:
-            db_manager.add_paper(paper, evaluation_data)
+            paper_id = db_manager.add_paper(paper, evaluation_data)
             overall = evaluation_data.get('overall_score', 0)
-            print(f"   Score: {overall:.2f} (Saved)")
-            if overall >= min_score_for_deep_analysis:
-                promising_papers.append(paper)
+            if paper_id:
+                logger.info("[DB SAVED] Successfully stored new paper: %s", paper.get('title'))
+                print(f"   Score: {overall:.2f} (Saved)")
+                if overall >= min_score_for_deep_analysis:
+                    promising_papers.append(paper)
+            else:
+                logger.error("[DB SAVED] FAILED to store new paper: %s", paper.get('title'))
+                print(f"   WARNING: Failed to save '{paper.get('title')}' to the database.")
         else:
             print(f"   WARNING: Flash evaluation failed for {paper['doi']}. Skipping.")
 

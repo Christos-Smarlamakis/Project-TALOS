@@ -174,7 +174,7 @@ class DatabaseManager:
             evaluation_reasoning,evaluation_contribution,evaluation_utilization,
             suggested_tags,suggested_folder,suggested_discord_channel,
             in_zotero,processed_at,last_evaluated_at,enrichment_status)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"""
         params = (paper_data.get('doi'), paper_data.get('url'), paper_data.get('title'),
             paper_data.get('authors_str'), paper_data.get('publication_year'),
             paper_data.get('abstract'), paper_data.get('source'),
