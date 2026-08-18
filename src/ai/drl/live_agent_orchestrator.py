@@ -456,6 +456,23 @@ def run_live_loop(agent, action_map, working_source_names, config,
                         f"Paper: {paper_title[:60]}..."
                     )
                     score = evaluate_paper(paper, ai_manager, provider_call_counts)
+
+                    # -- Paper-level evaluation telemetry (v5.10.6) --
+                    if score is None or score == 0.0:
+                        status = "FAILED [-]"
+                    elif score >= 8.0:
+                        status = "ELITE  [+]"
+                    elif score >= 6.0:
+                        status = "ACCEPT [v]"
+                    else:
+                        status = "REJECT [X]"
+                    safe_title = paper.get("title", "Unknown Title")[:55]
+                    eval_msg = (
+                        f"  └─ [EVAL] {safe_title:<55} | Score: {score:>4.1f}/10 | {status} -> DB"
+                    )
+                    logger.info(eval_msg)
+                    print(eval_msg)
+
                     if score > best_score:
                         best_score = score
 
