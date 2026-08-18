@@ -1,10 +1,10 @@
-﻿# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.5
+﻿# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.6
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-08-15 (v5.10.5 -- Καθολικός Δυναμικός Πάροχος Μοντέλων & Μηχανή Αυτοθεραπευόμενου Πλεονασμού)
+> **Τελευταία Ενημέρωση:** 2026-08-17 (v5.10.6 -- Ενορχηστρωτής Αυτόματης Εκκίνησης Δαίμονα Λειτουργικού Συστήματος)
 
 ---
 
@@ -278,6 +278,11 @@ Batch script για εκκίνηση του TALOS CLI.
 **Συναρτήσεις:** `ModelProvisioner` (`detect_protocol()`, `resolve_local_model_path()`, `ensure_model_available()`, `check_available()`, `_ollama_list()`, `_ollama_pull()`, `_ensure_cloud()`, `_ensure_ollama()`, `_ensure_huggingface()`), module-level `main()`.
 **Imports:** `subprocess`, `dotenv`, `huggingface_hub` (προαιρετικό)
 
+#### `src/utils/daemon_autostart.py` (v5.10.6 — Daemon OS Autostart & Orchestrator)
+**Σκοπός:** Ενορχηστρωτής αυτόματης εκκίνησης του δαίμονα 24/7 στα Windows. Η `generate_boot_batch()` δημιουργεί το `talos_daemon_boot.bat`, το οποίο χρησιμοποιεί το `sys.executable` (απόλυτη διαδρομή, εντός εισαγωγικών) για την εκκίνηση του CPU server (θύρα 11435, `-m fermion serve`) και του δαίμονα (`talos_service.py`), χωρίς εξάρτηση από το `conda activate` ή το PATH του συστήματος. Η `install_windows_autostart()` καταχωρεί συντόμευση `.lnk` στον φάκελο Εκκίνησης μέσω pywin32 Shell COM (εικονίδιο `shell32.dll,43`, ελαχιστοποιημένο).
+**Συναρτήσεις:** `generate_boot_batch()`, `install_windows_autostart()`, `_project_root()`, module-level `main()`.
+**Imports:** `os`, `sys`, `pathlib`, `win32com.client` (lazy, προαιρετικό)
+
 #### `src/ai/optimizers/gwo_llm_router_reward_shaper.py` (v5.10.2 — Bi-Level Reward Shaping)
 **Σκοπός:** Κλάση `GWOLLMRouterRewardShaper` για Διεπίπεδη Βελτιστοποίηση Ανταμοιβής Πολλαπλών Στόχων στα βάρη ανταμοιβής του Δρομολογητή LLM `[w_quality, w_latency, w_cost, w_penalty]` (προβολή simplex). Εξωτερικός βρόχος GWO + εσωτερική αξιολόγηση δρομολογητή υπό `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Εξάγει `models/gwo_llm_router_reward_weights.json`.
 **Συναρτήσεις:** `GWOLLMRouterRewardShaper` (`optimize()`, `_evaluate_router()`, `_update_position()`, `export()`, `run()`), `main()`.
@@ -448,7 +453,11 @@ src/utils/model_provisioner.py (Universal Model Provisioner)
   ├── src.utils.logger
   ├── config.settings
   ├── dotenv
-  └── huggingface_hub (optional)
+  ├── huggingface_hub (optional)
+src/utils/daemon_autostart.py (Daemon OS Autostart)
+  ├── os
+  ├── pathlib
+  └── win32com.client (lazy)
 ```
 
 ---
@@ -469,6 +478,7 @@ src/utils/model_provisioner.py (Universal Model Provisioner)
 | **MCP Server** | `src/mcp_server.py` | Native MCP (Model Context Protocol) stdio server που εκθέτει 4 tools (system_status, semantic_search, paper_details, trigger_scrape) μέσω MCPServer v2.0.0. Decoupled αρχιτεκτονική: τα tools καλούν το FastAPI backend μέσω HTTP. |
 | **Enterprise Logger** | `src/utils/logger.py` | Central `get_logger(name)` factory -- `rich.logging.RichHandler` console + `RotatingFileHandler` to `data/logs/talos_system.log` (10 MB, 5 backups) |
 | **Universal Model Provisioner** | `src/utils/model_provisioner.py` | Deterministic model provisioning (Ollama / HuggingFace Hub / cloud) with 3-tier local path resolution and self-healing fallback |
+| **Daemon OS Autostart** | `src/utils/daemon_autostart.py` | Ενορχηστρωτής αυτόματης εκκίνησης Windows (συντόμευση Startup + boot batch) για τον δαίμονα 24/7 |
 
 ---
 
@@ -505,8 +515,8 @@ src/utils/model_provisioner.py (Universal Model Provisioner)
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-08-15 (v5.10.5 -- Καθολικός Δυναμικός Πάροχος Μοντέλων & Μηχανή Αυτοθεραπευόμενου Πλεονασμού)
-> **Έκδοση Project:** v5.10.5
+> **Τελευταία ενημέρωση:** 2026-08-17 (v5.10.6 -- Ενορχηστρωτής Αυτόματης Εκκίνησης Δαίμονα Λειτουργικού Συστήματος)
+> **Έκδοση Project:** v5.10.6
 > **Συνολικά αρχεία που καλύπτονται:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### Νέο στην v5.9.9: Ενοποίηση Αναφορών

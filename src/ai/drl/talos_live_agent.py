@@ -53,6 +53,8 @@ def _parse_args():
     parser.add_argument("--episodes", type=int, default=None,
                         help="Run a bounded number of intelligent API actions "
                              "(default: run until interrupted).")
+    parser.add_argument("--sources", nargs="+", default=None,
+                        help="Space-separated source names to run (default: all).")
     return parser.parse_args()
 
 
@@ -73,6 +75,8 @@ def main():
             sys.exit(1)
 
     all_source_names = _load_source_list(config)
+    if args.sources:
+        all_source_names = [n for n in all_source_names if n in args.sources]
     action_map, working_source_names = build_source_map(all_source_names)
     num_working = len(working_source_names)
     num_configured = len(all_source_names)

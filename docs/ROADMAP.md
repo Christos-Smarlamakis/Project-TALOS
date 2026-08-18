@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.10.5 (Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine)
+> **Current Version:** v5.10.6 (Daemon OS Autostart & Orchestrator)
 > **Last Updated:** 2026-08-15
 
 ---
@@ -125,8 +125,9 @@ The v5.10.x series transitions Project TALOS from an aggregator to a fully adapt
 | **v5.10.3** | Hierarchical DRL | Integrated `LLMRouterSubAgent` directly into 24/7 research daemon (`talos_service.py`), live foraging orchestrator (`live_agent_orchestrator.py`), and search pipelines. Implemented dynamic SWE-bench relative quality normalization ($Q_p = \text{Score}_p / \max_k \text{Score}_k$). | Complete |
 | **v5.10.4** | Model Discovery & SYNAPSE | Created `ModelDiscoveryEngine` (`src/ai/llm/model_discovery.py`) with local `data/model_benchmarks.json` cache and live API model scanning. Exposed 19th REST endpoint `GET /api/v1/synapse/status`. | Complete |
 | **v5.10.5** | Dynamic Provisioner | Created `ModelProvisioner` (`src/utils/model_provisioner.py`) with 3-tier path resolution (custom vault `FAST_EDGE_MODEL_PATH`, in-tree `models/`, auto-download) and JIT auto-pull for Ollama and HuggingFace Hub with self-healing fallback. 296 Pytest tests passing. | Complete |
-| **v5.10.6** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline (`src/ai/dspy_prisma_pipeline.py`) leveraging PlanEval architecture (Fast Edge Planner/Evaluator + Heavy Reasoning Executor). | Next |
-| **v5.10.7** | CORTEX & n8n Gateway | Live arXiv RSS & text evaluation Discord Bot (`src/integration/discord_evaluator.py`) and SYNAPSE n8n Workflow Gateway templates (`templates/n8n_workflows/`). | Upcoming |
+| **v5.10.6** | Daemon OS Autostart & Orchestrator | Added `src/utils/daemon_autostart.py` (Windows Startup shortcut), interactive daemon pre-flight in `talos.py`, and `daemon_target_sources` injection into `talos_live_agent.py`. | Complete |
+| **v5.10.7** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline (`src/ai/dspy_prisma_pipeline.py`) leveraging PlanEval architecture (Fast Edge Planner/Evaluator + Heavy Reasoning Executor). | Next |
+| **v5.10.8** | CORTEX & n8n Gateway | Live arXiv RSS & text evaluation Discord Bot (`src/integration/discord_evaluator.py`) and SYNAPSE n8n Workflow Gateway templates (`templates/n8n_workflows/`). | Upcoming |
 
 ---
 
@@ -165,8 +166,9 @@ Project ALEXANDRIA marks the full desktop and distributed release of the platfor
 | **v5.10.3** | HMADRL Orchestrator | Hierarchical DRL coupling in Daemon, Live Agent, Search pipelines, Dynamic SWE-bench $Q_p$ | Complete |
 | **v5.10.4** | Model Discovery | `ModelDiscoveryEngine`, local JSON cache, 19th REST endpoint (`GET /api/v1/synapse/status`) | Complete |
 | **v5.10.5** | Dynamic Provisioner | `ModelProvisioner`, 3-tier path resolution (`FAST_EDGE_MODEL_PATH`), JIT auto-pull, 296 tests | Complete |
-| **v5.10.6** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline via PlanEval architecture | Next |
-| **v5.10.7** | CORTEX & n8n Gateway | Discord evaluation bot, SYNAPSE n8n workflow templates | Upcoming |
+| **v5.10.6** | Daemon OS Autostart & Orchestrator | Windows Startup shortcut, daemon pre-flight, source injection | Complete |
+| **v5.10.7** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline via PlanEval architecture | Next |
+| **v5.10.8** | CORTEX & n8n Gateway | Discord evaluation bot, SYNAPSE n8n workflow templates | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine | Future |
 
 ---

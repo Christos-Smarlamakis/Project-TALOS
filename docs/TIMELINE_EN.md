@@ -4,9 +4,16 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-15 (v5.10.5 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine)
+> **Last Updated:** 2026-08-17 (v5.10.6 -- Daemon OS Autostart & Orchestrator)
 
 ---
+
+## Phase 36: Daemon OS Autostart Orchestrator (v5.10.6)
+
+- [x] **Windows OS Autostart Generator** -- Added `src/utils/daemon_autostart.py` with `install_windows_autostart()` producing `talos_daemon_boot.bat` and a Startup-folder `.lnk` (pywin32, `shell32.dll,43` icon, minimized window).
+- [x] **Interactive Daemon Pre-Flight** -- `talos.py` gains a "Configure Daemon & OS Autostart" option prompting network strategy, target sources, and autostart hook.
+- [x] **Daemon Source Injection** -- `_run_live_search()` reads `daemon_target_sources` from `config.json` and forwards them to `talos_live_agent.py --sources`.
+- [x] **Version & Documentation Sync** -- v5.10.6 synced across 5 code files and 15 documentation files.
 
 ## Phase 35: Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine (v5.10.5)
 

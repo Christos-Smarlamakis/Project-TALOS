@@ -337,9 +337,9 @@ class TestSettingsResolution:
         assert DEFAULT_TIER == "fast"
 
     def test_talos_version(self):
-        """Verify the TALOS_VERSION is v5.10.5."""
+        """Verify the TALOS_VERSION is v5.10.6."""
         from config.settings import TALOS_VERSION
-        assert TALOS_VERSION == "5.10.5"
+        assert TALOS_VERSION == "5.10.6"
 
     def test_talos_api_port(self):
         """Verify the default TALOS_API_PORT is 8001."""

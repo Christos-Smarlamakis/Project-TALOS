@@ -2,6 +2,19 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.6] - 2026-08-17 -- Daemon OS Autostart & Orchestrator
+
+### Added
+- **Daemon OS Autostart Generator** (`src/utils/daemon_autostart.py`): `install_windows_autostart()` generates a boot batch script (`talos_daemon_boot.bat`) and registers a Windows Startup-folder shortcut (pywin32 Shell COM) with a system icon (`shell32.dll, 43`) and minimized window style.
+- **Interactive Daemon Pre-Flight** (`talos.py`): new "Configure Daemon & OS Autostart" menu option prompting for the daemon network strategy, target sources, and an optional autostart hook.
+- **Daemon Source Injection** (`src/ai/drl/talos_service.py`): `_run_live_search()` reads `daemon_target_sources` from `config.json` and forwards them to `talos_live_agent.py` via `--sources`.
+
+### Changed
+- Version strings synced across 5 code files and the 15 canonical documentation files to v5.10.6.
+
+### Fixed
+- **Autostart path bug** (`src/utils/daemon_autostart.py`): the generated `talos_daemon_boot.bat` previously called `conda activate talosenv` and bare `python`/`fermion`, which could silently fall back to the system Python (dropping sources and causing a 22-vs-23 tensor mismatch). The script now uses the quoted `sys.executable` absolute path for the daemon and the CPU server, removing the conda dependency.
+
 ## [v5.10.5] - 2026-08-15 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine
 
 ### Added

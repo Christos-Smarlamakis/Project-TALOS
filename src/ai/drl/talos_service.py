@@ -48,6 +48,7 @@ if _P: sys.path.insert(0, _P)
 import time
 import gc
 import signal
+import subprocess
 import numpy as np
 import json
 from datetime import datetime, timedelta
@@ -106,6 +107,66 @@ logger = get_logger("talos_service")
 # -- 3-hour live search interval (seconds) --
 LIVE_SEARCH_INTERVAL_SECONDS = 3 * 3600
 
+# -- Fast Edge CPU server (Fermion) subprocess handle for self-hosting --
+_FERMION_PROCESS = None
+
+
+def _spawn_fermion_cpu_server(strategy):
+    """
+    Start the Fast Edge CPU server (Fermion) in the background.
+
+    The daemon self-hosts its local CPU inference dependency on port 11435
+    when the global hardware strategy requires CPU compute. The subprocess
+    is spawned with subprocess.Popen so it runs in the background without
+    blocking the daemon's main loop. This removes the dependency on the
+    external .bat launcher.
+
+    Args:
+        strategy (str): The active TALOS_HARDWARE_STRATEGY value.
+
+    Returns:
+        subprocess.Popen or None: The spawned process, or None when the
+            strategy does not require CPU compute or spawning fails.
+    """
+    global _FERMION_PROCESS
+    if strategy not in ("cpu_gpu_split", "cpu_only"):
+        return None
+    try:
+        _FERMION_PROCESS = subprocess.Popen(
+            [sys.executable, "-m", "fermion", "serve", "--port", "11435"]
+        )
+        console.print(
+            f"  [INIT] Hardware Strategy: {strategy}. "
+            f"Auto-started Fast Edge CPU server (Port 11435)."
+        )
+        return _FERMION_PROCESS
+    except Exception as e:
+        console.print(
+            f"  [WARN] Could not auto-start Fast Edge CPU server: {e}"
+        )
+        return None
+
+
+def _terminate_fermion_cpu_server():
+    """
+    Stop the background Fermion CPU server during graceful shutdown.
+
+    Terminates the self-hosted Fast Edge CPU server so the daemon does not
+    leave an orphaned zombie process holding port 11435.
+    """
+    global _FERMION_PROCESS
+    if _FERMION_PROCESS is not None:
+        try:
+            _FERMION_PROCESS.terminate()
+            console.print(
+                "  [SHUTDOWN] Fast Edge CPU server (Port 11435) terminated."
+            )
+        except Exception as e:
+            console.print(
+                f"  [WARN] Could not terminate Fast Edge CPU server: {e}"
+            )
+        finally:
+            _FERMION_PROCESS = None
 
 def build_paper_alert(paper_data, source):
     """
@@ -333,6 +394,26 @@ def route_daemon_evaluation(source_name, prompt_length=_DAEMON_NOMINAL_PROMPT_LE
     return chosen
 
 
+def _load_daemon_target_sources():
+    """Read the daemon target sources from config.json.
+
+    Returns:
+        list of str: The configured daemon_target_sources, or an empty list.
+    """
+    import json
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    config_path = os.path.join(project_root, 'config.json')
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            cfg = json.load(f)
+        sources = cfg.get("daemon_target_sources")
+        if isinstance(sources, list):
+            return [str(s) for s in sources]
+        return []
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return []
+
+
 def _run_live_search():
     """
     Execute the intelligent live foraging pass via the TALOS Live DRL Agent.
@@ -352,10 +433,14 @@ def _run_live_search():
     try:
         headless_env = os.environ.copy()
         headless_env["TALOS_HEADLESS"] = "1"
+        # -- v5.10.6: inject daemon target sources from config.json --
+        cmd = [sys.executable, os.path.abspath(live_agent_script),
+               "--episodes", "15", "--verbose"]
+        target_sources = _load_daemon_target_sources()
+        if target_sources:
+            cmd += ["--sources"] + target_sources
         result = subprocess.run(
-            [sys.executable, os.path.abspath(live_agent_script),
-             "--episodes", "15", "--verbose"],
-            stdout=None, stderr=None, timeout=3600, env=headless_env)
+            cmd, stdout=None, stderr=None, timeout=3600, env=headless_env)
         if result.returncode == 0:
             logger.info("Live DRL foraging agent completed successfully.")
             return True
@@ -589,6 +674,12 @@ def main():
     # ══════════════════════════════════════════════════════════════════════════
 
     # ── Create environment first (to get dimensions) ────────────────────────
+    # -- Self-host the Fast Edge CPU server (Fermion, port 11435) --
+    # The daemon auto-starts its local CPU inference dependency in the
+    # background when the global hardware strategy requires CPU compute.
+    # This removes the dependency on external .bat launchers.
+    _hardware_strategy = os.environ.get("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
+    _spawn_fermion_cpu_server(_hardware_strategy)
     # -- Resolve active-profile DB and ensure the schema exists --
     try:
         from src.core.database_manager import DatabaseManager, get_active_profile_db_path
@@ -686,6 +777,8 @@ def main():
     # ══════════════════════════════════════════════════════════════════════════
     # SHUTDOWN
     # ══════════════════════════════════════════════════════════════════════════
+
+    _terminate_fermion_cpu_server()
 
     console.print("[bold #006699]TALOS Autonomous Daemon - Shutdown Complete[/]")
     console.print(f"  Total high-score papers discovered: {high_score_count}")

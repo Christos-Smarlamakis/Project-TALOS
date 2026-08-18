@@ -165,6 +165,18 @@ def execute_live_fetch(action, action_map, config):
             print(f"  [WARN] {source_name} is disabled (no API key). Skipping.")
             return papers, True, source_name
 
+        # -- Query visibility telemetry --
+        # Surface the exact query before the network fetch so operators can
+        # see what the DRL agent is searching for on this source.
+        query = getattr(source, "query", None)
+        if not query:
+            terms = getattr(source, "search_terms", None)
+            if terms:
+                query = " OR ".join(str(t) for t in terms)
+        if not query:
+            query = config.get(f"{source_name}_query", "unknown")
+        logger.info(f'[ACT] {source_name} | Query: "{query}"')
+        print(f'  [ACT] {source_name} | Query: "{query}"')
         print(f"  [{source_name}] Fetching papers...")
         papers = source.fetch_new_papers()
 
@@ -436,7 +448,13 @@ def run_live_loop(agent, action_map, working_source_names, config,
                 error_streak = 0
                 best_score = 0.0
 
-                for paper in papers:
+                total_papers = len(papers)
+                for i, paper in enumerate(papers):
+                    paper_title = paper.get('title', 'N/A')
+                    logger.info(
+                        f"[EVALUATION] Progress: {i+1}/{total_papers} | "
+                        f"Paper: {paper_title[:60]}..."
+                    )
                     score = evaluate_paper(paper, ai_manager, provider_call_counts)
                     if score > best_score:
                         best_score = score

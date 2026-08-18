@@ -1,10 +1,10 @@
-﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.5
+﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.6
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-15 (v5.10.5 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine)
+> **Last Updated:** 2026-08-17 (v5.10.6 -- Daemon OS Autostart & Orchestrator)
 
 ---
 
@@ -275,6 +275,11 @@ Batch script for launching Streamlit GUI.
 **Functions:** `ModelProvisioner` (`detect_protocol()`, `resolve_local_model_path()`, `ensure_model_available()`, `check_available()`, `_ollama_list()`, `_ollama_pull()`, `_ensure_cloud()`, `_ensure_ollama()`, `_ensure_huggingface()`), module-level `main()`.
 **Imports:** `subprocess`, `dotenv`, `huggingface_hub` (optional)
 
+#### `src/utils/daemon_autostart.py` (v5.10.6 — Daemon OS Autostart & Orchestrator)
+**Purpose:** Windows OS autostart orchestrator for the 24/7 daemon. `generate_boot_batch()` writes `talos_daemon_boot.bat`, which uses the quoted `sys.executable` absolute path to launch the CPU server (port 11435, `-m fermion serve`) and the daemon (`talos_service.py`) without relying on `conda activate` or the system PATH. `install_windows_autostart()` registers a Startup-folder `.lnk` via pywin32 Shell COM (`shell32.dll,43` icon, minimized).
+**Functions:** `generate_boot_batch()`, `install_windows_autostart()`, `_project_root()`, module-level `main()`.
+**Imports:** `os`, `sys`, `pathlib`, `win32com.client` (lazy, optional)
+
 #### `src/ai/optimizers/gwo_llm_router_reward_shaper.py` (v5.10.2 — Bi-Level Reward Shaping)
 **Purpose:** `GWOLLMRouterRewardShaper` bi-level multi-objective optimizer for the LLM Router reward weights `[w_quality, w_latency, w_cost, w_penalty]` (simplex-projected). Outer GWO loop + inner router evaluation under `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Exports `models/gwo_llm_router_reward_weights.json`.
 **Functions:** `GWOLLMRouterRewardShaper` (`optimize()`, `_evaluate_router()`, `_update_position()`, `export()`, `run()`), `main()`.
@@ -445,7 +450,11 @@ src/utils/model_provisioner.py (Universal Model Provisioner)
   ├── src.utils.logger
   ├── config.settings
   ├── dotenv
-  └── huggingface_hub (optional)
+  ├── huggingface_hub (optional)
+src/utils/daemon_autostart.py (Daemon OS Autostart)
+  ├── os
+  ├── pathlib
+  └── win32com.client (lazy)
 ```
 
 ---
@@ -466,6 +475,7 @@ src/utils/model_provisioner.py (Universal Model Provisioner)
 | **MCP Server** | `src/mcp_server.py` | Native MCP (Model Context Protocol) stdio server exposing 4 tools (system_status, semantic_search, paper_details, trigger_scrape) via MCPServer v2.0.0. Decoupled architecture: tools delegate to FastAPI backend via HTTP. |
 | **Enterprise Logger** | `src/utils/logger.py` | Central `get_logger(name)` factory -- `rich.logging.RichHandler` console + `RotatingFileHandler` to `data/logs/talos_system.log` (10 MB, 5 backups) |
 | **Universal Model Provisioner** | `src/utils/model_provisioner.py` | Deterministic model provisioning (Ollama / HuggingFace Hub / cloud) with 3-tier local path resolution and self-healing fallback |
+| **Daemon OS Autostart** | `src/utils/daemon_autostart.py` | Windows Startup shortcut + boot batch generator for the 24/7 daemon |
 
 ---
 
@@ -499,8 +509,8 @@ src/utils/model_provisioner.py (Universal Model Provisioner)
 
 ---
 
-> **Last Updated:** 2026-08-15 (v5.10.5 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine)
-> **Project Version:** v5.10.5
+> **Last Updated:** 2026-08-17 (v5.10.6 -- Daemon OS Autostart & Orchestrator)
+> **Project Version:** v5.10.6
 > **Total Files Covered:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### New in v5.9.9: Report Path Consolidation

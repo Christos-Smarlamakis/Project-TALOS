@@ -1,6 +1,6 @@
 # TALOS Tech Radar & Ecosystem Map
 
-> **Last Updated:** 2026-08-15 (v5.10.5 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine)
+> **Last Updated:** 2026-08-17 (v5.10.6 -- Daemon OS Autostart & Orchestrator)
 
 This document is the technology radar of Project TALOS. It catalogues the development stack, the agentic architecture, the document-comprehension tooling, and the simulation capabilities that surround the core TALOS research intelligence system. It tracks State-of-the-Art (SOTA) technologies and maps the surrounding research-intelligence ecosystem.
 
@@ -27,6 +27,10 @@ The development tooling that lets developers iterate on TALOS quickly and safely
     *   **Role in TALOS:** Drafts papers from TALOS results, producing an IMRaD draft with Mermaid diagrams for visualization.
 
 ---
+
+*   **Daemon OS Autostart (pywin32 Shell COM)**
+    *   **What it is:** A Windows OS autostart orchestrator that generates a boot batch script and registers a Startup-folder shortcut for the 24/7 daemon.
+    *   **Role in TALOS:** Keeps the autonomous research daemon running across reboots (minimized console, system icon) with configurable network strategy and target sources.
 
 ## 2. Agentic & Core Architecture (TALOS v5.0)
 
@@ -76,4 +80,4 @@ Related systems and competitors that TALOS is evaluated against, tracked to keep
 
 ---
 
-> **Project Version:** v5.10.5 | **Last Updated:** 2026-08-15
+> **Project Version:** v5.10.6 | **Last Updated:** 2026-08-17

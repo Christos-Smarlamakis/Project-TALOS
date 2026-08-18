@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.10.5
+Project: TALOS v5.10.6
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,9 @@ Description:
     CI/CD, and Diagnostics & Exit. Includes the new Vendored Graphify
 AST Knowledge Graph adapter (v5.9.12).
 
+    v5.10.6: Daemon OS Autostart & Orchestrator -- added the Windows
+    Startup hook installer (src/utils/daemon_autostart.py), interactive
+    daemon network strategy configuration, and daemon_target_sources.
     v5.10.5: Universal Dynamic Model Provisioner & Self-Healing Redundancy
     Engine -- added the ModelProvisioner (src/utils/model_provisioner.py) with
     3-tier local path resolution, JIT auto-pull for Ollama and HuggingFace Hub,
@@ -1011,6 +1014,81 @@ def _view_and_pivot_research_focus(python_exe, project_root):
         safe_pause()
 
 
+def _configure_daemon_autostart(project_root):
+    """Interactive pre-flight configuration for the 24/7 daemon.
+
+    Prompts for the daemon network strategy, the target sources, and an
+    optional Windows OS autostart hook. Persists the strategy to .env and
+    the sources to config.json under the daemon_target_sources key.
+
+    Args:
+        project_root (str): Absolute path to the project root.
+    """
+    import json
+    from dotenv import set_key
+
+    env_path = os.path.join(project_root, '.env')
+    if not os.path.exists(env_path):
+        console.print("[yellow]No .env file found -- creating an empty one.[/yellow]")
+        open(env_path, 'w', encoding='utf-8').close()
+
+    # -- 1. Network strategy --
+    strategy = questionary.select(
+        "Select Daemon Network Strategy (Redundancy):",
+        choices=[
+            questionary.Choice("local_first (Recommended) -- local primary, auto-fallback to cloud", "local_first"),
+            questionary.Choice("strict_local -- air-gapped, never cloud", "strict_local"),
+            questionary.Choice("cloud_first -- cloud primary, auto-fallback to local", "cloud_first"),
+            questionary.Choice("strict_cloud -- cloud only, never local", "strict_cloud"),
+        ],
+        style=TALOS_QUESTIONARY_STYLE,
+    ).ask()
+    if strategy:
+        try:
+            set_key(env_path, "TALOS_NETWORK_STRATEGY", strategy)
+            os.environ["TALOS_NETWORK_STRATEGY"] = strategy
+            console.print(f"[green][OK] TALOS_NETWORK_STRATEGY set to {strategy}.[/green]")
+        except Exception as e:
+            console.print(f"[red][ERROR] Could not update .env: {e}[/red]")
+
+    # -- 2. Target sources --
+    selected_sources = prompt_source_selection()
+    config_path = os.path.join(project_root, 'config.json')
+    if selected_sources is None:
+        console.print("[dim]Source selection cancelled.[/dim]")
+    else:
+        sources = selected_sources or list(ALL_ACADEMIC_SOURCES)
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                cfg = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            cfg = {}
+        cfg["daemon_target_sources"] = sources
+        try:
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(cfg, f, indent=2, ensure_ascii=False)
+            console.print(f"[green][OK] daemon_target_sources saved ({len(sources)} sources).[/green]")
+        except Exception as e:
+            console.print(f"[red][ERROR] Could not save config.json: {e}[/red]")
+
+    # -- 3. Autostart hook --
+    install_hook = questionary.confirm(
+        "Install Windows Autostart Hook?",
+        default=False,
+        style=TALOS_QUESTIONARY_STYLE,
+    ).ask()
+    if install_hook:
+        try:
+            from src.utils.daemon_autostart import install_windows_autostart
+            result = install_windows_autostart()
+            if result:
+                console.print(f"[green][OK] Autostart hook installed: {result}[/green]")
+            else:
+                console.print("[yellow][WARN] Autostart hook could not be installed.[/yellow]")
+        except Exception as e:
+            console.print(f"[red][ERROR] Autostart installation failed: {e}[/red]")
+
+
 def main_menu():
     python_exe = sys.executable or "python"
     project_root = os.path.dirname(os.path.abspath(__file__))
@@ -1107,13 +1185,14 @@ def main_menu():
             "  7. Autonomous Red Tester (RL Chaos Fuzzer)",
             "  8. Live DRL Agent (Real API Orchestration)",
             "  9. Autonomous Research Process (24/7 Service)",
+            " 10. Configure Daemon & OS Autostart",
             questionary.Separator("  [ DIAGNOSTICS & EXIT ]"),
-            " 10. Baseline Report (Standard)",
-            " 11. Baseline Report (Academic -- 600 DPI)",
-            " 12. DRL Agent Status",
-            " 13. Codebase Docs Generator (18 Languages)",
+            " 11. Baseline Report (Standard)",
+            " 12. Baseline Report (Academic -- 600 DPI)",
+            " 13. DRL Agent Status",
+            " 14. Codebase Docs Generator (18 Languages)",
             questionary.Separator(),
-            " 14. Exit",
+            " 15. Exit",
         ])
         if choice is None or "Exit" in choice: break
         fm = "Press Enter to return..."
@@ -1291,6 +1370,17 @@ def main_menu():
             if questionary.confirm("Start autonomous process? (Ctrl+C to stop)", default=True).ask():
                 run_script("talos_service.py", python_exe)
         elif "10." in choice:
+            # -- Configure Daemon & OS Autostart --
+            info = _build_info_panel(
+                "Configure Daemon & OS Autostart",
+                "Configures the 24/7 daemon network strategy, target sources,\n"
+                "and an optional Windows OS autostart hook (Startup folder\n"
+                "shortcut with a minimized console and a system icon).",
+                border_style="bright_cyan",
+            )
+            console.print(info)
+            _configure_daemon_autostart(project_root)
+        elif "11." in choice:
             info = _build_info_panel(
                 "Baseline Report (Standard)",
                 "Generates a standard baseline report with score distribution,\n"
@@ -1299,7 +1389,7 @@ def main_menu():
             )
             console.print(info)
             run_script("generate_baseline_report.py", python_exe)
-        elif "11." in choice:
+        elif "12." in choice:
             info = _build_info_panel(
                 "Baseline Report (Academic -- 600 DPI)",
                 "Generates a publication-quality academic baseline report\n"
@@ -1309,7 +1399,7 @@ def main_menu():
             )
             console.print(info)
             run_script("generate_baseline_report.py", python_exe, args=["--academic"])
-        elif "12." in choice:
+        elif "13." in choice:
             # -- DRL Status: rich-powered display --
             mp = os.path.join(project_root, "models", "dddqn_trained.pth")
             gp = os.path.join(project_root, "models", "gwo_foraging_hyperparameters.json")
@@ -1337,7 +1427,7 @@ def main_menu():
                 box=box.ROUNDED,
             )
             console.print(drl_panel)
-        elif "13." in choice:
+        elif "14." in choice:
             info = _build_info_panel(
                 "Codebase Documentation Generator (18 Languages)",
                 "Uses LOCAL Ollama -- zero cloud cost, full privacy.\n"

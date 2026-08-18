@@ -1,10 +1,10 @@
-﻿# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.5
+﻿# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.6
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-08-15
-> **Version:** v5.10.5 -- Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine
+> **Last Updated:** 2026-08-17
+> **Version:** v5.10.6 -- Daemon OS Autostart & Orchestrator
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -797,6 +797,13 @@ For each evaluated paper, the AI generates:
 - JIT auto-pull for Ollama (`ollama pull`) and HuggingFace Hub (`huggingface_hub.snapshot_download`) with self-healing fallback (`[WARNING] Auto-provisioning failed ... Reverting to baseline model.`).
 - `run_talos.bat` / `run_talos.sh` step [5/5] execute the provisioner; `model_manager.py` `_provision_model()` routes uninstalled models through it.
 - `tests/test_model_provisioner.py` (22 hermetic tests).
+
+### 15.12 Daemon OS Autostart & Orchestrator (v5.10.6)
+
+- `src/utils/daemon_autostart.py` (`generate_boot_batch()`, `install_windows_autostart()`) generates `talos_daemon_boot.bat` and registers a Windows Startup-folder `.lnk` (pywin32, `shell32.dll,43` icon, minimized window).
+- Interactive daemon pre-flight in `talos.py` ("Configure Daemon & OS Autostart"): network strategy, target sources, optional autostart hook.
+- `daemon_target_sources` in `config.json` injected into `talos_live_agent.py --sources`.
+- `talos_live_agent.py` gains `--sources` (`nargs="+"`) source filtering.
 
 ---
 
