@@ -136,7 +136,7 @@ Requires **Ollama** for running locally the `gemma4` model.
 This software is part of ongoing research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.3, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.6, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -288,7 +288,7 @@ python src/utils/generate_docs.py
 Αυτό το λογισμικό αποτελεί μέρος εν εξελίξει έρευνας. Εάν χρησιμοποιήσετε το **TALOS** στην εργασία σας, παρακαλούμε να το αναφέρετε ως εξής:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.3, Αύγουστος 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.6, Αύγουστος 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -313,6 +313,6 @@ python src/utils/generate_docs.py
 
 ### 6. Ευχαριστίες & Υποστήριξη
 
-Ο Κύριος Αρχιτέκτονας και Συγγραφέας, **Χρήστος Σμαρλαμάκης**, είναι επίσημα επιλεγμένος αποδέκτης του **IEEE Computer Society WEIGD Student Support Fund (2026)**. Εκφράζουμε την ευγνωμοσύνη μας για την υποστήριξη και τους πόρους που παρέχονται από την IEEE Computer Society και τη διαρκή κληρονομιά της Dr. Grace C. N. Wei στην ενδυνάμωση εργαλείων έρευνας ανοικτού κώδικα και εκδημοκρατισμένης πρόσβασης για την παγκόσμια επιστημονική κοινότητα.
+Ο Κύριος Αρχιτέκτονας και Συγγραφέας, **Χρήστος Σμαρλαμάκης**, είναι επίσημος αποδέκτης του **IEEE Computer Society WEIGD Student Support Fund (2026)**. Εκφράζουμε την ευγνωμοσύνη μας για την υποστήριξη και τους πόρους που παρέχονται από την IEEE Computer Society και τη διαρκή κληρονομιά της Dr. Grace C. N. Wei στην προώθηση εργαλείων έρευνας ανοικτού κώδικα και εκδημοκρατισμένης πρόσβασης για την παγκόσμια επιστημονική κοινότητα.
 
 *Σχεδιασμός & Ανάπτυξη με Υποβοήθηση Τεχνητής Νοημοσύνης από τον Χρήστο Σμαρλαμάκη.*
