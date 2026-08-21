@@ -276,7 +276,7 @@ Batch script for launching Streamlit GUI.
 **Imports:** `subprocess`, `dotenv`, `huggingface_hub` (optional)
 
 #### `src/utils/daemon_autostart.py` (v5.10.6 — Daemon OS Autostart & Orchestrator)
-**Purpose:** Windows OS autostart orchestrator for the 24/7 daemon. `generate_boot_batch()` writes `talos_daemon_boot.bat`, which uses the quoted `sys.executable` absolute path to launch the CPU server (port 11435, `-m fermion serve`) and the daemon (`talos_service.py`) without relying on `conda activate` or the system PATH. `install_windows_autostart()` registers a Startup-folder `.lnk` via pywin32 Shell COM (`shell32.dll,43` icon, minimized).
+**Purpose:** Windows OS autostart orchestrator for the 24/7 daemon. `generate_boot_batch()` writes `talos_daemon_boot.bat`, which uses the quoted `sys.executable` absolute path to launch the CPU server (port 11435, `-m llama_cpp.server`) and the daemon (`talos_service.py`) without relying on `conda activate` or the system PATH. `install_windows_autostart()` registers a Startup-folder `.lnk` via pywin32 Shell COM (`shell32.dll,43` icon, minimized).
 **Functions:** `generate_boot_batch()`, `install_windows_autostart()`, `_project_root()`, module-level `main()`.
 **Imports:** `os`, `sys`, `pathlib`, `win32com.client` (lazy, optional)
 

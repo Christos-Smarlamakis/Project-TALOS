@@ -279,7 +279,7 @@ Batch script για εκκίνηση του TALOS CLI.
 **Imports:** `subprocess`, `dotenv`, `huggingface_hub` (προαιρετικό)
 
 #### `src/utils/daemon_autostart.py` (v5.10.6 — Daemon OS Autostart & Orchestrator)
-**Σκοπός:** Ενορχηστρωτής αυτόματης εκκίνησης του δαίμονα 24/7 στα Windows. Η `generate_boot_batch()` δημιουργεί το `talos_daemon_boot.bat`, το οποίο χρησιμοποιεί το `sys.executable` (απόλυτη διαδρομή, εντός εισαγωγικών) για την εκκίνηση του CPU server (θύρα 11435, `-m fermion serve`) και του δαίμονα (`talos_service.py`), χωρίς εξάρτηση από το `conda activate` ή το PATH του συστήματος. Η `install_windows_autostart()` καταχωρεί συντόμευση `.lnk` στον φάκελο Εκκίνησης μέσω pywin32 Shell COM (εικονίδιο `shell32.dll,43`, ελαχιστοποιημένο).
+**Σκοπός:** Ενορχηστρωτής αυτόματης εκκίνησης του δαίμονα 24/7 στα Windows. Η `generate_boot_batch()` δημιουργεί το `talos_daemon_boot.bat`, το οποίο χρησιμοποιεί το `sys.executable` (απόλυτη διαδρομή, εντός εισαγωγικών) για την εκκίνηση του CPU server (θύρα 11435, `-m llama_cpp.server`) και του δαίμονα (`talos_service.py`), χωρίς εξάρτηση από το `conda activate` ή το PATH του συστήματος. Η `install_windows_autostart()` καταχωρεί συντόμευση `.lnk` στον φάκελο Εκκίνησης μέσω pywin32 Shell COM (εικονίδιο `shell32.dll,43`, ελαχιστοποιημένο).
 **Συναρτήσεις:** `generate_boot_batch()`, `install_windows_autostart()`, `_project_root()`, module-level `main()`.
 **Imports:** `os`, `sys`, `pathlib`, `win32com.client` (lazy, προαιρετικό)
 

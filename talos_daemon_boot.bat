@@ -10,9 +10,9 @@ REM -------------------------------------------------------------------
 REM 1. Start the local Fast Edge CPU server (port 11435) when
 REM    the hardware strategy needs local CPU inference.
 findstr /i "TALOS_HARDWARE_STRATEGY=.*cpu_gpu_split" "%~dp0.env" >nul 2>&1
-if %ERRORLEVEL%==0 start /B "" "C:\Users\Chris\.conda\envs\talosenv\python.exe" -m fermion serve --port 11435
+if %ERRORLEVEL%==0 start /B "" "C:\Users\Chris\.conda\envs\talosenv\python.exe" -m llama_cpp.server --port 11435
 findstr /i "TALOS_HARDWARE_STRATEGY=.*cpu_only" "%~dp0.env" >nul 2>&1
-if %ERRORLEVEL%==0 start /B "" "C:\Users\Chris\.conda\envs\talosenv\python.exe" -m fermion serve --port 11435
+if %ERRORLEVEL%==0 start /B "" "C:\Users\Chris\.conda\envs\talosenv\python.exe" -m llama_cpp.server --port 11435
 
 REM 2. Launch the 24/7 autonomous research daemon.
 "C:\Users\Chris\.conda\envs\talosenv\python.exe" src/ai/drl/talos_service.py

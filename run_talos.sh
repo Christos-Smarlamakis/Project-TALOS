@@ -213,7 +213,7 @@ do_server() {
     detect_and_activate_env
     nohup $PYTHON_CMD -m uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001 > /dev/null 2>&1 &
     log_success "Microservice dispatched to background (PID: $!)."
-    check_fermion
+    check_edge_server
     press_enter
 }
 
@@ -288,7 +288,7 @@ do_test() {
     press_enter
 }
 
-check_fermion() {
+check_edge_server() {
     if [ ! -f "$SCRIPT_DIR/.env" ]; then return 0; fi
     
     local FAST_EDGE=""
@@ -300,8 +300,8 @@ check_fermion() {
         local STATUS=""
         check_port_silent 11435 STATUS
         if [[ "$STATUS" == *"OFFLINE"* ]]; then
-            log_info "Bootstrapping Fermion CPU Edge Accelerator..."
-            nohup fermion serve --port 11435 > /dev/null 2>&1 &
+            log_info "Bootstrapping Fast Edge CPU server..."
+            nohup $PYTHON_CMD -m llama_cpp.server --port 11435 > /dev/null 2>&1 &
             sleep 2
         fi
     fi

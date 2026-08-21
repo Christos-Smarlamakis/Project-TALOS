@@ -740,7 +740,7 @@ class AIManager:
             response = requests.post(
                 f"{base_url}/chat/completions",
                 json=payload,
-                timeout=30,
+                timeout=120,
                 headers={"Content-Type": "application/json"},
             )
             if response.status_code == 200:

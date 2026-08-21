@@ -205,7 +205,7 @@ call :LOG_INFO "Bootstrapping FastAPI Microservice..."
 call :ACTIVATE_CONDA
 start "TALOS FastAPI Server (8001)" /min cmd /c "python -m uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001"
 call :LOG_SUCCESS "Microservice dispatched to background (Port: 8001)."
-call :CHECK_FERMION
+call :CHECK_EDGE_SERVER
 pause >nul
 goto MAIN_MENU
 
@@ -283,7 +283,7 @@ if %ERRORLEVEL% equ 0 (
 pause
 goto MAIN_MENU
 
-:CHECK_FERMION
+:CHECK_EDGE_SERVER
 if not exist ".env" goto :EOF
 for /f "tokens=1,2 delims==" %%a in ('type .env 2^>nul') do (
     if "%%a"=="FAST_EDGE_MODEL" set "FAST_EDGE=%%b"
@@ -294,8 +294,8 @@ if %ERRORLEVEL% neq 0 goto :EOF
 
 netstat -ano | findstr "LISTENING" | findstr ":11435" >nul
 if %ERRORLEVEL% neq 0 (
-    call :LOG_INFO "Bootstrapping Fermion CPU Edge Accelerator..."
-    start "TALOS Fast Edge Server" /min cmd /c "fermion serve --port 11435"
+    call :LOG_INFO "Bootstrapping Fast Edge CPU server..."
+    start "TALOS Fast Edge Server" /min cmd /c "python -m llama_cpp.server --port 11435"
     timeout /t 2 /nobreak >nul
 )
 goto :EOF
