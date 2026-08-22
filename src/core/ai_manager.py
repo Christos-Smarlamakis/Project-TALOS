@@ -1044,10 +1044,12 @@ class AIManager:
         # -- Interactive mode: prompt the user --
         try:
             import questionary
+            from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
             answer = questionary.confirm(
                 f"Local {tier} model connection failed ({error}).\n"
                 "Switch to Cloud fallback (Gemini/DeepSeek) for this session?",
                 default=True,
+                style=TALOS_QUESTIONARY_STYLE,
             ).ask()
             if answer:
                 if tier == "fast":

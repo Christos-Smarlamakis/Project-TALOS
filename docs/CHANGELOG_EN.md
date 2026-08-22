@@ -2,6 +2,28 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.8] - 2026-08-22 -- Enterprise TUI Overhaul & Academic Aesthetics
+
+### Added
+- **Unified Questionary Theme** (`src/utils/ui_theme.py`): New canonical `TALOS_QUESTIONARY_STYLE` module defining the Enterprise TUI "Cyan/Teal & Bright White" palette. Category separators render in bright white (`bold fg:#ffffff`), the question mark in IEEE blue (`bold fg:#4a9eff`), and all selection/pointer/answer accents in cyan/teal (`bold fg:#00ced1`) with `noinherit` to suppress background inversion for publication-ready IEEE screenshots.
+
+### Changed
+- **Every interactive prompt themed** -- `talos.py`, `src/ai/llm/model_manager.py`, `src/ai/llm/research_pivot.py`, `src/ai/llm/query_translator.py`, `src/analysis/citation_analyzer.py`, `src/analysis/author_profiler.py`, `src/analysis/knowledge_path_generator.py`, `src/core/profile_manager.py`, `src/core/ai_manager.py`, `src/ai/drl/drl_trainer.py`, `src/ai/drl/talos_service.py`, `src/ingestion/grey_literature_miner.py`, `src/ingestion/metadata_enricher.py`, `src/ingestion/pdf_downloader.py`, `src/utils/generate_docs.py`, `src/utils/migrate_database_schema.py`, `src/utils/recalculate_scores.py`, and `src/utils/reevaluate_database.py` now import and pass `TALOS_QUESTIONARY_STYLE` to every `questionary.select`, `questionary.checkbox`, and `questionary.text` prompt.
+- **Header panel border** -- the top-level Rich panel in `talos.py` now uses `border_style="#006699"` (IEEE blue) for an elegant academic frame.
+- **DSPy PRISMA pipeline postponed** to v5.10.9 in favor of the Enterprise TUI Overhaul.
+- **Version strings synced** across 5 code files and the 15 canonical documentation files to v5.10.8.
+
+## [v5.10.7] - 2026-08-21 -- OPTICA Bridge Integration
+
+### Added
+- **OPTICA REST Client** (`src/integration/optica_client.py`): New `OpticaClient` class that lets TALOS act as an API client to the sister Project OPTICA microservice (port 8002), offloading heavy cnsplots/PyVis graphics rendering. `request_plot(plot_type, journal_template)` dynamically resolves the active profile database path via `get_active_profile_db_path()`, builds a `{data_source, plot_type, journal_template, override_params}` payload, POSTs to `{OPTICA_API_BASE}/plot/generate`, and returns graceful error dictionaries on connection failure instead of crashing.
+- **Configuration** (`config/settings.py`): New `OPTICA_API_BASE` environment setting defaulting to `http://127.0.0.1:8002/api/v1`, mirrored in `config.template.json` and `example.env`.
+- **TUI Entry** (`talos.py`): New "Data Visualizations (via OPTICA)" menu option in the Analysis & Insights group, prompting for plot type (`opex_dashboard` / `semantic_topology`) and journal template (`nature` / `science` / `cell`), then rendering the result in a Rich panel.
+
+### Changed
+- **DSPy PRISMA pipeline postponed** to v5.10.8 in favor of the OPTICA Bridge integration.
+- Version strings synced across 5 code files and the 15 canonical documentation files to v5.10.7.
+
 ## [v5.10.6] - 2026-08-17 -- Daemon OS Autostart & Orchestrator
 
 ### Added

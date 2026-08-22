@@ -36,6 +36,7 @@ import json
 import time
 from tqdm import tqdm
 import questionary
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 
 # Προσθέτουμε το root του project στο path για να βρει τα modules
 from src.core.database_manager import DatabaseManager
@@ -144,7 +145,7 @@ class MetadataEnricher:
 
         print(f"Βρέθηκαν {len(papers_to_enrich)} άρθρα που μπορεί να χρειάζονται εμπλουτισμό.")
         print("Πηγές (fallback chain): OpenAlex → Crossref → DBLP → Semantic Scholar")
-        if not questionary.confirm("Θέλετε να ξεκινήσει η διαδικασία αναζήτησης και ενημέρωσης;", default=True).ask():
+        if not questionary.confirm("Θέλετε να ξεκινήσει η διαδικασία αναζήτησης και ενημέρωσης;", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
             print("Η διαδικασία ακυρώθηκε από τον χρήστη.")
             return
 

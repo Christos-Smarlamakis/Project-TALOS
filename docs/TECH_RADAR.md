@@ -1,6 +1,6 @@
 # TALOS Tech Radar & Ecosystem Map
 
-> **Last Updated:** 2026-08-17 (v5.10.6 -- Daemon OS Autostart & Orchestrator)
+> **Last Updated:** 2026-08-22 (v5.10.8 -- Enterprise TUI Overhaul & Academic Aesthetics)
 
 This document is the technology radar of Project TALOS. It catalogues the development stack, the agentic architecture, the document-comprehension tooling, and the simulation capabilities that surround the core TALOS research intelligence system. It tracks State-of-the-Art (SOTA) technologies and maps the surrounding research-intelligence ecosystem.
 
@@ -80,4 +80,4 @@ Related systems and competitors that TALOS is evaluated against, tracked to keep
 
 ---
 
-> **Project Version:** v5.10.6 | **Last Updated:** 2026-08-17
+> **Project Version:** v5.10.8 | **Last Updated:** 2026-08-22

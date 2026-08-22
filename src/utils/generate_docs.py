@@ -39,6 +39,8 @@ except ImportError:
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
+if HAS_QUESTIONARY:
+    from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 from src.utils.logger import get_logger
 from rich.console import Console
 from rich.panel import Panel
@@ -373,6 +375,7 @@ def main() -> None:
     lang_code = questionary.select(
         "Documentation language:",
         choices=lang_choices,
+        style=TALOS_QUESTIONARY_STYLE,
     ).ask()
 
     if lang_code is None:
@@ -395,6 +398,7 @@ def main() -> None:
     selected_dirs = questionary.checkbox(
         "Select directories to document (SPACE to toggle, ENTER to confirm):",
         choices=dir_choices,
+        style=TALOS_QUESTIONARY_STYLE,
     ).ask()
 
     if selected_dirs is None or len(selected_dirs) == 0:
@@ -434,7 +438,7 @@ def main() -> None:
         border_style="cyan",
     ))
 
-    confirmed = questionary.confirm("Proceed with generation?", default=True).ask()
+    confirmed = questionary.confirm("Proceed with generation?", default=True, style=TALOS_QUESTIONARY_STYLE).ask()
     if not confirmed:
         logger.info("Cancelled.")
         return

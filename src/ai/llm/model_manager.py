@@ -47,20 +47,7 @@ import subprocess
 import time
 import requests
 import questionary
-from questionary import Style
-
-TALOS_QUESTIONARY_STYLE = Style([
-    ('qmark', 'fg:#006699 bold'),
-    ('question', 'bold fg:#e4e7ee'),
-    ('answer', 'fg:#4a9eff bold'),
-    ('pointer', 'fg:#4a9eff bold'),
-    ('highlighted', 'fg:#4a9eff bold noinherit'),
-    ('selected', 'fg:#28a745 bold noinherit'),
-    ('separator', 'fg:#6b7280'),
-    ('instruction', 'fg:#6b7280 italic'),
-    ('text', 'fg:#c9cdd4'),
-    ('disabled', 'fg:#6b7280 italic')
-])
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 
 from dotenv import dotenv_values, set_key as _set_key
 

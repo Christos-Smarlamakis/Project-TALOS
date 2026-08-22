@@ -1,10 +1,10 @@
-﻿# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.6
+﻿# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.8
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-08-17 (v5.10.6 -- Ενορχηστρωτής Αυτόματης Εκκίνησης Δαίμονα Λειτουργικού Συστήματος)
+> **Τελευταία Ενημέρωση:** 2026-08-22 (v5.10.8 -- Ανακαίνιση Επιχειρησιακού TUI & Ακαδημαϊκή Αισθητική)
 
 ---
 
@@ -283,6 +283,11 @@ Batch script για εκκίνηση του TALOS CLI.
 **Συναρτήσεις:** `generate_boot_batch()`, `install_windows_autostart()`, `_project_root()`, module-level `main()`.
 **Imports:** `os`, `sys`, `pathlib`, `win32com.client` (lazy, προαιρετικό)
 
+#### `src/integration/optica_client.py` (v5.10.7 — OPTICA Bridge Integration)
+**Σκοπός:** Πελάτης REST προς την αδελφή μικροϋπηρεσία Project OPTICA (θύρα 8002), η οποία εκφορτώνει τη βαριά απόδοση γραφικών cnsplots/PyVis. Η `request_plot()` επιλύει δυναμικά τη διαδρομή της ενεργής βάσης δεδομένων (`get_active_profile_db_path()`), κατασκευάζει φορτίο `{data_source, plot_type, journal_template, override_params}` και αποστέλλει POST στο `{OPTICA_API_BASE}/plot/generate` με ευπρεπή χειρισμό σφαλμάτων σύνδεσης (χωρίς κατάρρευση).
+**Συναρτήσεις:** `OpticaClient` (`request_plot()`, `_error()`, `plot_generate_url`), module-level `optica_client`.
+**Imports:** `os`, `requests`, `config.settings`
+
 #### `src/ai/optimizers/gwo_llm_router_reward_shaper.py` (v5.10.2 — Bi-Level Reward Shaping)
 **Σκοπός:** Κλάση `GWOLLMRouterRewardShaper` για Διεπίπεδη Βελτιστοποίηση Ανταμοιβής Πολλαπλών Στόχων στα βάρη ανταμοιβής του Δρομολογητή LLM `[w_quality, w_latency, w_cost, w_penalty]` (προβολή simplex). Εξωτερικός βρόχος GWO + εσωτερική αξιολόγηση δρομολογητή υπό `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Εξάγει `models/gwo_llm_router_reward_weights.json`.
 **Συναρτήσεις:** `GWOLLMRouterRewardShaper` (`optimize()`, `_evaluate_router()`, `_update_position()`, `export()`, `run()`), `main()`.
@@ -442,6 +447,11 @@ src/analysis/graphify_adapter.py
 src/integration/synapse_client.py
   └── requests
 
+src/integration/optica_client.py (OPTICA Bridge)
+  ├── requests
+  ├── config.settings
+  └── src.core.database_manager
+
 src/mcp_server.py
   └── requests
 
@@ -515,9 +525,9 @@ src/utils/daemon_autostart.py (Daemon OS Autostart)
 
 ---
 
-> **Τελευταία ενημέρωση:** 2026-08-17 (v5.10.6 -- Ενορχηστρωτής Αυτόματης Εκκίνησης Δαίμονα Λειτουργικού Συστήματος)
-> **Έκδοση Project:** v5.10.6
-> **Συνολικά αρχεία που καλύπτονται:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
+> **Τελευταία ενημέρωση:** 2026-08-22 (v5.10.8 -- Ανακαίνιση Επιχειρησιακού TUI & Ακαδημαϊκή Αισθητική)
+> **Έκδοση Project:** v5.10.8
+> **Συνολικά αρχεία που καλύπτονται:** 75+ (62 src/ + 4 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### Νέο στην v5.9.9: Ενοποίηση Αναφορών
 > - **Όλες οι αναφορές** πλέον αποθηκεύονται στο **`data/reports/`** (όχι στη ρίζα `reports/`).

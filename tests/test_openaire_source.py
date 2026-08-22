@@ -21,7 +21,7 @@ import os
 import requests
 from unittest.mock import patch, MagicMock
 
-from src.ingestion.openaire import OpenAIRESource
+from src.ingestion.openaire_source import OpenAIRESource
 
 
 def _result(**overrides):

@@ -37,6 +37,7 @@ import re
 from dotenv import load_dotenv
 from datetime import datetime
 import questionary
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 from typing import Union, List, Dict, Any
 from tqdm import tqdm
 
@@ -117,7 +118,7 @@ class UnifiedProfiler:
                     
                     choices.append({'name': f"{display_name}  --  [{institution}]", 'value': res})
                 
-                choice = questionary.select("Multiple authors found. Please choose the correct one:", choices=choices, use_indicator=True).ask()
+                choice = questionary.select("Multiple authors found. Please choose the correct one:", choices=choices, use_indicator=True, style=TALOS_QUESTIONARY_STYLE).ask()
                 if not choice: return None
                 selected_author_info = choice
             else:

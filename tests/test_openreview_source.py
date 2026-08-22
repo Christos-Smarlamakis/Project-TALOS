@@ -25,7 +25,7 @@ from types import SimpleNamespace
 import pytest
 from unittest.mock import patch, MagicMock
 
-from src.ingestion import openreview as openreview_source
+from src.ingestion.openreview_source import OpenReviewSource
 
 
 class FakeField:

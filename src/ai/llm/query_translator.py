@@ -29,6 +29,7 @@ while _P and not os.path.exists(os.path.join(_P, 'talos.py')):
 if _P: sys.path.insert(0, _P)
 import json
 import questionary
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 
 from src.core.ai_manager import AIManager
 
@@ -93,7 +94,8 @@ def main():
     # 1. Λήψη της ερευνητικής πρόθεσης
     research_goal = questionary.text(
         "Περιέγραψε το νέο ερευνητικό σου θέμα (στα Αγγλικά):",
-        validate=lambda text: True if len(text.strip()) > 10 else "Please describe your topic in more detail."
+        validate=lambda text: True if len(text.strip()) > 10 else "Please describe your topic in more detail.",
+        style=TALOS_QUESTIONARY_STYLE,
     ).ask()
 
     if not research_goal: return
@@ -149,7 +151,7 @@ def main():
         print("\n⚠️ Προσοχή: Η Πυθία δεν επέστρεψε τα αναμενόμενα πεδία. Ελέγξτε το Output.")
         return
 
-    if questionary.confirm("\nΘέλεις να εφαρμόσω αυτές τις αλλαγές;", default=True).ask():
+    if questionary.confirm("\nΘέλεις να εφαρμόσω αυτές τις αλλαγές;", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
         count = 0
         for key, value in generated_config.items():
             # Ενημερώνουμε μόνο τα γνωστά πεδία για ασφάλεια

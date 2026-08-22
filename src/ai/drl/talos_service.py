@@ -649,13 +649,15 @@ def main():
     # ── Interactive reporting mode selection ───────────────────────────────
     try:
         import questionary
+        from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
         mode = questionary.select(
             "Select reporting mode:",
             choices=[
                 "1. Silent — alerts only (Telegram/Discord for score ≥ 8)",
                 "2. Normal — episode summary every 10 episodes",
                 "3. Verbose — every action printed",
-            ]
+            ],
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
         if mode is None:
             print("  Cancelled. Exiting.")

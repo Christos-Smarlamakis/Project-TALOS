@@ -33,6 +33,7 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.feature_extraction.text import TfidfVectorizer
 import questionary
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
@@ -78,7 +79,8 @@ class KnowledgePathGenerator:
         print("\n--- The Knowledge Path Forger ---")
         goal = questionary.text(
             "What do you want to learn in depth today? Describe your goal:",
-            validate=lambda text: True if len(text.strip()) > 10 else "Please provide a more detailed goal."
+            validate=lambda text: True if len(text.strip()) > 10 else "Please provide a more detailed goal.",
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
         return goal
 

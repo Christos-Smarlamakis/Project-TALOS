@@ -24,6 +24,7 @@ while _P and not os.path.exists(os.path.join(_P, 'talos.py')):
     _P = os.path.dirname(_P)
 if _P: sys.path.insert(0, _P)
 
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 from src.core.database_manager import DatabaseManager
 from dotenv import load_dotenv
 
@@ -231,12 +232,13 @@ def main():
     
     print(f"Found {len(papers)} papers to process.\n")
     
-    if not questionary.confirm(f"Attempt to download PDFs for {len(papers)} papers? This may take time.", default=True).ask():
+    if not questionary.confirm(f"Attempt to download PDFs for {len(papers)} papers? This may take time.", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
         return
     
     use_batch = questionary.confirm(
         "Use multi-threaded batch download? (Faster — ~10x speedup with ThreadPoolExecutor)", 
-        default=True
+        default=True,
+        style=TALOS_QUESTIONARY_STYLE,
     ).ask()
 
     success = 0

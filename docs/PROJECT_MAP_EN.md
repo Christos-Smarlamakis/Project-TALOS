@@ -1,10 +1,10 @@
-﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.6
+﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.8
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-17 (v5.10.6 -- Daemon OS Autostart & Orchestrator)
+> **Last Updated:** 2026-08-22 (v5.10.8 -- Enterprise TUI Overhaul & Academic Aesthetics)
 
 ---
 
@@ -280,6 +280,11 @@ Batch script for launching Streamlit GUI.
 **Functions:** `generate_boot_batch()`, `install_windows_autostart()`, `_project_root()`, module-level `main()`.
 **Imports:** `os`, `sys`, `pathlib`, `win32com.client` (lazy, optional)
 
+#### `src/integration/optica_client.py` (v5.10.7 — OPTICA Bridge Integration)
+**Purpose:** REST client to the sister Project OPTICA microservice (port 8002), which offloads heavy cnsplots/PyVis graphics. `request_plot()` dynamically resolves the active profile database path (`get_active_profile_db_path()`), builds a `{data_source, plot_type, journal_template, override_params}` payload, and POSTs to `{OPTICA_API_BASE}/plot/generate` with graceful connection-error handling.
+**Functions:** `OpticaClient` (`request_plot()`, `_error()`, `plot_generate_url`), module-level `optica_client`.
+**Imports:** `os`, `requests`, `config.settings`
+
 #### `src/ai/optimizers/gwo_llm_router_reward_shaper.py` (v5.10.2 — Bi-Level Reward Shaping)
 **Purpose:** `GWOLLMRouterRewardShaper` bi-level multi-objective optimizer for the LLM Router reward weights `[w_quality, w_latency, w_cost, w_penalty]` (simplex-projected). Outer GWO loop + inner router evaluation under `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Exports `models/gwo_llm_router_reward_weights.json`.
 **Functions:** `GWOLLMRouterRewardShaper` (`optimize()`, `_evaluate_router()`, `_update_position()`, `export()`, `run()`), `main()`.
@@ -439,6 +444,11 @@ src/analysis/graphify_adapter.py
 src/integration/synapse_client.py
   └── requests
 
+src/integration/optica_client.py (OPTICA Bridge)
+  ├── requests
+  ├── config.settings
+  └── src.core.database_manager
+
 src/mcp_server.py
   └── requests
 
@@ -509,9 +519,9 @@ src/utils/daemon_autostart.py (Daemon OS Autostart)
 
 ---
 
-> **Last Updated:** 2026-08-17 (v5.10.6 -- Daemon OS Autostart & Orchestrator)
-> **Project Version:** v5.10.6
-> **Total Files Covered:** 75+ (62 src/ + 3 integration/ + 10 root entry/config/docs/tests + 1 testing/)
+> **Last Updated:** 2026-08-22 (v5.10.8 -- Enterprise TUI Overhaul & Academic Aesthetics)
+> **Project Version:** v5.10.8
+> **Total Files Covered:** 75+ (62 src/ + 4 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### New in v5.9.9: Report Path Consolidation
 > - **All reports** now stored under **`data/reports/`** (no longer at root `reports/`).

@@ -25,6 +25,9 @@
 
   "execution_mode": "local",
 
+  "_comment_optica": "OPTICA Bridge (v5.10.7): TALOS is an API client to Project OPTICA (port 8002) for cnsplots/PyVis graphics. Env override: OPTICA_API_BASE.",
+  "optica_api_base": "http://127.0.0.1:8002/api/v1",
+
   "ai_provider_priority": ["local", "nvidia", "groq", "cerebras", "github", "gemini", "deepseek", "mistral", "openrouter", "huggingface"],
   "failure_threshold": 3,
 

@@ -27,20 +27,7 @@ import json
 import shutil
 import subprocess
 import questionary
-from questionary import Style
-
-TALOS_QUESTIONARY_STYLE = Style([
-    ('qmark', 'fg:#006699 bold'),
-    ('question', 'bold fg:#e4e7ee'),
-    ('answer', 'fg:#4a9eff bold'),
-    ('pointer', 'fg:#4a9eff bold'),
-    ('highlighted', 'fg:#4a9eff bold noinherit'),
-    ('selected', 'fg:#28a745 bold noinherit'),
-    ('separator', 'fg:#6b7280'),
-    ('instruction', 'fg:#6b7280 italic'),
-    ('text', 'fg:#c9cdd4'),
-    ('disabled', 'fg:#6b7280 italic')
-])
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 
 # -- v5.9.17: Enterprise logging & Universal Rich TUI --
 from src.utils.logger import get_logger

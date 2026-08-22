@@ -70,6 +70,7 @@ def main():
         # Interactive mode: ask the user
         try:
             import questionary
+            from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
             # v1.3: .ask() returns None on Ctrl+C, but some questionary
             # versions re-raise — guard explicitly for a clean exit.
             try:
@@ -80,7 +81,8 @@ def main():
                         "2. Short training (100 episodes) ~ 1 min",
                         "3. Standard training (500 episodes) ~ 5 min",
                         "4. Deep training (1000 episodes) ~ 10 min",
-                    ]
+                    ],
+                    style=TALOS_QUESTIONARY_STYLE,
                 ).ask()
             except KeyboardInterrupt:
                 choice = None

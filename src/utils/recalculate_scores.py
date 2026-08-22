@@ -33,6 +33,7 @@ import os
 import sqlite3
 from tqdm import tqdm
 import questionary
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 
 # Προσθέτουμε το root του project στο path για να βρει τα core modules
 from src.core.database_manager import DatabaseManager
@@ -104,7 +105,7 @@ def recalculate_database_scores():
     
     print(f"\nΠροετοιμασία για μαζική ενημέρωση {len(updates_to_perform)} εγγραφών.")
     
-    if not questionary.confirm("Είστε σίγουροι ότι θέλετε να ενημερώσετε τα overall scores για ΟΛΑ τα άρθρα;", default=False).ask():
+    if not questionary.confirm("Είστε σίγουροι ότι θέλετε να ενημερώσετε τα overall scores για ΟΛΑ τα άρθρα;", default=False, style=TALOS_QUESTIONARY_STYLE).ask():
         print("Η διαδικασία ακυρώθηκε από τον χρήστη.")
         return
 

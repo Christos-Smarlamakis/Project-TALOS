@@ -4,9 +4,30 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-17 (v5.10.6 -- Daemon OS Autostart & Orchestrator)
+> **Last Updated:** 2026-08-22 (v5.10.8 -- Enterprise TUI Overhaul & Academic Aesthetics)
 
 ---
+
+## Phase 38: Enterprise TUI Overhaul & Academic Aesthetics (v5.10.8)
+
+### Status: COMPLETED (2026-08-22)
+
+- [x] **Unified Questionary Theme** -- New canonical `src/utils/ui_theme.py` exporting `TALOS_QUESTIONARY_STYLE` with the Cyan/Teal & Bright White palette (bright-white separators, IEEE blue qmark, cyan/teal `noinherit` selection).
+- [x] **Prompt-wide Styling** -- Every `questionary.select`/`checkbox`/`text`/`confirm` across 18 prompt-using modules now passes `style=TALOS_QUESTIONARY_STYLE`.
+- [x] **Header Panel Border** -- Top-level Rich panel in `talos.py` now uses `border_style="#006699"`.
+- [x] **DSPy PRISMA Postponed** -- shifted to v5.10.9; CORTEX & n8n Gateway shifted to v5.10.10.
+- [x] **Version & Documentation Sync** -- v5.10.8 synced across 5 code files and 15 documentation files.
+
+## Phase 37: OPTICA Bridge Integration (v5.10.7)
+
+### Status: COMPLETED (2026-08-21)
+
+- [x] **OPTICA REST Client** -- Added `src/integration/optica_client.py` (`OpticaClient`) so TALOS acts as an API client to Project OPTICA (port 8002), offloading cnsplots/PyVis graphics.
+- [x] **Dynamic DB Path Resolution** -- `request_plot()` resolves the active profile database path via `get_active_profile_db_path()` and posts `{data_source, plot_type, journal_template, override_params}` to `{OPTICA_API_BASE}/plot/generate` with graceful connection-error handling.
+- [x] **Configuration Expansion** -- `OPTICA_API_BASE` setting added to `config/settings.py`, `config.template.json`, and `example.env`.
+- [x] **TUI Entry** -- "Data Visualizations (via OPTICA)" added to the Analysis & Insights menu group with plot-type and journal-template prompts.
+- [x] **DSPy PRISMA Postponed** -- shifted to v5.10.8.
+- [x] **Version & Documentation Sync** -- v5.10.7 synced across 5 code files and 15 documentation files.
 
 ## Phase 36: Daemon OS Autostart Orchestrator (v5.10.6)
 

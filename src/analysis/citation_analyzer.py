@@ -31,6 +31,7 @@ import json
 from datetime import datetime
 from pyvis.network import Network
 import questionary
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 from typing import Union, List, Dict, Any, Tuple # <-- Συμβατότητα με Python < 3.10
 
 # Προσθέτουμε το root του project στο path για να βρει τα core modules
@@ -123,13 +124,14 @@ def get_target_paper_from_user(db_manager: DatabaseManager) -> Union[str, None]:
             "1. Εισαγωγή DOI ή URL του Semantic Scholar χειροκίνητα",
             "2. Επιλογή από τα πρόσφατα 'Core Papers' της βάσης TALOS"
         ],
-        pointer="»"
+        pointer="»",
+        style=TALOS_QUESTIONARY_STYLE,
     ).ask()
 
     if choice is None: return None
 
     if choice.startswith("1."):
-        user_input = questionary.text("Εισάγετε το DOI ή το URL:").ask()
+        user_input = questionary.text("Εισάγετε το DOI ή το URL:", style=TALOS_QUESTIONARY_STYLE).ask()
         return get_paper_identifier(user_input)
     
     if choice.startswith("2."):
@@ -155,7 +157,8 @@ def get_target_paper_from_user(db_manager: DatabaseManager) -> Union[str, None]:
         selected_doi = questionary.select(
             "Διάλεξε ένα άρθρο από τη λίστα (ταξινομημένα κατά συνάφεια):",
             choices=paper_choices,
-            pointer="»"
+            pointer="»",
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
 
         return selected_doi

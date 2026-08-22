@@ -47,8 +47,8 @@ from src.ingestion.osti_source import OSTISource
 from src.ingestion.scigov_source import ScienceGovSource
 from src.ingestion.plos_source import PLOSSource
 from src.ingestion.core_source import CORESource
-from src.ingestion.openreview import OpenReviewSource
-from src.ingestion.openaire import OpenAIRESource
+from src.ingestion.openreview_source import OpenReviewSource
+from src.ingestion.openaire_source import OpenAIRESource
 
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager

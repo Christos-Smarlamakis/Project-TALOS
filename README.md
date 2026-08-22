@@ -1,4 +1,4 @@
-﻿# Project TALOS (v5.10.6)
+﻿# Project TALOS (v5.10.8)
 
 ### **Tactical Agentic Literature Orchestration System**
 
@@ -47,6 +47,7 @@ TALOS acts as an autonomous "Research Architect," filtering noise and highlighti
   - Models saved at `models/dddqn_trained.pth` and `models/talos_drl.pth`
 - **Autonomous Red Tester (RL-Driven Chaos Engineering)** (`src/ai/testing/red_tester.py`)
 - **Daemon OS Autostart Orchestrator** (`src/utils/daemon_autostart.py`) -- Windows Startup hook + boot batch generator for the 24/7 daemon (v5.10.6)
+- **OPTICA Bridge Integration** (`src/integration/optica_client.py`) -- API client to Project OPTICA (port 8002) for heavy cnsplots/PyVis graphics; TUI "Data Visualizations (via OPTICA)" menu (v5.10.7)
   - **Non-Stationary Multi-Armed Bandit** with Epsilon-Greedy (epsilon=0.2, alpha=0.1) stress-tests system components via subprocess
   - **LLM-as-a-Judge Diagnostics**: Crash stderr sent to Fast Edge LLM (Neutrino-8B) for two-sentence human-readable diagnosis
   - **Rich TUI Visualization**: Spinners, red crash Panels, yellow AI Diagnosis Panels, green PASS confirmations, color-coded Q-Table (Component Fragility)
@@ -136,7 +137,7 @@ Requires **Ollama** for running locally the `gemma4` model.
 This software is part of ongoing research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.6, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.8, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -145,7 +146,7 @@ This software is part of ongoing research. If you use **TALOS** in your work, pl
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.10.6},
+  version = {v5.10.8},
   year = {2026}
 }
 ```
@@ -288,7 +289,7 @@ python src/utils/generate_docs.py
 Αυτό το λογισμικό αποτελεί μέρος εν εξελίξει έρευνας. Εάν χρησιμοποιήσετε το **TALOS** στην εργασία σας, παρακαλούμε να το αναφέρετε ως εξής:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.6, Αύγουστος 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.8, Αύγουστος 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -297,7 +298,7 @@ python src/utils/generate_docs.py
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.10.6},
+  version = {v5.10.8},
   year = {2026}
 }
 ```

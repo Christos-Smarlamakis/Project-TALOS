@@ -42,6 +42,7 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai.types import Tool, GenerateContentConfig, GoogleSearch
 import questionary
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 
 def load_config():
     """Load the project configuration from config.json.
@@ -102,7 +103,8 @@ def run_miner():
 
     research_topic = questionary.text(
         "What technical topic would you like to investigate (GitHub, Tech Reports)?",
-        validate=lambda text: True if len(text.strip()) > 5 else "Please enter a valid topic."
+        validate=lambda text: True if len(text.strip()) > 5 else "Please enter a valid topic.",
+        style=TALOS_QUESTIONARY_STYLE,
     ).ask()
 
     if not research_topic: return

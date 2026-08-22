@@ -2,6 +2,28 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.10.8] - 2026-08-22 -- Ανακαίνιση Επιχειρησιακού TUI & Ακαδημαϊκή Αισθητική
+
+### Προστέθηκε
+- **Ενοποιημένο Θέμα Ερωτήσεων** (`src/utils/ui_theme.py`): Νέα κανονική ενότητα `TALOS_QUESTIONARY_STYLE` που ορίζει την επιχειρησιακή παλέτα TUI "Cyan/Teal & Bright White". Οι διαχωριστές κατηγοριών αποδίδονται σε έντονο λευκό (`bold fg:#ffffff`), το ερωτηματικό σε μπλε IEEE (`bold fg:#4a9eff`) και όλοι οι τόνοι επιλογής, δείκτη και απάντησης σε κυανό/τιρκουάζ (`bold fg:#00ced1`) με `noinherit` για την καταστολή της αντιστροφής φόντου, εξασφαλίζοντας στιγμιότυπα έτοιμα για δημοσίευση IEEE.
+
+### Άλλαξε
+- **Θεματοποιήθηκε κάθε διαδραστική ερώτηση** -- τα `talos.py`, `src/ai/llm/model_manager.py`, `src/ai/llm/research_pivot.py`, `src/ai/llm/query_translator.py`, `src/analysis/citation_analyzer.py`, `src/analysis/author_profiler.py`, `src/analysis/knowledge_path_generator.py`, `src/core/profile_manager.py`, `src/core/ai_manager.py`, `src/ai/drl/drl_trainer.py`, `src/ai/drl/talos_service.py`, `src/ingestion/grey_literature_miner.py`, `src/ingestion/metadata_enricher.py`, `src/ingestion/pdf_downloader.py`, `src/utils/generate_docs.py`, `src/utils/migrate_database_schema.py`, `src/utils/recalculate_scores.py` και `src/utils/reevaluate_database.py` εισάγουν πλέον και διαβιβάζουν το `TALOS_QUESTIONARY_STYLE` σε κάθε ερώτηση `questionary.select`, `questionary.checkbox` και `questionary.text`.
+- **Περίγραμμα πίνακα κεφαλίδας** -- ο κορυφαίος πίνακας Rich στο `talos.py` χρησιμοποιεί πλέον `border_style="#006699"` (μπλε IEEE) για κομψό ακαδημαϊκό πλαίσιο.
+- **Η διοχέτευση DSPy PRISMA αναβλήθηκε** για την v5.10.9 υπέρ της Ανακαίνισης Επιχειρησιακού TUI.
+- **Συγχρονισμός συμβολοσειρών έκδοσης** σε 5 αρχεία κώδικα και 15 κανονικά αρχεία τεκμηρίωσης σε v5.10.8.
+
+## [v5.10.7] - 2026-08-21 -- Ενσωμάτωση Γέφυρας OPTICA
+
+### Προστέθηκε
+- **Πελάτης REST OPTICA** (`src/integration/optica_client.py`): Νέα κλάση `OpticaClient` που επιτρέπει στο TALOS να λειτουργεί ως πελάτης API προς την αδελφή μικροϋπηρεσία Project OPTICA (θύρα 8002), εκφορτώνοντας τη βαριά απόδοση γραφικών cnsplots/PyVis. Η `request_plot(plot_type, journal_template)` επιλύει δυναμικά τη διαδρομή της ενεργής βάσης δεδομένων μέσω της `get_active_profile_db_path()`, κατασκευάζει φορτίο `{data_source, plot_type, journal_template, override_params}`, αποστέλλει POST στο `{OPTICA_API_BASE}/plot/generate` και επιστρέφει ευπρεπή λεξικά σφάλματος σε περίπτωση αδυναμίας σύνδεσης αντί να καταρρεύσει.
+- **Διαμόρφωση** (`config/settings.py`): Νέα ρύθμιση περιβάλλοντος `OPTICA_API_BASE` με προεπιλογή `http://127.0.0.1:8002/api/v1`, καθρεπτισμένη στα `config.template.json` και `example.env`.
+- **Είσοδος TUI** (`talos.py`): Νέα επιλογή μενού "Data Visualizations (via OPTICA)" στην ομάδα Ανάλυση & Ευρήματα, που ζητά τύπο γραφήματος (`opex_dashboard` / `semantic_topology`) και πρότυπο περιοδικού (`nature` / `science` / `cell`), και αποδίδει το αποτέλεσμα σε πίνακα Rich.
+
+### Άλλαξε
+- **Η διοχέτευση DSPy PRISMA αναβλήθηκε** για την v5.10.8 υπέρ της ενσωμάτωσης Γέφυρας OPTICA.
+- Συγχρονισμός συμβολοσειρών έκδοσης σε 5 αρχεία κώδικα και 15 κανονικά αρχεία τεκμηρίωσης σε v5.10.7.
+
 ## [v5.10.6] - 2026-08-17 -- Αυτόματη Εκκίνηση Δαίμονα Λειτουργικού Συστήματος & Ενορχηστρωτής
 
 ### Προστέθηκε

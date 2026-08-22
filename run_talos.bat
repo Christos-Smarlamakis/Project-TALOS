@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Project TALOS v5.10.6 -- Research Intelligence Dashboard
+title Project TALOS v5.10.8 -- Research Intelligence Dashboard
 
 REM ---------------------------------------------------------------------------
 REM [ INIT ] Enforce Terminal Viewport Dimensions
@@ -12,7 +12,7 @@ chcp 65001 >nul 2>&1
 
 REM ===========================================================================
 REM script         : run_talos.bat
-REM version        : v5.10.6 (Universal Dynamic Model Provisioner & Self-Healing Redundancy Engine)
+REM version        : v5.10.8 (Enterprise TUI Overhaul & Academic Aesthetics)
 REM description    : Advanced System Dashboard and Execution Matrix for Project TALOS.
 REM                  Implements Two-Column UI, IEEE WEIGD standard telemetry,
 REM                  defensive error handling, solid-block Unicode rendering,
@@ -103,7 +103,7 @@ echo %C_IEEE_LIGHT%             ██    ███████ ██      █�
 echo %C_IEEE_LIGHT%             ██    ██   ██ ██      ██    ██     ██  %C_RESET%
 echo %C_IEEE_LIGHT%             ██    ██   ██ ███████  ██████  ██████  %C_RESET%
 echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
-echo  %C_CYAN%Project TALOS v5.10.6 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)%C_RESET%
+echo  %C_CYAN%Project TALOS v5.10.8 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)%C_RESET%
 echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
 echo  [ SYSTEM TELEMETRY ]    API (8001): %API_STATUS%   ^|   BUS (8000): %SYNAPSE_STATUS%   ^|   EDGE (11435): %EDGE_STATUS%
 echo %C_IEEE_DARK%-----------------------------------------------------------------------------------------------------%C_RESET%
@@ -189,7 +189,7 @@ echo [5/5] Provisioning Local AI Models (Universal Model Provisioner)...
 call :LOG_INFO "Executing Universal Dynamic Model Provisioner (fast edge + heavy models)..."
 python src/utils/model_provisioner.py
 
-call :LOG_SUCCESS "TALOS v5.10.6 deployment finalized."
+call :LOG_SUCCESS "TALOS v5.10.8 deployment finalized."
 pause
 goto MAIN_MENU
 

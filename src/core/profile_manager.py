@@ -27,6 +27,12 @@ import json
 import questionary
 import subprocess
 
+_P = os.path.abspath(os.path.dirname(__file__))
+while _P and not os.path.exists(os.path.join(_P, 'talos.py')):
+    _P = os.path.dirname(_P)
+if _P: sys.path.insert(0, _P)
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
+
 PROFILES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '_profiles'))
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 ACTIVE_PROFILE_FILE = os.path.join(PROFILES_DIR, 'active_profile.txt')
@@ -105,7 +111,7 @@ def load_profile_to_root(profile_name):
     print(f"🚀 Το προφίλ '{profile_name}' είναι τώρα ενεργό!")
 
 def create_new_profile():
-    name = questionary.text("Δώσε όνομα για το νέο προφίλ (π.χ. bioinformatics):").ask()
+    name = questionary.text("Δώσε όνομα για το νέο προφίλ (π.χ. bioinformatics):", style=TALOS_QUESTIONARY_STYLE).ask()
     if not name: return
     
     safe_name = "".join([c for c in name if c.isalnum() or c in (' ', '_', '-')]).strip().replace(' ', '_')
@@ -124,7 +130,7 @@ def create_new_profile():
     
     print(f"\n--- Το νέο προφίλ '{safe_name}' δημιουργήθηκε! ---")
     
-    if questionary.confirm("Θέλεις να ρυθμίσεις τον ερευνητικό στόχο (PYTHIA) τώρα;", default=True).ask():
+    if questionary.confirm("Θέλεις να ρυθμίσεις τον ερευνητικό στόχο (PYTHIA) τώρα;", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
         success = run_pythia_script()
         if success:
             # --- Η ΔΙΟΡΘΩΣΗ ΕΙΝΑΙ ΕΔΩ ---
@@ -146,7 +152,8 @@ def switch_profile():
 
     choice = questionary.select(
         f"Τρέχον Προφίλ: [{current}]. Επίλεξε προφίλ για φόρτωση:",
-        choices=profiles + ["Ακύρωση"]
+        choices=profiles + ["Ακύρωση"],
+        style=TALOS_QUESTIONARY_STYLE,
     ).ask()
 
     if choice == "Ακύρωση" or choice is None: return
@@ -163,7 +170,7 @@ def switch_profile():
 def configure_current_profile():
     """Εκτελεί την Πυθία για το τρέχον προφίλ."""
     current = get_active_profile_name()
-    if questionary.confirm(f"ΠΡΟΣΟΧΗ: Αυτό θα αλλάξει τις ρυθμίσεις (Queries/Prompts) για το προφίλ '{current}'. Συνέχεια;", default=False).ask():
+    if questionary.confirm(f"ΠΡΟΣΟΧΗ: Αυτό θα αλλάξει τις ρυθμίσεις (Queries/Prompts) για το προφίλ '{current}'. Συνέχεια;", default=False, style=TALOS_QUESTIONARY_STYLE).ask():
         success = run_pythia_script()
         if success:
             # --- ΚΑΙ ΕΔΩ Η ΔΙΟΡΘΩΣΗ ---
@@ -188,10 +195,11 @@ def main():
                 "4. Αποθήκευση Τρέχουσας Κατάστασης (Save)",
                 questionary.Separator(),
                 "Επιστροφή"
-            ]
+            ],
+            style=TALOS_QUESTIONARY_STYLE,
         ).ask()
     except Exception:
-         choice = questionary.select("Επιλογές:", choices=["1. Switch", "2. Create", "3. Configure (PYTHIA)", "4. Save", "Return"]).unsafe_ask()
+         choice = questionary.select("Επιλογές:", choices=["1. Switch", "2. Create", "3. Configure (PYTHIA)", "4. Save", "Return"], style=TALOS_QUESTIONARY_STYLE).unsafe_ask()
 
     if not choice or "Επιστροφή" in choice or "Return" in choice: return
 

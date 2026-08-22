@@ -31,6 +31,7 @@ import json
 import time
 from datetime import timedelta
 import questionary
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 
 # Προσθέτουμε το root του project στο path
 from src.core.database_manager import DatabaseManager
@@ -72,7 +73,7 @@ def main():
     total_to_recalibrate = len(papers_to_update)
     print(f"\nΒρέθηκαν {total_to_recalibrate} άρθρα προς επανα-αξιολόγηση (Quad-Layer).")
     
-    if not questionary.confirm(f"Θα γίνει επανα-αξιολόγηση των πρώτων {total_to_recalibrate} άρθρων. Συνέχεια;", default=False).ask():
+    if not questionary.confirm(f"Θα γίνει επανα-αξιολόγηση των πρώτων {total_to_recalibrate} άρθρων. Συνέχεια;", default=False, style=TALOS_QUESTIONARY_STYLE).ask():
         print("Η διαδικασία ακυρώθηκε.")
         return
 

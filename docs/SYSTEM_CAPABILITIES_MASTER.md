@@ -1,10 +1,10 @@
-﻿# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.6
+﻿# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.8
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-08-17
-> **Version:** v5.10.6 -- Daemon OS Autostart & Orchestrator
+> **Last Updated:** 2026-08-22
+> **Version:** v5.10.8 -- Enterprise TUI Overhaul & Academic Aesthetics
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -804,6 +804,13 @@ For each evaluated paper, the AI generates:
 - Interactive daemon pre-flight in `talos.py` ("Configure Daemon & OS Autostart"): network strategy, target sources, optional autostart hook.
 - `daemon_target_sources` in `config.json` injected into `talos_live_agent.py --sources`.
 - `talos_live_agent.py` gains `--sources` (`nargs="+"`) source filtering.
+
+### 15.13 OPTICA Bridge Integration (v5.10.7)
+
+- `src/integration/optica_client.py` (`OpticaClient`) -- REST client to Project OPTICA (port 8002) offloading heavy cnsplots/PyVis graphics.
+- `request_plot(plot_type, journal_template)` resolves the active profile DB path via `get_active_profile_db_path()` and POSTs `{data_source, plot_type, journal_template, override_params}` to `{OPTICA_API_BASE}/plot/generate` with graceful connection-error handling.
+- `config/settings.py` `OPTICA_API_BASE` (default `http://127.0.0.1:8002/api/v1`); mirrored in `config.template.json` and `example.env`.
+- TUI "Data Visualizations (via OPTICA)" menu option (Analysis & Insights group): plot type (`opex_dashboard` / `semantic_topology`) and journal template (`nature` / `science` / `cell`).
 
 ---
 

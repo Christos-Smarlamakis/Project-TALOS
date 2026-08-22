@@ -32,6 +32,7 @@ import re
 from datetime import datetime
 from tqdm import tqdm
 import questionary
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 
 # Προσθέτουμε το root του project στο path για να βρει τα core modules
 from src.core.database_manager import DatabaseManager
@@ -71,7 +72,7 @@ def migrate_schema():
         print("ERROR: Database 'talos_research.db' not found. Nothing to migrate.")
         return
 
-    if not questionary.confirm(f"This script will permanently modify '{db_path}'. A backup will be created at '{backup_path}'. Continue?", default=False).ask():
+    if not questionary.confirm(f"This script will permanently modify '{db_path}'. A backup will be created at '{backup_path}'. Continue?", default=False, style=TALOS_QUESTIONARY_STYLE).ask():
         print("Migration cancelled by user.")
         return
 

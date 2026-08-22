@@ -10,16 +10,27 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.10.6
+Project: TALOS v5.10.8
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
     Conda environment, API port, Synapse bus, execution mode, active
     LLM tiers, and the current active research focus from config.json.
-    14-option richly-grouped menu across five visual categories: Core & AI
-    Configuration, Search & Ingestion, Analysis & Topologies, Daemons &
+    15-option richly-grouped menu across five visual categories: Core & AI
+    Configuration, Search & Ingestion, Analysis & Insights, Daemons &
     CI/CD, and Diagnostics & Exit. Includes the new Vendored Graphify
 AST Knowledge Graph adapter (v5.9.12).
+
+    v5.10.8: Enterprise TUI Overhaul & Academic Aesthetics -- unified
+    questionary prompt style across the entire CLI (Cyan/Teal #00ced1 selection
+    colors, bright-white category separators, IEEE blue #4a9eff question mark)
+    for publication-ready IEEE screenshots. Style canonicalized in
+    src/utils/ui_theme.py and imported by every prompt-using module.
+
+    v5.10.7: OPTICA Bridge Integration -- TALOS now acts as an API client
+    to the sister Project OPTICA microservice (port 8002), offloading heavy
+    cnsplots/PyVis graphics. Added src/integration/optica_client.py and the
+    "Data Visualizations (via OPTICA)" TUI menu option.
 
     v5.10.6: Daemon OS Autostart & Orchestrator -- added the Windows
     Startup hook installer (src/utils/daemon_autostart.py), interactive
@@ -102,20 +113,7 @@ Dependencies:
     - python-dotenv: Environment variable loading.
 """
 import questionary
-from questionary import Style
-
-TALOS_QUESTIONARY_STYLE = Style([
-    ('qmark', 'fg:#006699 bold'),
-    ('question', 'bold fg:#e4e7ee'),
-    ('answer', 'fg:#4a9eff bold'),
-    ('pointer', 'fg:#4a9eff bold'),
-    ('highlighted', 'fg:#4a9eff bold noinherit'),
-    ('selected', 'fg:#28a745 bold noinherit'),
-    ('separator', 'fg:#6b7280'),
-    ('instruction', 'fg:#6b7280 italic'),
-    ('text', 'fg:#c9cdd4'),
-    ('disabled', 'fg:#6b7280 italic')
-])
+from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 
 import os
 import subprocess
@@ -1089,6 +1087,77 @@ def _configure_daemon_autostart(project_root):
             console.print(f"[red][ERROR] Autostart installation failed: {e}[/red]")
 
 
+def _generate_optica_plots():
+    """Drive the OPTICA visualization bridge from the TALOS TUI.
+
+    Prompts the user for a plot type and a journal template, then delegates
+    the heavy rendering work to the Project OPTICA microservice (port 8002).
+    The result (or a graceful error) is rendered in a Rich panel.
+    """
+    # -- Plot type selection --
+    plot_choice = safe_select(
+        "Select a visualization to generate (via OPTICA):",
+        choices=[
+            "opex_dashboard (OPEX & Scores Multi-Panel)",
+            "semantic_topology (Elite Semantic Graph)",
+        ],
+    )
+    if plot_choice is None:
+        return
+    plot_type = plot_choice.split(" ")[0]
+
+    # -- Journal template selection --
+    journal_template = safe_select(
+        "Select the journal template:",
+        choices=["nature", "science", "cell"],
+    )
+    if journal_template is None:
+        return
+
+    info = _build_info_panel(
+        "Data Visualizations (via OPTICA)",
+        "Offloading graphics rendering to Project OPTICA (port 8002).\n"
+        f"[dim]Plot: {plot_type} | Journal template: {journal_template}[/dim]",
+        border_style="bright_magenta",
+    )
+    console.print(info)
+
+    # -- Lazy import: keep the OPTICA client out of the startup path --
+    try:
+        from src.integration.optica_client import OpticaClient
+        result = OpticaClient().request_plot(plot_type, journal_template)
+    except Exception as exc:  # pragma: no cover - defensive
+        result = {
+            "ok": False,
+            "error": f"Failed to reach OPTICA: {exc}",
+            "output_path": None,
+        }
+
+    # -- Render the result in a Rich panel --
+    if result.get("ok"):
+        output_path = result.get("output_path") or result.get("path")
+        body = "OPTICA plot generated successfully."
+        if output_path:
+            body += f"\n\n[bold green]Output:[/bold green] {output_path}"
+        console.print(Panel(
+            body,
+            title="[bold]OPTICA Bridge[/bold]",
+            border_style="green",
+            box=box.ROUNDED,
+            padding=(1, 2),
+        ))
+    else:
+        error_msg = result.get("error", "OPTICA is unreachable.")
+        console.print(Panel(
+            f"[bold red]OPTICA request failed.[/bold red]\n\n{error_msg}\n\n"
+            "[dim]Ensure Project OPTICA is running on port 8002 and retry.[/dim]",
+            title="[bold]OPTICA Bridge[/bold]",
+            border_style="red",
+            box=box.ROUNDED,
+            padding=(1, 2),
+        ))
+
+
 def main_menu():
     python_exe = sys.executable or "python"
     project_root = os.path.dirname(os.path.abspath(__file__))
@@ -1163,36 +1232,37 @@ def main_menu():
 
         header_panel = Panel(
             Align.center(header_content),
-            border_style="bright_blue",
+            border_style="#006699",
             box=box.ROUNDED,
             padding=(1, 2),
         )
 
         console.print(header_panel)
 
-        # -- v5.9.12: Richly-grouped 14-option menu --
+        # -- v5.10.7: Richly-grouped 15-option menu (OPTICA Bridge added) --
         choice = safe_select("Select operation:", choices=[
             questionary.Separator("  [ CORE & AI CONFIGURATION ]"),
             "  1. Configure AI Models & Execution Modes (Model Manager)",
             "  2. View & Pivot Research Focus (Query Translator)",
             questionary.Separator("  [ SEARCH & INGESTION ]"),
             "  3. CLI Research Search (Interactive)",
-            questionary.Separator("  [ ANALYSIS & TOPOLOGIES ]"),
+            questionary.Separator("  [ ANALYSIS & INSIGHTS ]"),
             "  4. Metadata Enrichment",
             "  5. Legacy Architecture Graph (D3.js)",
             "  6. Advanced AST Knowledge Graph (Graphify)",
+            "  7. Data Visualizations (via OPTICA)",
             questionary.Separator("  [ DAEMONS & CI/CD ]"),
-            "  7. Autonomous Red Tester (RL Chaos Fuzzer)",
-            "  8. Live DRL Agent (Real API Orchestration)",
-            "  9. Autonomous Research Process (24/7 Service)",
-            " 10. Configure Daemon & OS Autostart",
+            "  8. Autonomous Red Tester (RL Chaos Fuzzer)",
+            "  9. Live DRL Agent (Real API Orchestration)",
+            " 10. Autonomous Research Process (24/7 Service)",
+            " 11. Configure Daemon & OS Autostart",
             questionary.Separator("  [ DIAGNOSTICS & EXIT ]"),
-            " 11. Baseline Report (Standard)",
-            " 12. Baseline Report (Academic -- 600 DPI)",
-            " 13. DRL Agent Status",
-            " 14. Codebase Docs Generator (18 Languages)",
+            " 12. Baseline Report (Standard)",
+            " 13. Baseline Report (Academic -- 600 DPI)",
+            " 14. DRL Agent Status",
+            " 15. Codebase Docs Generator (18 Languages)",
             questionary.Separator(),
-            " 15. Exit",
+            " 16. Exit",
         ])
         if choice is None or "Exit" in choice: break
         fm = "Press Enter to return..."
@@ -1321,6 +1391,9 @@ def main_menu():
                     console.print(f"[red][ERROR] Graphify pipeline failed: {e}[/red]")
             safe_pause()
         elif " 7." in choice:
+            # -- Data Visualizations (via OPTICA) --
+            _generate_optica_plots()
+        elif " 8." in choice:
             # -- Autonomous Red Tester (RL Chaos Fuzzer) --
             info = _build_info_panel(
                 "Autonomous Red Tester (RL-Driven Chaos Engineering)",
@@ -1347,7 +1420,7 @@ def main_menu():
                     run_red_tester(cycles=cycles)
                 except Exception as e:
                     console.print(f"[red]Error running Autonomous Red Tester: {e}[/red]")
-        elif " 8." in choice:
+        elif " 9." in choice:
             # -- Live DRL Agent --
             info = _build_info_panel(
                 "Live DRL Agent -- Real API Orchestration",
@@ -1358,7 +1431,7 @@ def main_menu():
             console.print(info)
             if questionary.confirm("Start live agent? (Ctrl+C to stop)", default=True).ask():
                 run_script("talos_live_agent.py", python_exe, args=["--verbose"])
-        elif " 9." in choice:
+        elif "10." in choice:
             # -- Autonomous Research Process (24/7 Service) --
             info = _build_info_panel(
                 "Autonomous Research Process -- 24/7 + DRL",
@@ -1369,7 +1442,7 @@ def main_menu():
             console.print(info)
             if questionary.confirm("Start autonomous process? (Ctrl+C to stop)", default=True).ask():
                 run_script("talos_service.py", python_exe)
-        elif "10." in choice:
+        elif "11." in choice:
             # -- Configure Daemon & OS Autostart --
             info = _build_info_panel(
                 "Configure Daemon & OS Autostart",
@@ -1380,7 +1453,7 @@ def main_menu():
             )
             console.print(info)
             _configure_daemon_autostart(project_root)
-        elif "11." in choice:
+        elif "12." in choice:
             info = _build_info_panel(
                 "Baseline Report (Standard)",
                 "Generates a standard baseline report with score distribution,\n"
@@ -1389,7 +1462,7 @@ def main_menu():
             )
             console.print(info)
             run_script("generate_baseline_report.py", python_exe)
-        elif "12." in choice:
+        elif "13." in choice:
             info = _build_info_panel(
                 "Baseline Report (Academic -- 600 DPI)",
                 "Generates a publication-quality academic baseline report\n"
@@ -1399,7 +1472,7 @@ def main_menu():
             )
             console.print(info)
             run_script("generate_baseline_report.py", python_exe, args=["--academic"])
-        elif "13." in choice:
+        elif "14." in choice:
             # -- DRL Status: rich-powered display --
             mp = os.path.join(project_root, "models", "dddqn_trained.pth")
             gp = os.path.join(project_root, "models", "gwo_foraging_hyperparameters.json")
@@ -1427,7 +1500,7 @@ def main_menu():
                 box=box.ROUNDED,
             )
             console.print(drl_panel)
-        elif "14." in choice:
+        elif "15." in choice:
             info = _build_info_panel(
                 "Codebase Documentation Generator (18 Languages)",
                 "Uses LOCAL Ollama -- zero cloud cost, full privacy.\n"
