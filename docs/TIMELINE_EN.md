@@ -4,10 +4,33 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-22 (v5.10.8 -- Enterprise TUI Overhaul & Academic Aesthetics)
+> **Last Updated:** 2026-08-24 (v5.10.10 -- 3D Holographic Knowledge Constellation & Multi-Pipeline Live Visualizer)
 
 ---
 
+## Phase 40: 3D Holographic Constellation Visualizer (v5.10.10)
+
+### Status: COMPLETED (2026-08-24)
+
+- [x] **3D WebGL 1.0 Visualizer** -- Single-file self-contained HTML (`templates/live_foraging_visualizer.html`) with embedded GLSL shaders, handwritten 3D matrix math library, zero CDN dependencies. Features: 16-satellite orbital constellation, rotating gold icosahedron core, animated energy pulse beams, octahedron lockout cages, ambient particle field, glassmorphism HUD overlay.
+- [x] **FastAPI SSE Streaming** -- Three new endpoints: `GET /api/v1/visualizer/live` (HTML), `GET /api/v1/visualizer/stream` (Server-Sent Events with 15s heartbeat), `GET /api/v1/visualizer/demo-data` (50 most recent evaluations). In-memory `queue.Queue` broadcast with `broadcast_visualizer_event()` for thread-safe, non-blocking publication.
+- [x] **Multi-Pipeline Event Hooking** -- `daily_search.py` emits `paper_evaluated` after Flash pre-screening and Pro deep analysis. `historic_search.py` emits `paper_evaluated` after Flash evaluation. All emissions are best-effort with graceful ImportError fallback.
+- [x] **TUI Integration** -- `_menu_architecture_graphs()` gains "3. 3D Knowledge Constellation Visualizer (Browser)" with FastAPI reachability check, Rich info panel, and `webbrowser.open()` auto-launch.
+- [x] **Dual-Mode Operation** -- Live SSE Stream (connects to `/api/v1/visualizer/stream`) and Conference Offline Replay (replays `/api/v1/visualizer/demo-data` with Play/Pause/1x-5x Speed/Timeline scrub).
+- [x] **API endpoint count** increased from 19 to 22.
+- [x] **Version synced across 6 code files and 15 documentation files** to v5.10.10.
+- [x] **Verification gates passed** -- compileall, test_smoke, test_talos_version.
+## Phase 39: Comprehensive TUI Feature Audit & Profile Management Restoration (v5.10.9)
+
+### Status: COMPLETED (2026-08-23)
+
+- [x] **Hierarchical TUI Refactoring** -- 16-option progressive-disclosure menu across six visual groups (Core Config & Profiles, Search & Ingestion, Advanced Analysis, RL & Daemons, System/DB/Diagnostics, Exit). Nine dedicated sub-menu handler functions added.
+- [x] **Profile Management restored** -- `_manage_profiles()` delegates to `src.core.profile_manager` for profile switch/create/view/save operations. Active profile info displayed in Rich console with config and database health.
+- [x] **All previously omitted tools restored** -- Daily Search, Historical Search, Grey Literature Miner, PDF Downloader, Citation Analyzer, Knowledge Path Generator, Recommender, Author Profiler, Trend Analyzer, GWO Foraging Tuner, GWO LLM Router Shaper, GWO Live Dashboard, Metadata Enrichment, Recalculate Scores, Re-evaluate Database, DB Health Stats, API Health Check.
+- [x] **Profile Manager emoji cleanup** -- all emoji characters removed from print statements; replaced with plain-text markers.
+- [x] **DSPy PRISMA shifted to v5.10.11**; CORTEX & n8n Gateway shifted to v5.10.12.
+- [x] **Version synced across 6 code files and 15 documentation files** to v5.10.9.
+- [x] **Verification gates passed** -- compileall, test_smoke, test_talos_version.
 ## Phase 38: Enterprise TUI Overhaul & Academic Aesthetics (v5.10.8)
 
 ### Status: COMPLETED (2026-08-22)

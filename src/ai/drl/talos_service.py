@@ -48,6 +48,7 @@ if _P: sys.path.insert(0, _P)
 import time
 import gc
 import signal
+import atexit
 import subprocess
 import numpy as np
 import json
@@ -75,6 +76,9 @@ else:
 
 # ── Graceful shutdown handler ───────────────────────────────────────────────
 _shutdown_requested = False
+
+# -- Module-level reporting mode (set by main() so _run_live_search can read it) --
+_reporting_mode = "verbose"
 
 
 def _handle_signal(signum, frame):
@@ -107,6 +111,12 @@ logger = get_logger("talos_service")
 # -- 3-hour live search interval (seconds) --
 LIVE_SEARCH_INTERVAL_SECONDS = 3 * 3600
 
+# -- Persistent digest sentinel to prevent duplicate emails on restart (v5.10.9) --
+_DIGEST_SENTINEL = os.path.join(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')),
+    'data', '.last_digest_date'
+)
+
 # -- Fast Edge CPU server (Fermion) subprocess handle for self-hosting --
 _FERMION_PROCESS = None
 
@@ -133,8 +143,12 @@ def _spawn_fermion_cpu_server(strategy):
         return None
     try:
         _FERMION_PROCESS = subprocess.Popen(
-            [sys.executable, "-m", "fermion", "serve", "--port", "11435"]
+            [sys.executable, "-m", "llama_cpp.server", "--port", "11435"],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
+        # -- Register cleanup via atexit so the child is terminated even on
+        #    abnormal exit paths (SIGKILL, os._exit, unhandled crash). --
+        atexit.register(_terminate_fermion_cpu_server)
         console.print(
             f"  [INIT] Hardware Strategy: {strategy}. "
             f"Auto-started Fast Edge CPU server (Port 11435)."
@@ -435,7 +449,10 @@ def _run_live_search():
         headless_env["TALOS_HEADLESS"] = "1"
         # -- v5.10.6: inject daemon target sources from config.json --
         cmd = [sys.executable, os.path.abspath(live_agent_script),
-               "--episodes", "15", "--verbose"]
+               "--episodes", "15"]
+        # Conditional --verbose: only pass when reporting mode is verbose
+        if _reporting_mode == "verbose":
+            cmd.append("--verbose")
         target_sources = _load_daemon_target_sources()
         if target_sources:
             cmd += ["--sources"] + target_sources
@@ -491,6 +508,11 @@ def _run_daemon_iteration(env, agent, notifier, sleep_action, verbose, epsilon,
         logger.info("[DAEMON] 3-hour interval reached. Triggering live academic search...")
         if _run_live_search():
             last_live_search = time.time()
+            # -- Refresh the paper pool so fresh discoveries are visible (v5.10.9) --
+            try:
+                env.papers = OfflineTalosEnv._load_papers_from_db()
+            except Exception:
+                pass
 
     obs, info = env.reset()
     agent.reset_hidden_states()
@@ -519,8 +541,12 @@ def _run_daemon_iteration(env, agent, notifier, sleep_action, verbose, epsilon,
         # The agent decided to rest. Sleep for 1 hour to conserve
         # API limits and system resources.
         if action == sleep_action:
-            with console.status("[bold #4a9eff]Waiting for next research cycle...[/]"):
-                time.sleep(3600)
+            # -- Poll every 5 seconds so shutdown is responsive (v5.10.9) --
+            sleep_start = time.time()
+            while (time.time() - sleep_start) < 3600:
+                if _shutdown_requested:
+                    break
+                time.sleep(5)
             obs = next_obs
             continue
 
@@ -601,6 +627,13 @@ def _run_daemon_iteration(env, agent, notifier, sleep_action, verbose, epsilon,
         console.print("[bold #006699]Sending daily digest email...[/]")
         send_daily_digest(notifier)
         last_digest_date = datetime.now().date()
+        # -- Persist sentinel to disk so restarts don't re-send (v5.10.9) --
+        try:
+            os.makedirs(os.path.dirname(_DIGEST_SENTINEL), exist_ok=True)
+            with open(_DIGEST_SENTINEL, 'w') as _f:
+                _f.write(last_digest_date.isoformat())
+        except Exception:
+            pass
 
     # -- Episode summary --
     if verbose:
@@ -646,30 +679,30 @@ def main():
         f"  Daily Digest: Email at 17:00  |  Press Ctrl+C to stop\n"
     )
 
-    # ── Interactive reporting mode selection ───────────────────────────────
+    # ── Configuration-driven reporting mode (headless-safe, v5.10.9) ─────────
+    # Reads daemon_reporting_mode from config.json (default: "verbose").
+    # Also accepts --mode silent|normal|verbose as a CLI override.
+    global _reporting_mode
+    _reporting_mode = "verbose"
     try:
-        import questionary
-        from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
-        mode = questionary.select(
-            "Select reporting mode:",
-            choices=[
-                "1. Silent — alerts only (Telegram/Discord for score ≥ 8)",
-                "2. Normal — episode summary every 10 episodes",
-                "3. Verbose — every action printed",
-            ],
-            style=TALOS_QUESTIONARY_STYLE,
-        ).ask()
-        if mode is None:
-            print("  Cancelled. Exiting.")
-            return
-        verbose = "3." in mode  # Verbose mode
-        normal = "2." in mode   # Normal mode (episode summaries)
-        silent = "1." in mode   # Silent mode (alerts only)
-    except ImportError:
-        # questionary not installed — fall back to --verbose flag
-        verbose = "--verbose" in sys.argv
-        normal = False
-        silent = True  # Default to silent without questionary
+        config_path = os.path.join(
+            os.path.dirname(__file__), '..', '..', 'config.json')
+        with open(config_path, 'r', encoding='utf-8') as _f:
+            _cfg = json.load(_f)
+        _reporting_mode = _cfg.get("daemon_reporting_mode", "verbose")
+    except Exception:
+        pass
+    if "--mode" in sys.argv:
+        idx = sys.argv.index("--mode")
+        if idx + 1 < len(sys.argv):
+            _reporting_mode = sys.argv[idx + 1]
+    verbose = (_reporting_mode == "verbose")
+    silent  = (_reporting_mode == "silent")
+    normal  = (_reporting_mode == "normal")
+
+    # -- Log the resolved mode so the operator can see what was selected --
+    _mode_map = {"verbose": "VERBOSE (every action)", "normal": "NORMAL (episode summaries)", "silent": "SILENT (alerts only)"}
+    print(f"  [INIT] Reporting mode (config/--mode): {_mode_map.get(_reporting_mode, _reporting_mode)}")
 
     # ══════════════════════════════════════════════════════════════════════════
     # INITIALISATION
@@ -740,7 +773,15 @@ def main():
     # ── Tracking variables ─────────────────────────────────────────────────
     papers_discovered = 0
     high_score_count = 0
+    # -- Persistent digest sentinel: avoid duplicate emails on restart (v5.10.9) --
     last_digest_date = None
+    if os.path.exists(_DIGEST_SENTINEL):
+        try:
+            with open(_DIGEST_SENTINEL, 'r') as _f:
+                last_digest_date = datetime.strptime(
+                    _f.read().strip()[:10], "%Y-%m-%d").date()
+        except Exception:
+            pass
     last_live_search = 0  # Start at 0 so the live search fires immediately on startup
 
     # ── Reporting summary ────────────────────────────────────────────────

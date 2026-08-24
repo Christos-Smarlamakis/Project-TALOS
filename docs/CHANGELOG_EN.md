@@ -2,6 +2,46 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.10] - 2026-08-24 -- 3D Holographic Knowledge Constellation & Multi-Pipeline Live Visualizer
+
+### Added
+- **3D Holographic Knowledge Constellation Visualizer** (`templates/live_foraging_visualizer.html`): Single-file, air-gapped WebGL 1.0 interactive 3D visualizer with zero external network dependencies. Features: Deep Slate/Navy background (`#0f1117`) with ambient space particle field (800+ particles), IEEE blue (`#006699`) orbital ring grids on 3 inclination planes, rotating gold (`#f39c12`) icosahedron central TALOS core, 16 cyan (`#00ced1`) satellite source nodes positioned on orbital rings, animated energy pulse beams traveling along 3D vectors from core to target source, amber/red pulsating octahedron lockout cages, glassmorphism HUD overlay with real-time evaluation card, interactive camera controls (mouse-drag orbit, mouse-wheel zoom, middle-drag pan, reset view, 2D/3D projection toggle), dual-mode operation (Live SSE Stream vs. Conference Offline Replay), replay controls (Play/Pause, 1x/2x/5x Speed, timeline scrub), and score filter (All/Accepted/Elite).
+- **FastAPI Visualizer Endpoints** (`src/api/main_api.py`):
+  - `GET /api/v1/visualizer/live`: Serves the standalone visualizer HTML page via `HTMLResponse`.
+  - `GET /api/v1/visualizer/stream`: Server-Sent Events (SSE) endpoint pushing live JSON payloads (`paper_evaluated`, `paper_discovered`, `agent_step`, `router_decision`) via `StreamingResponse` with 15-second heartbeat keep-alive.
+  - `GET /api/v1/visualizer/demo-data`: Returns the 50 most recently evaluated papers from the database for offline conference replay mode.
+  - In-memory `broadcast_visualizer_event()` helper using `queue.Queue` for thread-safe, non-blocking event publication from synchronous pipeline code.
+- **Multi-Pipeline Event Hooking**:
+  - `src/ingestion/daily_search.py`: Emits `paper_evaluated` events after both Flash pre-screening and Pro deep analysis phases with pipeline labels "Daily Search 16 APIs" and "Daily Search 16 APIs (Deep)".
+  - `src/ingestion/historic_search.py`: Emits `paper_evaluated` events after Flash evaluation with pipeline label "Historic Archive Search".
+  - `talos.py` `_menu_architecture_graphs()`: New option "3. 3D Knowledge Constellation Visualizer (Browser)" with FastAPI reachability check on port 8001, Rich info panel, and `webbrowser.open()` auto-launch.
+
+### Changed
+- **API endpoint count** increased from 19 to 22 total (100% ecosystem coverage + visualizer streaming).
+- **Version strings synced across 6 code files** (`config/settings.py`, `src/api/main_api.py`, `talos.py`, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py`) to v5.10.10.
+- **Documentation synced across 15 canonical files** to v5.10.10 (2026-08-24).
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_smoke.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed with v5.10.10 assertion.
+## [v5.10.9] - 2026-08-23 -- Comprehensive TUI Feature Audit & Profile Management Restoration
+
+### Added
+- **Hierarchical TUI Refactoring** (`talos.py`): 16-option progressive-disclosure menu across six visual groups replacing the legacy flat menu. Each group opens a dedicated sub-menu with Back-to-Main-Menu navigation and Ctrl+C safety via `safe_select()`/`safe_pause()`.
+  - **Core Configuration & Profiles** (Options 1-3): AI Model Manager, Profile Management (Switch/Create/View), Research Focus & Query Translation (PYTHIA/Pivot).
+  - **Search & Ingestion Pipelines** (Option 4): Daily Search (16 APIs), Historical Archive Search, Grey Literature Miner, Batch PDF Downloader.
+  - **Advanced Analysis & Insights** (Options 5-7): Literature & Scientometric Analysis (Citation Analyzer, Knowledge Path Generator, Recommender, Author Profiler, Trend Analyzer, Interactive Dashboard, DRL Training), Codebase Architecture Graphs (Graphify AST + Legacy D3.js), Data Visualizations (via OPTICA).
+  - **Reinforcement Learning & Daemons** (Options 8-12): Autonomous Research Daemon, Live DRL Agent, Autonomous Red Tester, GWO Swarm Optimization (Foraging Tuner, LLM Router Shaper, 3D Live Dashboard), Configure Daemon & OS Autostart.
+  - **System, Database & Diagnostics** (Options 13-15): Database Maintenance (Metadata Enrichment, Recalculate Scores, Re-evaluate Database, DB Health Stats), Baseline Reports (Standard/Academic 600 DPI), System Diagnostics (DRL Status, Docs Generator, API Health Check).
+- **Profile Management restored as first-class TUI node** (`talos.py` `_manage_profiles()`): Switch active profile, create new profile with PYTHIA setup, view profile info (research goal, config size, database size), save current state to profile. All operations delegate to `src.core.profile_manager` functions.
+- **Nine dedicated sub-menu handler functions** in `talos.py`: `_manage_profiles`, `_menu_research_focus`, `_menu_search_ingestion`, `_menu_literature_analysis`, `_menu_architecture_graphs`, `_menu_gwo_suite`, `_menu_database_maintenance`, `_menu_baseline_reports`, `_menu_system_diagnostics`.
+
+### Changed
+- **Profile Manager emoji cleanup** (`src/core/profile_manager.py`): All emoji characters in print statements replaced with plain-text bracketed markers (`[SAVED]`, `[LOADED]`, `[NEW]`, `[ACTIVE]`, `[Saving]`, `[Loading]`). Compliance with Constitution I (Zero Emojis Protocol).
+- **Unified TUI theme** maintained across all new handlers: every `questionary` prompt in the 9 new sub-menu functions imports and passes `style=TALOS_QUESTIONARY_STYLE` from `src/utils.ui_theme`.
+- **DSPy PRISMA pipeline** shifted to v5.10.11. CORTEX & n8n Gateway shifted to v5.10.12.
+- **Version strings synced** across 6 code files and 15 canonical documentation files to v5.10.9.
 ## [v5.10.8] - 2026-08-22 -- Enterprise TUI Overhaul & Academic Aesthetics
 
 ### Added

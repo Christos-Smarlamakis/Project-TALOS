@@ -82,7 +82,7 @@ def save_current_state_to_profile(profile_name):
     if os.path.exists(db_src):
         shutil.copy2(db_src, os.path.join(profile_path, 'talos_research.db'))
     
-    print(f"✅ Η κατάσταση του προφίλ '{profile_name}' αποθηκεύτηκε.")
+    print(f"[SAVED] Profile '{profile_name}' state saved successfully.")
 
 def load_profile_to_root(profile_name):
     """Φέρνει τα αρχεία του προφίλ στον κεντρικό φάκελο."""
@@ -103,12 +103,12 @@ def load_profile_to_root(profile_name):
 
     if os.path.exists(db_src):
         shutil.copy2(db_src, db_dest)
-        print(f"📚 Φορτώθηκε η βάση δεδομένων του '{profile_name}'.")
+        print(f"[LOADED] Database loaded for profile '{profile_name}'.")
     else:
-        print(f"🆕 Δεν υπάρχει βάση για το '{profile_name}'. Θα δημιουργηθεί νέα.")
+        print(f"[NEW] No database for profile '{profile_name}'. A new one will be created.")
 
     set_active_profile_name(profile_name)
-    print(f"🚀 Το προφίλ '{profile_name}' είναι τώρα ενεργό!")
+    print(f"[ACTIVE] Profile '{profile_name}' is now active.")
 
 def create_new_profile():
     name = questionary.text("Δώσε όνομα για το νέο προφίλ (π.χ. bioinformatics):", style=TALOS_QUESTIONARY_STYLE).ask()
@@ -136,7 +136,7 @@ def create_new_profile():
             # --- Η ΔΙΟΡΘΩΣΗ ΕΙΝΑΙ ΕΔΩ ---
             # Μετά την επιτυχή εκτέλεση της Πυθίας (η οποία αλλάζει το root config),
             # αποθηκεύουμε ΑΜΕΣΩΣ το root config πίσω στον φάκελο του προφίλ.
-            print("\n💾 Αποθήκευση νέων ρυθμίσεων στο προφίλ...")
+            print("\n[Saving] Saving new settings to profile...")
             save_current_state_to_profile(safe_name)
 
 def switch_profile():
@@ -161,10 +161,10 @@ def switch_profile():
         print("Είσαι ήδη σε αυτό το προφίλ.")
         return
 
-    print(f"\n💾 Αποθήκευση κατάστασης '{current}'...")
+    print(f"\n[Saving] Saving state of '{current}'...")
     save_current_state_to_profile(current)
     
-    print(f"\n📂 Φόρτωση προφίλ '{choice}'...")
+    print(f"\n[Loading] Loading profile '{choice}'...")
     load_profile_to_root(choice)
 
 def configure_current_profile():
@@ -174,7 +174,7 @@ def configure_current_profile():
         success = run_pythia_script()
         if success:
             # --- ΚΑΙ ΕΔΩ Η ΔΙΟΡΘΩΣΗ ---
-            print(f"\n💾 Αποθήκευση νέων ρυθμίσεων στο προφίλ '{current}'...")
+            print(f"\n[Saving] Saving new settings to profile '{current}'...")
             save_current_state_to_profile(current)
 
 def main():
@@ -191,7 +191,7 @@ def main():
             choices=[
                 "1. Εναλλαγή Προφίλ (Switch)",
                 "2. Δημιουργία Νέου Προφίλ (+ Auto Setup)",
-                "3. 🔮 Ρύθμιση Στόχου Τρέχοντος Προφίλ (PYTHIA)",
+                "3. PYTHIA Goal Configuration (Active Profile)",
                 "4. Αποθήκευση Τρέχουσας Κατάστασης (Save)",
                 questionary.Separator(),
                 "Επιστροφή"

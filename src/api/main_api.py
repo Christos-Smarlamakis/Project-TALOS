@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.10.8
+Project: TALOS v5.10.10
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -9,7 +9,7 @@ Description:
     Tailwind CSS + Shadcn UI frontend. All endpoints wrap existing synchronous
     core functions -- no logic is rewritten.
 
-    Endpoints (19 total -- 100% ecosystem coverage + Synapse protocol + capabilities + tester):
+    Endpoints (22 total -- 100% ecosystem coverage + Synapse protocol + capabilities + tester + visualizer):
     - GET  /api/v1/health              -> system health, DB stats, embedding coverage
     - GET  /api/v1/papers              -> paginated paper list
     - GET  /api/v1/papers/{paper_id}   -> full paper detail
@@ -29,6 +29,9 @@ Description:
     - GET  /api/v1/synapse/status        -> SYNAPSE bus reachability, queue health, event types
     - GET  /api/v1/tester/status       -> Autonomous Red Tester Q-table status
     - GET  /api/v1/tester/reports      -> list crash report metadata
+    - GET  /api/v1/visualizer/live     -> 3D Holographic Knowledge Constellation Visualizer HTML
+    - GET  /api/v1/visualizer/stream   -> SSE event stream for live visualizer
+    - GET  /api/v1/visualizer/demo-data -> recent evaluated papers for offline replay
 
     Key design decisions:
     - Port 8001 (avoids conflict with SYNAPSE event bus on port 8000)
@@ -69,6 +72,8 @@ import json
 import uuid
 import threading
 import time
+import asyncio
+import queue as _queue_mod
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -76,7 +81,7 @@ from typing import Optional, List, Dict, Any
 import numpy as np
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -92,8 +97,8 @@ logger = get_logger("api")
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-description="Facade REST API for the TALOS autonomous research platform (v5.10.8 -- Enterprise TUI Overhaul & Academic Aesthetics)",
-version="5.10.8",
+description="Facade REST API for the TALOS autonomous research platform (v5.10.10 -- 3D Holographic Knowledge Constellation Visualizer)",
+version="5.10.10",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -190,6 +195,41 @@ def _update_task(task_id: str, **kwargs):
             _task_store[task_id].update(kwargs)
 
 
+# =============================================================================
+# VISUALIZER EVENT BROADCASTER (v5.10.10)
+# =============================================================================
+
+# In-memory circular event queue consumed by the SSE streaming endpoint.
+# Max 500 events to prevent unbounded memory growth. Overflow events are
+# silently dropped (put_nowait catches queue.Full).
+_visualizer_event_queue: _queue_mod.Queue = _queue_mod.Queue(maxsize=500)
+
+
+def broadcast_visualizer_event(event_type: str, payload: dict) -> bool:
+    """Push an event into the visualizer broadcast queue (non-blocking).
+
+    This function is designed to be called from synchronous pipeline code
+    (daily_search.py, historic_search.py, talos_live_agent.py) without
+    requiring async refactoring. If the queue is full, the event is
+    silently dropped and False is returned.
+
+    Args:
+        event_type (str): Event type label (paper_evaluated, agent_step, etc.).
+        payload (dict): JSON-serializable event payload.
+
+    Returns:
+        bool: True if the event was queued, False if dropped (queue full).
+    """
+    try:
+        _visualizer_event_queue.put_nowait({
+            "event_type": event_type,
+            "payload": payload,
+            "timestamp": datetime.utcnow().isoformat(),
+        })
+        return True
+    except _queue_mod.Full:
+        logger.warning("Visualizer event queue full -- event dropped: %s", event_type)
+        return False
 # =============================================================================
 # PYDANTIC MODELS
 # =============================================================================
@@ -349,7 +389,7 @@ class EvaluatePaperRequest(BaseModel):
 @app.on_event("startup")
 def on_startup():
     """Pre-warm singletons and log readiness."""
-    logger.info("TALOS FastAPI v5.10.8 starting up (Enterprise TUI Overhaul & Academic Aesthetics, port 8001)...")
+    logger.info("TALOS FastAPI v5.10.10 starting up (3D Holographic Knowledge Constellation Visualizer, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")
@@ -1023,6 +1063,102 @@ async def get_capabilities():
     raise HTTPException(status_code=404, detail="Capabilities document not found.")
 
 
+# -- GET /api/v1/visualizer/live ------------------------------------------------
+
+@app.get("/api/v1/visualizer/live", response_class=HTMLResponse, tags=["Visualizer"])
+async def serve_visualizer():
+    """Serve the 3D Holographic Knowledge Constellation Visualizer.
+
+    Returns the standalone self-contained HTML page. No external dependencies.
+    This is a complete WebGL 1.0 application -- no CDN scripts, no network
+    fetches required at runtime (100% air-gapped compliant).
+
+    Returns 404 if templates/live_foraging_visualizer.html does not exist.
+    """
+    project_root = _get_project_root()
+    viz_path = os.path.join(project_root, "templates", "live_foraging_visualizer.html")
+    if not os.path.exists(viz_path):
+        raise HTTPException(
+            status_code=404,
+            detail="live_foraging_visualizer.html not found in templates/ directory.",
+        )
+    return HTMLResponse(content=Path(viz_path).read_text(encoding="utf-8"))
+
+
+# -- GET /api/v1/visualizer/stream ----------------------------------------------
+
+@app.get("/api/v1/visualizer/stream", tags=["Visualizer"])
+async def visualizer_sse_stream():
+    """Server-Sent Events (SSE) endpoint for real-time visualizer event streaming.
+
+    Returns a text/event-stream response that pushes live JSON payloads for
+    paper_discovered, paper_evaluated, agent_step, and router_decision events.
+    Includes a periodic heartbeat comment every 15 seconds to keep the
+    connection alive through proxies and load balancers.
+
+    The stream is consumed by the frontend visualizer's EventSource in
+    live SSE mode.
+    """
+    async def event_generator():
+        last_heartbeat = time.time()
+        while True:
+            try:
+                event = _visualizer_event_queue.get(timeout=1.0)
+                yield f"data: {json.dumps(event)}\n\n"
+                last_heartbeat = time.time()
+            except _queue_mod.Empty:
+                # Send heartbeat if 15 seconds have passed since last event
+                now = time.time()
+                if now - last_heartbeat >= 15:
+                    yield ": heartbeat\n\n"
+                    last_heartbeat = now
+            except GeneratorExit:
+                break
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # disable nginx buffering
+        },
+    )
+
+
+# -- GET /api/v1/visualizer/demo-data -------------------------------------------
+
+@app.get("/api/v1/visualizer/demo-data", tags=["Visualizer"])
+def get_visualizer_demo_data(limit: int = Query(default=50, le=200)):
+    """Return the most recently evaluated papers for offline conference replay.
+
+    Queries the database for the latest N evaluated papers (up to 200)
+    and returns them as a lightweight JSON array. Each entry contains
+    title, overall_score, source, a derived pipeline_type, and provider.
+
+    Used by the frontend visualizer's Conference Offline Replay mode for
+    the HOU ICBE presentation.
+    """
+    db = _get_db()
+    try:
+        papers = db.get_all_papers_for_dashboard()
+        if not papers:
+            return []
+        # Sort by id descending (most recent first) and limit
+        papers = sorted(papers, key=lambda p: p.get("id", 0), reverse=True)[:limit]
+        result = []
+        for p in papers:
+            result.append({
+                "title": p.get("title", ""),
+                "overall_score": float(p.get("overall_score", 0)),
+                "source": p.get("source", "--"),
+                "pipeline_type": "Retrospective Evaluation",
+                "provider": p.get("provider", "--"),
+            })
+        return result
+    except Exception as e:
+        logger.error("Visualizer demo data query failed: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to query evaluation data.")
 # =============================================================================
 # MAIN -- development server entry point
 # =============================================================================

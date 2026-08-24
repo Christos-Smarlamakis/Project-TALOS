@@ -227,6 +227,19 @@ def main(sources=None):
         if evaluation_data:
             db_manager.add_paper(paper, evaluation_data)
 
+            # -- v5.10.10: Push to 3D visualizer stream (best-effort) --
+            try:
+                from src.api.main_api import broadcast_visualizer_event
+                broadcast_visualizer_event("paper_evaluated", {
+                    "title": paper.get("title", ""),
+                    "overall_score": evaluation_data.get("overall_score", 0),
+                    "source": paper.get("source", ""),
+                    "pipeline": "Historic Archive Search",
+                    "provider": getattr(ai_manager, "last_provider_used", "--"),
+                })
+            except ImportError:
+                pass
+
             scores = evaluation_data.get('scores', {})
             s = scores.get('strategic', 0)
             o = scores.get('operational', 0)

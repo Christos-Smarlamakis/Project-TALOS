@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.10.8
+Project: TALOS v5.10.10
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,7 +21,7 @@ Description:
     CI/CD, and Diagnostics & Exit. Includes the new Vendored Graphify
 AST Knowledge Graph adapter (v5.9.12).
 
-    v5.10.8: Enterprise TUI Overhaul & Academic Aesthetics -- unified
+    v5.10.10: Enterprise TUI Overhaul & Academic Aesthetics -- unified
     questionary prompt style across the entire CLI (Cyan/Teal #00ced1 selection
     colors, bright-white category separators, IEEE blue #4a9eff question mark)
     for publication-ready IEEE screenshots. Style canonicalized in
@@ -297,7 +297,7 @@ def safe_select(message, choices):
     """Questionary select with graceful fallback.
     Returns None on Ctrl+C (all menus treat None as 'Back')."""
     try:
-        return questionary.select(message, choices=choices, use_indicator=True, pointer=">", style=TALOS_QUESTIONARY_STYLE).ask()
+        return questionary.select(message, choices=choices, use_indicator=True, pointer=">", style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask()
     except KeyboardInterrupt:
         return None
     except Exception:
@@ -314,6 +314,12 @@ def safe_pause(msg="Press Enter to return..."):
         console.input(msg)
     except (KeyboardInterrupt, EOFError):
         console.print()
+
+# -- v5.10.10: Universal Navigation Instructions --
+NAV_SELECT  = "(Use arrow keys to navigate, Enter to confirm, Ctrl+C to return)"
+NAV_CHECK   = "(Space to toggle, Enter to confirm, Ctrl+C to return)"
+NAV_TEXT    = "(Enter to confirm, Ctrl+C to cancel)"
+NAV_CONFIRM = "(y/n, Enter to confirm)"
 
 # -- v5.10.2: Canonical 16-source list for the interactive checkbox TUI --
 ALL_ACADEMIC_SOURCES = [
@@ -489,7 +495,7 @@ def check_first_run(python_exe):
             return
         if not os.path.exists("_profiles"): os.makedirs("_profiles")
         # .ask() returns None on Ctrl+C -- treat as "no" (skip config).
-        answer = questionary.confirm("Start configuration now?", default=True, style=TALOS_QUESTIONARY_STYLE).ask()
+        answer = questionary.confirm("Start configuration now?", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask()
         if answer:
             run_script("query_translator.py", python_exe)
             set_active_profile_name("default")
@@ -507,11 +513,11 @@ def author_tools_menu(python_exe):
     ])
     if choice is None or "Back" in choice: return
     if choice.startswith("1.") or choice.startswith("2."):
-        aid = questionary.text("Enter author name or ORCID iD:", style=TALOS_QUESTIONARY_STYLE).ask()
+        aid = questionary.text("Enter author name or ORCID iD:", style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask()
         scr = "author_profiler.py" if "1." in choice else "author_trajectory_analyzer.py"
         if aid: run_script(scr, python_exe, args=[aid.strip()])
     elif choice.startswith("3."):
-        an = questionary.text("Enter author name:", style=TALOS_QUESTIONARY_STYLE).ask()
+        an = questionary.text("Enter author name:", style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask()
         if an:
             result = run_script("author_profiler.py", python_exe, args=an.strip().split(), capture=True)
             if result and result.stdout:
@@ -580,7 +586,7 @@ def system_health_menu(python_exe):
         except Exception: pass
         webbrowser.open(f"http://localhost:{port}/architecture_graph.html")
     elif choice.startswith("4."):
-        if questionary.confirm("Start now? (may take 60s)", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
+        if questionary.confirm("Start now? (may take 60s)", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask():
             run_script("architecture_intelligence_report.py", python_exe)
     elif choice.startswith("5."):
         import webbrowser, socket
@@ -652,7 +658,7 @@ def system_health_menu(python_exe):
             "Produces detailed Markdown docs for every code file you select.",
             border_style="bright_blue",
         ))
-        if questionary.confirm("Launch documentation generator?", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
+        if questionary.confirm("Launch documentation generator?", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask():
             run_script("generate_docs.py", python_exe)
     console.print(); safe_pause("Press Enter...")
 
@@ -705,7 +711,7 @@ def api_keys_menu(python_exe):
             sel = safe_select("Key:", choices=flat)
             if sel and not sel.startswith("---") and sel != "Cancel":
                 k = sel.split()[0]; cv = vals.get(k, "")
-                nv = questionary.text(f"New value for {k}:", default=cv, style=TALOS_QUESTIONARY_STYLE).ask()
+                nv = questionary.text(f"New value for {k}:", default=cv, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask()
                 if nv is not None:
                     from dotenv import set_key
                     try:
@@ -969,7 +975,7 @@ def _view_and_pivot_research_focus(python_exe, project_root):
             border_style="bright_magenta",
         )
         console.print(info)
-        if questionary.confirm("Proceed with Query Translation?", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
+        if questionary.confirm("Proceed with Query Translation?", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask():
             run_script("query_translator.py", python_exe)
             # -- Show success panel --
             success = _build_info_panel(
@@ -1085,6 +1091,35 @@ def _configure_daemon_autostart(project_root):
                 console.print("[yellow][WARN] Autostart hook could not be installed.[/yellow]")
         except Exception as e:
             console.print(f"[red][ERROR] Autostart installation failed: {e}[/red]")
+
+
+def _launch_visualizer():
+    """Open the 3D Holographic Knowledge Constellation in browser."""
+    import webbrowser
+    viz_url = "http://127.0.0.1:8001/api/v1/visualizer/live"
+    console.print(_build_info_panel(
+        "3D Holographic Knowledge Constellation Visualizer",
+        "Real-time WebGL 1.0 visualizer with 16-satellite orbital\\n"
+        "constellation, animated energy pulse beams, lockout cages,\\n"
+        "and glassmorphism HUD. Dual-mode: Live SSE + Offline Replay.\\n\\n"
+        f"[bold cyan]Access URL:[/bold cyan] {viz_url}",
+        border_style="bright_cyan",
+    ))
+    api_reachable = False
+    try:
+        import urllib.request
+        req = urllib.request.Request("http://127.0.0.1:8001/api/v1/health", method="HEAD")
+        urllib.request.urlopen(req, timeout=3)
+        api_reachable = True
+    except Exception:
+        pass
+    if api_reachable:
+        console.print("[green]FastAPI server detected on port 8001. Opening browser...[/green]")
+        webbrowser.open(viz_url)
+    else:
+        console.print("[yellow][WARN] FastAPI server not reachable on port 8001.[/yellow]")
+        console.print("[dim]Start the server first (run_talos.bat Option 6), or run:[/dim]")
+        console.print("[dim]  python -m uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001[/dim]")
 
 
 def _generate_optica_plots():
@@ -1252,22 +1287,26 @@ def main_menu():
             "  6. Advanced AST Knowledge Graph (Graphify)",
             "  7. Data Visualizations (via OPTICA)",
             questionary.Separator("  [ DAEMONS & CI/CD ]"),
-            "  8. Autonomous Red Tester (RL Chaos Fuzzer)",
-            "  9. Live DRL Agent (Real API Orchestration)",
-            " 10. Autonomous Research Process (24/7 Service)",
-            " 11. Configure Daemon & OS Autostart",
+            "  8. Train DRL Agent (Offline GPU Trainer)",
+            "  9. Autonomous Red Tester (RL Chaos Fuzzer)",
+            " 10. Live DRL Agent (Real API Orchestration)",
+            " 11. Autonomous Research Process (24/7 Service)",
+            " 12. Configure Daemon & OS Autostart",
             questionary.Separator("  [ DIAGNOSTICS & EXIT ]"),
-            " 12. Baseline Report (Standard)",
-            " 13. Baseline Report (Academic -- 600 DPI)",
-            " 14. DRL Agent Status",
-            " 15. Codebase Docs Generator (18 Languages)",
+            " 13. Baseline Report (Standard)",
+            " 14. Baseline Report (Academic -- 600 DPI)",
+            " 15. DRL Agent Status",
+            " 16. Codebase Docs Generator (18 Languages)",
+            " 17. Verify Architecture Dependency Map (CI Audit)",
             questionary.Separator(),
-            " 16. Exit",
+            " 18. 3D Knowledge Constellation Visualizer (Browser Demo)",
+            questionary.Separator(),
+            " 19. Exit",
         ])
         if choice is None or "Exit" in choice: break
         fm = "Press Enter to return..."
 
-        # -- Route menu choices (v5.9.12: reorganized into 5 groups) --
+        # -- Route menu choices (v5.10.10: 6 tools integrated) --
         if " 1." in choice:
             # -- Model Manager: import and run main() in-process --
             console.print("\n[bold bright_cyan]Launching AI Model Manager...[/bold bright_cyan]\n")
@@ -1281,20 +1320,24 @@ def main_menu():
             # -- View & Pivot Research Focus (interactive workflow) --
             _view_and_pivot_research_focus(python_exe, project_root)
         elif " 3." in choice:
-            # -- CLI Research Search: open the full legacy search menu --
             choice2 = safe_select("CLI Research Search:", choices=[
                 questionary.Separator("  SEARCH & DISCOVERY"),
                 "3a. Daily Search (16 APIs)",
                 "3b. Historical Search (Deep Archive)",
                 "3c. Grey Literature / Web Horizon Scan",
+                "3d. Zotero Cloud Sync",
                 questionary.Separator("  ANALYSIS & INSIGHTS"),
-                "3d. Knowledge Path Generator",
-                "3e. Citation Network Analyzer",
-                "3f. Strategic Reading Report",
-                "3g. Author Analysis Tools",
-                "3h. Interactive Dashboard",
-                "3i. DRL Training (API Orchestrator)",
-                "3j. Compare Baselines (Pre/Post DRL)",
+                "3e. Knowledge Path Generator",
+                "3f. Citation Network Analyzer",
+                "3g. Strategic Reading Report",
+                "3h. Author Analysis Tools",
+                "3i. Author Career Trajectory (ORCID)",
+                "3j. Interactive Dashboard",
+                questionary.Separator("  TRAINING & DATA"),
+                "3k. DRL Training (API Orchestrator)",
+                "3l. Compare Baselines (Pre/Post DRL)",
+                "3m. Open Access Data Enricher (Unpaywall)",
+                "3n. Architecture Intelligence Report (NATO CDE)",
                 questionary.Separator(), "Back"
             ])
             if choice2 is None or "Back" in choice2: continue
@@ -1303,30 +1346,32 @@ def main_menu():
                 if selected is None:
                     console.print("[dim]Source selection cancelled.[/dim]")
                 elif not selected:
-                    console.print("[yellow]No sources selected -- skipping.[/yellow]")
+                    console.print("[yellow]No sources selected.[/yellow]")
                 else:
-                    run_script("daily_search.py", python_exe,
-                               args=["--sources"] + selected)
+                    run_script("daily_search.py", python_exe, args=["--sources"] + selected)
             elif "3b" in choice2:
-                if questionary.confirm("This may take a long time. Sure?", default=False, style=TALOS_QUESTIONARY_STYLE).ask():
+                if questionary.confirm("This may take a long time. Proceed?", default=False, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_CONFIRM).ask():
                     selected = prompt_source_selection()
                     if selected is None:
                         console.print("[dim]Source selection cancelled.[/dim]")
                     elif not selected:
-                        console.print("[yellow]No sources selected -- skipping.[/yellow]")
+                        console.print("[yellow]No sources selected.[/yellow]")
                     else:
-                        run_script("historic_search.py", python_exe,
-                                   args=["--sources"] + selected)
+                        run_script("historic_search.py", python_exe, args=["--sources"] + selected)
             elif "3c" in choice2: run_script("grey_literature_miner.py", python_exe)
-            elif "3d" in choice2: run_script("knowledge_path_generator.py", python_exe)
-            elif "3e" in choice2: run_script("citation_analyzer.py", python_exe)
-            elif "3f" in choice2: run_script("recommender.py", python_exe)
-            elif "3g" in choice2: author_tools_menu(python_exe)
-            elif "3h" in choice2:
+            elif "3d" in choice2: run_script("zotero_connector.py", python_exe)
+            elif "3e" in choice2: run_script("knowledge_path_generator.py", python_exe)
+            elif "3f" in choice2: run_script("citation_analyzer.py", python_exe)
+            elif "3g" in choice2: run_script("recommender.py", python_exe)
+            elif "3h" in choice2: author_tools_menu(python_exe)
+            elif "3i" in choice2:
+                aid = questionary.text("Enter author ORCID iD:", style=TALOS_QUESTIONARY_STYLE, instruction=NAV_TEXT).ask()
+                if aid: run_script("author_trajectory_analyzer.py", python_exe, args=[aid.strip()])
+            elif "3j" in choice2:
                 run_script("interactive_dashboard.py", python_exe)
                 fm = "Dashboard terminated. Press Enter..."
-            elif "3i" in choice2: run_script("drl_trainer.py", python_exe)
-            elif "3j" in choice2:
+            elif "3k" in choice2: run_script("drl_trainer.py", python_exe)
+            elif "3l" in choice2:
                 info = _build_info_panel(
                     "Compare Baselines -- Pre/Post DRL",
                     "Generates a new academic baseline report and compares it\n"
@@ -1334,7 +1379,7 @@ def main_menu():
                     border_style="yellow",
                 )
                 console.print(info)
-                if questionary.confirm("Generate new baseline and compare?", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
+                if questionary.confirm("Generate new baseline and compare?", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_CONFIRM).ask():
                     run_script("generate_baseline_report.py", python_exe, args=["--academic"])
                     rb = os.path.join(project_root, "reports", "general_status_report")
                     if os.path.exists(rb):
@@ -1347,6 +1392,10 @@ def main_menu():
                                 border_style="green",
                             )
                             console.print(comp)
+            elif "3m" in choice2: run_script("data_enricher.py", python_exe)
+            elif "3n" in choice2:
+                if questionary.confirm("Run architecture intelligence report? (may take 60s)", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_CONFIRM).ask():
+                    run_script("architecture_intelligence_report.py", python_exe)
         elif " 4." in choice:
             info = _build_info_panel(
                 "Metadata Enrichment",
@@ -1394,6 +1443,17 @@ def main_menu():
             # -- Data Visualizations (via OPTICA) --
             _generate_optica_plots()
         elif " 8." in choice:
+            # -- v5.10.10: Train DRL Agent (Offline GPU Trainer) --
+            info = _build_info_panel(
+                "Train DRL Agent -- Offline GPU Trainer",
+                "Trains the Double Dueling DQN agent against the TALOS\\n"
+                "Gymnasium environment. Requires CUDA for GPU acceleration.\\n"
+                "[dim]Interactive episode selection and profile-aware DB.[/dim]",
+                border_style="bright_green",
+            )
+            console.print(info)
+            run_script("drl_trainer.py", python_exe)
+        elif " 9." in choice:
             # -- Autonomous Red Tester (RL Chaos Fuzzer) --
             info = _build_info_panel(
                 "Autonomous Red Tester (RL-Driven Chaos Engineering)",
@@ -1420,7 +1480,7 @@ def main_menu():
                     run_red_tester(cycles=cycles)
                 except Exception as e:
                     console.print(f"[red]Error running Autonomous Red Tester: {e}[/red]")
-        elif " 9." in choice:
+        elif "10." in choice:
             # -- Live DRL Agent --
             info = _build_info_panel(
                 "Live DRL Agent -- Real API Orchestration",
@@ -1431,7 +1491,7 @@ def main_menu():
             console.print(info)
             if questionary.confirm("Start live agent? (Ctrl+C to stop)", default=True).ask():
                 run_script("talos_live_agent.py", python_exe, args=["--verbose"])
-        elif "10." in choice:
+        elif "11." in choice:
             # -- Autonomous Research Process (24/7 Service) --
             info = _build_info_panel(
                 "Autonomous Research Process -- 24/7 + DRL",
@@ -1442,7 +1502,7 @@ def main_menu():
             console.print(info)
             if questionary.confirm("Start autonomous process? (Ctrl+C to stop)", default=True).ask():
                 run_script("talos_service.py", python_exe)
-        elif "11." in choice:
+        elif "12." in choice:
             # -- Configure Daemon & OS Autostart --
             info = _build_info_panel(
                 "Configure Daemon & OS Autostart",
@@ -1453,7 +1513,7 @@ def main_menu():
             )
             console.print(info)
             _configure_daemon_autostart(project_root)
-        elif "12." in choice:
+        elif "13." in choice:
             info = _build_info_panel(
                 "Baseline Report (Standard)",
                 "Generates a standard baseline report with score distribution,\n"
@@ -1462,7 +1522,7 @@ def main_menu():
             )
             console.print(info)
             run_script("generate_baseline_report.py", python_exe)
-        elif "13." in choice:
+        elif "14." in choice:
             info = _build_info_panel(
                 "Baseline Report (Academic -- 600 DPI)",
                 "Generates a publication-quality academic baseline report\n"
@@ -1472,7 +1532,7 @@ def main_menu():
             )
             console.print(info)
             run_script("generate_baseline_report.py", python_exe, args=["--academic"])
-        elif "14." in choice:
+        elif "15." in choice:
             # -- DRL Status: rich-powered display --
             mp = os.path.join(project_root, "models", "dddqn_trained.pth")
             gp = os.path.join(project_root, "models", "gwo_foraging_hyperparameters.json")
@@ -1500,7 +1560,7 @@ def main_menu():
                 box=box.ROUNDED,
             )
             console.print(drl_panel)
-        elif "15." in choice:
+        elif "16." in choice:
             info = _build_info_panel(
                 "Codebase Documentation Generator (18 Languages)",
                 "Uses LOCAL Ollama -- zero cloud cost, full privacy.\n"
@@ -1509,8 +1569,24 @@ def main_menu():
                 border_style="bright_blue",
             )
             console.print(info)
-            if questionary.confirm("Launch documentation generator?", default=True, style=TALOS_QUESTIONARY_STYLE).ask():
+            if questionary.confirm("Launch documentation generator?", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask():
                 run_script("generate_docs.py", python_exe)
+
+        elif " 17." in choice:
+            # -- v5.10.10: Verify Architecture Dependency Map (CI Audit) --
+            info = _build_info_panel(
+                "Architecture Dependency Map Audit",
+                "CI/CD exit-code-only audit of the project dependency\\n"
+                "graph against docs/PROJECT_MAP.md Section 7.\\n"
+                "[dim]Reports stale and missing dependency entries.[/dim]",
+                border_style="yellow",
+            )
+            console.print(info)
+            run_script("verify_dependency_map.py", python_exe, args=["--ci"])
+
+        elif " 18." in choice:
+            # -- v5.10.10: 3D Holographic Knowledge Constellation Visualizer --
+            _launch_visualizer()
 
         if choice and "Exit" not in choice:
             safe_pause(fm)

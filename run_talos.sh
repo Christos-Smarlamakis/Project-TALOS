@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ===========================================================================
 # script         : run_talos.sh
-# version        : v5.10.8 (Enterprise TUI Overhaul & Academic Aesthetics)
+# version        : v5.10.10 (3D Holographic Knowledge Constellation Visualizer)
 # description    : Cross-Platform POSIX Dashboard for Project TALOS.
 #                  Implements Two-Column UI, IEEE WEIGD standard telemetry,
 #                  defensive error handling, Universal ASCII rendering, and
@@ -106,8 +106,9 @@ show_menu() {
     clear
     check_port_silent 8001 API_STATUS
     check_port_silent 8000 SYNAPSE_STATUS
+    check_port_silent 11434 OLLAMA_STATUS
     check_port_silent 11435 EDGE_STATUS
-
+    check_port_silent 8002 OPTICA_STATUS
     echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
     echo -e "${C_IEEE_LIGHT}          #########   ######   ##         ######    ###### ${C_RESET}"
     echo -e "${C_IEEE_LIGHT}             ##      ##    ##  ##        ##    ##  ##      ${C_RESET}"
@@ -115,19 +116,27 @@ show_menu() {
     echo -e "${C_IEEE_LIGHT}             ##      ##    ##  ##        ##    ##       ## ${C_RESET}"
     echo -e "${C_IEEE_LIGHT}             ##      ##    ##  ########   ######   ######  ${C_RESET}"
     echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
-    echo -e "  ${C_CYAN}Project TALOS v5.10.8 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)${C_RESET}"
+    echo -e "  ${C_CYAN}Project TALOS v5.10.10 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)${C_RESET}"
     echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
-    echo -e "  [ SYSTEM TELEMETRY ]    API (8001): ${API_STATUS}   |   BUS (8000): ${SYNAPSE_STATUS}   |   EDGE (11435): ${EDGE_STATUS}"
+    echo -e "  [ SYSTEM TELEMETRY ]  API (8001): ${API_STATUS} | BUS (8000): ${SYNAPSE_STATUS} | OLLAMA (11434): ${OLLAMA_STATUS} | OPTICA (8002): ${OPTICA_STATUS}"
     echo -e "${C_IEEE_DARK}-----------------------------------------------------------------------------------------------------${C_RESET}"
-    echo -e "  ${C_IEEE_LIGHT}[ INFRASTRUCTURE & UI ]${C_RESET}                       ${C_IEEE_LIGHT}[ REASONING AGENTS ]${C_RESET}"
-    echo -e "  [1] Full Setup (Auto-Conda + Pip + UI)       [5] TALOS Console (Interactive CLI)"
-    echo -e "  [2] Start FastAPI Server (Background)        [6] Autonomous Research Daemon (24/7)"
-    echo -e "  [3] Start MCP Server (Background)            [7] Live DRL Agent (Verbose Output)"
-    echo -e "  [4] Launch UI (Cherry Studio Provisioner)"
+    echo -e "  ${C_IEEE_LIGHT}[ 1. PRIMARY CONTROL HUBS ]${C_RESET}"
+    echo -e "  [1] TALOS Master Console (Interactive TUI Dashboard)"
+    echo -e "  [2] Launch UI (Cherry Studio Desktop Integration)"
     echo -e ""
-    echo -e "  ${C_IEEE_LIGHT}[ TESTING & MAINTENANCE ]${C_RESET}"
-    echo -e "  [8] Autonomous Red Tester (RL Chaos Fuzzer)   [10] Terminate Session"
-    echo -e "  [9] Execute Test Framework (Pytest Suite)"
+    echo -e "  ${C_IEEE_LIGHT}[ 2. AUTONOMOUS DAEMONS AND DRL AGENTS ]${C_RESET}"
+    echo -e "  [3] Autonomous Research Daemon (24/7 Background Service)"
+    echo -e "  [4] Live DRL Foraging Agent (Interactive API Exploration)"
+    echo -e "  [5] Autonomous Red Tester (RL Chaos Engineering Fuzzer)"
+    echo -e ""
+    echo -e "  ${C_IEEE_LIGHT}[ 3. BACKGROUND SERVERS AND PROVISIONING ]${C_RESET}"
+    echo -e "  [6] Start FastAPI REST Server (Port 8001)"
+    echo -e "  [7] Start MCP Tool Server (Model Context Protocol)"
+    echo -e "  [8] Full Environment Setup (Auto-Conda + Dependencies)"
+    echo -e ""
+    echo -e "  ${C_IEEE_LIGHT}[ 4. QUALITY ASSURANCE AND EXIT ]${C_RESET}"
+    echo -e "  [9] Execute Automated Test Suite (Pytest Framework)"
+    echo -e "  [10] Terminate Session / Exit"
     echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
     echo -e ""
     echo -ne "  ${C_CYAN}Select Operational Directive [1-10]:${C_RESET} "
@@ -195,7 +204,7 @@ do_setup() {
     log_info "Executing Universal Dynamic Model Provisioner (fast edge + heavy models)..."
     $PYTHON_CMD src/utils/model_provisioner.py || log_warn "Model provisioning skipped or offline."
 
-    log_success "TALOS v5.10.8 deployment finalized."
+    log_success "TALOS v5.10.10 deployment finalized."
     press_enter
 }
 
@@ -316,26 +325,26 @@ while true; do
     show_menu
     read -r choice
     case "$choice" in
-        1) do_setup ;;
-        2) do_server ;;
-        3) do_mcp_server ;;
-        4) do_provision_ui ;;
-        5) do_cli ;;
-        6) do_daemon ;;
-        7) do_live_drl ;;
-        8) do_auto_tester ;;
+        1) do_cli ;;
+        2) do_provision_ui ;;
+        3) do_daemon ;;
+        4) do_live_drl ;;
+        5) do_auto_tester ;;
+        6) do_server ;;
+        7) do_mcp_server ;;
+        8) do_setup ;;
         9) do_test ;;
         10)
             echo ""
-            echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
-            echo -e "  Closing Project TALOS v5.10.8..."
-            echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
+        echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
+        echo -e "  Closing Project TALOS v5.10.10..."
+        echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
             # Reset viewport constraint on exit
             printf '\033[8;24;80t' >/dev/null 2>&1 || true
             exit 0
             ;;
         *)
-            echo -e "${C_RED}Invalid directive. Please select [1-10].${C_RESET}"
+        echo -e "${C_RED}Invalid directive. Please select [1-10].${C_RESET}"
             sleep 1
             ;;
     esac

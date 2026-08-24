@@ -1,10 +1,10 @@
-﻿# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.8
+# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.10
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-08-22
-> **Version:** v5.10.8 -- Enterprise TUI Overhaul & Academic Aesthetics
+> **Version:** v5.10.10 -- Enterprise TUI Overhaul & Academic Aesthetics
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 

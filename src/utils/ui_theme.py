@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: ui_theme.py
-Project: TALOS v5.10.8
+Project: TALOS v5.10.9
 Description:
     Canonical single source of truth for the unified questionary prompt style
     used across the entire TALOS TUI. The palette implements the Enterprise

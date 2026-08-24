@@ -318,6 +318,18 @@ def main(sources=None):
             if paper_id:
                 logger.info("[DB SAVED] Successfully stored new paper: %s", paper.get('title'))
                 print(f"   Score: {overall:.2f} (Saved)")
+                # -- v5.10.10: Push to 3D visualizer stream (best-effort) --
+                try:
+                    from src.api.main_api import broadcast_visualizer_event
+                    broadcast_visualizer_event("paper_evaluated", {
+                        "title": paper.get("title", ""),
+                        "overall_score": overall,
+                        "source": paper.get("source", ""),
+                        "pipeline": "Daily Search 16 APIs",
+                        "provider": getattr(ai_manager, "last_provider_used", "--"),
+                    })
+                except ImportError:
+                    pass
                 if overall >= min_score_for_deep_analysis:
                     promising_papers.append(paper)
             else:
@@ -356,6 +368,18 @@ def main(sources=None):
 
             scores = deep_evaluation_data.get('scores', {})
             print(f"   SUCCESS: S:{scores.get('strategic')} O:{scores.get('operational')} T:{scores.get('tactical')} P:{scores.get('playground')}")
+            # -- v5.10.10: Push deep analysis result to visualizer --
+            try:
+                from src.api.main_api import broadcast_visualizer_event
+                broadcast_visualizer_event("paper_evaluated", {
+                    "title": paper.get("title", ""),
+                    "overall_score": deep_evaluation_data.get("overall_score", 0),
+                    "source": paper.get("source", ""),
+                    "pipeline": "Daily Search 16 APIs (Deep)",
+                    "provider": getattr(ai_manager, "last_provider_used", "--"),
+                })
+            except ImportError:
+                pass
         else:
             print(f"   WARNING: Pro evaluation failed for {paper['doi']}.")
 
