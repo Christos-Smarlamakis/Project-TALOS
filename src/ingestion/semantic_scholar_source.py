@@ -79,6 +79,12 @@ class SemanticScholarSource:
                 return response.json()
             except requests.exceptions.RequestException as e:
                 print(f"ERROR [Semantic Scholar]: API call to {endpoint} failed after {attempt + 1} attempts. Error: {e}")
+                # -- v5.10.12 hotfix: surface hidden API errors to the visualizer --
+                try:
+                    from src.integration.visualizer_bridge import push_visualizer_event
+                    push_visualizer_event("error", "semantic_scholar", error_msg=str(e))
+                except ImportError:
+                    pass
                 return None
         return None
 

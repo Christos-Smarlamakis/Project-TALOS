@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.10.11
+Project: TALOS v5.10.12
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -20,6 +20,12 @@ Description:
     Configuration, Search & Ingestion, Analysis & Insights, Daemons &
     CI/CD, and Diagnostics & Exit. Includes the new Vendored Graphify
 AST Knowledge Graph adapter (v5.9.12).
+
+    v5.10.12: Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive
+    Visualizer Tools -- 60 FPS animated laser beams with traveling photon
+    pulses, raycaster click-to-fire nodes, PNG snapshot, fullscreen and help
+    overlays, 1000ms AJAX state polling, active-profile DB resolution, and a
+    SQLite VACUUM optimizer.
 
     v5.10.11: Vendored Three.js 3D Knowledge Constellation & Live Telemetry
     Engine -- superseded the experimental raw WebGL 1.0 visualizer with a
@@ -1099,6 +1105,47 @@ def _configure_daemon_autostart(project_root):
             console.print(f"[red][ERROR] Autostart installation failed: {e}[/red]")
 
 
+def _launch_daemon_in_new_console(project_root, python_exe):
+    """Spawn the 24/7 autonomous daemon in a detached console window.
+
+    On Windows the daemon is launched with subprocess.CREATE_NEW_CONSOLE so it
+    owns a fresh console window while the main TUI stays interactive. On
+    non-Windows platforms the existing synchronous run_script() path is kept.
+
+    Args:
+        project_root (str): Absolute path to the project root.
+        python_exe (str): Path to the active Python interpreter (used as the
+            fallback launcher on non-Windows platforms).
+    """
+    daemon_script = os.path.join(
+        project_root, "src", "ai", "drl", "talos_service.py"
+    )
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
+    if USE_LOCAL_MODEL:
+        env["TALOS_USE_LOCAL"] = "1"
+
+    if sys.platform == "win32":
+        try:
+            subprocess.Popen(
+                [sys.executable, daemon_script],
+                cwd=project_root,
+                env=env,
+                creationflags=subprocess.CREATE_NEW_CONSOLE,
+            )
+        except OSError as exc:
+            console.print(f"[red][ERROR] Daemon launch failed: {exc}[/red]")
+            return
+        console.print(_build_info_panel(
+            "Autonomous Research Daemon Launched",
+            "[INIT] Autonomous Research Daemon launched in a new console window.\n"
+            "Main TUI remains active. Return to the main menu is immediate.",
+            border_style="green",
+        ))
+    else:
+        run_script("talos_service.py", python_exe)
+
+
 def _launch_visualizer():
     """Auto-start FastAPI on port 8001 and open the WebGL visualizer.
 
@@ -1122,10 +1169,11 @@ def _launch_visualizer():
             return False
 
     console.print(_build_info_panel(
-        "3D Holographic Knowledge Constellation Visualizer",
-        "Real-time WebGL 1.0 visualizer with 16-satellite orbital\n"
-        "constellation, animated energy pulse beams, lockout cages,\n"
-        "and glassmorphism HUD. Dual-mode: Live SSE + Offline Replay.\n\n"
+        "3D Knowledge Constellation Visualizer",
+        "Vendored Three.js r128 constellation with 60 FPS animated\n"
+        "laser beams, traveling photon pulses, interactive click-to-fire\n"
+        "nodes, PNG snapshot, fullscreen, help overlay, and glassmorphism\n"
+        "HUD. Live 1000ms AJAX polling + Offline Conference Replay.\n\n"
         f"Access URL: {viz_url}",
         border_style="bright_cyan",
     ))
@@ -1280,7 +1328,7 @@ def main_menu():
         title_text = Text()
         title_text.append("TALOS", style="bold bright_cyan")
         title_text.append(f" v{TALOS_VERSION}", style="bold cyan")
-        title_text.append(f"  |  Profile: [{ap}]", style="dim white")
+        title_text.append(f"  |  Profile: [{ap}]", style="bold bright_cyan")
 
         # -- v5.9.7: IEEE Computer Society WEIGD Fund badge --
         ieee_badge = Text()
@@ -1558,7 +1606,7 @@ def main_menu():
             )
             console.print(info)
             if questionary.confirm("Start autonomous process? (Ctrl+C to stop)", default=True).ask():
-                run_script("talos_service.py", python_exe)
+                _launch_daemon_in_new_console(project_root, python_exe)
         elif "12." in choice:
             # -- Configure Daemon & OS Autostart --
             info = _build_info_panel(

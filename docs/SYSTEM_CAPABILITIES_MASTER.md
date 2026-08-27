@@ -1,12 +1,12 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.11
+# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.12
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-08-24
-> **Version:** v5.10.11 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine
+> **Last Updated:** 2026-08-27
+> **Version:** v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools
 
-[![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
+[![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
 ---
 
@@ -560,6 +560,9 @@ For each evaluated paper, the AI generates:
 - **Elite Papers:** Overall score >= 7 highlighted in gold in search results tables
 - **Clickable Hyperlinks:** Crash report paths, Q-table paths, and report directories are clickable Rich `[link=file:///...]` terminal hyperlinks (v5.9.8)
 - **Ctrl+C Safety:** `safe_pause()` and `safe_select()` helpers for graceful interrupt handling
+- **System Tray Companion (v5.10.12):** `src/utils/tray_icon.py` launches a pystray icon (navy/cyan "T") next to the Windows clock with Open 3D Visualizer, Show / Hide Console (Win32 `ShowWindow`), and Terminate Daemon actions; initialized by `talos_service.py` on daemon startup.
+- **New Console Window Daemon Launch (v5.10.12):** Option 11 spawns the 24/7 daemon via `subprocess.Popen(..., creationflags=subprocess.CREATE_NEW_CONSOLE)` so the TUI stays interactive.
+- **Rich TrueColor DRL Telemetry (v5.10.12):** `live_agent_orchestrator.py` emits color-coded `[ACT]`, `[ROUTER]`, `[WARNING]`, `[RECOVERY]`, and `[EVAL]` badges with dynamic `[ELITE  +]` / `[ACCEPT v]` / `[REJECT X]` status.
 
 ### 10.3 run_talos.bat / run_talos.sh Features
 
@@ -725,7 +728,18 @@ For each evaluated paper, the AI generates:
 
 ---
 
-## Section 15: v5.9.10 to v5.9.13 New Capabilities
+## Section 15: 3D WebGL / AJAX Visualizer & Recent Capabilities (v5.10.12)
+
+### 15.0 3D WebGL / AJAX Knowledge Constellation Visualizer & Interactive Tools (v5.10.12)
+
+- `templates/live_foraging_visualizer.html` -- vendored Three.js r128 (zero CDN) constellation:
+  - 60 FPS animated energy laser beams (additive-blended `THREE.Line`) with traveling photon spheres (Cyan `#00ced1` / Gold `#f59e0b`).
+  - Robust fuzzy source resolver `findNodeIndex(rawSource)` with `_source`/`source` suffix normalization.
+  - Interactive click-to-fire via `THREE.Raycaster` on satellite nodes, updating the HUD.
+  - SNAPSHOT (PNG via `canvas.toDataURL` -> `TALOS_3D_Constellation.png`), FULLSCREEN, THEME (dark / academic print), and HELP (keyboard shortcuts R/T/F/S/Space/1-3).
+  - 1000ms pure-AJAX state poller (`GET /api/v1/visualizer/state?_t=`) with no-store headers: refreshes all 16 health auras and count badges, fires beams on new evaluation IDs.
+- Backend: `GET /api/v1/visualizer/state` resolves the active profile DB via `get_active_profile_db_path()`; `POST /api/v1/visualizer/events` accepts a dict or list and updates `_sources_health_state`.
+- SQLite optimizer: `src/utils/db_stats.py::optimize_database(db_path)` runs `PRAGMA integrity_check;` + `VACUUM;`.
 
 ### 15.1 Vendored Graphify AST Integration (v5.9.10 to v5.9.13)
 

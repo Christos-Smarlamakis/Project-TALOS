@@ -101,6 +101,14 @@ from config.settings import TALOS_VERSION
 from rich.console import Console
 from rich.panel import Panel
 from src.utils.logger import get_logger
+from src.integration.visualizer_bridge import push_visualizer_event
+
+# -- System tray companion (optional; degrades gracefully when pystray is
+#    missing so headless or non-Windows daemons keep working). --
+try:
+    from src.utils.tray_icon import launch_tray_icon_async
+except ImportError:
+    launch_tray_icon_async = None
 
 # -- Rich console instance for the daemon TUI --
 console = Console()
@@ -557,6 +565,11 @@ def _run_daemon_iteration(env, agent, notifier, sleep_action, verbose, epsilon,
         if verbose and routed_provider:
             print(f"  [DAEMON/ROUTER] {routed_source} -> provider={routed_provider}")
 
+        # -- v5.10.12 hotfix: centralized visualizer bridge (active push) --
+        _daemon_paper = info.get("paper_data", {}) or {}
+        _daemon_title = _daemon_paper.get("title", "Unknown") if isinstance(_daemon_paper, dict) else "Unknown"
+        push_visualizer_event("paper_evaluated", routed_source, score, _daemon_title)
+
         # -- Throttle: mandatory cooldown between API calls --
         # This keeps CPU at ~0% and gives APIs time to breathe.
         time.sleep(5)
@@ -790,6 +803,21 @@ def main():
     console.print(f"  Alerts: Telegram + Discord (score >= 8)")
     console.print(f"  Digest: Email daily at 17:00")
     console.print("[bold green][INIT] Daemon ready. Starting main loop.[/]")
+
+    # ── System tray companion (Windows) ─────────────────────────────────────
+    # Appears next to the clock so the operator can open the 3D visualizer,
+    # toggle the console window, or request a clean shutdown.
+    if launch_tray_icon_async is not None:
+        try:
+            def _request_clean_shutdown():
+                _handle_signal(None, None)
+
+            launch_tray_icon_async(on_exit=_request_clean_shutdown)
+            console.print("[green][TRAY] System tray icon initialized.[/green]")
+        except Exception as _tray_exc:
+            console.print(f"[yellow][TRAY] System tray unavailable: {_tray_exc}[/yellow]")
+    else:
+        console.print("[dim][TRAY] System tray companion skipped (pystray not installed).[/dim]")
 
     # ══════════════════════════════════════════════════════════════════════════
     # MAIN LOOP — runs FOREVER (until Ctrl+C)

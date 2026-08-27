@@ -27,12 +27,71 @@ if _P: sys.path.insert(0, _P)
 import os
 
 # Προσθέτουμε το root path
-from src.core.database_manager import DatabaseManager
+from src.core.database_manager import DatabaseManager, get_active_profile_db_path
 
 def print_header(title):
     print(f"\n{'='*60}")
     print(f"  {title}")
     print(f"{'='*60}")
+
+def optimize_database(db_path):
+    """Run a SQLite integrity check and VACUUM maintenance pass.
+
+    Executes ``PRAGMA integrity_check;`` to validate the on-disk B-tree
+    structure, then ``VACUUM;`` to reclaim free pages and defragment the
+    database file. Reports clean console metrics for the operation.
+
+    Args:
+        db_path (str): Path to the SQLite database file to optimize.
+
+    Returns:
+        dict: Summary with ``ok``, ``integrity``, ``size_before``,
+            ``size_after``, and ``freed_bytes`` keys.
+    """
+    import sqlite3
+
+    report = {
+        "ok": False,
+        "integrity": "unknown",
+        "size_before": 0,
+        "size_after": 0,
+        "freed_bytes": 0,
+    }
+
+    if not db_path or not os.path.exists(db_path):
+        print(f"[DB-OPTIMIZE] Skipped: database not found at {db_path}")
+        return report
+
+    try:
+        report["size_before"] = os.path.getsize(db_path)
+    except OSError:
+        pass
+
+    try:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        result = cursor.execute("PRAGMA integrity_check;").fetchone()
+        report["integrity"] = str(result[0]) if result else "unknown"
+        cursor.execute("VACUUM;")
+        conn.commit()
+        conn.close()
+        report["ok"] = True
+    except Exception as exc:  # pragma: no cover - defensive
+        print(f"[DB-OPTIMIZE] Failed: {exc}")
+        return report
+
+    try:
+        report["size_after"] = os.path.getsize(db_path)
+    except OSError:
+        pass
+    report["freed_bytes"] = report["size_before"] - report["size_after"]
+
+    print("[DB-OPTIMIZE] Integrity check:", report["integrity"])
+    print(f"[DB-OPTIMIZE] Size before:  {report['size_before']} bytes")
+    print(f"[DB-OPTIMIZE] Size after:   {report['size_after']} bytes")
+    print(f"[DB-OPTIMIZE] Freed:        {report['freed_bytes']} bytes")
+    return report
+
 
 def main():
     db = DatabaseManager()
@@ -65,5 +124,25 @@ def main():
     print("\n")
 
 if __name__ == "__main__":
-    main()
-    input("Πατήστε Enter για έξοδο.")
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="TALOS database statistics and optimizer."
+    )
+    parser.add_argument(
+        "--optimize",
+        action="store_true",
+        help="Run PRAGMA integrity_check and VACUUM on the active profile database.",
+    )
+    parser.add_argument(
+        "--db",
+        default=None,
+        help="Optional explicit database path (defaults to the active profile DB).",
+    )
+    args = parser.parse_args()
+
+    if args.optimize:
+        optimize_database(args.db or get_active_profile_db_path())
+    else:
+        main()
+        input("Press Enter to exit.")

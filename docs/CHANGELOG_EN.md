@@ -2,6 +2,29 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.12] - 2026-08-27 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools
+
+### Added
+- **3D Animated Laser Beams & Photon Pulses** (`templates/live_foraging_visualizer.html`): `activeBeams` array with additive-blended glowing `THREE.Line` beams and traveling `SphereGeometry(0.12)` photon spheres (Cyan `#00ced1` / Gold `#f59e0b`) animated at 60 FPS; sine-envelope opacity, temporary target-node scale pulse, and aura intensification with full geometry/material disposal on completion.
+- **Interactive Visualizer Tools**: raycaster click-to-fire on satellite nodes, SNAPSHOT (PNG download `TALOS_3D_Constellation.png` via `canvas.toDataURL`), FULLSCREEN toggle, THEME (dark / academic print), and a HELP modal with keyboard shortcuts (R/T/F/S/Space/1-3).
+- **1000ms Pure AJAX State Poller**: cache-busted `GET /api/v1/visualizer/state?_t=` with strict no-store headers, refreshing all 16 health auras and count badges, and firing beams on new evaluation IDs.
+- **SQLite Vacuum Optimizer** (`src/utils/db_stats.py`): `optimize_database(db_path)` running `PRAGMA integrity_check;` + `VACUUM;` with clean console metrics and a `--optimize` CLI flag.
+- **System Tray Companion** (`src/utils/tray_icon.py` + `pystray` + `Pillow`): `launch_tray_icon_async()` renders a 16x16 navy/cyan "T" tray icon with Open 3D Visualizer, Show / Hide Console (Win32 `ShowWindow`), and Terminate Daemon actions, running in a non-blocking daemon thread; wired into `talos_service.py` startup with a graceful ImportError fallback.
+- **New Console Window Daemon Launch** (`talos.py`): Option 11 now spawns `talos_service.py` via `subprocess.Popen(..., creationflags=subprocess.CREATE_NEW_CONSOLE)` on Windows so the 24/7 daemon owns a dedicated console while the TUI stays interactive.
+- **Rich TrueColor DRL Telemetry** (`src/ai/drl/live_agent_orchestrator.py`): `Console(force_terminal=True)` with color-coded `[ACT]`, `[ROUTER]`, `[WARNING]`, `[RECOVERY]`, and `[EVAL]` badges; dynamic status badges `[ELITE  +]` / `[ACCEPT v]` / `[REJECT X]`.
+
+### Changed
+- **Version strings synced across 6 core code files** to v5.10.12; Docker image `talos:5.10.12`; CITATION.cff version and date updated.
+- **Documentation synced across the canonical file set** to v5.10.12 (2026-08-27).
+- **23 FastAPI endpoints** documented (E01-E23) across capabilities and project-map references.
+- **Roadmap re-aligned**: DSPy PRISMA Pipeline shifted to v5.10.13; CORTEX & n8n Gateway shifted to v5.10.14.
+- **Project Map structural repair**: `docs/PROJECT_MAP.md` and `docs/PROJECT_MAP_EN.md` re-encoded to UTF-8; broken markdown tables, misaligned columns, and corrupted box-drawing glyphs fixed; stale `scripts/` and `app.py` (Streamlit) paths replaced with the current `src/` layout; strict EN/GR parity restored (79 src/ modules, 23 endpoints).
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed with v5.10.12 assertion.
+
 ## [v5.10.11] - 2026-08-24 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine
 
 ### Added

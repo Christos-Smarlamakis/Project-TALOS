@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS v5.10.11 -- 3D Knowledge Constellation (Vendored Three.js)</title>
+<title>TALOS v5.10.12 -- 3D Knowledge Constellation (Vendored Three.js)</title>
 <style>
   *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
   html, body { width:100%; height:100%; overflow:hidden; background:#0f1117; font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; color:#e4e7ee; }
@@ -47,6 +47,16 @@
   body.print-theme .ctrl-btn { color:#33414f; }
   body.print-theme .ctrl-btn:hover, body.print-theme .ctrl-btn.active { color:#002855; border-color:#002855; }
   body.print-theme #mode-indicator { color:#002855; }
+  #help-modal { position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,0.55); }
+  #help-modal.visible { display:flex; }
+  #help-modal .modal { position:relative; background:#161a22; border:1px solid rgba(0,102,153,0.45); border-radius:12px; padding:24px 28px; width:min(420px,90vw); color:#e4e7ee; }
+  body.print-theme #help-modal .modal { background:#ffffff; color:#0f1117; border-color:rgba(0,40,85,0.35); }
+  #help-modal h3 { margin:0 0 14px; font-size:14px; letter-spacing:1.5px; text-transform:uppercase; color:#00ced1; }
+  #help-modal table { width:100%; border-collapse:collapse; font-size:13px; }
+  #help-modal td { padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+  #help-modal kbd { display:inline-block; min-width:22px; text-align:center; padding:2px 7px; border:1px solid rgba(0,206,209,0.4); border-radius:4px; color:#00ced1; font-family:inherit; font-size:11px; margin-right:8px; }
+  #help-modal .close { position:absolute; top:12px; right:14px; cursor:pointer; border:none; background:none; color:#b0bec5; font-size:16px; }
+  body.print-theme #help-modal .close { color:#33414f; }
 </style>
 </head>
 <body>
@@ -58,6 +68,9 @@
   <span class="ctrl-sep"></span>
   <button class="ctrl-btn" id="btn-theme">THEME</button>
   <button class="ctrl-btn" id="btn-reset">RESET VIEW</button>
+  <button class="ctrl-btn" id="btn-snapshot">SNAPSHOT</button>
+  <button class="ctrl-btn" id="btn-fullscreen">FULLSCREEN</button>
+  <button class="ctrl-btn" id="btn-help">HELP</button>
 </div>
 
 <div id="mode-indicator">LIVE AJAX POLLING</div>
@@ -83,7 +96,22 @@
   <div class="lg"><span class="dot" style="background:#10b981"></span> Healthy</div>
   <div class="lg"><span class="dot" style="background:#f59e0b"></span> Cooldown</div>
   <div class="lg"><span class="dot" style="background:#ef4444"></span> Error / 403</div>
-  <div class="lg"><span class="dot" style="background:#06b6d4"></span> Standby</div>
+  <div class="lg"><span class="dot" style="background:#00ced1"></span> Standby</div>
+</div>
+
+<div id="help-modal">
+  <div class="modal">
+    <button class="close" id="help-close">X</button>
+    <h3>Keyboard Shortcuts</h3>
+    <table>
+      <tr><td><kbd>R</kbd> Reset view</td></tr>
+      <tr><td><kbd>T</kbd> Toggle theme</td></tr>
+      <tr><td><kbd>F</kbd> Fullscreen</td></tr>
+      <tr><td><kbd>S</kbd> Snapshot (PNG)</td></tr>
+      <tr><td><kbd>Space</kbd> Pause / Play</td></tr>
+      <tr><td><kbd>1-3</kbd> Replay speed</td></tr>
+    </table>
+  </div>
 </div>
 
 <script src="/static/js/three.min.js"></script>
@@ -99,7 +127,10 @@
     "PubMed","PLOS","CORE","OSTI.gov","Science.gov",
     "OpenArchives","IEEE","Elsevier","Springer","OpenReview","OpenAIRE"];
 
-  var STATE_COLORS = { healthy: 0x10b981, cooldown: 0xf59e0b, error: 0xef4444, standby: 0x06b6d4 };
+  // -- v5.10.12: Node registry used by the robust fuzzy source resolver --
+  var NODES = SOURCE_NAMES.map(function (name, i) { return { slug: name, name: SOURCE_LABELS[i] }; });
+
+  var STATE_COLORS = { healthy: 0x10b981, cooldown: 0xf59e0b, error: 0xef4444, standby: 0x00ced1 };
 
   var printTheme = false;
   var currentMode = 'live';
@@ -113,6 +144,7 @@
 
   var scene = new THREE.Scene();
   var camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
+  camera.position.set(0, 6, 42);
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.6));
   var keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -122,28 +154,47 @@
   fillLight.position.set(-6, -2, -4);
   scene.add(fillLight);
 
-  var orbit = { theta: 0, phi: Math.PI / 6, radius: 14 };
+  var orbit = { theta: 0, phi: Math.atan2(42, 6), radius: Math.sqrt(42 * 42 + 6 * 6) };
   var panTarget = new THREE.Vector3(0, 0, 0);
 
-  var grid = null;
-  function buildGrid(print) {
-    if (grid) { scene.remove(grid); grid.geometry.dispose(); grid.material.dispose(); }
-    grid = new THREE.GridHelper(18, 18, print ? 0x6688aa : 0x224466, print ? 0xdde3ea : 0x16202c);
-    scene.add(grid);
-  }
-  buildGrid(false);
+  // -- v5.10.11 concentric golden geodesic wireframe core (nested detail=1
+  //    icosahedra in gold/amber hues counter-rotating as a quantum gyroscope) --
+  var coreGroup = new THREE.Group();
+  coreGroup.position.set(0, 0, 0);
 
-  var coreMat = new THREE.MeshBasicMaterial({ color: 0xf39c12, wireframe: true });
-  var core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.25, 1), coreMat);
-  scene.add(core);
-  var innerMat = new THREE.MeshBasicMaterial({ color: 0xf39c12, wireframe: true, transparent: true, opacity: 0.5 });
-  var innerCore = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), innerMat);
-  scene.add(innerCore);
+  var outerMaterial = new THREE.MeshBasicMaterial({ color: 0xffd700, wireframe: true, transparent: true, opacity: 0.85 });
+  var outerCore = new THREE.Mesh(new THREE.IcosahedronGeometry(2.0, 1), outerMaterial);
+  coreGroup.add(outerCore);
+
+  var innerMaterial = new THREE.MeshBasicMaterial({ color: 0xffaa00, wireframe: true, transparent: true, opacity: 0.75 });
+  var innerCore = new THREE.Mesh(new THREE.IcosahedronGeometry(1.2, 1), innerMaterial);
+  coreGroup.add(innerCore);
+
+  scene.add(coreGroup);
+
+  // -- Subtle ambient starfield (v5.10.10 Dark Space Mode): faint stardust --
+  var starField = null;
+  (function buildStarField() {
+    var starCount = 700;
+    var positions = new Float32Array(starCount * 3);
+    for (var si = 0; si < starCount; si++) {
+      var sr = 80 + Math.random() * 60;
+      var stheta = Math.random() * Math.PI * 2;
+      var sphi = Math.acos(2 * Math.random() - 1);
+      positions[si * 3] = sr * Math.sin(sphi) * Math.cos(stheta);
+      positions[si * 3 + 1] = sr * Math.sin(sphi) * Math.sin(stheta);
+      positions[si * 3 + 2] = sr * Math.cos(sphi);
+    }
+    var starGeo = new THREE.BufferGeometry();
+    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    var starMat = new THREE.PointsMaterial({ color: 0x88ccff, size: 0.18, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false });
+    starField = new THREE.Points(starGeo, starMat);
+    scene.add(starField);
+  })();
 
   var lineGroup = new THREE.Group();
   scene.add(lineGroup);
-  var coreLineMat = new THREE.LineBasicMaterial({ color: 0x2a3a4f, transparent: true, opacity: 0.55 });
-  var meshMat = new THREE.LineBasicMaterial({ color: 0x1a2634, transparent: true, opacity: 0.30 });
+  var coreLineMat = new THREE.LineBasicMaterial({ color: 0x334e68, transparent: true, opacity: 0.35 });
   // -- Fibonacci spherical distribution (golden angle) --
   function fibonacciSphere(i, n, radius) {
     var y = 1 - (i / (n - 1)) * 2;
@@ -198,32 +249,32 @@
   // -- Theme-adaptive floating label badge (canvas-backed billboard sprite) --
   function makeLabelSprite(text) {
     var c = document.createElement('canvas');
-    c.width = 256; c.height = 64;
+    c.width = 512; c.height = 128;
     var tex = new THREE.CanvasTexture(c);
     tex.minFilter = THREE.LinearFilter;
     tex.magFilter = THREE.LinearFilter;
     var mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false });
     var spr = new THREE.Sprite(mat);
-    spr.scale.set(1.6, 0.4, 1);
+    spr.scale.set(2.8, 0.7, 1.0);
     drawLabel({ canvas: c, tex: tex }, text);
     return { sprite: spr, canvas: c, tex: tex };
   }
   function drawLabel(label, text) {
     var ctx = label.canvas.getContext('2d');
-    ctx.clearRect(0, 0, 256, 64);
-    ctx.font = 'bold 30px Segoe UI, Arial, sans-serif';
+    ctx.clearRect(0, 0, 512, 128);
+    ctx.font = 'bold 52px Segoe UI, Arial, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     if (printTheme) {
       // Academic print mode: high-contrast dark navy for paper screenshots.
       ctx.fillStyle = '#002855';
-      ctx.fillText(text, 128, 32);
+      ctx.fillText(text, 256, 64);
     } else {
-      // Dark mode: cyan-white text with a soft dark shadow for legibility.
+      // Dark mode: crisp white text with a soft dark shadow for legibility.
       ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-      ctx.shadowBlur = 8;
-      ctx.fillStyle = '#e0f2fe';
-      ctx.fillText(text, 128, 32);
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(text, 256, 64);
     }
     label.tex.needsUpdate = true;
   }
@@ -232,16 +283,16 @@
   // v5.10.11: refined proportions -- sphere radius 0.24 (35% scaled-down from
   // the original 0.37), aura halo sized at 2.2x the node diameter, and a
   // floating theme-adaptive label badge above every node.
-  var NODE_RADIUS = 0.24;
+  var NODE_RADIUS = 0.22;
   var AURA_SCALE = NODE_RADIUS * 2 * 2.2;
   var nodeData = [];
   for (var i = 0; i < 16; i++) {
-    var pos = fibonacciSphere(i, 16, 4.5);
+    var pos = fibonacciSphere(i, 16, 13.5);
     var group = new THREE.Group();
     group.position.copy(pos);
 
     var sphere = new THREE.Mesh(
-      new THREE.SphereGeometry(NODE_RADIUS, 24, 24),
+      new THREE.SphereGeometry(NODE_RADIUS, 32, 32),
       new THREE.MeshPhongMaterial({ color: 0x00ced1, emissive: 0x003333, shininess: 40 })
     );
     group.add(sphere);
@@ -256,65 +307,68 @@
     group.add(counter.sprite);
 
     var labelSprite = makeLabelSprite(SOURCE_LABELS[i]);
-    labelSprite.sprite.position.set(0, NODE_RADIUS + 0.52, 0);
+    labelSprite.sprite.position.set(0, 0.65, 0);
     group.add(labelSprite.sprite);
 
     scene.add(group);
-    nodeData.push({ name: SOURCE_NAMES[i], label: SOURCE_LABELS[i], group: group, sphere: sphere, aura: aura, counter: counter, labelSprite: labelSprite, count: 0 });
+    nodeData.push({ name: SOURCE_NAMES[i], label: SOURCE_LABELS[i], group: group, sphere: sphere, aura: aura, counter: counter, labelSprite: labelSprite, count: 0, pulseBoost: 1 });
   }
-  // -- Connection lines: core -> all 16 satellites + faint neighbor mesh --
+  // -- Hub-and-spoke connection lines: core -> each satellite only --
   var linkVerts = [];
   for (var j = 0; j < 16; j++) {
     linkVerts.push(0, 0, 0);
     linkVerts.push(nodeData[j].group.position.x, nodeData[j].group.position.y, nodeData[j].group.position.z);
   }
-  for (var k = 0; k < 16; k++) {
-    var p = nodeData[k].group.position;
-    var nearest = [];
-    for (var m = 0; m < 16; m++) {
-      if (m === k) continue;
-      nearest.push({ idx: m, d: p.distanceTo(nodeData[m].group.position) });
-    }
-    nearest.sort(function (a, b) { return a.d - b.d; });
-    for (var n = 0; n < 3; n++) {
-      var q = nodeData[nearest[n].idx].group.position;
-      linkVerts.push(p.x, p.y, p.z, q.x, q.y, q.z);
-    }
-  }
   var coreGeo = new THREE.BufferGeometry();
   coreGeo.setAttribute('position', new THREE.Float32BufferAttribute(linkVerts, 3));
   lineGroup.add(new THREE.LineSegments(coreGeo, coreLineMat));
 
-  var meshLinkVerts = [];
-  for (var a = 0; a < 16; a++) {
-    var pa = nodeData[a].group.position;
-    for (var b = a + 1; b < 16; b++) {
-      var pb = nodeData[b].group.position;
-      if (pa.distanceTo(pb) < 5.4) meshLinkVerts.push(pa.x, pa.y, pa.z, pb.x, pb.y, pb.z);
-    }
-  }
-  var meshGeo = new THREE.BufferGeometry();
-  meshGeo.setAttribute('position', new THREE.Float32BufferAttribute(meshLinkVerts, 3));
-  lineGroup.add(new THREE.LineSegments(meshGeo, meshMat));
+  // -- v5.10.12: Animated energy laser beams with traveling photon pulses --
+  var activeBeams = [];
+  var vOrigin = new THREE.Vector3(0, 0, 0);
 
-  // -- Energy laser pulse beam (core -> target node, fades over 1.2s) --
-  var laserGeo = new THREE.BufferGeometry();
-  laserGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0], 3));
-  var laserMat = new THREE.LineBasicMaterial({ color: 0xf39c12, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
-  var laser = new THREE.Line(laserGeo, laserMat);
-  laser.frustumCulled = false;
-  laser.visible = false;
-  scene.add(laser);
-  var laserT = -1;
+  function triggerBeam(targetIdx, score, opts) {
+    if (targetIdx == null || targetIdx < 0 || targetIdx >= nodeData.length) targetIdx = 0;
+    var targetNode = nodeData[targetIdx];
+    opts = opts || {};
+    var direction = opts.direction || 'core_to_node';
+    var beamColor = (opts.color != null) ? opts.color : ((score >= 8) ? 0xf59e0b : 0x00ced1);
+    var duration = opts.duration || 2500;
 
-  function fireLaser(idx) {
-    var target = nodeData[idx].group.position;
-    var attr = laserGeo.attributes.position;
-    attr.setXYZ(0, 0, 0, 0);
-    attr.setXYZ(1, target.x, target.y, target.z);
-    attr.needsUpdate = true;
-    laserT = 0;
-    laser.visible = true;
+    var startPt = (direction === 'node_to_core') ? targetNode.group.position.clone() : vOrigin.clone();
+    var endPt = (direction === 'node_to_core') ? vOrigin.clone() : targetNode.group.position.clone();
+
+    // -- v5.10.12 aesthetic upgrade: parabolic arc via quadratic bezier --
+    var midPt = startPt.clone().lerp(endPt, 0.5);
+    midPt.y += 6;
+    var curve = new THREE.QuadraticBezierCurve3(startPt, midPt, endPt);
+
+    // Additive-blend glowing line tracing the bezier arc.
+    var geo = new THREE.BufferGeometry().setFromPoints(curve.getPoints(24));
+    var mat = new THREE.LineBasicMaterial({
+      color: beamColor, transparent: true, opacity: 0,
+      blending: THREE.AdditiveBlending, depthWrite: false
+    });
+    var line = new THREE.Line(geo, mat);
+    line.frustumCulled = false;
+    scene.add(line);
+
+    // Traveling photon sphere in the resolved beam color.
+    var photon = new THREE.Mesh(
+      new THREE.SphereGeometry(0.12, 16, 16),
+      new THREE.MeshBasicMaterial({ color: beamColor, transparent: true })
+    );
+    photon.position.copy(startPt);
+    scene.add(photon);
+
+    activeBeams.push({
+      line: line,
+      photon: photon,
+      node: targetNode,
+      curve: curve,
+      startTime: performance.now(),
+      duration: duration
+    });
   }
 
   function setAura(idx, hex) {
@@ -322,6 +376,7 @@
     mat.map = makeGlowTexture(hex);
     mat.map.needsUpdate = true;
     mat.needsUpdate = true;
+    nodeData[idx].sphere.material.color.setHex(hex);
   }
   // -- HUD helpers --
   function normalizeTitle(t) {
@@ -360,15 +415,19 @@
     elPipeline.className = 'hud-badge ' + p.pipeline;
   }
 
-  function sourceIndex(src) {
-    var s = String(src || '').toLowerCase();
-    for (var i = 0; i < SOURCE_NAMES.length; i++) {
-      if (s.indexOf(SOURCE_NAMES[i]) !== -1 || SOURCE_NAMES[i].indexOf(s) !== -1) return i;
+  function findNodeIndex(rawSource) {
+    if (!rawSource) return 0;
+    const s = String(rawSource).toLowerCase().replace(/_source|source/g, '').trim();
+    for (let i = 0; i < NODES.length; i++) {
+      const nodeSlug = NODES[i].slug.toLowerCase();
+      const nodeName = NODES[i].name.toLowerCase();
+      if (nodeSlug === s || nodeName === s || s.includes(nodeSlug) || nodeSlug.includes(s)) {
+        return i;
+      }
     }
-    var h = 0;
-    for (var j = 0; j < s.length; j++) h = (h * 31 + s.charCodeAt(j)) | 0;
-    return ((h % 16) + 16) % 16;
+    return 0; // fallback to arXiv node
   }
+  function sourceIndex(src) { return findNodeIndex(src); }
 
   var recentlyHandled = new Set();
   function dedupeKey(p) {
@@ -393,7 +452,7 @@
     var score = parseFloat(p.overall_score != null ? p.overall_score : (p.score != null ? p.score : 0));
     if (isNaN(score)) score = 0;
     var idx = sourceIndex(p.source);
-    fireLaser(idx);
+    triggerBeam(idx, score);
     setAura(idx, auraForScore(score));
     nodeData[idx].count += 1;
     drawCounter(nodeData[idx].counter, nodeData[idx].count);
@@ -406,7 +465,7 @@
 
   function handleSourceSearching(p) {
     var idx = sourceIndex(p.source);
-    fireLaser(idx);
+    triggerBeam(idx, 6.0);
     setAura(idx, STATE_COLORS.cooldown);
     elTitle.textContent = 'Searching ' + nodeData[idx].label + '...';
     elScore.textContent = 'SEARCHING';
@@ -442,6 +501,32 @@
     else if (evt.event_type === 'source_status') handleSourceStatus(p);
   }
 
+  // -- v5.10.12 hotfix: 4-state bi-directional beam bridge --
+  function handleBeamEvent(beam) {
+    if (!beam || !beam.source) return;
+    var idx = sourceIndex(beam.source);
+    var state = beam.state || 'data_in';
+    var health = { query_out: 'standby', error: 'error', data_in: 'healthy', evaluation: 'healthy' }[state] || 'standby';
+    setAuraByStatus(idx, health);
+    if (beam.direction) {
+      var score = parseFloat(beam.score);
+      if (isNaN(score)) score = 0;
+      triggerBeam(idx, score, { direction: beam.direction, color: beam.color });
+      if (state === 'evaluation' || state === 'data_in') {
+        updateHud({
+          title: normalizeTitle(beam.title) || nodeData[idx].label,
+          score: score,
+          badge: badgeForScore(score),
+          reward: beam.reward,
+          provider: beam.provider,
+          source: beam.source,
+          sourceLabel: nodeData[idx].label,
+          pipeline: 'DRL'
+        });
+      }
+    }
+  }
+
   // -- Pure AJAX polling engine (1-second interval, cache-busted) --
   var lastSeenEvalId = null;
   var pollTimer = null;
@@ -473,24 +558,32 @@
       }
     });
 
-    // -- New evaluation? Fire laser + refresh the HUD card --
+    // -- v5.10.12 hotfix: active push beams (backlog-safe, 4-state) --
+    var beams = data.beams || [];
+    for (var bi = 0; bi < beams.length; bi++) {
+      handleBeamEvent(beams[bi]);
+    }
+
+    // -- Fallback: fire from the passive DB poller only when no active beam --
     var ev = data.latest_evaluation;
     if (ev && ev.id != null && ev.id !== lastSeenEvalId) {
       lastSeenEvalId = ev.id;
-      var idx = sourceIndex(ev.source);
-      fireLaser(idx);
-      var score = parseFloat(ev.overall_score);
-      if (isNaN(score)) score = 0;
-      updateHud({
-        title: normalizeTitle(ev.title),
-        score: score,
-        badge: badgeForScore(score),
-        reward: ev.reward,
-        provider: ev.provider,
-        source: ev.source,
-        sourceLabel: nodeData[idx].label,
-        pipeline: pipelineForSource(ev.source)
-      });
+      if (beams.length === 0) {
+        var idx = sourceIndex(ev.source);
+        var score = parseFloat(ev.overall_score);
+        if (isNaN(score)) score = 0;
+        triggerBeam(idx, score);
+        updateHud({
+          title: normalizeTitle(ev.title),
+          score: score,
+          badge: badgeForScore(score),
+          reward: ev.reward,
+          provider: ev.provider,
+          source: ev.source,
+          sourceLabel: nodeData[idx].label,
+          pipeline: pipelineForSource(ev.source)
+        });
+      }
     }
   }
 
@@ -543,8 +636,14 @@
   // -- Orbit camera controls (drag rotate, right-click pan, wheel zoom) --
   var dragging = false, dragButton = 0, lastX = 0, lastY = 0;
   renderer.domElement.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  // -- v5.10.12: Raycaster for interactive click-to-fire on satellite nodes --
+  var raycaster = new THREE.Raycaster();
+  var pointer = new THREE.Vector2();
+  var mouseDownX = 0, mouseDownY = 0;
+
   renderer.domElement.addEventListener('mousedown', function (e) {
     dragging = true; dragButton = e.button; lastX = e.clientX; lastY = e.clientY;
+    mouseDownX = e.clientX; mouseDownY = e.clientY;
     if (dragButton === 2) renderer.domElement.classList.add('panning');
   });
   window.addEventListener('mousemove', function (e) {
@@ -564,15 +663,48 @@
       panTarget.addScaledVector(upV, dy * panScale);
     }
   });
-  window.addEventListener('mouseup', function () { dragging = false; renderer.domElement.classList.remove('panning'); });
+  window.addEventListener('mouseup', function (e) {
+    dragging = false; renderer.domElement.classList.remove('panning');
+    if (dragButton === 0 && e.target === renderer.domElement) {
+      var dx = e.clientX - mouseDownX, dy = e.clientY - mouseDownY;
+      if (Math.sqrt(dx * dx + dy * dy) <= 5) fireClick(e);
+    }
+  });
+
+  function fireClick(e) {
+    pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+    pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    var meshes = [];
+    for (var i = 0; i < nodeData.length; i++) meshes.push(nodeData[i].sphere);
+    var hits = raycaster.intersectObjects(meshes);
+    if (hits.length > 0) {
+      var clicked = meshes.indexOf(hits[0].object);
+      if (clicked >= 0) {
+        triggerBeam(clicked, 8.5);
+        nodeData[clicked].count += 1;
+        drawCounter(nodeData[clicked].counter, nodeData[clicked].count);
+        updateHud({
+          title: 'Manual probe: ' + nodeData[clicked].label,
+          score: 8.5,
+          badge: 'ELITE',
+          reward: 8.5,
+          provider: 'USER',
+          source: nodeData[clicked].name,
+          sourceLabel: nodeData[clicked].label,
+          pipeline: 'DRL'
+        });
+      }
+    }
+  }
   renderer.domElement.addEventListener('wheel', function (e) {
     e.preventDefault();
     orbit.radius *= (1 + Math.sign(e.deltaY) * 0.08);
-    orbit.radius = Math.max(4, Math.min(40, orbit.radius));
+    orbit.radius = Math.max(4, Math.min(60, orbit.radius));
   }, { passive: false });
 
   function resetCamera() {
-    orbit = { theta: 0, phi: Math.PI / 6, radius: 14 };
+    orbit = { theta: 0, phi: Math.atan2(42, 6), radius: Math.sqrt(42 * 42 + 6 * 6) };
     panTarget.set(0, 0, 0);
   }
 
@@ -581,12 +713,10 @@
     printTheme = print;
     renderer.setClearColor(print ? 0xffffff : 0x0f1117, 1);
     document.body.classList.toggle('print-theme', print);
-    buildGrid(print);
-    coreMat.color.set(print ? 0x002855 : 0xf39c12);
-    innerMat.color.set(print ? 0x002855 : 0xf39c12);
-    coreLineMat.color.set(print ? 0x33445a : 0x2a3a4f);
-    meshMat.color.set(print ? 0x55606e : 0x1a2634);
-    laserMat.color.set(print ? 0x002855 : 0xf39c12);
+    if (starField) starField.visible = !print;
+    outerMaterial.color.set(print ? 0x002855 : 0xffd700);
+    innerMaterial.color.set(print ? 0x002855 : 0xffaa00);
+    coreLineMat.color.set(print ? 0x33445a : 0x334e68);
     for (var i = 0; i < nodeData.length; i++) {
       nodeData[i].sphere.material.color.set(print ? 0x002855 : 0x00ced1);
       drawCounter(nodeData[i].counter, nodeData[i].count);
@@ -606,21 +736,48 @@
     requestAnimationFrame(animate);
     var dt = Math.min(clock.getDelta(), 0.1);
 
-    core.rotation.y += dt * 0.35;
-    core.rotation.x += dt * 0.12;
-    innerCore.rotation.y -= dt * 0.5;
-    innerCore.rotation.z += dt * 0.2;
+    if (outerCore && innerCore) {
+      outerCore.rotation.y += 0.005;
+      outerCore.rotation.x += 0.002;
+      innerCore.rotation.y -= 0.008;
+      innerCore.rotation.z += 0.003;
+    }
+
+    if (starField) {
+      starField.rotation.y += 0.0003;
+      starField.rotation.x += 0.0001;
+    }
 
     for (var i = 0; i < nodeData.length; i++) {
-      var s = 1 + 0.06 * Math.sin(clock.elapsedTime * 2 + i);
+      // -- Dynamic paper-count scaling, clamped to 0.85x .. 1.3x --
+      var countScale = 0.85 + Math.min(1, Math.log10(Math.max(nodeData[i].count || 0, 1)) / 3) * 0.45;
+      var s = countScale * (1 + 0.06 * Math.sin(clock.elapsedTime * 2 + i)) * (nodeData[i].pulseBoost || 1);
       nodeData[i].sphere.scale.setScalar(s);
     }
 
-    if (laserT >= 0) {
-      laserT += dt;
-      var t = laserT / 1.2;
-      if (t >= 1) { laser.visible = false; laserT = -1; laserMat.opacity = 0; }
-      else { laserMat.opacity = Math.max(0, 1 - t); }
+    // -- v5.10.12: advance active laser beams and traveling photon pulses --
+    var now = performance.now();
+    for (var b = activeBeams.length - 1; b >= 0; b--) {
+      var beam = activeBeams[b];
+      var t = (now - beam.startTime) / beam.duration;
+      if (t >= 1) {
+        scene.remove(beam.line);
+        scene.remove(beam.photon);
+        beam.line.geometry.dispose();
+        beam.line.material.dispose();
+        beam.photon.geometry.dispose();
+        beam.photon.material.dispose();
+        beam.node.pulseBoost = 1;
+        beam.node.sphere.scale.setScalar(1);
+        beam.node.aura.material.opacity = 0.75;
+        activeBeams.splice(b, 1);
+        continue;
+      }
+      beam.curve.getPoint(t, beam.photon.position);
+      beam.line.material.opacity = Math.sin(t * Math.PI) * 0.9;
+      beam.photon.material.opacity = Math.sin(t * Math.PI);
+      beam.node.pulseBoost = 1 + Math.sin(t * Math.PI) * 0.4;
+      beam.node.aura.material.opacity = 0.75 + Math.sin(t * Math.PI) * 0.25;
     }
 
     camera.position.set(
@@ -660,6 +817,30 @@
     this.textContent = printTheme ? 'THEME: PRINT' : 'THEME';
   });
   document.getElementById('btn-reset').addEventListener('click', resetCamera);
+
+  // -- v5.10.12: Snapshot, fullscreen, and help overlay tools --
+  document.getElementById('btn-snapshot').addEventListener('click', function () {
+    var link = document.createElement('a');
+    link.download = 'TALOS_3D_Constellation.png';
+    link.href = renderer.domElement.toDataURL('image/png');
+    link.click();
+  });
+  document.getElementById('btn-fullscreen').addEventListener('click', function () {
+    if (document.fullscreenElement) { document.exitFullscreen(); }
+    else { document.documentElement.requestFullscreen(); }
+  });
+  var helpModal = document.getElementById('help-modal');
+  document.getElementById('btn-help').addEventListener('click', function () { helpModal.classList.add('visible'); });
+  document.getElementById('help-close').addEventListener('click', function () { helpModal.classList.remove('visible'); });
+  helpModal.addEventListener('click', function (e) { if (e.target === helpModal) helpModal.classList.remove('visible'); });
+
+  function setReplaySpeed(n) {
+    replaySpeed = n;
+    var btn = document.getElementById('rp-speed');
+    btn.dataset.speed = String(n);
+    btn.textContent = n + 'x';
+    if (replayPlaying) startReplay();
+  }
   document.getElementById('rp-play').addEventListener('click', function () {
     if (replayPlaying) { pauseReplay(); this.textContent = 'PLAY'; }
     else { startReplay(); this.textContent = 'PAUSE'; }
@@ -674,8 +855,15 @@
   document.getElementById('rp-timeline').addEventListener('input', function () { seekReplay(this.value); });
 
   window.addEventListener('keydown', function (e) {
-    if (e.key === 'r' || e.key === 'R') resetCamera();
-    if (e.key === 't' || e.key === 'T') document.getElementById('btn-theme').click();
+    var k = e.key.toLowerCase();
+    if (k === 'r') { resetCamera(); }
+    else if (k === 't') { document.getElementById('btn-theme').click(); }
+    else if (k === 'f') { document.getElementById('btn-fullscreen').click(); }
+    else if (k === 's') { document.getElementById('btn-snapshot').click(); }
+    else if (k === ' ') { e.preventDefault(); document.getElementById('rp-play').click(); }
+    else if (k === '1') { setReplaySpeed(1); }
+    else if (k === '2') { setReplaySpeed(2); }
+    else if (k === '3') { setReplaySpeed(3); }
   });
 
   // -- Bootstrap --

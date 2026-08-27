@@ -84,19 +84,29 @@ class OpenAIRESource:
     def _first(values, default=None):
         """Return the first non-empty value from a list-like field.
 
+        Nested XML-to-JSON dictionary wrappers (``$``, ``#text``, ``value``)
+        are unwrapped so a title such as ``[{"$": "Some Title"}]`` resolves to
+        the plain string instead of the raw dictionary.
+
         Args:
             values: Raw field value (list, scalar, or None).
             default: Value returned when the field is empty.
 
         Returns:
-            The first element if it is a non-empty list, else the scalar/default.
+            The first unwrapped value if it is a non-empty list, else the
+            scalar/default.
         """
+        def _unwrap(value):
+            if isinstance(value, dict):
+                return value.get("$", value.get("#text", value.get("value", str(value))))
+            return value
+
         if isinstance(values, list):
             for value in values:
                 if value not in (None, ""):
-                    return value
+                    return _unwrap(value)
             return default
-        return values if values else default
+        return _unwrap(values) if values else default
 
     @staticmethod
     def _normalize_keywords(query: str) -> str:

@@ -55,6 +55,7 @@ from src.ingestion.openaire_source import OpenAIRESource
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
 from src.ai.drl.llm_router_subagent import estimate_prompt_tokens
+from src.integration.visualizer_bridge import push_visualizer_event
 
 
 # -- v5.10.2: Canonical 16-source registry for the checkbox TUI and --sources --
@@ -287,18 +288,13 @@ def main(sources=None):
         if evaluation_data:
             db_manager.add_paper(paper, evaluation_data)
 
-            # -- v5.10.10: Push to 3D visualizer stream (best-effort) --
-            try:
-                from src.api.main_api import broadcast_visualizer_event
-                broadcast_visualizer_event("paper_evaluated", {
-                    "title": paper.get("title", ""),
-                    "overall_score": evaluation_data.get("overall_score", 0),
-                    "source": paper.get("source", ""),
-                    "pipeline": "Historic Archive Search",
-                    "provider": getattr(ai_manager, "last_provider_used", "--"),
-                })
-            except ImportError:
-                pass
+            # -- v5.10.12 hotfix: centralized visualizer bridge (active push) --
+            push_visualizer_event(
+                "paper_evaluated",
+                paper.get("source", "unknown"),
+                evaluation_data.get("overall_score", 0.0),
+                paper.get("title", "Unknown"),
+            )
 
             scores = evaluation_data.get('scores', {})
             s = scores.get('strategic', 0)

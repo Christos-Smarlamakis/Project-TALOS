@@ -1,538 +1,219 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.11
+# PROJECT_MAP.md -- Ξ Ξ»Ξ®ΟΞ·Ο‚ Ξ§Ξ¬ΟΟ„Ξ·Ο‚ Ο„ΞΏΟ… Project TALOS v5.10.12
 
-> **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
+> **Ξ£ΞΊΞΏΟ€ΟΟ‚:** Ξ‘Ο…Ο„Ο Ο„ΞΏ Ξ±ΟΟ‡ΞµΞ―ΞΏ ΞµΞ―Ξ½Ξ±ΞΉ Ξ· "ΞΌΞ½Ξ®ΞΌΞ·" Ο„ΞΏΟ… project. Ξ”ΞΉΞ±Ξ²Ξ¬Ξ¶ΞµΟ„Ξ±ΞΉ Ο…Ο€ΞΏΟ‡ΟΞµΟ‰Ο„ΞΉΞΊΞ¬ Ξ±Ο€Ο ΞΊΞ¬ΞΈΞµ Ξ½Ξ­ΞΏ chat ΟΟƒΟ„Ξµ ΞΏ AI agent Ξ½Ξ± Ξ³Ξ½Ο‰ΟΞ―Ξ¶ΞµΞΉ Ξ±ΞΊΟΞΉΞ²ΟΟ‚ Ο„ΞΉ Ο…Ο€Ξ¬ΟΟ‡ΞµΞΉ, Ο€ΞΏΟ, ΞΊΞ±ΞΉ Ο€ΟΟ‚ ΟƒΟ…Ξ½Ξ΄Ξ­ΞµΟ„Ξ±ΞΉ -- Ο‡Ο‰ΟΞ―Ο‚ Ξ½Ξ± ΞΎΞ±Ξ½Ξ±Ξ΄ΞΉΞ±Ξ²Ξ¬Ξ¶ΞµΞΉ ΟΞ»Ξ± Ο„Ξ± Ξ±ΟΟ‡ΞµΞ―Ξ±.
 >
-> **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
+> **ΞΞ±Ξ½ΟΞ½Ξ±Ο‚:** ΞΞµΟ„Ξ¬ Ξ±Ο€Ο ΞΞ‘ΞΞ• Ξ±Ξ»Ξ»Ξ±Ξ³Ξ® ΞΊΟΞ΄ΞΉΞΊΞ± (Ξ½Ξ­Ξ± ΟƒΟ…Ξ½Ξ¬ΟΟ„Ξ·ΟƒΞ·, Ο„ΟΞΏΟ€ΞΏΟ€ΞΏΞ―Ξ·ΟƒΞ· Ο…Ο€ΞΏΞ³ΟΞ±Ο†Ξ®Ο‚, Ξ½Ξ­ΞΏ/Ξ΄ΞΉΞ±Ξ³ΟΞ±ΞΌΞΌΞ­Ξ½ΞΏ Ξ±ΟΟ‡ΞµΞ―ΞΏ), Ξ±Ο…Ο„Ο Ο„ΞΏ Ξ±ΟΟ‡ΞµΞ―ΞΏ Ξ Ξ΅Ξ•Ξ Ξ•Ξ™ Ξ½Ξ± ΞµΞ½Ξ·ΞΌΞµΟΟΞ½ΞµΟ„Ξ±ΞΉ.
 >
-> **Τελευταία Ενημέρωση:** 2026-08-24 (v5.10.11 -- Τρισδιάστατος Αστερισμός Γνώσης Three.js & Μηχανή Ζωντανής Τηλεμετρίας)
+> **Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―Ξ± Ξ•Ξ½Ξ·ΞΌΞ­ΟΟ‰ΟƒΞ·:** 2026-08-27 (v5.10.12 -- Ξ•Ξ½Ξ―ΟƒΟ‡Ο…ΟƒΞ· Ξ‘Ο…Ο„ΟΞ½ΞΏΞΌΞΏΟ… Ξ”Ξ±Ξ―ΞΌΞΏΞ½Ξ±, 3D Ξ¤Ξ·Ξ»ΞµΞΌΞµΟ„ΟΞ―Ξ± Ξ›Ξ­ΞΉΞ¶ΞµΟ, Ξ”ΞΉΞ±Ξ΄ΟΞ±ΟƒΟ„ΞΉΞΊΟΟ‚ ΞΟ€Ο„ΞΉΞΊΞΏΟ€ΞΏΞΉΞ·Ο„Ξ®Ο‚, System Tray Companion & Rich TrueColor Ξ¤Ξ·Ξ»ΞµΞΌΞµΟ„ΟΞ―Ξ±)
 
 ---
 
-## 1. Επισκόπηση Αρχιτεκτονικής
+## 1. Ξ•Ο€ΞΉΟƒΞΊΟΟ€Ξ·ΟƒΞ· Ξ‘ΟΟ‡ΞΉΟ„ΞµΞΊΟ„ΞΏΞ½ΞΉΞΊΞ®Ο‚
 
-```
-------------------------------------------------------------------¬
-¦                        USER INTERFACES                          ¦
-¦  talos.py (CLI menu)     src/api/main_api.py (FastAPI — 15 endpoints)   ¦
-¦  React 18 + Tailwind CSS + Shadcn UI     templates/dashboard.html (Flask)¦
-L--------------------------T---------------------------------------
-¦                            ¦ subprocess / direct import
-¦                            ΅
-------------------------------------------------------------------¬
-¦                    src/ SRV PACKAGES (55 αρχεία)                 ¦
-¦  src/ai/drl/   (9 files) — DRL agent, networks, env, trainer,   ¦
-¦                            live agent, service                   ¦
-¦  src/ai/optimizers/ (3)  — GWO tuner + reward shaper + dashboard ¦
-¦  src/ai/embeddings/  (2) — embedding_generator, db upgrade      ¦
-¦  src/ai/llm/         (3) — PYTHIA, model_manager, research_pivot¦
-¦  src/analysis/       (9) — citation_analyzer, author_profiler,  ¦
-¦                            knowledge_path, recommender, etc.    ¦
-¦  src/utils/          (8) — db_stats, api_health_check, docs,    ¦
-¦                            verify_dep_map, dashboard, etc.      ¦
-¦  src/api/            (2) — talos_service_api, main_api.py (15 endpoints) ¦
-L--------------------------T---------------------------------------
-¦                            ¦ import
-¦                            ΅
-------------------------------------------------------------------¬
-¦                    src/core/ (5 αρχεία — Global Handlers)       ¦
-¦  ai_manager.py          database_manager.py        hardware.py  ¦
-¦  notifier.py            profile_manager.py                      ¦
-¦  (Multi-provider LLM)   (SQLite + Embeddings)     (GPU detect)  ¦
-L--------------------------T---------------------------------------
-¦                            ¦ import
-¦                            ΅
-------------------------------------------------------------------¬
-¦                    src/ingestion/ (21 αρχεία)                    ¦
-¦  16 APIs: arxiv  elsevier  semantic_scholar  ieee  springer     ¦
-¦           openalex  dblp  core  crossref  openarchives  pubmed  ¦
-¦           scigov  osti  plos  openreview  openaire              ¦
-¦  7 pipelines: daily_search  historic_search  grey_lit  pdf      ¦
-¦               zotero  metadata_enricher  data_enricher          ¦
-¦  Standardized output: {doi, url, title, authors_str,            ¦
-¦                        publication_year, abstract, source}      ¦
-L--------------------------T---------------------------------------
-¦                            ¦ HTTP requests
-¦                            ΅
-------------------------------------------------------------------¬
-¦                    EXTERNAL APIs & SERVICES                     ¦
-¦  Gemini API  DeepSeek API  HuggingFace  Ollama  Discord  Zotero ¦
-¦  Unpaywall  ORCID  Semantic Scholar  IEEE  Elsevier  Springer   ¦
-L------------------------------------------------------------------
+```text
+USER INTERFACES
+  talos.py (Rich TUI -- ΞΌΞµΞ½ΞΏΟ 15 ΞµΟ€ΞΉΞ»ΞΏΞ³ΟΞ½)       src/api/main_api.py (FastAPI -- 23 endpoints E01-E23)
+  React 18 + Tailwind CSS + Shadcn UI             templates/dashboard.html (Flask, legacy)
+  src/utils/tray_icon.py (system tray)            templates/live_foraging_visualizer.html (Three.js)
 
-Data Flow:
-  User > talos.py > run_script() > src/*/*.py > src/core/*.py
-                                              > src/ingestion/*.py > External APIs
-                                                       ¦
-                                               data/talos_research.db (SQLite)
-                                                       ¦
-                                               config.json + .env
+        | subprocess / direct import
+        v
+
+SRC PACKAGES
+  src/core/          (5 Ξ±ΟΟ‡ΞµΞ―Ξ±)  ai_manager, database_manager, hardware, notifier, profile_manager
+  src/ai/drl/       (10 Ξ±ΟΟ‡ΞµΞ―Ξ±)  drl_agent, drl_networks, talos_env, train_agent, live_agent_*
+  src/ai/optimizers/ (3 Ξ±ΟΟ‡ΞµΞ―Ξ±)  gwo_foraging_hyperparameter_tuner, gwo_live_dashboard, gwo_llm_router_reward_shaper
+  src/ai/embeddings/ (2 Ξ±ΟΟ‡ΞµΞ―Ξ±)  embedding_generator, db_embedding_upgrade
+  src/ai/llm/        (4 Ξ±ΟΟ‡ΞµΞ―Ξ±)  model_manager, query_translator, research_pivot, model_discovery
+  src/ai/testing/    (1 Ξ±ΟΟ‡ΞµΞ―ΞΏ)  red_tester
+  src/analysis/     (10 Ξ±ΟΟ‡ΞµΞ―Ξ±)  citation_analyzer, author_profiler, recommender, knowledge_path, ΞΊ.Ξ¬.
+  src/ingestion/    (23 Ξ±ΟΟ‡ΞµΞ―Ξ±)  16 source agents + 7 pipelines
+  src/integration/   (3 Ξ±ΟΟ‡ΞµΞ―Ξ±)  synapse_client, optica_client, visualizer_bridge
+  src/utils/        (14 Ξ±ΟΟ‡ΞµΞ―Ξ±)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, ΞΊ.Ξ¬.
+  src/api/           (4 Ξ±ΟΟ‡ΞµΞ―Ξ±)  main_api, synapse_routes, red_tester_routes, talos_service_api
+  src/mcp_server.py              MCP stdio server (4 tools)
+
+        | import
+        v
+
+GLOBAL HANDLERS (src/core)
+  ai_manager.py (multi-provider LLM)      database_manager.py (SQLite + embeddings)
+  hardware.py (GPU / VRAM detection)      notifier.py (ΞµΞΉΞ΄ΞΏΟ€ΞΏΞΉΞ®ΟƒΞµΞΉΟ‚)     profile_manager.py (profiles)
+
+        | HTTP requests
+        v
+
+EXTERNAL APIs & SERVICES
+  Gemini  DeepSeek  HuggingFace  Ollama  Discord  Zotero  Unpaywall  ORCID
+  Semantic Scholar  IEEE  Elsevier  Springer  Crossref  OpenAIRE  OpenReview
+  SYNAPSE bus (ΞΈΟΟΞ± 8000)    OPTICA bridge (ΞΈΟΟΞ± 8002)
 ```
 
----
-
-## 2. Core Modules
-
-### 2.0 `core/talos_env.py` — Gymnasium Environment (v3.2, 16-source / 23-dim scaling)
-
-**Ρόλος:** RL environment για API source selection. **V2.1:** Fixed hour normalization `/23.0` > `/24.0`. **v3.0:** Provider-aware observation — state vector includes 4 provider ratios (gemini, deepseek, huggingface, local) για τον DRL agent. **v3.1 (Batch 1 audit):** Το 200-step cutoff επιστρέφεται πλέον ως `truncated=True` (όχι `terminated`) — Gymnasium time-limit semantics, ώστε το Bellman target να κάνει bootstrap πέρα από το τεχνητό όριο. **v3.2 (v5.10.1):** Κλιμάκωση περιβάλλοντος σε **23 διαστάσεις κατάστασης** (1 ώρα + 16 λόγοι πηγών + 2 σερί + 4 λόγοι παρόχων) και **17 δράσεις** (16 πηγές + ύπνος). Η `_load_source_list()` εγγυάται την παρουσία των `openreview` και `openaire`.
-
-**Module-level constants:**
-- `_PROVIDER_NAMES` = ["gemini", "deepseek", "huggingface", "local"]
-- `_PROVIDER_COUNT` = 4
-
-| Μέθοδος | Υπογραφή | Περιγραφή |
-|---------|----------|-----------|
-| `_load_source_list` | `(config=None) -> list` | Διαβάζει τη λίστα πηγών από config.json (source_names ή auto-detect από _query keys). |
-| `_try_load_config` | `() -> dict or None` | Φορτώνει config.json από το project root. |
-| `_load_source_limits` | `(source_names, config=None) -> np.ndarray` | Διαβάζει per-source API limits από config. |
-| `__init__` | `(self, source_names=None, source_limits=None, config=None)` | Dynamic init με N πηγές. Obs size = 1 + N + 2 + 4 (providers) = 23 για 16 πηγές. |
-| `reset` | `(seed=None, options=None) -> (obs, info)` | Μηδενίζει όλους τους counters. |
-| `step` | `(action) -> (obs, reward, terminated, truncated, info)` | Εκτελεί action. Actions 0..N-1 = query πηγή, N = sleep. |
-| `_build_obs` | `() -> np.ndarray` | v3.2: [hour/24, 16 usage_ratios..., low/10, err/10, 4 provider ratios] — 23 διαστάσεις. |
-| `get_default_state_space` | `() -> int` | v3.2: 23 (1 + 16 + 2 + 4). |
-| `get_default_action_space` | `() -> int` | v3.2: 17 (16 πηγές + 1 sleep). |
-
-### 2.1 `core/ai_manager.py` — Κλάση `AIManager` (v3.9)
-
-**v3.7 (Batch 1 audit):** Νέο attribute `last_provider_used` — ενημερώνεται σε κάθε επιτυχημένο `_execute_request()` με το όνομα του provider που εξυπηρέτησε το request. Χρησιμοποιείται από τον live orchestrator για σωστό provider attribution.
-**v3.8 (Batch 3 hotfix):** Υλοποιήθηκε η `analyze_generic_text(full_prompt) -> str|None` — ήταν τεκμηριωμένη στον χάρτη και καλούνταν από το grey_literature_miner.py, αλλά ΔΕΝ υπήρχε στον κώδικα (AttributeError). Thin wrapper γύρω από `_execute_request(model_type='pro', response_format='text')`.
-
-**Ρόλος:** Multi-provider LLM interface με circuit breaker pattern. Διαχειρίζεται 9 providers μέσω Καθολικού Πλέγματος Νέφους (v5.9.18): Gemini (Google GenAI SDK, μη-OpenAI) + 8 συμβατοί με OpenAI πάροχοι εφεδρείας (NVIDIA NIM, Groq, Cerebras, GitHub Models, Mistral, OpenRouter, DeepSeek, HuggingFace) + Local/Ollama (offline).
-
-| Μέθοδος | Υπογραφή | Περιγραφή |
-|---------|----------|-----------|
-| `__init__` | `(self, config: Dict[str, Any])` | Αρχικοποιεί όλους τους providers από config + .env μέσω του `OPENAI_COMPATIBLE_REGISTRY`. Θέτει provider_priority, FAILURE_THRESHOLD. |
-| `_clean_json_string` | `(self, text: str) -> str` | Εξάγει καθαρό JSON από LLM response. |
-| `evaluate_paper_json` | `(self, paper_content: str, model_type: str = 'pro', system_prompt_override: str = None) -> Union[Dict, None]` | Αξιολογεί paper με AI, structured JSON. |
-| `analyze_generic_text` | `(self, full_prompt: str) -> str` | Αναλύει arbitrary text. |
-| `_execute_request` | `(self, prompt: str, model_type: str, response_format: str = 'text') -> Union[Dict, str, None]` | Multi-provider request με 2D Execution Matrix routing. |
-| `_execute_cloud_chain` | `(self, prompt: str, model_type: str, response_format: str) -> Union[Dict, str, None]` | Δρομολογεί μέσω `provider_priority` (Universal Cloud Mesh), παρακάμπτοντας unconfigured/open-circuit providers. |
-| `_execute_openai_compatible_request` | `(self, provider_name: str, prompt: str, model_type: str, response_format: str) -> Union[Dict, str, None]` | Ενοποιημένος χειριστής OpenAI-compatible providers με circuit breaker. |
-| `_handle_failure` | `(self, provider_name: str)` | Αυξάνει failure counter, ανοίγει circuit στα 5+. |
-
-**Providers:**
-- `gemini`: Google GenAI SDK, flash_model (pre-screening), pro_model (deep analysis)
-- `nvidia`: OpenAI-compatible, model: nvidia/nemotron-3-ultra
-- `groq`: OpenAI-compatible, model: llama-3.3-70b-versatile
-- `cerebras`: OpenAI-compatible, model: llama-3.1-70b
-- `github`: OpenAI-compatible, model: gpt-4o-mini
-- `mistral`: OpenAI-compatible, model: mistral-small-latest
-- `openrouter`: OpenAI-compatible, model: meta-llama/llama-3.3-70b-instruct:free
-- `deepseek`: OpenAI-compatible, model: deepseek-chat
-- `huggingface`: OpenAI-compatible, model: meta-llama/Llama-3.3-70B-Instruct
-- `local`: Ollama OpenAI-compatible, model: gemma3:12b
-
----
-
-### 2.2 `core/live_agent_sources.py` — Source Discovery (v1.0, NEW in v5.3.1)
-
-**Ρόλος:** Source discovery and dynamic import for the TALOS Live DRL Agent. Scans config.json for `_query` keys, imports source classes by scanning modules for any class ending in "Source" (handles mixed naming: DBLP>DBLPSource, IEEE>IEEEXploreSource, etc.).
-
-| Συνάρτηση | Υπογραφή | Περιγραφή |
-|-----------|----------|-----------|
-| `import_source_class` | `(source_name: str) -> class or None` | Δυναμικό import με auto-detect κλάσης (ψάχνει για *Source). |
-| `build_source_map` | `(source_names: list) -> (dict, list)` | DENSE action mapping: {0: (name, cls), ...}. Επιστρέφει και τη λίστα των working source names. |
-
-### 2.3 `core/live_agent_orchestrator.py` — Main Loop + Cooldown (v1.1, Batch 1 audit)
-
-**v1.1 fixes:** (1) `LOW_SCORE_MAX` 20 > 10 ώστε το streak normalization να ταιριάζει με το training env (/10) — εξάλειψη train/inference distribution mismatch. (2) `evaluate_paper()` πλέον πιστώνει τον provider που ΠΡΑΓΜΑΤΙΚΑ απάντησε (`ai_manager.last_provider_used`), όχι πάντα "gemini".
-
-**Ρόλος:** Core orchestration loop για το TALOS Live DRL Agent. Handles state calculation, action selection, API fetch, AI evaluation, reward, counters, and provider tracking. **v3.1 Cooldown:** `active_cooldowns` dict prevents deadlocks — actions with negative reward get 5-step lockout, overridden by random free action.
-
-| Συνάρτηση | Υπογραφή | Περιγραφή |
-|-----------|----------|-----------|
-| `_get_provider_limits` | `(config: dict) -> dict` | Διαβάζει per-provider limits με tier-based Gemini. |
-| `calculate_state` | `(...) -> np.ndarray` | v3.0 Provider-Aware state: 1 + N_sources + 2 + 4. |
-| `execute_live_fetch` | `(action, action_map, config) -> tuple` | Εκτελεί ΕΝΑ live API call. |
-| `evaluate_paper` | `(paper, ai_manager, provider_call_counts) -> float` | AI evaluation + provider tracking. |
-| `calculate_reward` | `(score: float) -> float` | Score-to-reward mapping (+20, +5, -10). |
-| `run_live_loop` | `(agent, action_map, sources, config, ai_manager, verbose) -> dict` | **Main loop.** Cooldown: epsilon=0.05, 5-step lockout, random override. |
-
-**Cooldown mechanism (v3.1):**
-- `reward < 0` > `active_cooldowns[action] = 5`
-- All cooldowns decrement each iteration, removed at 0
-- If agent picks cooldown action > random free action override
-- Cooldowns reset on sleep (new "day")
-
----
-
-### 2.4 `core/drl_networks.py` — Neural Network Architectures (v1.0, NEW in v5.3.2)
-
-**Ρόλος:** Pluggable neural network architectures for the DRL agent. **v1.0:** Contains `DuelingLSTM` — 3-layer LSTM with dueling heads (V + A). Designed for future architectures (Transformer, xLSTM) via a common `(input_dim, output_dim)` interface.
-
-| Κλάση | Υπογραφή | Περιγραφή |
-|-------|----------|-----------|
-| `DuelingLSTM` | `__init__(input_dim, output_dim)` | 3-layer LSTM (128>64>32) με LayerNorm + dueling heads. `forward(state) -> Q-values`. |
-
-### 2.5 `core/drl_agent.py` — DRL Agent (v2.2, Pluggable Network)
-
-**Ρόλος:** Double Dueling DQN agent. **V2.2:** `network_class` parameter — any network from `drl_networks.py` can be injected. Save/load includes network class name for correct reconstruction.
-
-**Hyperparameters (GWO-optimized v2.0):** `LR=3.361e-05`, `GAMMA=0.6983`, `EPS_DECAY=0.9202` (80 iters, 9.5h, fitness -2353.0).
-
-**Κλάση `TalosDRLAgent`:**
-| Μέθοδος | Υπογραφή | Περιγραφή |
-|---------|----------|-----------|
-| `__init__` | `(state_dim=None, action_dim=None, network_class=None)` | v2.2: `network_class` param (default: DuelingLSTM). |
-| `act` | `(state, eps=0.0) -> int` | ε-greedy action selection. |
-| `learn` | `()` | DDQN learning step. |
-| `save` | `(path)` | Αποθηκεύει weights + metadata **including** `network_class` name. |
-| `load` | `(path)` | v2.2: Resolves network class from saved metadata, uses DuelingLSTM as fallback. |
-
-**Hyperparameters (GWO-optimized v2.0):**
-- `LR = 3.361e-05` (GWO-optimized learning rate)
-- `GAMMA = 0.6983` (GWO-optimized discount factor)
-- `EPS_DECAY = 0.9202` (GWO-optimized epsilon decay, in drl_trainer.py)
-- `TAU = 1e-3`, `MEMORY_LEN = 10000`, `BATCH_SIZE = 200`
-
-**Κλάση `DuelingLSTM`:**
-| Μέθοδος | Υπογραφή | Περιγραφή |
-|---------|----------|-----------|
-| `__init__` | `(input_dim=STATE_SPACE, output_dim=ACTION_SPACE)` | 3-layer LSTM (128>64>32) με dueling heads. |
-| `forward` | `(state) -> Q-values` | Forward pass με CuDNN flatten_parameters(). |
-
-**Κλάση `TalosDRLAgent`:**
-| Μέθοδος | Υπογραφή | Περιγραφή |
-|---------|----------|-----------|
-| `__init__` | `(state_dim=None, action_dim=None)` | Δυναμική αρχικοποίηση. |
-| `act` | `(state, eps=0.0) -> int` | ε-greedy action selection. |
-| `learn` | `()` | DDQN learning step. |
-| `save` | `(path)` | Αποθηκεύει weights + metadata. |
-| `load` | `(path)` | v2.1: Pre-checks dims, recreates networks if needed, THEN load_state_dict. `weights_only=True`. |
-
-### 2.5 `core/notifier.py` — Κλάση `TalosNotifier` (v1.0, ~202 γραμμές)
-
-**Ρόλος:** Multi-channel notification system (Telegram, Discord, Email).
-
-### 2.6 `core/database_manager.py` — Κλάση `DatabaseManager` (v4.8.5, 569 γραμμές)
-
-**Ρόλος:** SQLite database layer με embeddings, semantic search, profile-aware.
-
-### 2.7 `core/hardware.py` (v4.8.5, 429 γραμμές)
-
-**Ρόλος:** Ανίχνευση GPU VRAM, προτάσεις μοντέλων Ollama.
-
-### 2.8 `templates/gui_theme.css` — Academic Theme CSS (v5.3.3)
-**Ρόλος:** Light-only CSS theme για το Streamlit Web GUI (dark mode removed in v5.3.3).
-**CSS variables injected by `app.py:render_css()`** — academic blue/teal palette με glassmorphism cards, custom scrollbar, και professional typography.
-
-### 2.9 `templates/gui_strings.py` — Translation System (v5.3.3)
-**Ρόλος:** Translation strings σε English + Greek για το Streamlit GUI. Εξάγει `STR` dict και `t(key, en_default="")` function. Dark theme toggle string removed in v5.3.3.
-
----
-
-## 3. Entry Points
-
-### 3.1 `talos.py` (v5.3.6 — TUI Hardening)
-CLI entry point με interactive menu. **v5.3.6 (Batch 2 TUI audit):** Νέα `safe_pause()` (Ctrl+C σε "Press Enter" prompts επιστρέφει στο μενού)· `safe_select()` πιάνει KeyboardInterrupt > None· διόρθωση διπλού "6." στο System Diagnostics (το "Baseline Report (Standard)" ήταν dead code — μενού αναριθμήθηκε 1-10)· bare `except:` > `except Exception:`· `TALOS_VERSION` constant στο header· top-level guard με `sys.exit(0)`.
-
-### 3.2 `src/api/main_api.py` (v1.3, ~1000 γραμμές)
-Headless FastAPI REST facade (15 endpoints) — sole backend for React 18 frontend. Streamlit deprecated in v5.6.0.
-
-### 3.3 `start_talos.bat`
-Batch script για εκκίνηση του TALOS CLI.
-
----
-
-## 4. Scripts (21 αρχεία)
-
-### 4.1 Search Scripts
-- `daily_search.py` (v5.4) — Καθημερινή αναζήτηση σε 16 APIs
-- `historic_search.py` (v5.5) — Deep archive search
-- `grey_literature_miner.py` (v2.1) — Grey literature με Gemini Search Grounding. **v2.1 (Batch 3):** `ddgs` import με fallback στο legacy `duckduckgo_search`· το missing GEMINI_API_KEY δεν είναι πλέον fatal (τρέχει με AIManager fallback + DuckDuckGo grounding).
-
-### 4.2 Analysis & Insights
-- `knowledge_path_generator.py` (v1.8) — "CHIRON"
-- `citation_analyzer.py` (v2.1) — "ORPHEUS"
-- `recommender.py` (v4.1) — "Strategic Reading Report"
-
-### 4.3 Configuration & AI
-- `query_translator.py` (v2.3) — "PYTHIA"
-- `model_manager.py` — Interactive model management
-- `profile_manager.py` — Profile switching
-
-### 4.4 Database Maintenance
-- `db_stats.py`, `metadata_enricher.py` (APOLLO), `embedding_generator.py`, `data_enricher.py`, `reevaluate_database.py`, `recalculate_scores.py`, `trend_analyzer.py`
-
-### 4.5 Integration Scripts
-
-#### `scripts/drl_trainer.py` (v1.3 — Batch 2 TUI hardening)
-**Σκοπός:** Training script με GWO-optimized hyperparameters. **v1.1:** `EPS_DECAY=0.9415` (GWO), saves as `dddqn_trained.pth`. **v1.2:** Fix fatal `NameError` (`args.episodes` > `episodes` σε interactive mode)· αποθηκεύει `done=terminated` μόνο (truncation bootstrap). **v1.3 (Batch 2, μόνο presentation):** Ctrl+C μεσα στην εκπαίδευση > αποθήκευση partial model σε `models/dddqn_partial.pth` + clean exit(0)· single-line progress ticker (`\r`) ανάμεσα στα 50-episode summaries· Ctrl+C guards σε prompt και top-level.
-
-#### `scripts/gwo_foraging_hyperparameter_tuner.py` (v2.1 — GWOForagingHyperparameterTuner)
-**Σκοπός:** GWO hyperparameter tuning (μετονομάστηκε από `gwo_rl_optimizer.py` στην v5.10.2). **v2.0 (Batch 1 audit):** (1) `calculate_fitness()` εκπαιδεύει ΠΡΑΓΜΑΤΙΚΑ τον agent (store + learn + decayed epsilon) και μετρά fitness σε ξεχωριστή greedy evaluation phase (`EVAL_EPISODES=5`) — πριν, το fitness ήταν καθαρός θόρυβος (eps=1.0, χωρίς learn()). (2) `update_wolf_position()` = canonical GWO (Mirjalili 2014): fresh r1/r2/A/C ανά alpha/beta/delta term. (3) Fitness values cached ανά iteration — το `_build_history_entry()` δέχεται `fitness_values` αντί να επανα-υπολογίζει. **v2.1:** προστέθηκε κλάση `GWOForagingHyperparameterTuner`· η εξαγωγή μετονομάστηκε σε `models/gwo_foraging_hyperparameters.json`.
-**Συναρτήσεις:** `main()`, `run_gwo()`, `calculate_fitness()`, `find_best_three_wolves()`, `update_wolf_position()`, `GWOForagingHyperparameterTuner.optimize()`.
-**Imports:** `core.talos_env.TalosEnv`, `core.drl_agent`
-
-#### `src/ai/drl/llm_router_subagent.py` (v5.10.3 — LLM Router Sub-Agent)
-**Σκοπός:** Ο `LLMRouterSubAgent` επιλέγει τον βέλτιστο ενεργό πάροχο για ένα αίτημα συμπερασμού. Φορτώνει βάρη ανταμοιβής από το `models/gwo_llm_router_reward_weights.json` (με εφεδρεία Pareto), αξιολογεί μήκος tokens, κατάσταση rate-limit και καθυστέρηση έναντι στατικού πίνακα `PROVIDER_PROFILES`, και επιστρέφει τον πάροχο που μεγιστοποιεί το `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Ενσωματώθηκε στον `AIManager`. Στην v5.10.3 προστέθηκαν ο τροποποιητής εργασίας `foraging_evaluation` και ο κοινός βοηθός `estimate_prompt_tokens()`? καλείται πλέον απευθείας από τον ζωντανό ενορχηστρωτή, τον δαίμονα 24/7 και τους αγωγούς αναζήτησης.
-**Συναρτήσεις:** `LLMRouterSubAgent` (`select_provider()`, `estimate_signals()`, `score_provider()`, `load_weights()`, `set_weights()`), module-level `estimate_prompt_tokens()`, `relative_quality()`.
-
-#### `src/ai/llm/model_discovery.py` (v5.10.4 — Dynamic Model Discovery Engine)
-**Σκοπός:** Η `ModelDiscoveryEngine` ανακαλύπτει δυναμικά ενεργά μοντέλα LLM στο τοπικό επίπεδο Ollama (GET /api/tags) και στους προαιρετικούς παρόχους cloud (NVIDIA NIM, Groq, OpenRouter, Gemini), με εφεδρεία εκτός δικτύου στο τοπικό μητρώο `data/model_benchmarks.json`. Υπολογίζει κανονικοποιημένες βαθμολογίες ποιότητας `Q_p = raw / max(raw)` και συναθροίζει σε επίπεδο παρόχου για τον δρομολογητή.
-**Συναρτήσεις:** `ModelDiscoveryEngine` (`discover_active_models()`, `get_normalized_quality_scores()`, `get_provider_quality_scores()`, `_discover_local_models()`, `_discover_cloud_models()`), module-level `get_discovery_engine()`.
-**Imports:** `numpy`, `json`
-
-#### `src/utils/model_provisioner.py` (v5.10.5 — Universal Dynamic Model Provisioner)
-**Σκοπός:** Η κλάση `ModelProvisioner` εγγυάται τη διαθεσιμότητα ενός μοντέλου πριν τη δρομολόγησή του. Ανιχνεύει ντετερμινιστικά το πρωτόκολλο παράδοσης (`detect_protocol()`: προθέματα cloud, Ollama με άνω-κάτω τελεία, HuggingFace Hub με κάθετο), επιλύει τοπικά αντίγραφα μέσω κλιμάκωσης 3 επιπέδων (`resolve_local_model_path()`: `FAST_EDGE_MODEL_PATH`, ενσωματωμένο `models/<sanitized_name>`, δίκτυο) και εκτελεί `ensure_model_available()` για JIT λήψη (`ollama pull` / `huggingface_hub.snapshot_download`) με εφεδρεία αυτοθεραπείας χωρίς κατάρρευση.
-**Συναρτήσεις:** `ModelProvisioner` (`detect_protocol()`, `resolve_local_model_path()`, `ensure_model_available()`, `check_available()`, `_ollama_list()`, `_ollama_pull()`, `_ensure_cloud()`, `_ensure_ollama()`, `_ensure_huggingface()`), module-level `main()`.
-**Imports:** `subprocess`, `dotenv`, `huggingface_hub` (προαιρετικό)
-
-#### `src/utils/daemon_autostart.py` (v5.10.6 — Daemon OS Autostart & Orchestrator)
-**Σκοπός:** Ενορχηστρωτής αυτόματης εκκίνησης του δαίμονα 24/7 στα Windows. Η `generate_boot_batch()` δημιουργεί το `talos_daemon_boot.bat`, το οποίο χρησιμοποιεί το `sys.executable` (απόλυτη διαδρομή, εντός εισαγωγικών) για την εκκίνηση του CPU server (θύρα 11435, `-m llama_cpp.server`) και του δαίμονα (`talos_service.py`), χωρίς εξάρτηση από το `conda activate` ή το PATH του συστήματος. Η `install_windows_autostart()` καταχωρεί συντόμευση `.lnk` στον φάκελο Εκκίνησης μέσω pywin32 Shell COM (εικονίδιο `shell32.dll,43`, ελαχιστοποιημένο).
-**Συναρτήσεις:** `generate_boot_batch()`, `install_windows_autostart()`, `_project_root()`, module-level `main()`.
-**Imports:** `os`, `sys`, `pathlib`, `win32com.client` (lazy, προαιρετικό)
-
-#### `src/integration/optica_client.py` (v5.10.7 — OPTICA Bridge Integration)
-**Σκοπός:** Πελάτης REST προς την αδελφή μικροϋπηρεσία Project OPTICA (θύρα 8002), η οποία εκφορτώνει τη βαριά απόδοση γραφικών cnsplots/PyVis. Η `request_plot()` επιλύει δυναμικά τη διαδρομή της ενεργής βάσης δεδομένων (`get_active_profile_db_path()`), κατασκευάζει φορτίο `{data_source, plot_type, journal_template, override_params}` και αποστέλλει POST στο `{OPTICA_API_BASE}/plot/generate` με ευπρεπή χειρισμό σφαλμάτων σύνδεσης (χωρίς κατάρρευση).
-**Συναρτήσεις:** `OpticaClient` (`request_plot()`, `_error()`, `plot_generate_url`), module-level `optica_client`.
-**Imports:** `os`, `requests`, `config.settings`
-
-#### `src/ai/optimizers/gwo_llm_router_reward_shaper.py` (v5.10.2 — Bi-Level Reward Shaping)
-**Σκοπός:** Κλάση `GWOLLMRouterRewardShaper` για Διεπίπεδη Βελτιστοποίηση Ανταμοιβής Πολλαπλών Στόχων στα βάρη ανταμοιβής του Δρομολογητή LLM `[w_quality, w_latency, w_cost, w_penalty]` (προβολή simplex). Εξωτερικός βρόχος GWO + εσωτερική αξιολόγηση δρομολογητή υπό `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Εξάγει `models/gwo_llm_router_reward_weights.json`.
-**Συναρτήσεις:** `GWOLLMRouterRewardShaper` (`optimize()`, `_evaluate_router()`, `_update_position()`, `export()`, `run()`), `main()`.
-**Imports:** `numpy`, `json`, `argparse`
-
-#### `scripts/talos_live_agent.py` (v3.2 — Batch 2 TUI hardening)
-**Σκοπός:** Thin entry point. **v3.1:** epsilon=0.05, 5-step cooldown για negative-reward actions, ASCII output. Delegates to `core.live_agent_orchestrator.run_live_loop()`. **v3.2:** argparse (`--verbose`, `--help`) αντί για ad-hoc sys.argv· formatted startup summary table· top-level KeyboardInterrupt guard (clean exit(0) σε Ctrl+C κατά το startup).
-**Συναρτήσεις:** `_parse_args()`, `main()` — config load, source discovery, model load, run loop.
-**Imports:** `core.drl_agent`, `core.ai_manager`, `core.talos_env`, `core.live_agent_sources`, `core.live_agent_orchestrator`
-
-#### `scripts/talos_service_api.py` (v1.0)
-Micro-Flask API server (port 5002).
-
-#### `scripts/research_pivot.py` (v1.0)
-Interactive Research Pivot Wizard.
-
-#### `scripts/talos_service.py` (v2.0)
-24/7 autonomous research daemon.
-
-#### `scripts/zotero_connector.py`, `pdf_downloader.py`, `interactive_dashboard.py`
-
-### 4.6 Author Tools
-- `author_profiler.py`, `author_trajectory_analyzer.py`
-
-### 4.7 Utilities
-- `generate_docs.py` (v2.0), `api_health_check.py`, `migrate_database_schema.py`
-
----
-
-## 5. Sources (16 APIs)
-
-| Source | Αρχείο | API Key | Query Key |
-|--------|--------|---------|-----------|
-| arXiv | `arxiv_source.py` | ? | `arxiv_query` |
-| CORE | `core_source.py` | ?? | `core_query` |
-| Crossref | `crossref_source.py` | ?? | `crossref_query` |
-| DBLP | `dblp_source.py` | ? | `dblp_query` |
-| Elsevier | `elsevier_source.py` | ? | `elsevier_query` |
-| IEEE | `ieee_source.py` | ? | `ieee_query` |
-| OpenAlex | `openalex_source.py` | ? | `openalex_query` |
-| OpenArchives | `openarchives_source.py` | ?? | `openarchives_query` |
-| OSTI | `osti_source.py` | ? | `osti_query` |
-| PLOS | `plos_source.py` | ? | `plos_query` |
-| PubMed | `pubmed_source.py` | ? | `pubmed_query` |
-| Science.gov | `scigov_source.py` | ? | `scigov_query` |
-| Semantic Scholar | `semantic_scholar_source.py` | ?? | `semantic_scholar_query` |
-| Springer | `springer_source.py` | ? | `springer_query` |
-| OpenAIRE | `openaire.py` | Optional | `openaire_query` |
-| OpenReview | `openreview.py` | Optional | `openreview_query` |
-
----
-
-## 6. Configuration & Data Flow
-
-### 6.1 `config.json` Schema (v5.3.1)
-```json
-{
-  "ai_provider_priority": ["local", "nvidia", "groq", "cerebras", "github", "gemini", "deepseek", "mistral", "openrouter", "huggingface"],
-  "gemini_tier": "free",
-  "provider_limits": {
-    "gemini": {
-      "free":    { "rpm": 5,    "rpd": 1500,  "tpm": 32000 },
-      "tier1":   { "rpm": 1000, "rpd": 10000, "tpm": 1000000 },
-      "tier2":   { "rpm": 2000, "rpd": 50000, "tpm": 2000000 }
-    },
-    "deepseek":     { "rpm": 60,  "rpd": 1000 },
-    "huggingface":  { "rpm": 30,  "rpd": 500 },
-    "local":        { "rpm": 9999,"rpd": 99999 }
-  },
-  "failure_threshold": 5,
-  "model_for_daily_search": "gemini-2.5-pro",
-  "pre_screening_model": "gemini-2.5-flash",
-  "min_pre_screening_score": 6,
-  "max_results_config": { ... },
-  "<source>_query": "...",     // 16 queries (all 16 sources)
-  "phd_focus_system_prompt": "...",
-  ...
-}
+Ξ΅ΞΏΞ® Ξ”ΞµΞ΄ΞΏΞΌΞ­Ξ½Ο‰Ξ½:
+
+```text
+User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
+                                        > src/ingestion/*.py > External APIs
+                                                |
+                                        data/talos_research.db (SQLite)
+                                                |
+                                        config.json + .env
 ```
 
-### 6.2 `.env` Keys
-- **Premium AI:** `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `HF_TOKEN`
-- **Universal Cloud Mesh (v5.9.18):** `NVIDIA_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`, `GITHUB_TOKEN`, `MISTRAL_API_KEY`, `OPENROUTER_API_KEY`
-- **Academic:** `SEMANTIC_SCHOLAR_API_KEY`, `IEEE_API_KEY`, `ELSEVIER_API_KEY`, `SPRINGER_API_KEY`, `CORE_API_KEY`, `OPENARCHIVES_API_KEY`
-- **Local:** `LOCAL_MODEL_NAME`, `LOCAL_EMBEDDING_MODEL`
+## 2. Core Modules (src/core)
 
-### 6.3 Environment Variables (Runtime)
-- `TALOS_USE_LOCAL=1` — local mode (Ollama)
-- `TALOS_ALLOW_CLOUD_FALLBACK=1` — cloud fallback
-
-### 6.4 Profile System
-```
-_profiles/<name>/config.json + talos_research.db
-active_profile.txt
-```
-
----
-
-## 7. Dependency Graph (v5.10.0 DDD Layout)
-
-```
-src/core/ai_manager.py (Universal Cloud Mesh, v5.9.18)
-  +-- config.settings
-  L-- src.ai.drl.llm_router_subagent
-
-talos.py (Rich TUI Master)
-  +-- src.ai.llm.model_manager
-  +-- src.analysis.graphify_adapter
-  +-- src.ai.testing.red_tester
-  L-- subprocess > src/*/*.py
-
-src/api/main_api.py (FastAPI Facade :8001)
-  +-- src.core.database_manager
-  +-- src.core.ai_manager
-  +-- src.api.synapse_routes
-  L-- src.api.red_tester_routes
-
-src/ai/drl/talos_live_agent.py (CLI entry)
-  +-- src.ai.drl.drl_agent
-  +-- src.core.ai_manager
-  +-- src.ai.drl.talos_env
-  +-- src.ai.drl.live_agent_sources
-  L-- src.ai.drl.live_agent_orchestrator
-
-src/ai/drl/drl_trainer.py
-  +-- src.ai.drl.talos_env
-  L-- src.ai.drl.drl_agent
-
-src/ai/drl/llm_router_subagent.py
-  L-- numpy
-
-src/ai/llm/model_discovery.py
-  +-- requests
-  L-- config.settings
-
-src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py
-  +-- src.ai.drl.talos_env
-  L-- src.ai.drl.drl_agent
-
-src/ai/optimizers/gwo_llm_router_reward_shaper.py
-  +-- src.ai.drl.llm_router_subagent
-  L-- numpy
-
-src/ingestion/daily_search.py / historic_search.py
-  +-- src.core.database_manager
-  +-- src.core.ai_manager
-  L-- src.ingestion.*
-
-src/analysis/citation_analyzer.py
-  +-- src.core.ai_manager
-  +-- src.core.database_manager
-  L-- src.ingestion.semantic_scholar_source
-
-src/analysis/graphify_adapter.py
-  L-- vendor.graphify
-
-src/integration/synapse_client.py
-  L-- requests
-
-src/integration/optica_client.py (OPTICA Bridge)
-  +-- requests
-  +-- config.settings
-  L-- src.core.database_manager
-
-src/mcp_server.py
-  L-- requests
-
-src/utils/logger.py (Enterprise Logging)
-  +-- rich.logging
-  L-- logging.handlers
-
-src/utils/model_provisioner.py (Universal Model Provisioner)
-  +-- src.utils.logger
-  +-- config.settings
-  +-- dotenv
-  +-- huggingface_hub (optional)
-src/utils/daemon_autostart.py (Daemon OS Autostart)
-  +-- os
-  +-- pathlib
-  L-- win32com.client (lazy)
-```
-
----
-
-## 8. Module Descriptions
-
-| Module | File | Description |
-|--------|------|-------------|
-| **TALOS** | `talos.py` | Main entry point — CLI menu and script launcher |
-| **Query Translator** | `scripts/query_translator.py` | Translates research goals into optimized API queries and system prompts |
-| **Knowledge Path Generator** | `scripts/knowledge_path_generator.py` | Generates structured reading paths with clustering and AI synthesis |
-| **Citation Network Analyzer** | `scripts/citation_analyzer.py` | Builds interactive citation network graphs from DOI input |
-| **Metadata Enricher** | `scripts/metadata_enricher.py` | Enriches paper records with external metadata (OpenAlex, Crossref, DBLP, Semantic Scholar) |
-| **Grey Literature Miner** | `scripts/grey_literature_miner.py` | Performs horizon scanning for grey literature via Gemini Search Grounding |
-| **Interactive Dashboard** | `scripts/interactive_dashboard.py` | Flask web dashboard with Tabulator.js for real-time database exploration |
-| **PDF Downloader** | `scripts/pdf_downloader.py` | Downloads Open Access PDFs via Unpaywall API with multi-threaded batch support |
-| **Autonomous Research Service** | `scripts/talos_service.py` | 24/7 background research daemon with Telegram/Discord/Email notifications |
-| **MCP Server** | `src/mcp_server.py` | Native MCP (Model Context Protocol) stdio server που εκθέτει 4 tools (system_status, semantic_search, paper_details, trigger_scrape) μέσω MCPServer v2.0.0. Decoupled αρχιτεκτονική: τα tools καλούν το FastAPI backend μέσω HTTP. |
-| **Enterprise Logger** | `src/utils/logger.py` | Central `get_logger(name)` factory -- `rich.logging.RichHandler` console + `RotatingFileHandler` to `data/logs/talos_system.log` (10 MB, 5 backups) |
-| **Universal Model Provisioner** | `src/utils/model_provisioner.py` | Deterministic model provisioning (Ollama / HuggingFace Hub / cloud) with 3-tier local path resolution and self-healing fallback |
-| **Daemon OS Autostart** | `src/utils/daemon_autostart.py` | Ενορχηστρωτής αυτόματης εκκίνησης Windows (συντόμευση Startup + boot batch) για τον δαίμονα 24/7 |
-
----
-
-## 9. Βοηθητικά Αρχεία
-
-| Αρχείο | Ρόλος |
+| Module | Ξ΅ΟΞ»ΞΏΟ‚ |
 |--------|-------|
-| **docs/** | Μόνιμη τεκμηρίωση (CHANGELOG, ROADMAP, TIMELINE, PROJECT_MAP, SYSTEM_CAPABILITIES, TECH_RADAR) |
-| **docs/internal/** | Ιδιόκτητα έγγραφα (API_HANDOVER, UX_UI_BLUEPRINT, IP_PROTECTION) |
-| **docs/generated/** | Αυτόματα παραγόμενα docs (ανά γλώσσα, από generate_docs.py) |
-| **tools/** | Dev & utility scripts (_bump_docs.py, _fix_changelogs.py) |
+| `ai_manager.py` | Multi-provider LLM manager (Gemini, DeepSeek, HuggingFace, Ollama) ΞΌΞµ circuit breakers, Ξ»ΞµΞΉΟ„ΞΏΟ…ΟΞ³Ξ―ΞµΟ‚ JSON/text/embedding, ΞΊΞ±ΞΉ Ξ±Ο€ΟΞ΄ΞΏΟƒΞ· `last_provider_used` |
+| `database_manager.py` | Ξ‘Ο€ΞΏΞΈΞ®ΞΊΞµΟ…ΟƒΞ· SQLite (20+ ΟƒΟ„Ξ®Ξ»ΞµΟ‚), Ξ²Ξ±ΞΈΞΌΞΏΞ»ΟΞ³Ξ·ΟƒΞ· 4 ΞµΟ€ΞΉΟ€Ξ­Ξ΄Ο‰Ξ½ (strategic/operational/tactical/playground), Ο€Ξ―Ξ½Ξ±ΞΊΞ±Ο‚ embeddings, ΟƒΞ·ΞΌΞ±ΟƒΞΉΞΏΞ»ΞΏΞ³ΞΉΞΊΞ® Ξ±Ξ½Ξ±Ξ¶Ξ®Ο„Ξ·ΟƒΞ· ΟƒΟ…Ξ½Ξ·ΞΌΞΉΟ„ΟΞ½ΞΏΟ…, state machine ΞµΞΌΟ€Ξ»ΞΏΟ…Ο„ΞΉΟƒΞΌΞΏΟ |
+| `hardware.py` | ΞΞΏΞ½Ξ±Ξ΄ΞΉΞΊΞ® Ο€Ξ·Ξ³Ξ® Ξ±Ξ»Ξ®ΞΈΞµΞΉΞ±Ο‚ Ξ³ΞΉΞ± Ξ±Ξ½Ξ―Ο‡Ξ½ΞµΟ…ΟƒΞ· GPU ΞΊΞ±ΞΉ ΞµΟΟ‰Ο„Ξ®ΞΌΞ±Ο„Ξ± VRAM; CPU fallback ΞΌΞµ ΞΏΞΌΞ±Ξ»Ξ® Ο…Ο€ΞΏΞ²Ξ¬ΞΈΞΌΞΉΟƒΞ· |
+| `notifier.py` | Ξ•ΞΉΞ΄ΞΏΟ€ΞΏΞΉΞ®ΟƒΞµΞΉΟ‚ Telegram / Discord / Email Ξ³ΞΉΞ± papers Ο…ΟΞ·Ξ»Ξ®Ο‚ Ξ²Ξ±ΞΈΞΌΞΏΞ»ΞΏΞ³Ξ―Ξ±Ο‚ |
+| `profile_manager.py` | Ξ•Ξ½Ξ±Ξ»Ξ»Ξ±Ξ³Ξ® ΞΊΞ±ΞΉ Ξ±Ξ½Ξ¬ΞΊΟ„Ξ·ΟƒΞ· profile (Ξ±Ο€ΞΏΞΌΞΏΞ½Ο‰ΞΌΞ­Ξ½ΞΏ config + DB Ξ±Ξ½Ξ¬ ΞµΟΞµΟ…Ξ½Ξ·Ο„ΞΉΞΊΟ ΞΈΞ­ΞΌΞ±) |
+
+### 2.1 DRL Environment (`src/ai/drl/talos_env.py`, v3.2)
+
+| ΞΞ­ΞΈΞΏΞ΄ΞΏΟ‚ | Ξ¥Ο€ΞΏΞ³ΟΞ±Ο†Ξ® | Ξ ΞµΟΞΉΞ³ΟΞ±Ο†Ξ® |
+|---------|----------|-----------|
+| `_load_source_list` | `(config=None) -> list` | Ξ”ΞΉΞ±Ξ²Ξ¬Ξ¶ΞµΞΉ Ο„Ξ· Ξ»Ξ―ΟƒΟ„Ξ± Ο€Ξ·Ξ³ΟΞ½ Ξ±Ο€Ο Ο„ΞΏ config.json |
+| `_build_obs` | `() -> np.ndarray` | ΞΞ±Ο„Ξ¬ΟƒΟ„Ξ±ΟƒΞ· 23 Ξ΄ΞΉΞ±ΟƒΟ„Ξ¬ΟƒΞµΟ‰Ξ½: [ΟΟΞ±/24, 16 Ξ»ΟΞ³ΞΏΞΉ Ο€Ξ·Ξ³ΟΞ½, low/10, err/10, 4 Ξ»ΟΞ³ΞΏΞΉ Ο€Ξ±ΟΟΟ‡Ο‰Ξ½] |
+| `step` | `(action) -> (obs, reward, terminated, truncated, info)` | Ξ•ΞΊΟ„ΞµΞ»ΞµΞ― action (0..N-1 ΞµΟΟΟ„Ξ·ΞΌΞ± Ο€Ξ·Ξ³Ξ®Ο‚, N ΟΟ€Ξ½ΞΏΟ‚) |
+| `get_default_state_space` | `() -> int` | 23 |
+| `get_default_action_space` | `() -> int` | 17 (16 Ο€Ξ·Ξ³Ξ­Ο‚ + ΟΟ€Ξ½ΞΏΟ‚) |
+
+### 2.2 DRL Agent (`src/ai/drl/drl_agent.py`)
+
+`TalosDRLAgent` -- DDDQN agent ΞΌΞµ pluggable Ξ΄Ξ―ΞΊΟ„Ο…Ξ± (`drl_networks.py`), epsilon-greedy (eps=0.0 ΞΊΞ±Ο„Ξ¬ Ο„Ξ· live inference), ΞΊΞ±ΞΉ Ξ±Ο…Ο„ΟΞΌΞ±Ο„Ξ· Ξ±Ξ½Ξ±ΞΊΞ±Ο„Ξ±ΟƒΞΊΞµΟ…Ξ® Ξ³ΞΉΞ± Ξ½Ξ­ΞµΟ‚ Ξ΄ΞΉΞ±ΟƒΟ„Ξ¬ΟƒΞµΞΉΟ‚.
+
+## 3. Ξ£Ξ·ΞΌΞµΞ―Ξ± Ξ•ΞΉΟƒΟΞ΄ΞΏΟ…
+
+| Ξ£Ξ·ΞΌΞµΞ―ΞΏ | Ξ ΞµΟΞΉΞ³ΟΞ±Ο†Ξ® |
+|--------|-----------|
+| `talos.py` | Rich TUI (ΞΌΞµΞ½ΞΏΟ 15 ΞµΟ€ΞΉΞ»ΞΏΞ³ΟΞ½ ΟƒΞµ Ο€Ξ­Ξ½Ο„Ξµ ΞΏΟ€Ο„ΞΉΞΊΞ­Ο‚ ΞΏΞΌΞ¬Ξ΄ΞµΟ‚) |
+| `src/api/main_api.py` | Headless FastAPI facade (23 endpoints E01-E23, ΞΈΟΟΞ± 8001) ΞΌΞµ Synapse webhook + Red Tester routers |
+| `run_talos.bat` / `run_talos.sh` | Scripts ΞµΞΊΞΊΞ―Ξ½Ξ·ΟƒΞ·Ο‚ (TUI, API server, daemon, tests) |
+| `src/mcp_server.py` | MCP stdio server ΞΌΞµ 4 tools (system_status, semantic_search, paper_details, trigger_scrape) |
+
+## 4. Ξ‘Ο€ΞΏΞ³ΟΞ±Ο†Ξ® Ξ Ξ±ΞΊΞ­Ο„Ο‰Ξ½ & Scripts
+
+| Ξ Ξ±ΞΊΞ­Ο„ΞΏ | Ξ‘ΟΟ‡ΞµΞ―Ξ± | Ξ’Ξ±ΟƒΞΉΞΊΞ¬ modules |
+|--------|--------|----------------|
+| `src/ai/drl/` | 10 | `talos_service.py` (Ξ΄Ξ±Ξ―ΞΌΞΏΞ½Ξ±Ο‚ 24/7), `talos_live_agent.py`, `live_agent_orchestrator.py`, `llm_router_subagent.py`, `train_agent.py`, `drl_trainer.py` |
+| `src/ai/optimizers/` | 3 | GWO foraging tuner, live dashboard, reward shaper |
+| `src/ai/embeddings/` | 2 | `embedding_generator.py`, `db_embedding_upgrade.py` |
+| `src/ai/llm/` | 4 | `model_manager.py`, `query_translator.py`, `research_pivot.py`, `model_discovery.py` |
+| `src/analysis/` | 10 | `citation_analyzer.py`, `author_profiler.py`, `recommender.py`, `knowledge_path_generator.py`, `trend_analyzer.py`, `graphify_adapter.py`, `generate_baseline_report.py`, ΞΊ.Ξ¬. |
+| `src/ingestion/` | 23 | 16 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `pdf_downloader.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
+| `src/utils/` | 14 | `db_stats.py`, `logger.py`, `tray_icon.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, ΞΊ.Ξ¬. |
+
+## 5. Ξ Ξ·Ξ³Ξ­Ο‚ (16 APIs)
+
+arxiv, ieee, semantic_scholar, springer, openalex, dblp, elsevier, core, crossref, openarchives, pubmed, scigov, osti, plos, openreview, openaire
+
+Ξ¤Ο…Ο€ΞΏΟ€ΞΏΞΉΞ·ΞΌΞ­Ξ½Ξ· Ξ­ΞΎΞΏΞ΄ΞΏΟ‚: `{doi, url, title, authors_str, publication_year, abstract, source}`
+
+## 6. Ξ”ΞΉΞ±ΞΌΟΟΟ†Ο‰ΟƒΞ· & Ξ΅ΞΏΞ® Ξ”ΞµΞ΄ΞΏΞΌΞ­Ξ½Ο‰Ξ½
+
+### 6.1 Ξ£Ο‡Ξ®ΞΌΞ± config.json (ΞΊΞ»ΞµΞΉΞ΄ΞΉΞ¬ Ξ±Ξ½ΟΟ„Ξ±Ο„ΞΏΟ… ΞµΟ€ΞΉΟ€Ξ­Ξ΄ΞΏΟ…)
+
+ΞΞΏΞ½Ο„Ξ­Ξ»Ξ± & Ξ΄ΟΞΏΞΌΞΏΞ»ΟΞ³Ξ·ΟƒΞ·: `model_for_daily_search`, `pre_screening_model`, `grey_research_model`, `deepseek_model_chat`, `ai_provider_priority`, `gemini_tier`, `provider_limits`, `failure_threshold`
+
+ΞΞ±Ο„ΟΟ†Ξ»ΞΉΞ± & ΟΟΞΉΞ±: `min_pre_screening_score`, `reevaluation_days_window`, `api_call_limit_flash`, `api_call_limit_pro`, `ai_request_delay`, `days_to_search_daily`, `days_to_search_historic`, `max_results_config`
+
+Ξ•ΟΟ‰Ο„Ξ®ΞΌΞ±Ο„Ξ±: `arxiv_query`, `ieee_query`, `springer_query`, `openalex_query`, `dblp_query`, `elsevier_query`, `crossref_query`, `openarchives_query`, `pubmed_query`, `osti_query`, `plos_query`, `semantic_scholar_query`, `core_query`, `scigov_query`, `openreview_query`, `openaire_query`
+
+Prompts: `phd_focus_system_prompt`, `pre_screening_prompt`, `trajectory_analyzer_prompt`, `orpheus_references_prompt_instruction`, `orpheus_citations_prompt_instruction`, `chiron_synthesizer_prompt`, `query_translator_prompt`
+
+Daemon: `daemon_target_sources`, `daemon_reporting_mode`, `active_focus_summary`, `mailto`
+
+### 6.2 ΞΞ»ΞµΞΉΞ΄ΞΉΞ¬ .env (example.env)
+
+LLM & runtime: `FAST_EDGE_MODEL`, `FAST_EDGE_BASE_URL`, `HEAVY_REASONING_MODEL`, `OLLAMA_BASE_URL`, `TALOS_CLOUD_PROVIDER`, `TALOS_EXECUTION_MODE`, `TALOS_API_PORT`, `SYNAPSE_BUS_URL`, `OPTICA_API_BASE`
+
+ΞΞ»ΞµΞΉΞ΄ΞΉΞ¬ Ο€Ξ±ΟΟΟ‡Ο‰Ξ½: `GEMINI_API_KEY`, `DEEPSEEK_API_KEY`, `HF_TOKEN`, `NVIDIA_API_KEY`, `GROQ_API_KEY`, `CEREBRAS_API_KEY`, `GITHUB_TOKEN`, `MISTRAL_API_KEY`, `OPENROUTER_API_KEY`
+
+ΞΞ»ΞµΞΉΞ΄ΞΉΞ¬ Ο€Ξ·Ξ³ΟΞ½: `ZOTERO_API_KEY`, `SEMANTIC_SCHOLAR_API_KEY`, `IEEE_API_KEY`, `SPRINGER_API_KEY`, `ELSEVIER_API_KEY`, `CORE_API_KEY`, `OPENARCHIVES_API_KEY`, `OPENREVIEW_USERNAME/PASSWORD`, `OPENAIRE_TOKEN`, `ORCID_CLIENT_ID/SECRET`
+
+Ξ•ΞΉΞ΄ΞΏΟ€ΞΏΞΉΞ®ΟƒΞµΞΉΟ‚: `DISCORD_WEBHOOK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `SMTP_*`, `MAILTO`
+
+### 6.3 ΞΞµΟ„Ξ±Ξ²Ξ»Ξ·Ο„Ξ­Ο‚ Ξ ΞµΟΞΉΞ²Ξ¬Ξ»Ξ»ΞΏΞ½Ο„ΞΏΟ‚ (Runtime)
+
+`TALOS_USE_LOCAL`, `TALOS_MODELS_VERIFIED`, `TALOS_ALLOW_CLOUD_FALLBACK`, `TALOS_ALLOW_LOCAL_FALLBACK`, `TALOS_NETWORK_STRATEGY`, `TALOS_HARDWARE_STRATEGY`, `HF_MODEL_NAME`
+
+### 6.4 Ξ£ΟΟƒΟ„Ξ·ΞΌΞ± Profile
+
+Ξ Ο†Ξ¬ΞΊΞµΞ»ΞΏΟ‚ `_profiles/<name>/` Ο€ΞµΟΞΉΞ­Ο‡ΞµΞΉ Ξ±Ο€ΞΏΞΌΞΏΞ½Ο‰ΞΌΞ­Ξ½ΞΏ `config.json` ΞΊΞ±ΞΉ `talos_research.db` Ξ±Ξ½Ξ¬ ΞµΟΞµΟ…Ξ½Ξ·Ο„ΞΉΞΊΟ ΞΈΞ­ΞΌΞ±. Ξ¤ΞΏ `active_profile.txt` Ο€Ξ±ΟΞ±ΞΊΞΏΞ»ΞΏΟ…ΞΈΞµΞ― Ο„ΞΏ ΞµΞ½ΞµΟΞ³Ο profile.
+
+## 7. Ξ“ΟΞ¬Ο†ΞΏΟ‚ Ξ•ΞΎΞ±ΟΟ„Ξ®ΟƒΞµΟ‰Ξ½
+
+```text
+talos.py
+  +-- src/utils/ui_theme.py, logger.py
+  +-- src/core/profile_manager.py
+  +-- src/core/ai_manager.py
+  +-- src/api/main_api.py (subprocess uvicorn)
+  +-- src/ai/drl/talos_service.py (subprocess CREATE_NEW_CONSOLE)
+
+src/ai/drl/talos_service.py
+  +-- src/core/notifier.py
+  +-- src/core/database_manager.py
+  +-- src/ai/drl/drl_agent.py, talos_env.py, train_agent.py
+  +-- src/ai/drl/live_agent_orchestrator.py
+  +-- src/ai/drl/llm_router_subagent.py
+  +-- src/utils/tray_icon.py (Ο€ΟΞΏΞ±ΞΉΟΞµΟ„ΞΉΞΊΟ)
+  +-- src/integration/visualizer_bridge.py
+
+src/ai/drl/live_agent_orchestrator.py
+  +-- src/integration/visualizer_bridge.py
+
+src/ingestion/*.py
+  +-- src/core/database_manager.py
+  +-- src/integration/synapse_client.py
+  +-- src/integration/visualizer_bridge.py
+```
+
+## 8. Ξ ΞµΟΞΉΞ³ΟΞ±Ο†Ξ­Ο‚ Modules (ΞµΟ€ΞΉΟƒΞ·ΞΌΞ±ΟƒΞΌΞ­Ξ½ΞµΟ‚ Ο€ΟΟΟƒΟ†Ξ±Ο„ΞµΟ‚ Ο€ΟΞΏΟƒΞΈΞ®ΞΊΞµΟ‚)
+
+| Module | Ξ”ΞΉΞ±Ξ΄ΟΞΏΞΌΞ® | Ξ ΞµΟΞΉΞ³ΟΞ±Ο†Ξ® |
+|--------|----------|-----------|
+| **System Tray Companion (v5.10.12)** | `src/utils/tray_icon.py` | `launch_tray_icon_async()` -- pystray ΞµΞΉΞΊΞΏΞ½Ξ―Ξ΄ΞΉΞΏ (navy/cyan "T") ΞΌΞµ Ξ†Ξ½ΞΏΞΉΞ³ΞΌΞ± 3D Visualizer, Ξ•ΞΌΟ†Ξ¬Ξ½ΞΉΟƒΞ·/Ξ‘Ο€ΟΞΊΟΟ…ΟΞ· ΞΞΏΞ½ΟƒΟΞ»Ξ±Ο‚, Ξ¤ΞµΟΞΌΞ±Ο„ΞΉΟƒΞΌΟΟ‚ Ξ”Ξ±Ξ―ΞΌΞΏΞ½Ξ± |
+| **3D Visualizer (v5.10.12)** | `templates/live_foraging_visualizer.html` | Ξ‘ΟƒΟ„ΞµΟΞΉΟƒΞΌΟΟ‚ Three.js ΞΌΞµ 60 FPS Ξ±ΞΊΟ„Ξ―Ξ½ΞµΟ‚ Ξ»Ξ­ΞΉΞ¶ΞµΟ, Ο€Ξ±Ξ»ΞΌΞΏΟΟ‚ Ο†Ο‰Ο„ΞΏΞ½Ξ―Ο‰Ξ½, raycaster, ΟƒΟ„ΞΉΞ³ΞΌΞΉΟΟ„Ο…Ο€ΞΏ |
+| **OPTICA Bridge (v5.10.7)** | `src/integration/optica_client.py` | REST client ΟƒΟ„ΞΏ Project OPTICA (ΞΈΟΟΞ± 8002) ΞµΞΊΟ†ΞΏΟΟ„ΟΞ½ΞΏΞ½Ο„Ξ±Ο‚ Ξ²Ξ±ΟΞΉΞ¬ Ξ³ΟΞ±Ο†ΞΉΞΊΞ¬ |
+| **Daemon OS Autostart (v5.10.6)** | `src/utils/daemon_autostart.py` | Ξ£Ο…Ξ½Ο„ΟΞΌΞµΟ…ΟƒΞ· Windows Startup + Ξ³ΞµΞ½Ξ½Ξ®Ο„ΟΞΉΞ± boot batch |
+| **Universal Model Provisioner (v5.10.5)** | `src/utils/model_provisioner.py` | Ξ‘Ξ½Ξ¬Ξ»Ο…ΟƒΞ· Ο„ΞΏΟ€ΞΉΞΊΞΏΟ ΞΌΞΏΞ½ΞΏΟ€Ξ±Ο„ΞΉΞΏΟ 3 ΞµΟ€ΞΉΟ€Ξ­Ξ΄Ο‰Ξ½ + self-healing fallback |
+| **Enterprise Logger** | `src/utils/logger.py` | `get_logger(name)` -- RichHandler ΞΊΞΏΞ½ΟƒΟΞ»Ξ± + RotatingFileHandler |
+| **MCP Server** | `src/mcp_server.py` | 4-tool stdio server Ο€ΞΏΟ… Ξ±Ξ½Ξ±ΞΈΞ­Ο„ΞµΞΉ ΟƒΟ„ΞΏ FastAPI |
+| **SYNAPSE Emitter** | `src/integration/synapse_client.py` | EventEmitter Ο€ΞΏΟ… ΟƒΟ„Ξ­Ξ»Ξ½ΞµΞΉ JSON events ΟƒΟ„Ξ· ΞΈΟΟΞ± 8000 |
+| **Visualizer Bridge (v5.10.12)** | `src/integration/visualizer_bridge.py` | `push_visualizer_event()` -- ΞΊΞµΞ½Ο„ΟΞΉΞΊΞ® Ξ³Ξ­Ο†Ο…ΟΞ± HTTP push Ο€ΟΞΏΟ‚ Ο„ΞΏΞ½ 3D Visualizer (ΞΈΟΟΞ± 8001) |
+
+## 9. Ξ’ΞΏΞ·ΞΈΞ·Ο„ΞΉΞΊΞ¬ Ξ‘ΟΟ‡ΞµΞ―Ξ±
+
+| Ξ‘ΟΟ‡ΞµΞ―ΞΏ/Ξ¦Ξ¬ΞΊΞµΞ»ΞΏΟ‚ | Ξ΅ΟΞ»ΞΏΟ‚ |
+|----------------|-------|
+| `docs/` | ΞΟΞ½ΞΉΞΌΞ· Ο„ΞµΞΊΞΌΞ·ΟΞ―Ο‰ΟƒΞ· (CHANGELOG, ROADMAP, TIMELINE, PROJECT_MAP, SYSTEM_CAPABILITIES, TECH_RADAR) |
+| `docs/internal/` | Ξ™Ξ΄ΞΉΟΞΊΟ„Ξ·Ο„Ξ± Ξ­Ξ³Ξ³ΟΞ±Ο†Ξ± (API_HANDOVER, UX_UI_BLUEPRINT, IP_PROTECTION) |
+| `tools/` | Dev & utility scripts |
 | `Dockerfile`, `docker-compose.yml` | Containerization |
-| `README.md`, `CHANGELOG_EN.md`, `CHANGELOG_GR.md`, `ROADMAP.md` | Documentation (root) |
-| `CITATION.cff`, `LICENSE` | Metadata |
+| `README.md`, `CITATION.cff`, `LICENSE` | Metadata |
+| `data/reports/` | ΞΞ»ΞµΟ‚ ΞΏΞΉ Ο€Ξ±ΟΞ±Ξ³ΟΞΌΞµΞ½ΞµΟ‚ Ξ±Ξ½Ξ±Ο†ΞΏΟΞ­Ο‚ (ΞµΞ½ΞΏΟ€ΞΏΞ―Ξ·ΟƒΞ· v5.9.9) |
+
+## 10. Ξ“Ξ½Ο‰ΟƒΟ„Ξ¬ Ξ ΟΞΏΞ²Ξ»Ξ®ΞΌΞ±Ο„Ξ± & Ξ£Ο…ΞΌΞ²Ξ¬ΟƒΞµΞΉΟ‚
+
+1. Ξ¤Ξ± ΞµΞ»Ξ»Ξ·Ξ½ΞΉΞΊΞ¬ ΟƒΟ‡ΟΞ»ΞΉΞ± ΟƒΟ€Ξ¬Ξ½Ξµ Ο„ΞΏ text matching Ο„ΞΏΟ… editor
+2. Ξ¤ΞΉΞΌΞ­Ο‚ `.env` Ο‡Ο‰ΟΞ―Ο‚ quotes -- Ο„ΞΏ load_dotenv Ξ΄ΞµΞ½ Ξ±Ο†Ξ±ΞΉΟΞµΞ― quotes
+3. Ξ¤ΞΏ `daily_search.py` ΞΊΞ±ΞΉ Ο„ΞΏ `historic_search.py` Ο€ΟΞ­Ο€ΞµΞΉ Ξ½Ξ± ΞΌΞ­Ξ½ΞΏΟ…Ξ½ ΟƒΟ…Ξ³Ο‡ΟΞΏΞ½ΞΉΟƒΞΌΞ­Ξ½Ξ± Ξ³ΞΉΞ± dedup
+4. Ξ¤ΞΏ 4-layer framework (strategic/operational/tactical/playground) ΞµΞ―Ξ½Ξ±ΞΉ INVARIANT
+5. Ξ¤ΞΏ `recommender.py` Ξ΄ΞΉΞ±Ξ²Ξ¬Ξ¶ΞµΞΉ SQLite Ξ±Ο€ΞµΟ…ΞΈΞµΞ―Ξ±Ο‚, ΟΟ‡ΞΉ ΞΌΞ­ΟƒΟ‰ DatabaseManager
+6. Circuit breaker ΟƒΟ„Ξ± 5+ failures
+7. Ξ¤ΞΏ ΞΌΞΏΞ½ΞΏΟ€Ξ¬Ο„ΞΉ DB ΞµΟ€ΞΉΞ»ΟΞµΟ„Ξ±ΞΉ ΟƒΞµ `data/talos_research.db` (ΟΟ‡ΞΉ ghost DBs ΟƒΟ„ΞΏ `src/`)
+8. Ξ¤Ξ± API endpoints Ξ΄ΞµΞ½ Ο€ΟΞ­Ο€ΞµΞΉ Ο€ΞΏΟ„Ξ­ Ξ½Ξ± ΞµΞ½ΞµΟΞ³ΞΏΟ€ΞΏΞΉΞΏΟΞ½ Ξ΄ΞΉΞ±Ξ΄ΟΞ±ΟƒΟ„ΞΉΞΊΟ `questionary.confirm()`
+9. Ξ¤ΞΏ TALOS FastAPI Ο„ΟΞ­Ο‡ΞµΞΉ ΟƒΟ„Ξ· ΞΈΟΟΞ± 8001 (Synapse 8000, OPTICA 8002)
+10. Ξ Ξ΄Ξ±Ξ―ΞΌΞΏΞ½Ξ±Ο‚ ΞΎΞµΞΊΞΉΞ½Ξ¬ ΟƒΞµ Ξ½Ξ­ΞΏ Ο€Ξ±ΟΞ¬ΞΈΟ…ΟΞΏ ΞΊΞΏΞ½ΟƒΟΞ»Ξ±Ο‚ (CREATE_NEW_CONSOLE) ΟƒΟ„Ξ± Windows
+11. Ξ¤ΞΏ `src/utils/tray_icon.py` Ο‡ΟΞ·ΟƒΞΉΞΌΞΏΟ€ΞΏΞΉΞµΞ― lazy imports ΟΟƒΟ„Ξµ Ξ½Ξ± Ο…Ο€ΞΏΞ²Ξ±ΞΈΞΌΞ―Ξ¶ΞµΟ„Ξ±ΞΉ ΞΏΞΌΞ±Ξ»Ξ¬ Ο‡Ο‰ΟΞ―Ο‚ pystray
 
 ---
 
-## 10. Known Gotchas & Conventions
+> **Ξ¤ΞµΞ»ΞµΟ…Ο„Ξ±Ξ―Ξ± Ξ•Ξ½Ξ·ΞΌΞ­ΟΟ‰ΟƒΞ·:** 2026-08-27 (v5.10.12 -- Ξ•Ξ½Ξ―ΟƒΟ‡Ο…ΟƒΞ· Ξ‘Ο…Ο„ΟΞ½ΞΏΞΌΞΏΟ… Ξ”Ξ±Ξ―ΞΌΞΏΞ½Ξ±, 3D Ξ¤Ξ·Ξ»ΞµΞΌΞµΟ„ΟΞ―Ξ± Ξ›Ξ­ΞΉΞ¶ΞµΟ, Ξ”ΞΉΞ±Ξ΄ΟΞ±ΟƒΟ„ΞΉΞΊΟΟ‚ ΞΟ€Ο„ΞΉΞΊΞΏΟ€ΞΏΞΉΞ·Ο„Ξ®Ο‚, System Tray Companion & Rich TrueColor Ξ¤Ξ·Ξ»ΞµΞΌΞµΟ„ΟΞ―Ξ±)
+> **ΞΞΊΞ΄ΞΏΟƒΞ· Project:** v5.10.12
+> **Ξ£Ο…Ξ½ΞΏΞ»ΞΉΞΊΞ¬ .py modules ΟƒΟ„ΞΏ src/:** 80 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 14 + api 4 + mcp_server 1)
 
-1. **Greek comments** break editor text matching
-2. **`.env` values χωρίς quotes** — load_dotenv δεν αφαιρεί quotes
-3. **`daily_search.py` και `historic_search.py`** πρέπει να συγχρονίζονται για dedup
-4. **4-layer framework** (strategic, operational, tactical, playground) είναι INVARIANT
-5. **`recommender.py`** διαβάζει SQLite απευθείας, όχι μέσω DatabaseManager
-6. **Circuit breaker** στα 5+ failures
-7. **Profile-aware**: DatabaseManager δέχεται `db_path`
-8. **Questionary stdin piping** μέσω `TALOS_GUI_STDIN` + `_gui_runner.py`
-9. **Subprocess env propagation**: `run_script()` προωθεί TALOS_* vars
-10. **Embeddings** ως pickled numpy arrays σε BLOB column
-11. **Source class names** έχουν mixed conventions (DBLPSource, IEEEXploreSource, OpenAlexSource) — χρήση `live_agent_sources.import_source_class()` που σκανάρει το module
-12. **Cooldown mechanism** (v3.1): negative reward > 5-step lockout > random override — αποτρέπει Deterministic Loops
-13. **`.gitignore` & `docs/`**: Το blanket `docs/` rule αγνοεί όλα τα αρχεία εκτός από αυτά με `!` negate pattern (`!docs/PROJECT_MAP*.md`). Αν προσθέσεις νέο μόνιμο doc στο docs/, πρέπει να προσθέσεις και το αντίστοιχο `!` στο `.gitignore`.
-14. **`tools/` path awareness**: Τα scripts στο `tools/` χρησιμοποιούν `os.chdir(os.path.join(os.path.dirname(__file__), '..'))` για να βρίσκουν το project root. Αν μετακινηθούν αλλού, πρέπει να ενημερωθεί το path.
 
----
-
-> **Τελευταία ενημέρωση:** 2026-08-24 (v5.10.11 -- Τρισδιάστατος Αστερισμός Γνώσης Three.js & Μηχανή Ζωντανής Τηλεμετρίας)
-> **Έκδοση Project:** v5.10.11
-> **Συνολικά αρχεία που καλύπτονται:** 75+ (62 src/ + 4 integration/ + 10 root entry/config/docs/tests + 1 testing/)
->
-> ### Νέο στην v5.9.9: Ενοποίηση Αναφορών
-> - **Όλες οι αναφορές** πλέον αποθηκεύονται στο **`data/reports/`** (όχι στη ρίζα `reports/`).
-> - Τα υποσυστήματα αναφορών (`reports/audits/`, `reports/authors/`, `reports/citations/`, `reports/general/`, `reports/general_status_report/`, `reports/grey_literature/`, `reports/knowledge_paths/`, `reports/recommendations/`, `reports/trends/`) μεταφέρθηκαν όλα στο `data/reports/`.
-> - **8 scripts ανάλυσης** (`src/analysis/`) ενημερώθηκαν για να γράφουν στο `data/reports/`.
-> - Ο **Αυτόνομος Κόκκινος Ελεγκτής** (`red_tester.py`) γράφει στο `data/reports/red_tester/`.
-> - Το REST API `red_tester_routes` διαβάζει από `data/reports/red_tester/`.
-> - Ολόκληρος ο κατάλογος root `reports/` διαγράφηκε -- καθαρή ρίζα έργου.

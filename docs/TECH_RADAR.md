@@ -1,6 +1,6 @@
 # TALOS Tech Radar & Ecosystem Map
 
-> **Last Updated:** 2026-08-24 (v5.10.11 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine)
+> **Last Updated:** 2026-08-27 (v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools)
 
 This document is the technology radar of Project TALOS. It catalogues the development stack, the agentic architecture, the document-comprehension tooling, and the simulation capabilities that surround the core TALOS research intelligence system. It tracks State-of-the-Art (SOTA) technologies and maps the surrounding research-intelligence ecosystem.
 
@@ -80,4 +80,4 @@ Related systems and competitors that TALOS is evaluated against, tracked to keep
 
 ---
 
-> **Project Version:** v5.10.11 | **Last Updated:** 2026-08-24 (v5.10.11 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine)
+> **Project Version:** v5.10.12 | **Last Updated:** 2026-08-27 (v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools)

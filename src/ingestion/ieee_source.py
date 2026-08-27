@@ -82,6 +82,12 @@ class IEEEXploreSource:
                 return response.json()
             except requests.exceptions.RequestException as e:
                 print(f"   ERROR [IEEE]: API call failed after {attempt + 1} attempts. Error: {e}")
+                # -- v5.10.12 hotfix: surface hidden API errors to the visualizer --
+                try:
+                    from src.integration.visualizer_bridge import push_visualizer_event
+                    push_visualizer_event("error", "ieee", error_msg=str(e))
+                except ImportError:
+                    pass
                 return None
         return None
 

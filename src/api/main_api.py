@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.10.11
+Project: TALOS v5.10.12
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -99,8 +99,8 @@ logger = get_logger("api")
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-description="Facade REST API for the TALOS autonomous research platform (v5.10.11 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine)",
-version="5.10.11",
+description="Facade REST API for the TALOS autonomous research platform (v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools)",
+version="5.10.12",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -305,6 +305,146 @@ def _record_source_status(payload: dict) -> None:
 
 
 # =============================================================================
+# VISUALIZER 4-STATE BEAM BRIDGE (v5.10.12 hotfix)
+# =============================================================================
+
+# Recent beam events produced by the centralized visualizer_bridge and drained
+# (popped) on every GET /api/v1/visualizer/state poll. This solves the backlog
+# desync where re-evaluating existing papers (no new id) never advanced
+# ``latest_evaluation.id`` and therefore never fired a laser beam.
+_recent_beams: List[dict] = []
+_beams_lock = threading.Lock()
+_visualizer_eval_seq = 0
+
+# Beam colors (hex ints) consumed by the WebGL frontend.
+_BEAM_CYAN = 0x00ced1
+_BEAM_GOLD = 0xffd700
+_BEAM_GREEN = 0x00ff00
+_BEAM_RED = 0xef4444
+
+# Synthetic latest-evaluation override (v5.10.12 hotfix). Backlog re-evaluation
+# uses UPDATE, so the max DB id never changes and the frontend's AJAX poller
+# sees a stale ``latest_evaluation.id``. These globals let every "evaluation"
+# event mint a strictly increasing id so the HUD keeps moving for backlog work.
+_live_eval_seq = 1000000
+_live_eval_state = None
+
+
+def _record_beam_event(event_type: str, payload: dict) -> None:
+    """Classify a telemetry event into the 4-state bi-directional beam model.
+
+    Maps incoming events to one of four states and records a beam record in
+    ``_recent_beams`` plus the corresponding source health:
+
+    - query_out        -> health "standby" (cyan), beam core -> node.
+    - error            -> health "error" (red), no beam.
+    - data_in          -> health "healthy" (green), beam node -> core.
+    - evaluation       -> health "healthy" (green), beam node -> core.
+
+    Beam color is gold for score >= 7.0, otherwise green. Unknown event types
+    are ignored so unrelated telemetry never produces a spurious beam.
+
+    Args:
+        event_type (str): The event type string from the bridge/ingestion.
+        payload (dict): Event payload (flat or nested).
+    """
+    global _live_eval_seq, _live_eval_state
+    if not isinstance(payload, dict):
+        return
+
+    source = str(payload.get("source", "")).strip().lower()
+    if not source:
+        return
+
+    raw_score = payload.get("score", payload.get("overall_score", 0))
+    try:
+        score = float(raw_score) if raw_score is not None else 0.0
+    except (TypeError, ValueError):
+        score = 0.0
+
+    raw_title = payload.get("title", "")
+    if isinstance(raw_title, dict):
+        raw_title = raw_title.get("#text") or raw_title.get("value") or str(raw_title)
+    title = str(raw_title or "Unknown").strip()[:160] or "Unknown"
+
+    status = str(payload.get("status", "")).strip().lower()
+    et = str(event_type or "").strip().lower()
+
+    # -- Classify into the 4-state model --
+    if et in ("query_out", "source_searching"):
+        state = "query_out"
+        health = "standby"
+        direction = "core_to_node"
+        color = _BEAM_CYAN
+    elif et == "error" or (et == "source_status" and status == "error"):
+        state = "error"
+        health = "error"
+        direction = None
+        color = None
+    elif et in ("evaluation", "paper_evaluated"):
+        # A real paper was scored: always clear any prior error state.
+        state = "evaluation"
+        health = "healthy"
+        direction = "node_to_core"
+        color = _BEAM_GOLD if score >= 7.0 else _BEAM_GREEN
+        # Synthetic latest-evaluation override: mint a strictly increasing id
+        # so the frontend HUD detects backlog re-evaluations that UPDATE the
+        # database without inserting a new row (max id never changes).
+        with _beams_lock:
+            _live_eval_seq += 1
+            _live_eval_state = {
+                "id": _live_eval_seq,
+                "title": title,
+                "source": source,
+                "overall_score": score,
+                "provider": _infer_active_provider(),
+                "reward": _score_to_reward(score),
+            }
+    elif et == "data_in":
+        # Only clear an error state when papers actually arrived (score > 0).
+        # score == 0 may be an empty success OR a hidden source error that was
+        # already reported as "error" from within the source agent.
+        state = "data_in"
+        direction = "node_to_core"
+        color = _BEAM_GOLD if score >= 7.0 else _BEAM_GREEN
+        with _sources_health_lock:
+            current = _sources_health_state.get(source, {}).get("status", "standby")
+        if current == "error" and score <= 0:
+            health = "error"
+        else:
+            health = "healthy"
+    elif et == "source_status":
+        # Preserve the reported status (cooldown/standby/healthy) for health,
+        # while still emitting a data_in beam back to the core.
+        state = "data_in"
+        health = status if status in ("healthy", "cooldown", "standby") else "healthy"
+        direction = "node_to_core"
+        color = _BEAM_GOLD if score >= 7.0 else _BEAM_GREEN
+    else:
+        return
+
+    global _visualizer_eval_seq
+    beam = {
+        "state": state,
+        "source": source,
+        "score": score,
+        "title": title,
+        "direction": direction,
+        "color": color,
+    }
+    with _beams_lock:
+        _recent_beams.append(beam)
+        _visualizer_eval_seq += 1
+
+    _record_source_status({
+        "source": source,
+        "status": health,
+        "count": int(payload.get("count", 0) or 0),
+        "message": str(payload.get("message", "") or payload.get("error_msg", "") or payload.get("query", "") or ""),
+    })
+
+
+# =============================================================================
 # PYDANTIC MODELS
 # =============================================================================
 
@@ -463,7 +603,7 @@ class EvaluatePaperRequest(BaseModel):
 @app.on_event("startup")
 def on_startup():
     """Pre-warm singletons and log readiness."""
-    logger.info("TALOS FastAPI v5.10.11 starting up (Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine, port 8001)...")
+    logger.info("TALOS FastAPI v5.10.12 starting up (Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")
@@ -1141,7 +1281,7 @@ async def get_capabilities():
 
 @app.get("/api/v1/visualizer/live", response_class=HTMLResponse, tags=["Visualizer"])
 async def serve_visualizer():
-    """Serve the 3D Three.js Knowledge Constellation Visualizer (v5.10.11).
+    """Serve the 3D Three.js Knowledge Constellation Visualizer (v5.10.12).
 
     Returns the standalone self-contained HTML page backed by the vendored
     Three.js bundle at /static/js/three.min.js. No external CDN calls and no
@@ -1453,10 +1593,24 @@ def get_visualizer_state():
     config = _load_config()
     active_query = config.get("research_topic") or config.get("openaire_query") or ""
 
+    with _beams_lock:
+        beams = list(_recent_beams)
+        _recent_beams.clear()
+        eval_seq = _visualizer_eval_seq
+        live_state = _live_eval_state
+
+    # -- v5.10.12 hotfix: synthetic latest-evaluation override --
+    # Backlog re-evaluation (UPDATE) does not advance the max DB id, so
+    # override the DB-derived "latest" with the last pushed evaluation event.
+    if live_state is not None:
+        latest = live_state
+
     return {
         "sources": sources,
         "latest_evaluation": latest,
         "active_query": active_query,
+        "eval_seq": eval_seq,
+        "beams": beams,
         "timestamp": time.time(),
     }
 
@@ -1492,9 +1646,11 @@ async def post_visualizer_events(request: Request):
             continue
         event_type = evt.get("event_type", "paper_evaluated")
         payload = evt.get("payload", evt)
-        # -- v5.10.11: record source health telemetry into the runtime state map --
-        if event_type == "source_status" and isinstance(payload, dict):
-            _record_source_status(payload)
+        # -- v5.10.12 hotfix: 4-state bi-directional beam telemetry bridge --
+        # Classifies query_out / data_in / evaluation / error events, updates
+        # per-source health, and queues a beam for the AJAX poller to consume.
+        _record_beam_event(event_type, payload)
+        # -- Keep the in-memory SSE queue populated for backward compatibility --
         broadcast_visualizer_event(event_type, payload)
     return {"status": "ok", "broadcasted": True}
 

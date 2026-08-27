@@ -8,11 +8,11 @@ authors:
     given-names: "Efstratios"
     orcid: "https://orcid.org/0009-0000-4727-4154"
 title: "Project TALOS: Tactical Agentic Literature Orchestration System"
-version: 5.10.11
-date-released: 2026-08-24
+version: 5.10.12
+date-released: 2026-08-27
 url: "https://github.com/Christos-Smarlamakis/Project-TALOS"
 abstract: "Project TALOS is an autonomous research intelligence platform powered by deep reinforcement learning (DDDQN), multi-tier LLM orchestration, and the Grey Wolf Optimizer (GWO). It conducts end-to-end scientific literature discovery and evaluation across 16 academic APIs."
 funding:
   - type: "grant"
     title: "IEEE Computer Society WEIGD Student Support Fund (2026)"
-    message: "Project supported by the IEEE Computer Society WEIGD Student Support Fund (2026)."
+    message: "Project supported by the IEEE Computer Society WEIGD Student Support Fund (2026). Recipient list: https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026"

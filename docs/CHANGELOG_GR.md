@@ -2,6 +2,29 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.10.12] - 2026-08-27 -- Αυτόνομη Ενίσχυση Daemon, Τηλεμετρία 3D Laser & Διαδραστικά Εργαλεία Οπτικοποιητή
+
+### Προστέθηκε
+- **Τρισδιάστατες Κινούμενες Δέσμες Laser & Παλμοί Φωτονίων** (`templates/live_foraging_visualizer.html`): Πίνακας `activeBeams` με λαμπερές γραμμές `THREE.Line` και κινούμενες σφαίρες φωτονίων (Κυανό `#00ced1` / Χρυσό `#f59e0b`) στα 60 FPS.
+- **Διαδραστικά Εργαλεία Οπτικοποιητή**: Κλικ-σε-κόμβο μέσω raycaster, SNAPSHOT (λήψη PNG `TALOS_3D_Constellation.png`), FULLSCREEN, THEME και modal HELP με συντομεύσεις πληκτρολογίου (R/T/F/S/Space/1-3).
+- **Pure AJAX Δειγματοληψία 1000ms**: `GET /api/v1/visualizer/state?_t=` με κεφαλίδες no-store, ανανέωση 16 αυρών υγείας και δεσμών laser σε νέες αξιολογήσεις.
+- **Βελτιστοποιητής SQLite VACUUM** (`src/utils/db_stats.py`): `optimize_database(db_path)` με `PRAGMA integrity_check;` + `VACUUM;` και καθαρά μηνύματα κονσόλας.
+- **System Tray Companion** (`src/utils/tray_icon.py` + `pystray` + `Pillow`): Το `launch_tray_icon_async()` αποδίδει εικονίδιο 16x16 navy/cyan "T" με ενέργειες Άνοιγμα 3D Visualizer, Εμφάνιση/Απόκρυψη Κονσόλας (Win32 `ShowWindow`) και Τερματισμός Δαίμονα, σε μη αποκλειστικό daemon thread; συνδεδεμένο στην εκκίνηση του `talos_service.py` με ομαλό fallback ImportError.
+- **Εκκίνηση Δαίμονα σε Νέο Παράθυρο Κονσόλας** (`talos.py`): Η επιλογή 11 πλέον ξεκινά το `talos_service.py` μέσω `subprocess.Popen(..., creationflags=subprocess.CREATE_NEW_CONSOLE)` στα Windows ώστε ο δαίμονας 24/7 να έχει δική του κονσόλα ενώ το TUI παραμένει διαδραστικό.
+- **Rich TrueColor Τηλεμετρία DRL** (`src/ai/drl/live_agent_orchestrator.py`): `Console(force_terminal=True)` με έγχρωμα badges `[ACT]`, `[ROUTER]`, `[WARNING]`, `[RECOVERY]` και `[EVAL]`; δυναμικά badges κατάστασης `[ELITE  +]` / `[ACCEPT v]` / `[REJECT X]`.
+
+### Άλλαξε
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 6 αρχεία κώδικα** σε v5.10.12; εικόνα Docker `talos:5.10.12`; ενημέρωση CITATION.cff.
+- **Συγχρονισμός τεκμηρίωσης** σε v5.10.12 (2026-08-27).
+- **23 FastAPI endpoints** καταγεγραμμένα (E01-E23).
+- **Επαναπροσδιορισμός οδικού χάρτη**: DSPy PRISMA στην v5.10.13; CORTEX & n8n Gateway στην v5.10.14.
+- **Δομική επισκευή Project Map**: Τα `docs/PROJECT_MAP.md` και `docs/PROJECT_MAP_EN.md` επανακωδικοποιήθηκαν σε UTF-8; διορθώθηκαν σπασμένοι πίνακες markdown, αστοίχισες στήλες και κατεστραμμένα box-drawing glyphs; αντικαταστάθηκαν τα παρωχημένα μονοπάτια `scripts/` και `app.py` (Streamlit) με τη σύγχρονη δομή `src/`; αποκαταστάθηκε αυστηρή ισοτιμία EN/GR (79 modules src/, 23 endpoints).
+
+### Επαλήθευση
+- `python -m compileall src config tests talos.py` πέρασε με μηδέν σφάλματα.
+- `python -m pytest tests/test_system_integrity.py -q` πέρασε.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε με ισχυρισμό v5.10.12.
+
 ## [v5.10.11] - 2026-08-24 -- Τρισδιάστατος Αστερισμός Γνώσης με Vendored Three.js & Μηχανή Ζωντανής Τηλεμετρίας
 
 ### Προστέθηκε

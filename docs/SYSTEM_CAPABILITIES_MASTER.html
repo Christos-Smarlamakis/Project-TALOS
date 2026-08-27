@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.10.11</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.10.12</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -283,15 +283,15 @@
   <a href="#s14" class="section-link">14. Test Suite</a>
   <a href="#s14-1" class="sub-link">14.1 Test Inventory</a>
   <a href="#s14-2" class="sub-link">14.2 Verification Gates</a>
-  <a href="#s15" class="section-link">15. v5.9.10 to v5.9.13 New Capabilities</a>
+  <a href="#s15" class="section-link">15. 3D WebGL / AJAX Visualizer &amp; Tools</a>
 </nav>
 
 <main>
 
-<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.10.11</h1>
+<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.10.12</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
-  <a href="https://www.computer.org/" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
+  <a href="https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
     <span style="display:inline-block; background:linear-gradient(135deg, #006699 50%, #002855 50%); color:#ffffff; font-family:'Segoe UI','Helvetica Neue',sans-serif; font-size:0.95rem; font-weight:600; padding:0.55rem 1.25rem; border-radius:50px; letter-spacing:0.02em; box-shadow:0 2px 8px rgba(0,102,153,0.25); border:1px solid rgba(255,255,255,0.15);">
       Supported by IEEE Computer Society WEIGD Student Support Fund (2026)
     </span>
@@ -302,8 +302,8 @@
   <strong>Document ID:</strong> TALOS-SYS-CAP-001 &nbsp;|&nbsp;
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
-  <strong>Last Updated:</strong> 2026-08-24 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.10.11 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine
+  <strong>Last Updated:</strong> 2026-08-27 &nbsp;|&nbsp;
+  <strong>Version:</strong> v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools
 </div>
 
 <!-- ===================================================================== -->
@@ -855,6 +855,9 @@
   <li><strong>Elite Papers:</strong> Overall score >= 7 highlighted in gold</li>
   <li><strong>Clickable Hyperlinks:</strong> Rich <code>[link=file:///...]</code> terminal hyperlinks for reports and Q-tables</li>
   <li><strong>Ctrl+C Safety:</strong> <code>safe_pause()</code> and <code>safe_select()</code> helpers</li>
+  <li><strong>System Tray Companion (v5.10.12):</strong> <code>src/utils/tray_icon.py</code> launches a pystray icon (navy/cyan "T") next to the Windows clock with Open 3D Visualizer, Show / Hide Console (Win32 <code>ShowWindow</code>), and Terminate Daemon actions; initialized by <code>talos_service.py</code> on daemon startup.</li>
+  <li><strong>New Console Window Daemon Launch (v5.10.12):</strong> Option 11 spawns the 24/7 daemon via <code>subprocess.Popen(..., creationflags=subprocess.CREATE_NEW_CONSOLE)</code> so the TUI stays interactive.</li>
+  <li><strong>Rich TrueColor DRL Telemetry (v5.10.12):</strong> <code>live_agent_orchestrator.py</code> emits color-coded <code>[ACT]</code>, <code>[ROUTER]</code>, <code>[WARNING]</code>, <code>[RECOVERY]</code>, and <code>[EVAL]</code> badges with dynamic <code>[ELITE  +]</code> / <code>[ACCEPT v]</code> / <code>[REJECT X]</code> status.</li>
 </ul>
 
 <h3 id="s10-3">10.3 run_talos.bat / run_talos.sh Features</h3>
@@ -1026,7 +1029,18 @@
 </ol>
 
 <!-- ===================================================================== -->
-<h2 id="s15">Section 15: v5.9.10 to v5.9.13 New Capabilities</h2>
+<h2 id="s15">Section 15: 3D WebGL / AJAX Visualizer &amp; Recent Capabilities (v5.10.12)</h2>
+
+<h3>15.0 3D WebGL / AJAX Knowledge Constellation Visualizer &amp; Interactive Tools (v5.10.12)</h3>
+<ul>
+  <li><strong>Visualizer:</strong> <code>templates/live_foraging_visualizer.html</code> -- vendored Three.js r128 (zero CDN) with 60 FPS animated laser beams (additive-blended <code>THREE.Line</code>) and traveling photon spheres (Cyan <code>#00ced1</code> / Gold <code>#f59e0b</code>).</li>
+  <li><strong>Fuzzy source resolver:</strong> <code>findNodeIndex(rawSource)</code> with <code>_source</code>/<code>source</code> suffix normalization.</li>
+  <li><strong>Interactive click-to-fire:</strong> <code>THREE.Raycaster</code> hit-testing fires a beam and updates the HUD on satellite-node click.</li>
+  <li><strong>Tools:</strong> SNAPSHOT (PNG via <code>canvas.toDataURL</code> -&gt; <code>TALOS_3D_Constellation.png</code>), FULLSCREEN, THEME (dark / academic print), HELP (keyboard shortcuts R/T/F/S/Space/1-3).</li>
+  <li><strong>AJAX telemetry:</strong> 1000ms pure-AJAX poller (<code>GET /api/v1/visualizer/state?_t=</code>) with no-store headers refreshing all 16 health auras and count badges; fires beams on new evaluation IDs.</li>
+  <li><strong>Backend:</strong> <code>GET /api/v1/visualizer/state</code> resolves the active profile DB via <code>get_active_profile_db_path()</code>; <code>POST /api/v1/visualizer/events</code> accepts a dict or list and updates <code>_sources_health_state</code>.</li>
+  <li><strong>SQLite optimizer:</strong> <code>src/utils/db_stats.py::optimize_database(db_path)</code> runs <code>PRAGMA integrity_check;</code> + <code>VACUUM;</code>.</li>
+</ul>
 
 <h3>15.1 Vendored Graphify AST Integration (v5.9.10 -- v5.9.13)</h3>
 <ul>
@@ -1099,7 +1113,7 @@
 </ul>
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.11</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.12</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

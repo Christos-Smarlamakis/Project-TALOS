@@ -30,8 +30,16 @@ import requests
 import numpy as np
 from datetime import datetime
 
+# -- Rich console for TrueColor DRL telemetry (force_terminal keeps color
+#    emitted even when the daemon's stdout is piped or redirected). --
+from rich.console import Console
+from src.integration.visualizer_bridge import push_visualizer_event
+
 # -- v5.10.3: module logger for router decision telemetry --
 logger = logging.getLogger(__name__)
+
+# -- Shared Rich console instance used across the live loop and evaluator. --
+console = Console(force_terminal=True)
 
 # ── Configuration constants ──────────────────────────────────────────────────
 MAX_CALLS_PER_SOURCE = 100      # Default API call limit per source per "day"
@@ -149,21 +157,28 @@ def execute_live_fetch(action, action_map, config):
         config (dict): Project configuration.
 
     Returns:
-        tuple: (papers_found, error_occurred, source_name)
+        tuple: (papers_found, error_occurred, source_name, error_msg)
     """
     if action not in action_map:
-        print(f"  [WARN] Action {action} has no mapped source. Skipping.")
-        return [], True, "unknown"
+        console.print(
+            f"  [bold yellow][WARNING][/bold yellow] "
+            f"[yellow]Action {action} has no mapped source. Skipping.[/yellow]"
+        )
+        return [], True, "unknown", "action not mapped"
 
     source_name, SourceClass = action_map[action]
     error_occurred = False
+    error_msg = ""
     papers = []
 
     try:
         source = SourceClass(config)
         if not getattr(source, "enabled", True):
-            print(f"  [WARN] {source_name} is disabled (no API key). Skipping.")
-            return papers, True, source_name
+            console.print(
+                f"  [bold yellow][WARNING][/bold yellow] "
+                f"[yellow]{source_name} is disabled (no API key). Skipping.[/yellow]"
+            )
+            return papers, True, source_name, f"{source_name} is disabled (no API key)"
 
         # -- Query visibility telemetry --
         # Surface the exact query before the network fetch so operators can
@@ -176,26 +191,32 @@ def execute_live_fetch(action, action_map, config):
         if not query:
             query = config.get(f"{source_name}_query", "unknown")
         logger.info(f'[ACT] {source_name} | Query: "{query}"')
-        print(f'  [ACT] {source_name} | Query: "{query}"')
-        print(f"  [{source_name}] Fetching papers...")
+        console.print(
+            f"  [bold #00ced1][ACT][/bold #00ced1] "
+            f"[bold white]{source_name}[/bold white] | Query: [dim]\"{query}\"[/dim]"
+        )
+        console.print(f"  [dim][{source_name}] Fetching papers...[/dim]")
         papers = source.fetch_new_papers()
 
         if papers:
-            print(f"  [{source_name}] Found {len(papers)} papers.")
+            console.print(f"  [dim][{source_name}] Found {len(papers)} papers.[/dim]")
         else:
-            print(f"  [{source_name}] No new papers found.")
+            console.print(f"  [dim][{source_name}] No new papers found.[/dim]")
 
     except requests.HTTPError as e:
-        print(f"  [ERR] [{source_name}] API error: {e}")
+        console.print(f"  [bold red][ERR][/bold red] [red][{source_name}] API error: {e}[/red]")
         error_occurred = True
+        error_msg = str(e)
     except requests.ConnectionError as e:
-        print(f"  [ERR] [{source_name}] Connection error: {e}")
+        console.print(f"  [bold red][ERR][/bold red] [red][{source_name}] Connection error: {e}[/red]")
         error_occurred = True
+        error_msg = str(e)
     except Exception as e:
-        print(f"  [ERR] [{source_name}] Unexpected error: {e}")
+        console.print(f"  [bold red][ERR][/bold red] [red][{source_name}] Unexpected error: {e}[/red]")
         error_occurred = True
+        error_msg = str(e)
 
-    return papers, error_occurred, source_name
+    return papers, error_occurred, source_name, error_msg
 
 
 def _estimate_prompt_tokens(text):
@@ -248,6 +269,15 @@ def evaluate_paper(paper, ai_manager, provider_call_counts):
         if raw_title.strip().startswith('<'):
             import re
             raw_title = re.sub(r'<[^>]+>', '', raw_title).strip()
+        # -- v5.10.12 hotfix: clean stringified dict titles (e.g. {'@classid': ...}) --
+        if raw_title.strip().startswith('{') and "'@classid'" in raw_title:
+            import ast
+            try:
+                parsed = ast.literal_eval(raw_title)
+                if isinstance(parsed, dict):
+                    raw_title = parsed.get('title') or parsed.get('value') or parsed.get('#text') or raw_title
+            except Exception:
+                pass
         paper['title'] = raw_title or 'Unknown Title'
 
     title = paper['title']
@@ -262,13 +292,19 @@ def evaluate_paper(paper, ai_manager, provider_call_counts):
                 prompt_length, task_type="foraging_evaluation"
             )
         except Exception as exc:
-            print(f"    [WARN] Router selection failed: {exc}")
+            console.print(
+                f"    [bold yellow][WARNING][/bold yellow] "
+                f"[yellow]Router selection failed: {exc}[/yellow]"
+            )
     logger.info(
         "[FORAGING/ROUTER] task_type=foraging_evaluation prompt_length=%s provider=%s",
         prompt_length, routed_provider,
     )
-    print(f"    [ROUTER] Foraging evaluation: prompt_length={prompt_length} "
-          f"-> provider={routed_provider}")
+    console.print(
+        f"    [bold #4a9eff][ROUTER][/bold #4a9eff] "
+        f"Foraging evaluation: prompt_length={prompt_length} -> "
+        f"provider=[bold yellow]{routed_provider}[/bold yellow]"
+    )
 
     try:
         evaluation = ai_manager.evaluate_paper_json(content, model_type='flash')
@@ -281,7 +317,10 @@ def evaluate_paper(paper, ai_manager, provider_call_counts):
             provider_call_counts[used] = provider_call_counts.get(used, 0) + 1
             return float(evaluation.get('overall_score', 0))
     except Exception as e:
-        print(f"    [WARN] AI evaluation failed: {e}")
+        console.print(
+            f"    [bold yellow][WARNING][/bold yellow] "
+            f"[yellow]AI evaluation failed: {e}[/yellow]"
+        )
     return 0.0
 
 
@@ -346,8 +385,8 @@ def run_live_loop(agent, action_map, working_source_names, config,
     high_score_count = 0
     episode_reward = 0.0
 
-    print("  [INIT] Live agent ready. Starting main loop.\n")
-    print("-" * 65)
+    console.print("  [bold cyan][INIT][/bold cyan] Live agent ready. Starting main loop.\n")
+    console.print("[dim]" + "-" * 65 + "[/dim]")
 
     # ══════════════════════════════════════════════════════════════════════════
     # MAIN LIVE LOOP
@@ -358,7 +397,7 @@ def run_live_loop(agent, action_map, working_source_names, config,
 
     while not shutdown_requested:
         if episodes is not None and steps_completed >= episodes:
-            print(f"  [DONE] Episode limit reached ({episodes} API actions). Shutting down.")
+            console.print(f"  [bold cyan][DONE][/bold cyan] Episode limit reached ({episodes} API actions). Shutting down.")
             break
         try:
             # ── Step 1: Calculate current state ────────────────────────────
@@ -389,9 +428,12 @@ def run_live_loop(agent, action_map, working_source_names, config,
                     import random as _random
                     old_action = action
                     action = _random.choice(free)
-                    print(f"  [COOLDOWN] Action {old_action} ({working_source_names[old_action]}) "
-                          f"locked ({active_cooldowns.get(old_action, '?')} steps left) "
-                          f"-> overridden to {action} ({working_source_names[action]})")
+                    console.print(
+                        f"  [bold green][RECOVERY][/bold green] "
+                        f"[green]Action {old_action} ({working_source_names[old_action]}) "
+                        f"locked ({active_cooldowns.get(old_action, '?')} steps left) "
+                        f"-> overridden to {action} ({working_source_names[action]})[/green]"
+                    )
 
             if verbose:
                 count_str = " ".join(
@@ -407,9 +449,12 @@ def run_live_loop(agent, action_map, working_source_names, config,
                 else:
                     action_label = working_source_names[action] if action < num_working else "?"
                 cd_str = f" cd={len(active_cooldowns)}" if active_cooldowns else ""
-                print(f"\n  [ACT] {action_label} ({action}) | "
-                      f"State: {count_str} low={low_score_streak} err={error_streak}{cd_str}")
-                print(f"    Providers: {prov_str}")
+                console.print(
+                    f"\n  [bold #00ced1][ACT][/bold #00ced1] "
+                    f"[bold white]{action_label}[/bold white] ({action}) | "
+                    f"State: {count_str} low={low_score_streak} err={error_streak}{cd_str}"
+                )
+                console.print(f"    [dim]Providers: {prov_str}[/dim]")
 
             # ── Step 3: SLEEP action ───────────────────────────────────────
             if action == sleep_action:
@@ -418,9 +463,9 @@ def run_live_loop(agent, action_map, working_source_names, config,
                     for n in working_source_names
                 ]
                 if ratios and max(ratios) > 0.8:
-                    print(f"  [SLEEP] Limits >80% -> sleeping 1h at {now.strftime('%H:%M')}")
+                    console.print(f"  [bold cyan][SLEEP][/bold cyan] Limits >80% -> sleeping 1h at {now.strftime('%H:%M')}")
                 else:
-                    print(f"  [SLEEP] Sleeping 1h at {now.strftime('%H:%M')}")
+                    console.print(f"  [bold cyan][SLEEP][/bold cyan] Sleeping 1h at {now.strftime('%H:%M')}")
                 time.sleep(SLEEP_SECONDS)
                 source_call_counts = {name: 0 for name in working_source_names}
                 provider_call_counts = {p: 0 for p in _PROVIDER_NAMES}
@@ -428,7 +473,10 @@ def run_live_loop(agent, action_map, working_source_names, config,
 
             # ── Step 4: Validate action ────────────────────────────────────
             if action < 0 or action >= num_working:
-                print(f"  [WARN] Invalid action {action} (max={num_working - 1}). Skipping.")
+                console.print(
+                    f"  [bold yellow][WARNING][/bold yellow] "
+                    f"[yellow]Invalid action {action} (max={num_working - 1}). Skipping.[/yellow]"
+                )
                 time.sleep(THROTTLE_SECONDS)
                 continue
 
@@ -437,32 +485,44 @@ def run_live_loop(agent, action_map, working_source_names, config,
             # ── Step 5: Check source limit ──────────────────────────────────
             limit = source_limits.get(source_name, MAX_CALLS_PER_SOURCE)
             if source_call_counts[source_name] >= limit:
-                print(f"  [WARN] {source_name} at limit ({limit} calls). Sleeping 1h...")
+                console.print(
+                    f"  [bold yellow][WARNING][/bold yellow] "
+                    f"[yellow]{source_name} at limit ({limit} calls). Sleeping 1h...[/yellow]"
+                )
                 time.sleep(SLEEP_SECONDS)
                 source_call_counts = {name: 0 for name in working_source_names}
                 provider_call_counts = {p: 0 for p in _PROVIDER_NAMES}
                 continue
 
             # ── Step 6: Execute ONE live API call ──────────────────────────
-            papers, error_occurred, fetched_source = execute_live_fetch(
+            papers, error_occurred, fetched_source, error_msg = execute_live_fetch(
                 action, action_map, config
             )
 
             # ── Step 7: Update counters ────────────────────────────────────
             source_call_counts[source_name] += 1
 
+            # ── v5.10.12 hotfix: 4-state telemetry (fixes Cyan Lock) ───────
+            # Always report the fetch outcome so an empty success does not
+            # leave the node stuck in standby (cyan). Hidden source errors are
+            # surfaced separately from within the source agents themselves.
+            if error_occurred:
+                push_visualizer_event("error", source_name, error_msg=error_msg or f"{source_name} fetch failed")
+            else:
+                push_visualizer_event("data_in", source_name, score=len(papers))
+
             if error_occurred:
                 error_streak += 1
                 low_score_streak = 0
                 reward = REWARD_ERROR
-                print(f"    [ERR] API Error | Reward: {reward:.0f} | Error streak: {error_streak}")
+                console.print(f"    [bold red][ERR][/bold red] API Error | Reward: {reward:.0f} | Error streak: {error_streak}")
                 episode_reward += reward
             elif not papers:
                 low_score_streak += 1
                 error_streak = 0
                 reward = REWARD_LOW
                 if verbose:
-                    print(f"    [EMPTY] No papers found. Reward: {reward:.0f}")
+                    console.print(f"    [dim][EMPTY][/dim] No papers found. Reward: {reward:.0f}")
                 episode_reward += reward
             else:
                 # ── Step 8: Evaluate papers via AI ─────────────────────────
@@ -478,29 +538,44 @@ def run_live_loop(agent, action_map, working_source_names, config,
                     )
                     score = evaluate_paper(paper, ai_manager, provider_call_counts)
 
-                    # -- Paper-level evaluation telemetry (v5.10.6) --
+                    # -- Paper-level evaluation telemetry (v5.10.6, TrueColor badges) --
                     if score is None or score == 0.0:
-                        status = "FAILED [-]"
+                        plain_status = "[REJECT X]"
+                        status_badge = "[bold red][REJECT X][/bold red]"
                     elif score >= 8.0:
-                        status = "ELITE  [+]"
+                        plain_status = "[ELITE +]"
+                        status_badge = "[bold gold1][ELITE  +][/bold gold1]"
                     elif score >= 6.0:
-                        status = "ACCEPT [v]"
+                        plain_status = "[ACCEPT v]"
+                        status_badge = "[bold green][ACCEPT v][/bold green]"
                     else:
-                        status = "REJECT [X]"
+                        plain_status = "[REJECT X]"
+                        status_badge = "[bold red][REJECT X][/bold red]"
                     safe_title = paper.get("title", "Unknown Title")[:55]
                     eval_msg = (
-                        f"  └─ [EVAL] {safe_title:<55} | Score: {score:>4.1f}/10 | {status} -> DB"
+                        f"  └─ [EVAL] {safe_title:<55} | Score: {score:>4.1f}/10 | "
+                        f"{plain_status} -> DB"
                     )
                     logger.info(eval_msg)
-                    print(eval_msg)
+                    console.print(
+                        f"  └─ [bold bright_blue][EVAL][/bold bright_blue] "
+                        f"[cyan]{safe_title:<55}[/cyan] | "
+                        f"Score: [bold white]{score:>4.1f}/10[/bold white] | "
+                        f"{status_badge} [dim]-> DB[/dim]"
+                    )
+
+                    # -- v5.10.12 hotfix: centralized visualizer bridge (active push) --
+                    push_visualizer_event("paper_evaluated", paper.get("source", "unknown"), score, safe_title)
 
                     if score > best_score:
                         best_score = score
 
                     if score >= SCORE_THRESHOLD_HIGH:
                         high_score_count += 1
-                        print(f"    [HIGH] Score: {score:.1f} -- "
-                              f"\"{paper.get('title', 'N/A')[:80]}\"")
+                        console.print(
+                            f"    [bold gold1][HIGH][/bold gold1] Score: {score:.1f} -- "
+                            f"\"{paper.get('title', 'N/A')[:80]}\""
+                        )
 
                     total_papers_fetched += 1
 
@@ -512,8 +587,10 @@ def run_live_loop(agent, action_map, working_source_names, config,
                 else:
                     low_score_streak = 0
 
-                print(f"    [OK] [{source_name}] Best score: {best_score:.1f} | "
-                      f"Reward: {reward:.0f} | Low streak: {low_score_streak}")
+                console.print(
+                    f"    [bold green][OK][/bold green] [{source_name}] Best score: {best_score:.1f} | "
+                    f"Reward: {reward:.0f} | Low streak: {low_score_streak}"
+                )
                 episode_reward += reward
 
             # ── Step 10: Apply cooldown if reward < 0 (v3.1 anti-deadlock) ─
@@ -525,19 +602,21 @@ def run_live_loop(agent, action_map, working_source_names, config,
 
             # ── Periodic status report ─────────────────────────────────────
             if total_papers_fetched > 0 and total_papers_fetched % 10 == 0:
-                print(f"\n  [STAT] {total_papers_fetched} papers fetched | "
-                      f"{high_score_count} high-score | Reward: {episode_reward:.0f}")
+                console.print(
+                    f"\n  [bold bright_blue][STAT][/bold bright_blue] {total_papers_fetched} papers fetched | "
+                    f"{high_score_count} high-score | Reward: {episode_reward:.0f}"
+                )
             # -- Count one completed API action (episode) --
             steps_completed += 1
 
         except KeyboardInterrupt:
-            print("\n  [STOP] KeyboardInterrupt received. Shutting down...")
+            console.print("\n  [bold yellow][STOP][/bold yellow] KeyboardInterrupt received. Shutting down...")
             shutdown_requested = True
         except Exception as e:
-            print(f"\n  [ERR] Unexpected error: {e}")
+            console.print(f"\n  [bold red][ERR][/bold red] Unexpected error: {e}")
             import traceback
             traceback.print_exc()
-            print("  [WAIT] Retrying in 30 seconds...")
+            console.print("  [bold green][RECOVERY][/bold green] [green]Retrying in 30 seconds...[/green]")
             time.sleep(30)
             continue
 

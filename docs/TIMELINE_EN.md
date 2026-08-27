@@ -4,9 +4,22 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-24 (v5.10.11 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine)
+> **Last Updated:** 2026-08-27 (v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools)
 
 ---
+
+## Phase 42: Autonomous Daemon Hardening, 3D Laser Telemetry & Tools (v5.10.12)
+
+### Status: COMPLETED (2026-08-27)
+
+- [x] **3D Animated Laser Beams & Photon Pulses** -- `activeBeams` array with additive-blended `THREE.Line` beams and traveling photon spheres at 60 FPS; sine-envelope opacity, node scale pulse, aura intensification, full disposal on completion.
+- [x] **Interactive Visualizer Tools** -- raycaster click-to-fire, SNAPSHOT (PNG `TALOS_3D_Constellation.png`), FULLSCREEN, THEME, HELP modal with keyboard shortcuts (R/T/F/S/Space/1-3).
+- [x] **1000ms Pure AJAX State Poller** -- cache-busted `/api/v1/visualizer/state` with no-store headers; refreshes 16 health auras/count badges and fires beams on new evaluation IDs.
+- [x] **Active Profile DB Resolution** -- visualizer state resolves `get_active_profile_db_path()` on every request; `POST /api/v1/visualizer/events` updates `_sources_health_state`.
+- [x] **SQLite Vacuum Optimizer** -- `src/utils/db_stats.py::optimize_database(db_path)` runs `PRAGMA integrity_check;` + `VACUUM;`.
+- [x] **Roadmap re-aligned** -- DSPy PRISMA shifted to v5.10.13; CORTEX & n8n Gateway shifted to v5.10.14.
+- [x] **Version synced across 6 code files and the canonical documentation set** to v5.10.12.
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version.
 
 ## Phase 41: Vendored Three.js 3D Constellation Visualizer (v5.10.11)
 

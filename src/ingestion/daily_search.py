@@ -57,6 +57,7 @@ from src.ingestion.openaire_source import OpenAIRESource
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
 from src.ai.drl.llm_router_subagent import estimate_prompt_tokens
+from src.integration.visualizer_bridge import push_visualizer_event
 from rich.console import Console
 from rich.panel import Panel
 
@@ -377,18 +378,13 @@ def main(sources=None):
             if paper_id:
                 logger.info("[DB SAVED] Successfully stored new paper: %s", paper.get('title'))
                 print(f"   Score: {overall:.2f} (Saved)")
-                # -- v5.10.10: Push to 3D visualizer stream (best-effort) --
-                try:
-                    from src.api.main_api import broadcast_visualizer_event
-                    broadcast_visualizer_event("paper_evaluated", {
-                        "title": paper.get("title", ""),
-                        "overall_score": overall,
-                        "source": paper.get("source", ""),
-                        "pipeline": "Daily Search 16 APIs",
-                        "provider": getattr(ai_manager, "last_provider_used", "--"),
-                    })
-                except ImportError:
-                    pass
+                # -- v5.10.12 hotfix: centralized visualizer bridge (active push) --
+                push_visualizer_event(
+                    "paper_evaluated",
+                    paper.get("source", "unknown"),
+                    overall,
+                    paper.get("title", "Unknown"),
+                )
                 if overall >= min_score_for_deep_analysis:
                     promising_papers.append(paper)
             else:
@@ -427,18 +423,13 @@ def main(sources=None):
 
             scores = deep_evaluation_data.get('scores', {})
             print(f"   SUCCESS: S:{scores.get('strategic')} O:{scores.get('operational')} T:{scores.get('tactical')} P:{scores.get('playground')}")
-            # -- v5.10.10: Push deep analysis result to visualizer --
-            try:
-                from src.api.main_api import broadcast_visualizer_event
-                broadcast_visualizer_event("paper_evaluated", {
-                    "title": paper.get("title", ""),
-                    "overall_score": deep_evaluation_data.get("overall_score", 0),
-                    "source": paper.get("source", ""),
-                    "pipeline": "Daily Search 16 APIs (Deep)",
-                    "provider": getattr(ai_manager, "last_provider_used", "--"),
-                })
-            except ImportError:
-                pass
+            # -- v5.10.12 hotfix: centralized visualizer bridge (active push) --
+            push_visualizer_event(
+                "paper_evaluated",
+                paper.get("source", "unknown"),
+                deep_evaluation_data.get("overall_score", 0.0),
+                paper.get("title", "Unknown"),
+            )
         else:
             print(f"   WARNING: Pro evaluation failed for {paper['doi']}.")
 

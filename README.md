@@ -1,10 +1,10 @@
-﻿﻿# Project TALOS (v5.10.11)
+﻿﻿# Project TALOS (v5.10.12)
 
 ### **Tactical Agentic Literature Orchestration System**
 
-> **An Autonomous Research Intelligence Platform -- Multi-Tier LLM Routing (CPU/GPU/Cloud), Headless FastAPI Backend with 19 REST Endpoints, SYNAPSE Event-Driven Protocol, RL-Driven Autonomous Red Tester with LLM-as-a-Judge Diagnostics, Academic Print Mode for AST Knowledge Graphs, React 18 + Tailwind CSS + Shadcn UI Frontend.**
+> **An Autonomous Research Intelligence Platform -- Multi-Tier LLM Routing (CPU/GPU/Cloud), Headless FastAPI Backend with 23 REST Endpoints, SYNAPSE Event-Driven Protocol, RL-Driven Autonomous Red Tester with LLM-as-a-Judge Diagnostics, Academic Print Mode for AST Knowledge Graphs, React 18 + Tailwind CSS + Shadcn UI Frontend.**
 
-[![IEEE Computer Society](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund)
+[![IEEE Computer Society](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue)
 ![License](https://img.shields.io/badge/License-AGPLv3-red)
 [![DOI](https://zenodo.org/badge/1191928488.svg)](https://doi.org/10.5281/zenodo.19224912)
@@ -35,7 +35,7 @@ TALOS acts as an autonomous "Research Architect," filtering noise and highlighti
   - **Grey Wolf Optimizer** (`src/ai/optimizers/gwo_rl_optimizer.py`) for hyperparameter tuning
   - **24/7 Autonomous Service** (`src/ai/drl/talos_service.py`) -- background research agent with Telegram/Discord/Email notifications
 - **Flask API server** (`src/api/talos_service_api.py`) -- real-time service status at `localhost:5002/api/status`
-- **FastAPI REST API** (`src/api/main_api.py`) -- full REST facade with 19 endpoints at `localhost:8001`
+- **FastAPI REST API** (`src/api/main_api.py`) -- full REST facade with 23 endpoints at `localhost:8001`
   - Semantic search, paginated papers, scrape/GWO triggers with BackgroundTasks
   - Single-paper AI evaluation, natural-language to boolean query translation
   - GWO history for Recharts, architecture graph HTML, top authors for BarChart
@@ -45,6 +45,8 @@ TALOS acts as an autonomous "Research Architect," filtering noise and highlighti
   - **Port 8001** (port 8000 reserved for SYNAPSE event bus)
   - Auto-generated interactive docs at `http://localhost:8001/docs`
   - Models saved at `models/dddqn_trained.pth` and `models/talos_drl.pth`
+- **3D Knowledge Constellation Visualizer** (`templates/live_foraging_visualizer.html`) -- vendored Three.js r128 (zero CDN) with 60 FPS animated laser beams, traveling photon pulses, interactive click-to-fire nodes, PNG snapshot, fullscreen and help overlays, and a 1000ms pure-AJAX state poller (`GET /api/v1/visualizer/state`) resolving the active profile database.
+- **Test Suite** -- `python -m pytest tests/test_system_integrity.py -q` for system health; `python -m pytest tests/test_multi_tier.py -k test_talos_version` for the version assertion.
 - **Autonomous Red Tester (RL-Driven Chaos Engineering)** (`src/ai/testing/red_tester.py`)
 - **Daemon OS Autostart Orchestrator** (`src/utils/daemon_autostart.py`) -- Windows Startup hook + boot batch generator for the 24/7 daemon (v5.10.6)
 - **OPTICA Bridge Integration** (`src/integration/optica_client.py`) -- API client to Project OPTICA (port 8002) for heavy cnsplots/PyVis graphics; TUI "Data Visualizations (via OPTICA)" menu (v5.10.7)
@@ -137,7 +139,7 @@ Requires **Ollama** for running locally the `gemma4` model.
 This software is part of ongoing research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.11, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.12, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -146,7 +148,7 @@ This software is part of ongoing research. If you use **TALOS** in your work, pl
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.10.11},
+  version = {v5.10.12},
   year = {2026}
 }
 ```
@@ -194,7 +196,7 @@ The Lead Architect and Author, **Christos Smarlamakis**, is an officially select
   - **Grey Wolf Optimizer** (`src/ai/optimizers/gwo_rl_optimizer.py`) ��� �������������� ��������������
   - **24/7 �������� ��������** (`src/ai/drl/talos_service.py`) -- ��������� ��������� �� ������������ Telegram/Discord/Email
 - **Flask API server** (`src/api/talos_service_api.py`) -- ��������� ��������� �� ���������� ����� ��� `localhost:5002/api/status`
-- **FastAPI REST API** (`src/api/main_api.py`) -- ������ ������� REST �� 18 endpoints ��� `localhost:8001`
+- **FastAPI REST API** (`src/api/main_api.py`) -- ������ ������� REST �� 23 endpoints ��� `localhost:8001`
   - ������������� ���������, �������������� papers, ������������� scrape/GWO �� BackgroundTasks
   - ���������� ����������� paper �� AI, ��������� ������� ������� �� boolean query
   - �������� GWO ��� Recharts, ������� �������������� HTML, ��������� ���������� ��� BarChart
@@ -289,7 +291,7 @@ python src/utils/generate_docs.py
 ���� �� ��������� �������� ����� �� �������� �������. ��� ��������������� �� **TALOS** ���� ������� ���, ����������� �� �� ��������� �� ����:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.11, ��������� 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.12, ��������� 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -298,7 +300,7 @@ python src/utils/generate_docs.py
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.10.11},
+  version = {v5.10.12},
   year = {2026}
 }
 ```

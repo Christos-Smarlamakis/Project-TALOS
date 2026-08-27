@@ -50,6 +50,8 @@ pyvis                       # Interactive network visualization
 rich                        # Terminal UI beautification (Console, Panel, Table, Box)
 questionary                 # Terminal UI (interactive menus)
 tqdm                        # Progress bars
+pystray                     # System tray icon companion (TALOS daemon)
+Pillow                      # Image generation for the system tray icon
 
 # === Reporting & Web Dashboard ===
 Flask                       # Web server for interactive dashboard
