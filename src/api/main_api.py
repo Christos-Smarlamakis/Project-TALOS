@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.10.10
+Project: TALOS v5.10.11
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -9,7 +9,7 @@ Description:
     Tailwind CSS + Shadcn UI frontend. All endpoints wrap existing synchronous
     core functions -- no logic is rewritten.
 
-    Endpoints (22 total -- 100% ecosystem coverage + Synapse protocol + capabilities + tester + visualizer):
+    Endpoints (23 total -- 100% ecosystem coverage + Synapse protocol + capabilities + tester + visualizer):
     - GET  /api/v1/health              -> system health, DB stats, embedding coverage
     - GET  /api/v1/papers              -> paginated paper list
     - GET  /api/v1/papers/{paper_id}   -> full paper detail
@@ -29,9 +29,10 @@ Description:
     - GET  /api/v1/synapse/status        -> SYNAPSE bus reachability, queue health, event types
     - GET  /api/v1/tester/status       -> Autonomous Red Tester Q-table status
     - GET  /api/v1/tester/reports      -> list crash report metadata
-    - GET  /api/v1/visualizer/live     -> 3D Holographic Knowledge Constellation Visualizer HTML
+    - GET  /api/v1/visualizer/live     -> 3D Three.js Knowledge Constellation Visualizer HTML
     - GET  /api/v1/visualizer/stream   -> SSE event stream for live visualizer
     - GET  /api/v1/visualizer/demo-data -> recent evaluated papers for offline replay
+    - GET  /api/v1/visualizer/state     -> consolidated AJAX state snapshot (sources + latest evaluation)
 
     Key design decisions:
     - Port 8001 (avoids conflict with SYNAPSE event bus on port 8000)
@@ -79,13 +80,14 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 
 import numpy as np
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from dotenv import load_dotenv
 
-from src.core.database_manager import DatabaseManager
+from src.core.database_manager import DatabaseManager, get_active_profile_db_path
 from src.core.ai_manager import AIManager
 from src.api.synapse_routes import router as synapse_router
 from src.api.red_tester_routes import router as red_tester_router
@@ -97,8 +99,8 @@ logger = get_logger("api")
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-description="Facade REST API for the TALOS autonomous research platform (v5.10.10 -- 3D Holographic Knowledge Constellation Visualizer)",
-version="5.10.10",
+description="Facade REST API for the TALOS autonomous research platform (v5.10.11 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine)",
+version="5.10.11",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -116,6 +118,13 @@ app.include_router(red_tester_router)
 
 # -- Mount templates/ as static files for architecture graph assets --
 app.mount("/static/templates", StaticFiles(directory="templates"), name="static_templates")
+
+# -- v5.10.11: Mount static/ directory for the vendored Three.js bundle --
+# Idempotent guard prevents duplicate mounts on module re-import. The /static
+# mount is registered AFTER /static/templates so architecture graph assets
+# keep resolving through the more specific prefix first.
+if not any(getattr(route, "path", None) == "/static" for route in app.router.routes):
+    app.mount("/static", StaticFiles(directory=os.path.join(_P, "static")), name="static")
 
 # -- Singleton instances (lazy-init) ------------------------------------------
 _db_manager: Optional[DatabaseManager] = None
@@ -230,6 +239,71 @@ def broadcast_visualizer_event(event_type: str, payload: dict) -> bool:
     except _queue_mod.Full:
         logger.warning("Visualizer event queue full -- event dropped: %s", event_type)
         return False
+
+
+# =============================================================================
+# SOURCE HEALTH TELEMETRY (v5.10.11)
+# =============================================================================
+
+# Public (keyless) sources always report healthy on pre-flight.
+_PUBLIC_SOURCES = {
+    "arxiv", "openalex", "dblp", "crossref", "openarchives",
+    "pubmed", "scigov", "osti", "plos",
+}
+
+# Authenticated sources and the environment variables that carry credentials.
+_AUTH_SOURCE_KEYS = {
+    "elsevier": ["ELSEVIER_API_KEY", "ELSEVIER_INST_TOKEN"],
+    "ieee": ["IEEE_API_KEY"],
+    "semantic_scholar": ["SEMANTIC_SCHOLAR_API_KEY"],
+    "springer": ["SPRINGER_API_KEY"],
+    "core": ["CORE_API_KEY"],
+    "openreview": ["OPENREVIEW_USERNAME", "OPENREVIEW_PASSWORD"],
+    "openaire": ["OPENAIRE_TOKEN", "OPENAIRE_API_KEY"],
+}
+
+# Canonical 16-source order (mirrors SOURCE_NAMES in the visualizer frontend).
+_ALL_VISUALIZER_SOURCES = [
+    "arxiv", "openalex", "semantic_scholar", "crossref", "dblp",
+    "pubmed", "plos", "core", "osti", "scigov",
+    "openarchives", "ieee", "elsevier", "springer", "openreview", "openaire",
+]
+
+# Runtime per-source health recorded from ``source_status`` telemetry events.
+_sources_health_state: Dict[str, dict] = {}
+_sources_health_lock = threading.Lock()
+
+
+def _source_has_key(slug: str) -> bool:
+    """Return True when a source has sufficient credentials to run.
+
+    Public sources always return True. Authenticated sources are checked against
+    their environment variables: OpenAIRE accepts a token OR an API key,
+    OpenReview requires both a username and a password, and Elsevier requires
+    both an API key and an institutional token.
+    """
+    if slug not in _AUTH_SOURCE_KEYS:
+        return True
+    if slug == "openaire":
+        return bool(os.getenv("OPENAIRE_TOKEN") or os.getenv("OPENAIRE_API_KEY"))
+    if slug == "openreview":
+        return bool(os.getenv("OPENREVIEW_USERNAME") and os.getenv("OPENREVIEW_PASSWORD"))
+    return all(bool(os.getenv(key)) for key in _AUTH_SOURCE_KEYS[slug])
+
+
+def _record_source_status(payload: dict) -> None:
+    """Persist a ``source_status`` telemetry event into the runtime health map."""
+    source = str(payload.get("source", "")).strip().lower()
+    if not source:
+        return
+    with _sources_health_lock:
+        _sources_health_state[source] = {
+            "status": payload.get("status", "standby"),
+            "count": int(payload.get("count", 0) or 0),
+            "message": str(payload.get("message", "")),
+        }
+
+
 # =============================================================================
 # PYDANTIC MODELS
 # =============================================================================
@@ -389,7 +463,7 @@ class EvaluatePaperRequest(BaseModel):
 @app.on_event("startup")
 def on_startup():
     """Pre-warm singletons and log readiness."""
-    logger.info("TALOS FastAPI v5.10.10 starting up (3D Holographic Knowledge Constellation Visualizer, port 8001)...")
+    logger.info("TALOS FastAPI v5.10.11 starting up (Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")
@@ -1067,11 +1141,11 @@ async def get_capabilities():
 
 @app.get("/api/v1/visualizer/live", response_class=HTMLResponse, tags=["Visualizer"])
 async def serve_visualizer():
-    """Serve the 3D Holographic Knowledge Constellation Visualizer.
+    """Serve the 3D Three.js Knowledge Constellation Visualizer (v5.10.11).
 
-    Returns the standalone self-contained HTML page. No external dependencies.
-    This is a complete WebGL 1.0 application -- no CDN scripts, no network
-    fetches required at runtime (100% air-gapped compliant).
+    Returns the standalone self-contained HTML page backed by the vendored
+    Three.js bundle at /static/js/three.min.js. No external CDN calls and no
+    network fetches are required at runtime (100% air-gapped compliant).
 
     Returns 404 if templates/live_foraging_visualizer.html does not exist.
     """
@@ -1130,35 +1204,301 @@ async def visualizer_sse_stream():
 
 @app.get("/api/v1/visualizer/demo-data", tags=["Visualizer"])
 def get_visualizer_demo_data(limit: int = Query(default=50, le=200)):
-    """Return the most recently evaluated papers for offline conference replay.
+    """Return the most recently evaluated papers from the ACTIVE PROFILE DB.
 
-    Queries the database for the latest N evaluated papers (up to 200)
-    and returns them as a lightweight JSON array. Each entry contains
-    title, overall_score, source, a derived pipeline_type, and provider.
+    Dynamically resolves the active profile database via
+    ``get_active_profile_db_path()`` on every request so that papers evaluated
+    by the 24/7 daemon or the daily search into the current profile are
+    immediately visible to the visualizer polling channel.
 
-    Used by the frontend visualizer's Conference Offline Replay mode for
-    the HOU ICBE presentation.
+    Args:
+        limit (int): Maximum number of papers to return (default 50, max 200).
+
+    Returns:
+        List[dict]: Clean paper records consumed by the frontend visualizer.
     """
-    db = _get_db()
     try:
-        papers = db.get_all_papers_for_dashboard()
-        if not papers:
-            return []
-        # Sort by id descending (most recent first) and limit
-        papers = sorted(papers, key=lambda p: p.get("id", 0), reverse=True)[:limit]
+        db_path = get_active_profile_db_path()
+        db = DatabaseManager(db_path=db_path)
+        rows = db.execute_query(
+            "SELECT id, title, overall_score, source, last_evaluated_at "
+            "FROM papers WHERE overall_score IS NOT NULL "
+            "ORDER BY id DESC LIMIT ?",
+            (limit,), fetch_all=True,
+        )
         result = []
-        for p in papers:
-            result.append({
-                "title": p.get("title", ""),
-                "overall_score": float(p.get("overall_score", 0)),
-                "source": p.get("source", "--"),
-                "pipeline_type": "Retrospective Evaluation",
-                "provider": p.get("provider", "--"),
-            })
+        if rows:
+            for row in rows:
+                result.append({
+                    "id": row[0],
+                    "title": str(row[1] or ""),
+                    "overall_score": float(row[2] or 0),
+                    "source": row[3] or "--",
+                    "provider": "local",
+                    "created_at": row[4],
+                })
         return result
     except Exception as e:
         logger.error("Visualizer demo data query failed: %s", e)
         raise HTTPException(status_code=500, detail="Failed to query evaluation data.")
+
+
+# -- GET /api/v1/visualizer/sources-health -------------------------------------
+
+@app.get("/api/v1/visualizer/sources-health", tags=["Visualizer"])
+def get_visualizer_sources_health():
+    """Return per-source health for the 3D constellation visualizer.
+
+    Pre-flight phase: public (keyless) sources report ``healthy``; authenticated
+    sources report ``healthy`` only when their credentials are present in the
+    environment, otherwise ``error``. Runtime telemetry recorded from
+    ``source_status`` events (403 errors, cooldowns, successful fetches) is
+    merged on top so the constellation reflects live ingestion state on load.
+
+    Returns:
+        dict: {"sources": {slug: {"status", "count", "has_key", "message"}}}.
+    """
+    load_dotenv()
+    with _sources_health_lock:
+        runtime = dict(_sources_health_state)
+
+    sources = {}
+    for slug in _ALL_VISUALIZER_SOURCES:
+        has_key = _source_has_key(slug)
+        base_status = "healthy" if has_key else "error"
+        rt = runtime.get(slug, {})
+        status = base_status
+        # Runtime telemetry overrides the pre-flight base, except a missing key
+        # always forces an error state (a keyless source cannot be healthy).
+        if base_status != "error" and rt.get("status") in ("healthy", "error", "cooldown", "standby"):
+            status = rt["status"]
+        sources[slug] = {
+            "status": status,
+            "count": int(rt.get("count", 0) or 0),
+            "has_key": has_key,
+            "message": rt.get("message", "") or ("configured" if has_key else "missing credentials"),
+        }
+    return {"sources": sources}
+
+
+# -- GET /api/v1/visualizer/state -------------------------------------------------
+
+def _score_to_reward(score: float) -> float:
+    """Map an evaluation score to the DRL reward band (mirrors calculate_reward).
+
+    Kept inline so the visualizer state endpoint does not import the heavy DRL
+    orchestrator (numpy, requests) just to compute a reward value.
+
+    Args:
+        score (float): Paper overall score (0-10).
+
+    Returns:
+        float: 20.0 for score >= 8, 5.0 for score >= 7, otherwise -10.0.
+    """
+    if score >= 8.0:
+        return 20.0
+    if score >= 7.0:
+        return 5.0
+    return -10.0
+
+
+def _infer_active_provider() -> str:
+    """Infer the LLM provider that most recently served evaluations.
+
+    The papers table does not persist a provider column, so the visualizer
+    derives a best-effort provider label from the runtime environment: local
+    Ollama (air-gapped) takes priority, then the first configured cloud key.
+
+    Returns:
+        str: Provider slug (local_gpu, gemini, deepseek, huggingface, or local).
+    """
+    if os.getenv("TALOS_USE_LOCAL", "").lower() in ("1", "true", "yes"):
+        return "local_gpu"
+    if os.getenv("GEMINI_API_KEY"):
+        return "gemini"
+    if os.getenv("DEEPSEEK_API_KEY"):
+        return "deepseek"
+    if os.getenv("HF_TOKEN"):
+        return "huggingface"
+    return "local"
+
+
+def _clean_paper_title(title) -> str:
+    """Normalize a raw paper title into a clean human-readable string.
+
+    Handles legacy XML dictionary structures (``{'#text': '...'}``), XML string
+    fragments, and dict reprs persisted by older ingestion pipelines so the HUD
+    card never renders raw markup.
+
+    Args:
+        title: Raw title value (str, dict, or None).
+
+    Returns:
+        str: Clean readable title, or "Unknown Title" when no text remains.
+    """
+    if title is None:
+        return "Unknown Title"
+    if isinstance(title, dict):
+        clean = title.get("#text") or title.get("value") or title.get("$") or ""
+        if not clean:
+            for key, value in title.items():
+                if isinstance(value, str) and not key.startswith("@"):
+                    clean = value
+                    break
+        title = clean or str(title)
+    text = str(title).strip()
+    if not text:
+        return "Unknown Title"
+    if text.startswith("<"):
+        import re
+        text = re.sub(r"<[^>]+>", "", text).strip()
+    # Strip a surviving dict repr such as "{'#text': 'Foo'}" or "{'value': 'Foo'}".
+    if text.startswith("{") and text.endswith("}"):
+        import re
+        match = re.search(r"['\"](?:#text|value|\$)?['\"]\s*:\s*['\"]([^'\"]+)", text)
+        if not match:
+            match = re.search(r":\s*['\"]([^'\"]+)['\"]", text)
+        if match:
+            text = match.group(1).strip()
+    return text or "Unknown Title"
+
+
+@app.get("/api/v1/visualizer/state", tags=["Visualizer"])
+def get_visualizer_state():
+    """Return the consolidated live-state snapshot for 1-second AJAX polling.
+
+    Dynamically opens the ACTIVE PROFILE database via
+    ``get_active_profile_db_path()`` on every request (never the lazy singleton,
+    so profile switches are reflected immediately), then merges three telemetry
+    surfaces into one payload:
+
+    1. Per-source health (16 nodes) -- key presence from ``.env`` merged with
+       runtime ``source_status`` telemetry (403/cooldown/healthy) held in
+       ``_sources_health_state``.
+    2. Per-source paper counts -- total rows grouped by ``source`` in SQLite.
+    3. Latest evaluated paper -- highest id with a non-null ``overall_score``.
+
+    Returns:
+        dict: ``{sources, latest_evaluation, active_query, timestamp}``.
+    """
+    load_dotenv()
+    with _sources_health_lock:
+        runtime = dict(_sources_health_state)
+
+    # -- Open the active profile database on every request --
+    db = None
+    try:
+        db = DatabaseManager(db_path=get_active_profile_db_path())
+    except Exception as exc:
+        logger.error("Visualizer state: DB init failed: %s", exc)
+
+    # -- Per-source total paper counts --
+    counts: Dict[str, int] = {}
+    if db is not None:
+        try:
+            rows = db.execute_query(
+                "SELECT source, COUNT(*) AS cnt FROM papers "
+                "WHERE source IS NOT NULL AND source != '' GROUP BY source",
+                fetch_all=True,
+            )
+            if rows:
+                for row in rows:
+                    slug = str(row[0] or "").strip().lower()
+                    if slug:
+                        counts[slug] = int(row[1] or 0)
+        except Exception as exc:
+            logger.error("Visualizer state: count query failed: %s", exc)
+
+    # -- Build the 16-source health map (green/red/amber/cyan) --
+    sources = {}
+    for slug in _ALL_VISUALIZER_SOURCES:
+        has_key = _source_has_key(slug)
+        base_status = "healthy" if has_key else "error"
+        rt = runtime.get(slug, {})
+        status = base_status
+        # Runtime telemetry overrides pre-flight, except a missing key always
+        # forces an error state (a keyless source cannot be healthy).
+        if base_status != "error" and rt.get("status") in ("healthy", "error", "cooldown", "standby"):
+            status = rt["status"]
+        message = rt.get("message", "") or ("configured" if has_key else "missing credentials")
+        sources[slug] = {
+            "status": status,
+            "count": int(counts.get(slug, rt.get("count", 0) or 0)),
+            "message": message,
+        }
+
+    # -- Latest evaluated paper --
+    latest: dict = {}
+    if db is not None:
+        try:
+            row = db.execute_query(
+                "SELECT id, title, overall_score, source FROM papers "
+                "WHERE overall_score IS NOT NULL ORDER BY id DESC LIMIT 1",
+                fetch_one=True,
+            )
+            if row:
+                score = float(row[2] or 0)
+                latest = {
+                    "id": int(row[0]),
+                    "title": _clean_paper_title(row[1]),
+                    "overall_score": score,
+                    "source": row[3] or "--",
+                    "provider": _infer_active_provider(),
+                    "reward": _score_to_reward(score),
+                }
+        except Exception as exc:
+            logger.error("Visualizer state: latest eval query failed: %s", exc)
+
+    # -- Active research query surfaced to the HUD --
+    config = _load_config()
+    active_query = config.get("research_topic") or config.get("openaire_query") or ""
+
+    return {
+        "sources": sources,
+        "latest_evaluation": latest,
+        "active_query": active_query,
+        "timestamp": time.time(),
+    }
+
+
+# -- POST /api/v1/visualizer/events ---------------------------------------------
+
+@app.post("/api/v1/visualizer/events", tags=["Visualizer"])
+async def post_visualizer_events(request: Request):
+    """Push JSON payloads directly into the visualizer broadcast queue.
+
+    Accepts either a single event dict or a JSON array of event dicts.
+    Each event may carry an ``event_type`` string and an optional ``payload``
+    dict. Events are queued non-blocking for the SSE stream and live visualizer.
+
+    Args:
+        request (Request): Raw FastAPI request whose JSON body is parsed here.
+
+    Returns:
+        dict: Status confirming the broadcast succeeded.
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=422, detail="Invalid JSON body.")
+    if isinstance(body, dict):
+        events = [body]
+    elif isinstance(body, list):
+        events = body
+    else:
+        raise HTTPException(status_code=422, detail="Expected a JSON object or array.")
+    for evt in events:
+        if not isinstance(evt, dict):
+            continue
+        event_type = evt.get("event_type", "paper_evaluated")
+        payload = evt.get("payload", evt)
+        # -- v5.10.11: record source health telemetry into the runtime state map --
+        if event_type == "source_status" and isinstance(payload, dict):
+            _record_source_status(payload)
+        broadcast_visualizer_event(event_type, payload)
+    return {"status": "ok", "broadcasted": True}
+
+
 # =============================================================================
 # MAIN -- development server entry point
 # =============================================================================

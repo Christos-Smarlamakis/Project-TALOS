@@ -220,6 +220,7 @@ def evaluate_paper(paper, ai_manager, provider_call_counts):
 
     v5.10.3: consults the LLMRouterSubAgent (``ai_manager.router``) to select
     the optimal LLM provider before triggering the evaluation request.
+    v5.10.10: normalizes paper titles returned as XML dicts to clean strings.
 
     Args:
         paper (dict): Standardized paper dictionary.
@@ -230,7 +231,27 @@ def evaluate_paper(paper, ai_manager, provider_call_counts):
     Returns:
         float: Overall score (0-10), or 0.0 if evaluation failed.
     """
-    content = f"Title: {paper.get('title', 'N/A')}\nAbstract: {paper.get('abstract', '')}"
+    # -- v5.10.10: normalize title if returned as an XML dict or XML string --
+    raw_title = paper.get('title', 'Unknown Title')
+    if isinstance(raw_title, dict):
+        # Extract text from OpenAIRE / XML dict structures (e.g. {'@classid': ...}).
+        clean_title = (raw_title.get('#text') or raw_title.get('value')
+                       or raw_title.get('$') or '')
+        if not clean_title:
+            # Fallback: first non-metadata string value.
+            for _k, _v in raw_title.items():
+                if isinstance(_v, str) and not _k.startswith('@'):
+                    clean_title = _v
+                    break
+        paper['title'] = clean_title or str(raw_title)
+    elif isinstance(raw_title, str):
+        if raw_title.strip().startswith('<'):
+            import re
+            raw_title = re.sub(r'<[^>]+>', '', raw_title).strip()
+        paper['title'] = raw_title or 'Unknown Title'
+
+    title = paper['title']
+    content = f"Title: {title}\nAbstract: {paper.get('abstract', '')}"
     # -- v5.10.3: consult the LLMRouterSubAgent for optimal provider selection --
     router = getattr(ai_manager, "router", None)
     prompt_length = _estimate_prompt_tokens(content)

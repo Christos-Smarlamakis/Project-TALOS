@@ -1,5 +1,5 @@
 ﻿# TALOS Project Instructions for AI Coding Agents
-# Version: v5.10.8
+# Version: v5.10.11
 
 ## CONSTITUTION v2.0 — The 8-Point Master Initialization Standard
 
@@ -52,12 +52,12 @@
 - After ANY architectural change, run `python scripts/verify_dependency_map.py` to audit
   the dependency graph against PROJECT_MAP.md Section 7.
 - After ANY database schema change, run `python scripts/db_stats.py` to verify integrity.
-- After ANY documentation change, run `python tests/test_smoke.py` for system health.
+- After ANY documentation change, run `python tests/test_system_integrity.py` for system health.
 - No change is "complete" until ALL four verification gates pass:
   1. `py_compile` (syntax)
   2. `verify_dependency_map.py` (imports)
   3. `db_stats.py` (database, if schema changed)
-  4. `test_smoke.py` (runtime health)
+  4. `test_system_integrity.py` (runtime health)
 - If ANY gate fails, fix the issue BEFORE proceeding.
 
 ### VI. THE MANDATORY 15-FILE DOCUMENTATION SYNCHRONICITY RULE
@@ -244,7 +244,7 @@
 - `python -m py_compile <file>` for syntax validation
 - `python talos.py` for full integration test
 - `python scripts/db_stats.py` for database health check
-- `python tests/test_smoke.py` for system health check
+- `python tests/test_system_integrity.py` for system health check
 - `python scripts/verify_dependency_map.py` for dependency map audit (AST vs PROJECT_MAP.md)
 - `python scripts/verify_dependency_map.py --ci` for CI/CD exit-code-only check
 - Local mode: `ollama pull gemma3:12b && ollama pull nomic-embed-text` then set TALOS_USE_LOCAL=1
@@ -280,8 +280,8 @@
 
 ---
 
-> **Last Updated:** 2026-08-24 (v5.10.10 -- 3D Holographic Knowledge Constellation & Multi-Pipeline Live Visualizer)
-> **Project Version:** v5.10.10
+> **Last Updated:** 2026-08-24 (v5.10.11 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine)
+> **Project Version:** v5.10.11
 
 ---
 

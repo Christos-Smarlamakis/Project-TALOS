@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-TALOS Smoke Test Suite
-Usage: python tests/test_smoke.py
+TALOS Automated System Integrity Verification Suite (ISO/IEC 25010 Compliance)
+Usage: python tests/test_system_integrity.py
 Checks syntax, imports, database, and AI manager -- all without API calls.
 Outputs a clean summary of what passed/failed.
 
@@ -12,7 +12,7 @@ import os
 import py_compile
 import traceback
 
-# Ensure we're in the project root (tests/test_smoke.py -> up one level)
+# Ensure we're in the project root (tests/test_system_integrity.py -> up one level)
 os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 

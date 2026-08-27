@@ -1,74 +1,74 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.10
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.11
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-24 (v5.10.10 -- Enterprise TUI Overhaul & Academic Aesthetics)
+> **Last Updated:** 2026-08-24 (v5.10.11 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine)
 
 ---
 
 ## 1. Architecture Overview
 
 ```
-------------------------------------------------------------------¬
-¦                        USER INTERFACES                          ¦
-¦  talos.py (CLI menu)          app.py (Streamlit Web GUI)        ¦
-¦  _gui_runner.py (wrapper)     templates/dashboard.html (Flask)  ¦
+------------------------------------------------------------------ï¿½
+ï¿½                        USER INTERFACES                          ï¿½
+ï¿½  talos.py (CLI menu)          app.py (Streamlit Web GUI)        ï¿½
+ï¿½  _gui_runner.py (wrapper)     templates/dashboard.html (Flask)  ï¿½
 L--------------------------T---------------------------------------
-                           ¦ subprocess / direct import
-                           ¡
-------------------------------------------------------------------¬
-¦                    SCRIPTS (21 files)                           ¦
-¦  talos_live_agent.py (thin entry, v3.1 cooldown)                ¦
-¦  daily_search.py          historic_search.py                    ¦
-¦  knowledge_path_generator.py                                    ¦
-¦  citation_analyzer.py              recommender.py               ¦
-¦  grey_literature_miner.py          query_translator.py          ¦
-¦  author_profiler.py      author_trajectory_analyzer.py          ¦
-¦  db_stats.py    data_enricher.py    embedding_generator.py      ¦
-¦  metadata_enricher.py               model_manager.py            ¦
-¦  pdf_downloader.py      profile_manager.py                      ¦
-¦  recalculate_scores.py  reevaluate_database.py                  ¦
-¦  trend_analyzer.py      zotero_connector.py                     ¦
-¦  interactive_dashboard.py          api_health_check.py          ¦
-¦  migrate_database_schema.py                                     ¦
-¦  generate_docs.py                                               ¦
+                           ï¿½ subprocess / direct import
+                           ï¿½
+------------------------------------------------------------------ï¿½
+ï¿½                    SCRIPTS (21 files)                           ï¿½
+ï¿½  talos_live_agent.py (thin entry, v3.1 cooldown)                ï¿½
+ï¿½  daily_search.py          historic_search.py                    ï¿½
+ï¿½  knowledge_path_generator.py                                    ï¿½
+ï¿½  citation_analyzer.py              recommender.py               ï¿½
+ï¿½  grey_literature_miner.py          query_translator.py          ï¿½
+ï¿½  author_profiler.py      author_trajectory_analyzer.py          ï¿½
+ï¿½  db_stats.py    data_enricher.py    embedding_generator.py      ï¿½
+ï¿½  metadata_enricher.py               model_manager.py            ï¿½
+ï¿½  pdf_downloader.py      profile_manager.py                      ï¿½
+ï¿½  recalculate_scores.py  reevaluate_database.py                  ï¿½
+ï¿½  trend_analyzer.py      zotero_connector.py                     ï¿½
+ï¿½  interactive_dashboard.py          api_health_check.py          ï¿½
+ï¿½  migrate_database_schema.py                                     ï¿½
+ï¿½  generate_docs.py                                               ï¿½
 L--------------------------T---------------------------------------
-                           ¦ import
-                           ¡
-------------------------------------------------------------------¬
-¦                    CORE MODULES (7 files)                       ¦
-¦  ai_manager.py          database_manager.py        hardware.py  ¦
-¦  drl_agent.py           talos_env.py                            ¦
-¦  live_agent_sources.py  live_agent_orchestrator.py              ¦
-¦  (Multi-provider LLM)   (SQLite + Embeddings)     (GPU detect)  ¦
-¦  (DDQN Agent)           (Gym Env)  (Source Disc) (Live Loop)    ¦
+                           ï¿½ import
+                           ï¿½
+------------------------------------------------------------------ï¿½
+ï¿½                    CORE MODULES (7 files)                       ï¿½
+ï¿½  ai_manager.py          database_manager.py        hardware.py  ï¿½
+ï¿½  drl_agent.py           talos_env.py                            ï¿½
+ï¿½  live_agent_sources.py  live_agent_orchestrator.py              ï¿½
+ï¿½  (Multi-provider LLM)   (SQLite + Embeddings)     (GPU detect)  ï¿½
+ï¿½  (DDQN Agent)           (Gym Env)  (Source Disc) (Live Loop)    ï¿½
 L--------------------------T---------------------------------------
-                           ¦ import
-                           ¡
-------------------------------------------------------------------¬
-¦                    SOURCES (16 APIs)                            ¦
-¦  arxiv  elsevier  semantic_scholar  ieee  springer  openalex    ¦
-¦  dblp  core  crossref  openarchives  pubmed  scigov  osti  plos ¦
-¦  openreview  openaire                                           ¦
-¦                                                                 ¦
-¦  Standardized output: {doi, url, title, authors_str,            ¦
-¦                        publication_year, abstract, source}      ¦
+                           ï¿½ import
+                           ï¿½
+------------------------------------------------------------------ï¿½
+ï¿½                    SOURCES (16 APIs)                            ï¿½
+ï¿½  arxiv  elsevier  semantic_scholar  ieee  springer  openalex    ï¿½
+ï¿½  dblp  core  crossref  openarchives  pubmed  scigov  osti  plos ï¿½
+ï¿½  openreview  openaire                                           ï¿½
+ï¿½                                                                 ï¿½
+ï¿½  Standardized output: {doi, url, title, authors_str,            ï¿½
+ï¿½                        publication_year, abstract, source}      ï¿½
 L--------------------------T---------------------------------------
-                           ¦ HTTP requests
-                           ¡
-------------------------------------------------------------------¬
-¦                    EXTERNAL APIs & SERVICES                     ¦
-¦  Gemini API  DeepSeek API  HuggingFace  Ollama  Discord  Zotero ¦
-¦  Unpaywall  ORCID  Semantic Scholar  IEEE  Elsevier  Springer   ¦
+                           ï¿½ HTTP requests
+                           ï¿½
+------------------------------------------------------------------ï¿½
+ï¿½                    EXTERNAL APIs & SERVICES                     ï¿½
+ï¿½  Gemini API  DeepSeek API  HuggingFace  Ollama  Discord  Zotero ï¿½
+ï¿½  Unpaywall  ORCID  Semantic Scholar  IEEE  Elsevier  Springer   ï¿½
 L------------------------------------------------------------------
 
 Data Flow:
   User > talos.py > run_script() > scripts/*.py > core/*.py > sources/*.py > External APIs
-                                                      ¦
+                                                      ï¿½
                                               talos_research.db (SQLite)
-                                                      ¦
+                                                      ï¿½
                                               config.json + .env
 ```
 
@@ -76,13 +76,13 @@ Data Flow:
 
 ## 2. Core Modules
 
-### 2.0 `core/talos_env.py` — Gymnasium Environment (v3.2, 16-source / 23-dim scaling)
+### 2.0 `core/talos_env.py` ï¿½ Gymnasium Environment (v3.2, 16-source / 23-dim scaling)
 
 **v3.1 (Batch 1 audit):** The 200-step cutoff is now reported as `truncated=True` (not `terminated`) per Gymnasium time-limit semantics, so Bellman targets bootstrap across the artificial cutoff.
 
 **v3.2 (v5.10.1):** Environment scaled to a **23-dimensional state space** (1 hour + 16 source ratios + 2 streaks + 4 provider ratios) and a **17-action space** (16 sources + sleep). `_load_source_list()` guarantees `openreview` and `openaire` are present.
 
-**Role:** RL environment for API source selection. **V2.1:** Fixed hour normalization `/23.0` > `/24.0`. **v3.0:** Provider-aware observation — state vector includes 4 provider ratios (gemini, deepseek, huggingface, local) for the DRL agent.
+**Role:** RL environment for API source selection. **V2.1:** Fixed hour normalization `/23.0` > `/24.0`. **v3.0:** Provider-aware observation ï¿½ state vector includes 4 provider ratios (gemini, deepseek, huggingface, local) for the DRL agent.
 
 **Module-level constants:**
 - `_PROVIDER_NAMES` = ["gemini", "deepseek", "huggingface", "local"]
@@ -96,14 +96,14 @@ Data Flow:
 | `__init__` | `(self, source_names=None, source_limits=None, config=None)` | Dynamic init with N sources. Obs size = 1 + N + 2 + 4 (providers) = 23 for 16 sources. |
 | `reset` | `(seed=None, options=None) -> (obs, info)` | Resets all counters. |
 | `step` | `(action) -> (obs, reward, terminated, truncated, info)` | Executes action. Actions 0..N-1 = query source, N = sleep. |
-| `_build_obs` | `() -> np.ndarray` | v3.2: [hour/24, 16 usage_ratios..., low/10, err/10, 4 provider ratios] — 23 dimensions. |
+| `_build_obs` | `() -> np.ndarray` | v3.2: [hour/24, 16 usage_ratios..., low/10, err/10, 4 provider ratios] ï¿½ 23 dimensions. |
 | `get_default_state_space` | `() -> int` | v3.2: 23 (1 + 16 + 2 + 4). |
 | `get_default_action_space` | `() -> int` | v3.2: 17 (16 sources + 1 sleep). |
 
-### 2.1 `core/ai_manager.py` — Class `AIManager` (v3.9)
+### 2.1 `core/ai_manager.py` ï¿½ Class `AIManager` (v3.9)
 
-**v3.7 (Batch 1 audit):** New attribute `last_provider_used` — set on every successful `_execute_request()` with the name of the provider that actually served the request. Consumed by the live orchestrator for correct provider attribution.
-**v3.8 (Batch 3 hotfix):** Implemented `analyze_generic_text(full_prompt) -> str|None` — it was documented in this map and called by grey_literature_miner.py, but did NOT exist in the code (AttributeError). Thin wrapper around `_execute_request(model_type='pro', response_format='text')`.
+**v3.7 (Batch 1 audit):** New attribute `last_provider_used` ï¿½ set on every successful `_execute_request()` with the name of the provider that actually served the request. Consumed by the live orchestrator for correct provider attribution.
+**v3.8 (Batch 3 hotfix):** Implemented `analyze_generic_text(full_prompt) -> str|None` ï¿½ it was documented in this map and called by grey_literature_miner.py, but did NOT exist in the code (AttributeError). Thin wrapper around `_execute_request(model_type='pro', response_format='text')`.
 
 **Role:** Multi-provider LLM interface with circuit breaker pattern. Manages 9 providers via the Universal Cloud Mesh (v5.9.18): Gemini (Google GenAI SDK, non-OpenAI) + 8 OpenAI-compatible redundancy providers (NVIDIA NIM, Groq, Cerebras, GitHub Models, Mistral, OpenRouter, DeepSeek, HuggingFace) + Local/Ollama (offline).
 
@@ -132,7 +132,7 @@ Data Flow:
 
 ---
 
-### 2.2 `core/live_agent_sources.py` — Source Discovery (v1.0, NEW in v5.3.1)
+### 2.2 `core/live_agent_sources.py` ï¿½ Source Discovery (v1.0, NEW in v5.3.1)
 
 **Role:** Source discovery and dynamic import for the TALOS Live DRL Agent. Scans config.json for `_query` keys, imports source classes by scanning modules for any class ending in "Source" (handles mixed naming: DBLP>DBLPSource, IEEE>IEEEXploreSource, etc.).
 
@@ -141,11 +141,11 @@ Data Flow:
 | `import_source_class` | `(source_name: str) -> class or None` | Dynamic import with auto-detect class (searches for *Source). |
 | `build_source_map` | `(source_names: list) -> (dict, list)` | DENSE action mapping: {0: (name, cls), ...}. Also returns the list of working source names. |
 
-### 2.3 `core/live_agent_orchestrator.py` — Main Loop + Cooldown (v1.1, Batch 1 audit)
+### 2.3 `core/live_agent_orchestrator.py` ï¿½ Main Loop + Cooldown (v1.1, Batch 1 audit)
 
-**v1.1 fixes:** (1) `LOW_SCORE_MAX` 20 > 10 so streak normalization matches the training env (/10) — eliminates train/inference distribution mismatch. (2) `evaluate_paper()` now credits the provider that ACTUALLY answered (`ai_manager.last_provider_used`), not always "gemini".
+**v1.1 fixes:** (1) `LOW_SCORE_MAX` 20 > 10 so streak normalization matches the training env (/10) ï¿½ eliminates train/inference distribution mismatch. (2) `evaluate_paper()` now credits the provider that ACTUALLY answered (`ai_manager.last_provider_used`), not always "gemini".
 
-**Role:** Core orchestration loop for the TALOS Live DRL Agent. Handles state calculation, action selection, API fetch, AI evaluation, reward, counters, and provider tracking. **v3.1 Cooldown:** `active_cooldowns` dict prevents deadlocks — actions with negative reward get 5-step lockout, overridden by random free action.
+**Role:** Core orchestration loop for the TALOS Live DRL Agent. Handles state calculation, action selection, API fetch, AI evaluation, reward, counters, and provider tracking. **v3.1 Cooldown:** `active_cooldowns` dict prevents deadlocks ï¿½ actions with negative reward get 5-step lockout, overridden by random free action.
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
@@ -164,17 +164,17 @@ Data Flow:
 
 ---
 
-### 2.4 `core/drl_networks.py` — Neural Network Architectures (v1.0, NEW in v5.3.2)
+### 2.4 `core/drl_networks.py` ï¿½ Neural Network Architectures (v1.0, NEW in v5.3.2)
 
-**Role:** Pluggable neural network architectures for the DRL agent. **v1.0:** Contains `DuelingLSTM` — 3-layer LSTM with dueling heads (V + A). Designed for future architectures (Transformer, xLSTM) via a common `(input_dim, output_dim)` interface.
+**Role:** Pluggable neural network architectures for the DRL agent. **v1.0:** Contains `DuelingLSTM` ï¿½ 3-layer LSTM with dueling heads (V + A). Designed for future architectures (Transformer, xLSTM) via a common `(input_dim, output_dim)` interface.
 
 | Class | Signature | Description |
 |-------|-----------|-------------|
 | `DuelingLSTM` | `__init__(input_dim, output_dim)` | 3-layer LSTM (128>64>32) with LayerNorm + dueling heads. `forward(state) -> Q-values`. |
 
-### 2.5 `core/drl_agent.py` — DRL Agent (v2.2, Pluggable Network)
+### 2.5 `core/drl_agent.py` ï¿½ DRL Agent (v2.2, Pluggable Network)
 
-**Role:** Double Dueling DQN agent. **V2.2:** `network_class` parameter — any network from `drl_networks.py` can be injected. Save/load includes network class name for correct reconstruction.
+**Role:** Double Dueling DQN agent. **V2.2:** `network_class` parameter ï¿½ any network from `drl_networks.py` can be injected. Save/load includes network class name for correct reconstruction.
 
 **Hyperparameters (GWO-optimized v2.0):** `LR=3.361e-05`, `GAMMA=0.6983`, `EPS_DECAY=0.9202` (80 iters, 9.5h, fitness -2353.0).
 
@@ -182,7 +182,7 @@ Data Flow:
 | Method | Signature | Description |
 |--------|-----------|-------------|
 | `__init__` | `(state_dim=None, action_dim=None, network_class=None)` | v2.2: `network_class` param (default: DuelingLSTM). |
-| `act` | `(state, eps=0.0) -> int` | å-greedy action selection. |
+| `act` | `(state, eps=0.0) -> int` | ï¿½-greedy action selection. |
 | `learn` | `()` | DDQN learning step. |
 | `save` | `(path)` | Saves weights + metadata **including** `network_class` name. |
 | `load` | `(path)` | v2.2: Resolves network class from saved metadata, uses DuelingLSTM as fallback. |
@@ -193,11 +193,11 @@ Data Flow:
 - `EPS_DECAY = 0.9202` (GWO-optimized epsilon decay, in drl_trainer.py)
 - `TAU = 1e-3`, `MEMORY_LEN = 10000`, `BATCH_SIZE = 200`
 
-### 2.6 `core/notifier.py` — Class `TalosNotifier` (v1.0, ~202 lines)
+### 2.6 `core/notifier.py` ï¿½ Class `TalosNotifier` (v1.0, ~202 lines)
 
 **Role:** Multi-channel notification system (Telegram, Discord, Email).
 
-### 2.7 `core/database_manager.py` — Class `DatabaseManager` (v4.8.5, 569 lines)
+### 2.7 `core/database_manager.py` ï¿½ Class `DatabaseManager` (v4.8.5, 569 lines)
 
 **Role:** SQLite database layer with embeddings, semantic search, profile-aware.
 
@@ -205,11 +205,11 @@ Data Flow:
 
 **Role:** GPU VRAM detection, Ollama model recommendations.
 
-### 2.9 `templates/gui_theme.css` — Academic Theme CSS (v5.3.3)
+### 2.9 `templates/gui_theme.css` ï¿½ Academic Theme CSS (v5.3.3)
 
-**Role:** Light-only CSS theme for the Streamlit Web GUI (dark mode removed in v5.3.3). **CSS variables injected by `app.py:render_css()`** — academic blue/teal palette with glassmorphism cards, custom scrollbar, and professional typography.
+**Role:** Light-only CSS theme for the Streamlit Web GUI (dark mode removed in v5.3.3). **CSS variables injected by `app.py:render_css()`** ï¿½ academic blue/teal palette with glassmorphism cards, custom scrollbar, and professional typography.
 
-### 2.10 `templates/gui_strings.py` — Translation System (v5.3.3)
+### 2.10 `templates/gui_strings.py` ï¿½ Translation System (v5.3.3)
 
 **Role:** Translation strings in English + Greek for the Streamlit GUI. Exports `STR` dict and `t(key, en_default="")` function. Dark theme toggle string removed in v5.3.3.
 
@@ -217,11 +217,11 @@ Data Flow:
 
 ## 3. Entry Points
 
-### 3.1 `talos.py` (v5.3.6 — TUI Hardening)
-CLI entry point with interactive menu. **v5.3.6 (Batch 2 TUI audit):** New `safe_pause()` (Ctrl+C at "Press Enter" prompts returns to menu); `safe_select()` catches KeyboardInterrupt > None; fixed duplicate "6." in System Diagnostics (dead "Baseline Report (Standard)" branch — menu renumbered 1-10); bare `except:` > `except Exception:`; `TALOS_VERSION` constant in header; top-level guard with `sys.exit(0)`.
+### 3.1 `talos.py` (v5.3.6 ï¿½ TUI Hardening)
+CLI entry point with interactive menu. **v5.3.6 (Batch 2 TUI audit):** New `safe_pause()` (Ctrl+C at "Press Enter" prompts returns to menu); `safe_select()` catches KeyboardInterrupt > None; fixed duplicate "6." in System Diagnostics (dead "Baseline Report (Standard)" branch ï¿½ menu renumbered 1-10); bare `except:` > `except Exception:`; `TALOS_VERSION` constant in header; top-level guard with `sys.exit(0)`.
 
 ### 3.2 `app.py` (v5.3.3, ~940 lines)
-Streamlit Web GUI — light-only theme (dark mode removed in v5.3.3).
+Streamlit Web GUI ï¿½ light-only theme (dark mode removed in v5.3.3).
 
 ### 3.3 `_gui_runner.py`
 Wrapper for Streamlit stdin piping.
@@ -234,65 +234,65 @@ Batch script for launching Streamlit GUI.
 ## 4. Scripts (21 files)
 
 ### 4.1 Search Scripts
-- `daily_search.py` (v5.4) — Daily search across 16 APIs
-- `historic_search.py` (v5.5) — Deep archive search
-- `grey_literature_miner.py` (v2.1) — Grey literature with Gemini Search Grounding. **v2.1 (Batch 3):** `ddgs` import with fallback to legacy `duckduckgo_search`; missing GEMINI_API_KEY is no longer fatal (runs on AIManager fallback + DuckDuckGo grounding).
+- `daily_search.py` (v5.4) ï¿½ Daily search across 16 APIs
+- `historic_search.py` (v5.5) ï¿½ Deep archive search
+- `grey_literature_miner.py` (v2.1) ï¿½ Grey literature with Gemini Search Grounding. **v2.1 (Batch 3):** `ddgs` import with fallback to legacy `duckduckgo_search`; missing GEMINI_API_KEY is no longer fatal (runs on AIManager fallback + DuckDuckGo grounding).
 
 ### 4.2 Analysis & Insights
-- `knowledge_path_generator.py` (v1.8) — "CHIRON"
-- `citation_analyzer.py` (v2.1) — "ORPHEUS"
-- `recommender.py` (v4.1) — "Strategic Reading Report"
+- `knowledge_path_generator.py` (v1.8) ï¿½ "CHIRON"
+- `citation_analyzer.py` (v2.1) ï¿½ "ORPHEUS"
+- `recommender.py` (v4.1) ï¿½ "Strategic Reading Report"
 
 ### 4.3 Configuration & AI
-- `query_translator.py` (v2.3) — "PYTHIA"
-- `model_manager.py` — Interactive model management
-- `profile_manager.py` — Profile switching
+- `query_translator.py` (v2.3) ï¿½ "PYTHIA"
+- `model_manager.py` ï¿½ Interactive model management
+- `profile_manager.py` ï¿½ Profile switching
 
 ### 4.4 Database Maintenance
 - `db_stats.py`, `metadata_enricher.py` (APOLLO), `embedding_generator.py`, `data_enricher.py`, `reevaluate_database.py`, `recalculate_scores.py`, `trend_analyzer.py`
 
 ### 4.5 Integration Scripts
 
-#### `scripts/drl_trainer.py` (v1.3 — Batch 2 TUI hardening)
+#### `scripts/drl_trainer.py` (v1.3 ï¿½ Batch 2 TUI hardening)
 **Purpose:** Training script with GWO-optimized hyperparameters. **v1.1:** `EPS_DECAY=0.9415` (GWO), saves as `dddqn_trained.pth`. **v1.2:** Fixed fatal `NameError` (`args.episodes` > `episodes` in interactive mode); stores `done=terminated` only (truncation still bootstraps). **v1.3 (Batch 2, presentation only):** Ctrl+C mid-training > saves partial model to `models/dddqn_partial.pth` + clean exit(0); single-line `\r` progress ticker between 50-episode summaries; Ctrl+C guards at prompt and top level.
 
-#### `scripts/gwo_foraging_hyperparameter_tuner.py` (v2.1 — GWOForagingHyperparameterTuner)
-**Purpose:** GWO hyperparameter tuning (renamed from `gwo_rl_optimizer.py` in v5.10.2). **v2.0 (Batch 1 audit):** (1) `calculate_fitness()` now ACTUALLY trains the agent (store + learn + decayed epsilon) and measures fitness in a separate greedy evaluation phase (`EVAL_EPISODES=5`) — previously fitness was pure noise (eps=1.0, no learn()). (2) `update_wolf_position()` follows canonical GWO (Mirjalili 2014): fresh r1/r2/A/C per alpha/beta/delta term. (3) Fitness values cached per iteration — `_build_history_entry()` receives `fitness_values` instead of re-evaluating. **v2.1:** added `GWOForagingHyperparameterTuner` class facade; export renamed to `models/gwo_foraging_hyperparameters.json`.
+#### `scripts/gwo_foraging_hyperparameter_tuner.py` (v2.1 ï¿½ GWOForagingHyperparameterTuner)
+**Purpose:** GWO hyperparameter tuning (renamed from `gwo_rl_optimizer.py` in v5.10.2). **v2.0 (Batch 1 audit):** (1) `calculate_fitness()` now ACTUALLY trains the agent (store + learn + decayed epsilon) and measures fitness in a separate greedy evaluation phase (`EVAL_EPISODES=5`) ï¿½ previously fitness was pure noise (eps=1.0, no learn()). (2) `update_wolf_position()` follows canonical GWO (Mirjalili 2014): fresh r1/r2/A/C per alpha/beta/delta term. (3) Fitness values cached per iteration ï¿½ `_build_history_entry()` receives `fitness_values` instead of re-evaluating. **v2.1:** added `GWOForagingHyperparameterTuner` class facade; export renamed to `models/gwo_foraging_hyperparameters.json`.
 **Functions:** `main()`, `run_gwo()`, `calculate_fitness()`, `find_best_three_wolves()`, `update_wolf_position()`, `GWOForagingHyperparameterTuner.optimize()`.
 **Imports:** `core.talos_env.TalosEnv`, `core.drl_agent`
 
-#### `src/ai/drl/llm_router_subagent.py` (v5.10.3 — LLM Router Sub-Agent)
+#### `src/ai/drl/llm_router_subagent.py` (v5.10.3 ï¿½ LLM Router Sub-Agent)
 **Purpose:** `LLMRouterSubAgent` selects the optimal active provider for an inference request. Loads reward weights from `models/gwo_llm_router_reward_weights.json` (Pareto fallback), evaluates prompt token length, rate-limit status, and latency against a static `PROVIDER_PROFILES` table, and returns the provider maximizing `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Integrated into `AIManager`. v5.10.3: added the `foraging_evaluation` task modifier and the shared `estimate_prompt_tokens()` helper; now invoked directly by the live DRL foraging orchestrator, the 24/7 daemon, and the search pipelines.
 **Functions:** `LLMRouterSubAgent` (`select_provider()`, `estimate_signals()`, `score_provider()`, `load_weights()`, `set_weights()`), module-level `estimate_prompt_tokens()`, `relative_quality()`.
 
-#### `src/ai/llm/model_discovery.py` (v5.10.4 — Dynamic Model Discovery Engine)
+#### `src/ai/llm/model_discovery.py` (v5.10.4 ï¿½ Dynamic Model Discovery Engine)
 **Purpose:** `ModelDiscoveryEngine` dynamically discovers active LLM models across the local Ollama tier (GET /api/tags) and optional cloud providers (NVIDIA NIM, Groq, OpenRouter, Gemini), with an air-gapped fallback to the local `data/model_benchmarks.json` registry. Computes normalized quality scores `Q_p = raw / max(raw)` and aggregates to provider level for the router.
 **Functions:** `ModelDiscoveryEngine` (`discover_active_models()`, `get_normalized_quality_scores()`, `get_provider_quality_scores()`, `_discover_local_models()`, `_discover_cloud_models()`), module-level `get_discovery_engine()`.
 **Imports:** `numpy`, `json`
 
-#### `src/utils/model_provisioner.py` (v5.10.5 — Universal Dynamic Model Provisioner)
+#### `src/utils/model_provisioner.py` (v5.10.5 ï¿½ Universal Dynamic Model Provisioner)
 **Purpose:** `ModelProvisioner` guarantees a model is available before routing. Deterministic `detect_protocol()` (cloud prefixes, Ollama colon, HuggingFace Hub slash), 3-tier `resolve_local_model_path()` (`FAST_EDGE_MODEL_PATH`, in-tree `models/<sanitized_name>`, network), and `ensure_model_available()` for JIT pull (`ollama pull` / `huggingface_hub.snapshot_download`) with self-healing fallback.
 **Functions:** `ModelProvisioner` (`detect_protocol()`, `resolve_local_model_path()`, `ensure_model_available()`, `check_available()`, `_ollama_list()`, `_ollama_pull()`, `_ensure_cloud()`, `_ensure_ollama()`, `_ensure_huggingface()`), module-level `main()`.
 **Imports:** `subprocess`, `dotenv`, `huggingface_hub` (optional)
 
-#### `src/utils/daemon_autostart.py` (v5.10.6 — Daemon OS Autostart & Orchestrator)
+#### `src/utils/daemon_autostart.py` (v5.10.6 ï¿½ Daemon OS Autostart & Orchestrator)
 **Purpose:** Windows OS autostart orchestrator for the 24/7 daemon. `generate_boot_batch()` writes `talos_daemon_boot.bat`, which uses the quoted `sys.executable` absolute path to launch the CPU server (port 11435, `-m llama_cpp.server`) and the daemon (`talos_service.py`) without relying on `conda activate` or the system PATH. `install_windows_autostart()` registers a Startup-folder `.lnk` via pywin32 Shell COM (`shell32.dll,43` icon, minimized).
 **Functions:** `generate_boot_batch()`, `install_windows_autostart()`, `_project_root()`, module-level `main()`.
 **Imports:** `os`, `sys`, `pathlib`, `win32com.client` (lazy, optional)
 
-#### `src/integration/optica_client.py` (v5.10.7 — OPTICA Bridge Integration)
+#### `src/integration/optica_client.py` (v5.10.7 ï¿½ OPTICA Bridge Integration)
 **Purpose:** REST client to the sister Project OPTICA microservice (port 8002), which offloads heavy cnsplots/PyVis graphics. `request_plot()` dynamically resolves the active profile database path (`get_active_profile_db_path()`), builds a `{data_source, plot_type, journal_template, override_params}` payload, and POSTs to `{OPTICA_API_BASE}/plot/generate` with graceful connection-error handling.
 **Functions:** `OpticaClient` (`request_plot()`, `_error()`, `plot_generate_url`), module-level `optica_client`.
 **Imports:** `os`, `requests`, `config.settings`
 
-#### `src/ai/optimizers/gwo_llm_router_reward_shaper.py` (v5.10.2 — Bi-Level Reward Shaping)
+#### `src/ai/optimizers/gwo_llm_router_reward_shaper.py` (v5.10.2 ï¿½ Bi-Level Reward Shaping)
 **Purpose:** `GWOLLMRouterRewardShaper` bi-level multi-objective optimizer for the LLM Router reward weights `[w_quality, w_latency, w_cost, w_penalty]` (simplex-projected). Outer GWO loop + inner router evaluation under `R = w_q*Quality - w_l*Latency - w_c*Cost - w_p*Penalty`. Exports `models/gwo_llm_router_reward_weights.json`.
 **Functions:** `GWOLLMRouterRewardShaper` (`optimize()`, `_evaluate_router()`, `_update_position()`, `export()`, `run()`), `main()`.
 **Imports:** `numpy`, `json`, `argparse`
 
-#### `scripts/talos_live_agent.py` (v3.2 — Batch 2 TUI hardening)
+#### `scripts/talos_live_agent.py` (v3.2 ï¿½ Batch 2 TUI hardening)
 **Purpose:** Thin entry point. **v3.1:** epsilon=0.05, 5-step cooldown for negative-reward actions, ASCII output. Delegates to `core.live_agent_orchestrator.run_live_loop()`. **v3.2:** argparse (`--verbose`, `--help`) replaces ad-hoc sys.argv scanning; formatted startup summary table; top-level KeyboardInterrupt guard (clean exit(0) on Ctrl+C during startup).
-**Functions:** `_parse_args()`, `main()` — config load, source discovery, model load, run loop.
+**Functions:** `_parse_args()`, `main()` ï¿½ config load, source discovery, model load, run loop.
 **Imports:** `core.drl_agent`, `core.ai_manager`, `core.talos_env`, `core.live_agent_sources`, `core.live_agent_orchestrator`
 
 #### `scripts/talos_service_api.py` (v1.0)
@@ -372,8 +372,8 @@ Interactive Research Pivot Wizard.
 - **Local:** `LOCAL_MODEL_NAME`, `LOCAL_EMBEDDING_MODEL`
 
 ### 6.3 Environment Variables (Runtime)
-- `TALOS_USE_LOCAL=1` — local mode (Ollama)
-- `TALOS_ALLOW_CLOUD_FALLBACK=1` — cloud fallback
+- `TALOS_USE_LOCAL=1` ï¿½ local mode (Ollama)
+- `TALOS_ALLOW_CLOUD_FALLBACK=1` ï¿½ cloud fallback
 
 ### 6.4 Profile System
 ```
@@ -473,7 +473,7 @@ src/utils/daemon_autostart.py (Daemon OS Autostart)
 
 | Module | File | Description |
 |--------|------|-------------|
-| **TALOS** | `talos.py` | Main entry point — CLI menu and script launcher |
+| **TALOS** | `talos.py` | Main entry point ï¿½ CLI menu and script launcher |
 | **Query Translator** | `scripts/query_translator.py` | Translates research goals into optimized API queries and system prompts |
 | **Knowledge Path Generator** | `scripts/knowledge_path_generator.py` | Generates structured reading paths with clustering and AI synthesis |
 | **Citation Network Analyzer** | `scripts/citation_analyzer.py` | Builds interactive citation network graphs from DOI input |
@@ -505,7 +505,7 @@ src/utils/daemon_autostart.py (Daemon OS Autostart)
 ## 10. Known Gotchas & Conventions
 
 1. **Greek comments** break editor text matching
-2. **`.env` values without quotes** — load_dotenv doesn't strip quotes
+2. **`.env` values without quotes** ï¿½ load_dotenv doesn't strip quotes
 3. **`daily_search.py` and `historic_search.py`** must be kept in sync for dedup logic
 4. **4-layer framework** (strategic, operational, tactical, playground) is INVARIANT
 5. **`recommender.py`** reads SQLite directly, not via DatabaseManager
@@ -514,13 +514,13 @@ src/utils/daemon_autostart.py (Daemon OS Autostart)
 8. **Questionary stdin piping** via `TALOS_GUI_STDIN` + `_gui_runner.py`
 9. **Subprocess env propagation**: `run_script()` forwards TALOS_* vars
 10. **Embeddings** as pickled numpy arrays in BLOB column
-11. **Source class names** have mixed conventions (DBLPSource, IEEEXploreSource, OpenAlexSource) — use `live_agent_sources.import_source_class()` which scans the module
-12. **Cooldown mechanism** (v3.1): negative reward > 5-step lockout > random override — prevents Deterministic Loops
+11. **Source class names** have mixed conventions (DBLPSource, IEEEXploreSource, OpenAlexSource) ï¿½ use `live_agent_sources.import_source_class()` which scans the module
+12. **Cooldown mechanism** (v3.1): negative reward > 5-step lockout > random override ï¿½ prevents Deterministic Loops
 
 ---
 
-> **Last Updated:** 2026-08-24 (v5.10.10 -- Enterprise TUI Overhaul & Academic Aesthetics)
-> **Project Version:** v5.10.10
+> **Last Updated:** 2026-08-24 (v5.10.11 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine)
+> **Project Version:** v5.10.11
 > **Total Files Covered:** 75+ (62 src/ + 4 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### New in v5.9.9: Report Path Consolidation

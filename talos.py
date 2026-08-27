@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.10.10
+Project: TALOS v5.10.11
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -20,6 +20,12 @@ Description:
     Configuration, Search & Ingestion, Analysis & Insights, Daemons &
     CI/CD, and Diagnostics & Exit. Includes the new Vendored Graphify
 AST Knowledge Graph adapter (v5.9.12).
+
+    v5.10.11: Vendored Three.js 3D Knowledge Constellation & Live Telemetry
+    Engine -- superseded the experimental raw WebGL 1.0 visualizer with a
+    production-grade Three.js architecture locally vendored in
+    static/js/three.min.js. Adds Health Aura Sprites, Academic Print Theme,
+    and a 1.5-second live polling bridge over the existing SSE stream.
 
     v5.10.10: Enterprise TUI Overhaul & Academic Aesthetics -- unified
     questionary prompt style across the entire CLI (Cyan/Teal #00ced1 selection
@@ -561,17 +567,17 @@ def system_health_menu(python_exe):
     ])
     if choice is None or "Back" in choice: return
     if choice.startswith("1."):
-        tp = os.path.join(project_root, 'tests', 'test_smoke.py')
+        tp = os.path.join(project_root, 'tests', 'test_system_integrity.py')
         if not os.path.exists(tp):
-            tp = os.path.join(project_root, 'test_smoke.py')  # legacy fallback
+            tp = os.path.join(project_root, 'test_system_integrity.py')  # legacy fallback
         if os.path.exists(tp):
             r = subprocess.run([python_exe, tp], check=False, env=os.environ.copy())
             if r.returncode == 0:
                 logger.info("All checks passed!")
             else:
-                logger.warning("Smoke test exited with code %s.", r.returncode)
+                logger.warning("System Integrity verification exited with code %s.", r.returncode)
         else:
-            logger.warning("Smoke test not found at tests/test_smoke.py")
+            logger.warning("System Integrity verification not found at tests/test_system_integrity.py")
     elif choice.startswith("2."):
         run_script("verify_dependency_map.py", python_exe, args=["--all"])
     elif choice.startswith("3."):
@@ -1094,32 +1100,83 @@ def _configure_daemon_autostart(project_root):
 
 
 def _launch_visualizer():
-    """Open the 3D Holographic Knowledge Constellation in browser."""
+    """Auto-start FastAPI on port 8001 and open the WebGL visualizer.
+
+    The routine first checks the local TCP port. If the backend is offline,
+    it starts Uvicorn as a silent non-blocking subprocess and polls for up to
+    three seconds. The browser opens only after the service accepts connections.
+    """
+    import socket
     import webbrowser
-    viz_url = "http://127.0.0.1:8001/api/v1/visualizer/live"
+
+    host = "127.0.0.1"
+    port = 8001
+    viz_url = f"http://{host}:{port}/api/v1/visualizer/live"
+
+    def _port_is_listening():
+        """Return True when the local FastAPI TCP port accepts connections."""
+        try:
+            with socket.create_connection((host, port), timeout=0.25):
+                return True
+        except OSError:
+            return False
+
     console.print(_build_info_panel(
         "3D Holographic Knowledge Constellation Visualizer",
-        "Real-time WebGL 1.0 visualizer with 16-satellite orbital\\n"
-        "constellation, animated energy pulse beams, lockout cages,\\n"
-        "and glassmorphism HUD. Dual-mode: Live SSE + Offline Replay.\\n\\n"
-        f"[bold cyan]Access URL:[/bold cyan] {viz_url}",
+        "Real-time WebGL 1.0 visualizer with 16-satellite orbital\n"
+        "constellation, animated energy pulse beams, lockout cages,\n"
+        "and glassmorphism HUD. Dual-mode: Live SSE + Offline Replay.\n\n"
+        f"Access URL: {viz_url}",
         border_style="bright_cyan",
     ))
-    api_reachable = False
-    try:
-        import urllib.request
-        req = urllib.request.Request("http://127.0.0.1:8001/api/v1/health", method="HEAD")
-        urllib.request.urlopen(req, timeout=3)
-        api_reachable = True
-    except Exception:
-        pass
-    if api_reachable:
-        console.print("[green]FastAPI server detected on port 8001. Opening browser...[/green]")
-        webbrowser.open(viz_url)
-    else:
-        console.print("[yellow][WARN] FastAPI server not reachable on port 8001.[/yellow]")
-        console.print("[dim]Start the server first (run_talos.bat Option 6), or run:[/dim]")
-        console.print("[dim]  python -m uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001[/dim]")
+
+    if not _port_is_listening():
+        console.print(
+            "[cyan][INIT] FastAPI backend offline. Auto-bootstrapping "
+            "microservice on port 8001 in background...[/cyan]"
+        )
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        try:
+            subprocess.Popen(
+                [
+                    sys.executable,
+                    "-m",
+                    "uvicorn",
+                    "src.api.main_api:app",
+                    "--host",
+                    host,
+                    "--port",
+                    str(port),
+                ],
+                cwd=project_root,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except OSError as exc:
+            console.print(f"[red][ERROR] FastAPI bootstrap failed: {exc}[/red]")
+            return
+
+        deadline = time.monotonic() + 3.0
+        while time.monotonic() < deadline:
+            if _port_is_listening():
+                break
+            time.sleep(0.15)
+
+    if not _port_is_listening():
+        console.print(
+            "[red][ERROR] FastAPI did not become reachable on port 8001 "
+            "within three seconds.[/red]"
+        )
+        return
+
+    webbrowser.open(viz_url)
+    console.print(_build_info_panel(
+        "Visualizer Online",
+        "FastAPI is listening on port 8001.\n"
+        "The default browser has been opened.\n\n"
+        f"{viz_url}",
+        border_style="green",
+    ))
 
 
 def _generate_optica_plots():

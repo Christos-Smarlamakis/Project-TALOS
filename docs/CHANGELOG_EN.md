@@ -2,6 +2,31 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.11] - 2026-08-24 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine
+
+### Added
+- **Vendored Three.js library** (`static/js/three.min.js`): Production-grade Three.js r128 (UMD, MIT license) bundle locally vendored and served from `/static/js/three.min.js` via a new idempotent `app.mount("/static", StaticFiles(directory="static"), name="static")` in `src/api/main_api.py`. Zero external CDN calls, 100% air-gapped compliant.
+- **Three.js 3D Knowledge Constellation Visualizer** (`templates/live_foraging_visualizer.html`): Rebuilt from the v5.10.10 raw WebGL 1.0 prototype into a robust Three.js architecture. Features:
+  - Dark Slate/Navy (`#0f1117`) background with Academic Print Mode (`renderer.setClearColor(0xffffff)` plus high-contrast white/navy HUD restyling) for publication screenshots.
+  - Central gold (`#f39c12`) `THREE.IcosahedronGeometry` wireframe core rotating continuously.
+  - 16 cyan (`#00ced1`) `THREE.SphereGeometry` satellite source nodes distributed via Fibonacci spherical coordinates (radius 4.5).
+  - Dynamic Health Aura `THREE.Sprite` halos behind each node with soft radial-gradient `CanvasTexture`, color-mapped Green (`#10b981`, Healthy), Amber (`#f59e0b`, Cooldown), Red (`#ef4444`, Error/403), Cyan (`#06b6d4`, Standby).
+  - Direct connection lines from the core to all 16 nodes plus a faint nearest-neighbor constellation mesh.
+  - Animated energy laser pulse beam from the core to the target source node fading over 1.2 seconds via additive-blended `THREE.Line`.
+  - Manual orbit camera controls (left-drag rotate, right-click pan, wheel zoom), THEME toggle, dual-mode switch (Live SSE Stream vs. Conference Offline Replay with Play/Pause and 1x/2x/5x speed), and a glassmorphism HUD card showing normalized title, ELITE/ACCEPT/REJECT score badge, DRL reward, and provider attribution.
+- **Resilient live polling bridge**: 1.5-second `GET /api/v1/visualizer/demo-data` polling timer runs alongside the existing `/api/v1/visualizer/stream` SSE channel; new evaluations fire the laser, update the target node aura and counter badge, and refresh the HUD card.
+
+### Changed
+- **Version strings synced across 6 code files** (`config/settings.py`, `src/api/main_api.py`, `talos.py`, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py`) to v5.10.11.
+- **Documentation synced across 15 canonical files** to v5.10.11 (2026-08-24).
+- **Roadmap re-aligned**: DSPy PRISMA Pipeline shifted to v5.10.12; CORTEX & n8n Gateway shifted to v5.10.13.
+- **Legacy WebGL 1.0 visualizer (v5.10.10) documented as superseded** by the production Three.js implementation.
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed with v5.10.11 assertion.
+
 ## [v5.10.10] - 2026-08-24 -- 3D Holographic Knowledge Constellation & Multi-Pipeline Live Visualizer
 
 ### Added
@@ -20,10 +45,11 @@ All notable changes to the TALOS project will be documented in this file. The pr
 - **API endpoint count** increased from 19 to 22 total (100% ecosystem coverage + visualizer streaming).
 - **Version strings synced across 6 code files** (`config/settings.py`, `src/api/main_api.py`, `talos.py`, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py`) to v5.10.10.
 - **Documentation synced across 15 canonical files** to v5.10.10 (2026-08-24).
+- **Academic test suite formalization**: `tests/test_smoke.py` renamed to `tests/test_system_integrity.py`, formally designated the "TALOS Automated System Integrity Verification Suite" (ISO/IEC 25010 compliance) for IEEE publication and HOU ICBE presentation rigor.
 
 ### Verification
 - `python -m compileall src config tests talos.py` passed with zero errors.
-- `python -m pytest tests/test_smoke.py -q` passed.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
 - `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed with v5.10.10 assertion.
 ## [v5.10.9] - 2026-08-23 -- Comprehensive TUI Feature Audit & Profile Management Restoration
 

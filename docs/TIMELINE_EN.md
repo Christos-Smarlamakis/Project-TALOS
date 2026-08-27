@@ -4,10 +4,21 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-24 (v5.10.10 -- 3D Holographic Knowledge Constellation & Multi-Pipeline Live Visualizer)
+> **Last Updated:** 2026-08-24 (v5.10.11 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine)
 
 ---
 
+## Phase 41: Vendored Three.js 3D Constellation Visualizer (v5.10.11)
+
+### Status: COMPLETED (2026-08-24)
+
+- [x] **Vendored Three.js** -- Production-grade Three.js r128 (UMD, MIT) bundle vendored at `static/js/three.min.js`; idempotent `app.mount("/static", StaticFiles(directory="static"))` added to `src/api/main_api.py`. Zero CDN calls.
+- [x] **Three.js Visualizer Rebuild** -- `templates/live_foraging_visualizer.html` rebuilt with Three.js: gold icosahedron core, 16 Fibonacci-distributed satellite nodes, Health Aura Sprites (Green/Amber/Red/Cyan), core-to-node connection lines plus neighbor mesh, additive-blended energy laser beam fading over 1.2s.
+- [x] **Academic Print Mode** -- THEME toggle switches renderer clear color to white (`0xffffff`) with navy high-contrast HUD for publication screenshots.
+- [x] **Live Polling Bridge** -- 1.5-second `GET /api/v1/visualizer/demo-data` polling alongside SSE streaming; resilient fallback.
+- [x] **Roadmap re-aligned** -- DSPy PRISMA shifted to v5.10.12; CORTEX & n8n Gateway shifted to v5.10.13.
+- [x] **Version synced across 6 code files and 15 documentation files** to v5.10.11.
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version.
 ## Phase 40: 3D Holographic Constellation Visualizer (v5.10.10)
 
 ### Status: COMPLETED (2026-08-24)
@@ -19,7 +30,7 @@
 - [x] **Dual-Mode Operation** -- Live SSE Stream (connects to `/api/v1/visualizer/stream`) and Conference Offline Replay (replays `/api/v1/visualizer/demo-data` with Play/Pause/1x-5x Speed/Timeline scrub).
 - [x] **API endpoint count** increased from 19 to 22.
 - [x] **Version synced across 6 code files and 15 documentation files** to v5.10.10.
-- [x] **Verification gates passed** -- compileall, test_smoke, test_talos_version.
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version.
 ## Phase 39: Comprehensive TUI Feature Audit & Profile Management Restoration (v5.10.9)
 
 ### Status: COMPLETED (2026-08-23)

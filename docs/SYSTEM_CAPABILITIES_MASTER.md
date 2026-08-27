@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.10
+# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.11
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-08-22
-> **Version:** v5.10.10 -- Enterprise TUI Overhaul & Academic Aesthetics
+> **Last Updated:** 2026-08-24
+> **Version:** v5.10.11 -- Vendored Three.js 3D Knowledge Constellation & Live Telemetry Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -23,7 +23,7 @@ The system operates as a five-layer architecture:
 | Layer | Component | Role |
 |-------|-----------|------|
 | **Frontend** | React 18 with Tailwind CSS and Shadcn UI | User-facing dashboard leveraging the REST API |
-| **Backend** | `src/api/main_api.py` (19 endpoints) | Headless FastAPI facade exposing all core capabilities |
+| **Backend** | `src/api/main_api.py` (23 endpoints) | Headless FastAPI facade exposing all core capabilities |
 | **AI Core** | `src/core/ai_manager.py` (9 providers -- Universal Cloud Mesh + circuit breaker + 2D matrix) | Multi-provider LLM orchestration with hardware-aware routing and interactive cloud fallback |
 | **Persistence** | `src/core/database_manager.py` | SQLite + multi-model vector embeddings (Ollama + Gemini) |
 | **Integration** | `src/integration/synapse_client.py` + `src/mcp_server.py` + `src/analysis/graphify_adapter.py` | SYNAPSE Event Bus + MCP Tool Server + AST Knowledge Graph Intelligence |
@@ -347,7 +347,7 @@ TALOS participates in the ALEXANDRIA Ecosystem via the SYNAPSE Event-Driven Prot
 
 ---
 
-## Section 6: REST API Reference (19 Endpoints)
+## Section 6: REST API Reference (23 Endpoints)
 
 ### 6.1 Endpoint Catalog
 
@@ -372,6 +372,10 @@ TALOS participates in the ALEXANDRIA Ecosystem via the SYNAPSE Event-Driven Prot
 | E17 | GET | `/api/v1/tester/status` | Autonomous Red Tester Q-table status (70+ arms) | `TesterStatusResponse` |
 | E18 | GET | `/api/v1/tester/reports` | List crash report metadata from data/reports/ | `List[CrashReport]` |
 | E19 | GET | `/api/v1/synapse/status` | SYNAPSE bus reachability, queue health, event types | `dict` |
+| E20 | GET | `/api/v1/visualizer/live` | 3D Holographic Knowledge Constellation Visualizer HTML | `HTMLResponse` |
+| E21 | GET | `/api/v1/visualizer/stream` | SSE event stream for live visualizer (15s heartbeat) | `StreamingResponse` |
+| E22 | GET | `/api/v1/visualizer/demo-data` | Recent evaluated papers for offline conference replay | `List[dict]` |
+| E23 | GET | `/api/v1/visualizer/state` | Consolidated AJAX polling snapshot (16-source health, latest evaluation, active query) | `dict` |
 
 ### 6.2 Pydantic v2 Model Inventory
 
@@ -704,7 +708,7 @@ For each evaluated paper, the AI generates:
 
 | Test File | Tests | Coverage |
 |-----------|-------|----------|
-| `tests/test_smoke.py` | 78 health checks | System health, database, configuration |
+| `tests/test_system_integrity.py` | 474 integrity checks | Automated System Integrity Verification Suite (ISO/IEC 25010) |
 | `tests/test_synapse.py` | 21 tests | EventEmitter + webhook route coverage |
 | `tests/test_multi_tier.py` | 20 tests | Fast vs. heavy LLM routing logic, version assertion |
 | `tests/test_provisioner.py` | 23 tests | Frontend provisioner OS detection and config generation |
@@ -717,7 +721,7 @@ For each evaluated paper, the AI generates:
 1. `python -m py_compile <file>` (syntax)
 2. `python scripts/verify_dependency_map.py` (imports)
 3. `python scripts/db_stats.py` (database, if schema changed)
-4. `python tests/test_smoke.py` (runtime health)
+4. `python tests/test_system_integrity.py` (runtime health)
 
 ---
 

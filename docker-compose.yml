@@ -5,7 +5,7 @@
 services:
   talos:
     build: .
-    image: talos:5.10.0
+    image: talos:5.10.11
     container_name: talos_api
     stdin_open: true
     tty: true

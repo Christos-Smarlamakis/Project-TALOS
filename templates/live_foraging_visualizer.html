@@ -3,930 +3,691 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS v5.10.10 -- 3D Holographic Knowledge Constellation</title>
+<title>TALOS v5.10.11 -- 3D Knowledge Constellation (Vendored Three.js)</title>
 <style>
-*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-html, body { width:100%; height:100%; overflow:hidden; background:#0f1117; font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; color:#e4e7ee; }
-#glCanvas { position:absolute; top:0; left:0; width:100%; height:100%; display:block; cursor:grab; }
-#glCanvas:active { cursor:grabbing; }
-#glCanvas.panning { cursor:move; }
-#hud { position:absolute; top:24px; right:24px; width:340px; background:rgba(15,17,23,0.72); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(0,102,153,0.35); border-radius:12px; padding:18px 20px; z-index:10; font-size:13px; line-height:1.5; pointer-events:auto; }
-.hud-header { font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:#6b7280; margin-bottom:8px; }
-.hud-badge { display:inline-block; padding:3px 10px; border-radius:4px; font-size:11px; font-weight:600; margin-bottom:6px; }
-.hud-badge.DRL { background:rgba(0,206,209,0.18); color:#00ced1; }
-.hud-badge.Daily { background:rgba(0,102,153,0.22); color:#4a9eff; }
-.hud-badge.Historic { background:rgba(243,156,18,0.18); color:#f39c12; }
-.hud-title { font-size:14px; font-weight:600; color:#e4e7ee; margin-bottom:8px; word-break:break-word; }
-.hud-score { display:inline-block; padding:4px 12px; border-radius:6px; font-size:13px; font-weight:700; margin-bottom:6px; }
-.hud-score.ELITE { background:rgba(243,156,18,0.20); color:#f39c12; border:1px solid rgba(243,156,18,0.40); }
-.hud-score.ACCEPT { background:rgba(40,167,69,0.18); color:#28a745; border:1px solid rgba(40,167,69,0.35); }
-.hud-score.REJECT { background:rgba(220,53,69,0.18); color:#dc3545; border:1px solid rgba(220,53,69,0.35); }
-.hud-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-top:1px solid rgba(255,255,255,0.06); }
-.hud-row .label { color:#6b7280; font-size:11px; }
-.hud-row .value { font-weight:600; font-size:12px; }
-.hud-empty { color:#6b7280; font-style:italic; text-align:center; padding:16px 0; }
-#controls { position:absolute; top:16px; left:16px; z-index:10; display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
-.ctrl-btn { background:rgba(15,17,23,0.75); backdrop-filter:blur(8px); border:1px solid rgba(0,102,153,0.30); color:#b0bec5; padding:7px 14px; border-radius:6px; font-size:12px; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
-.ctrl-btn:hover { border-color:rgba(0,206,209,0.55); color:#00ced1; }
-.ctrl-btn.active { background:rgba(0,206,209,0.12); border-color:#00ced1; color:#00ced1; }
-.ctrl-btn.score-btn.active { border-color:#f39c12; color:#f39c12; }
-.ctrl-sep { width:1px; height:24px; background:rgba(255,255,255,0.10); margin:0 4px; }
-#replay { position:absolute; bottom:24px; left:50%; transform:translateX(-50%); z-index:10; display:none; align-items:center; gap:10px; background:rgba(15,17,23,0.78); backdrop-filter:blur(10px); border:1px solid rgba(0,102,153,0.30); border-radius:10px; padding:10px 20px; }
-#replay.visible { display:flex; }
-#replay button { background:rgba(0,206,209,0.10); border:1px solid rgba(0,206,209,0.25); color:#b0bec5; padding:6px 12px; border-radius:5px; cursor:pointer; font-size:12px; transition:all 0.2s; }
-#replay button:hover { border-color:#00ced1; color:#00ced1; }
-#replay button.active { background:rgba(0,206,209,0.18); border-color:#00ced1; color:#00ced1; }
-#replay input[type=range] { width:200px; accent-color:#00ced1; }
-#replay span { font-size:11px; color:#6b7280; min-width:80px; text-align:center; }
-#mode-indicator { position:absolute; top:18px; left:50%; transform:translateX(-50%); z-index:9; font-size:10px; letter-spacing:2px; text-transform:uppercase; color:#6b7280; padding:4px 16px; background:rgba(15,17,23,0.60); border-radius:20px; border:1px solid rgba(255,255,255,0.06); }
-@keyframes pulse { 0%,100% { opacity:0.6; } 50% { opacity:1.0; } }
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#0f1117; font-family:'Segoe UI','Helvetica Neue',Arial,sans-serif; color:#e4e7ee; }
+  #scene-container { position:absolute; top:0; left:0; width:100vw; height:100vh; z-index:1; }
+  #scene-container canvas { display:block; cursor:grab; }
+  #scene-container canvas.panning { cursor:move; }
+  #scene-container canvas:active { cursor:grabbing; }
+  #hud { position:fixed; top:24px; right:24px; width:350px; background:rgba(15,17,23,0.72); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border:1px solid rgba(0,102,153,0.35); border-radius:12px; padding:18px 20px; z-index:10; font-size:13px; line-height:1.5; }
+  .hud-header { font-size:11px; text-transform:uppercase; letter-spacing:1.5px; color:#6b7280; margin-bottom:8px; }
+  .hud-badge { display:inline-block; padding:3px 10px; border-radius:4px; font-size:11px; font-weight:600; margin-bottom:6px; }
+  .hud-badge.DRL { background:rgba(0,206,209,0.18); color:#00ced1; }
+  .hud-badge.Daily { background:rgba(0,102,153,0.22); color:#4a9eff; }
+  .hud-badge.Historic { background:rgba(243,156,18,0.18); color:#f39c12; }
+  .hud-title { font-size:14px; font-weight:600; color:#e4e7ee; margin-bottom:8px; word-break:break-word; }
+  .hud-score { display:inline-block; padding:4px 12px; border-radius:6px; font-size:13px; font-weight:700; margin-bottom:6px; }
+  .hud-score.ELITE { background:rgba(243,156,18,0.20); color:#f39c12; border:1px solid rgba(243,156,18,0.40); }
+  .hud-score.ACCEPT { background:rgba(40,167,69,0.18); color:#28a745; border:1px solid rgba(40,167,69,0.35); }
+  .hud-score.REJECT { background:rgba(220,53,69,0.18); color:#dc3545; border:1px solid rgba(220,53,69,0.35); }
+  .hud-row { display:flex; justify-content:space-between; align-items:center; padding:4px 0; border-top:1px solid rgba(255,255,255,0.06); }
+  .hud-row .label { color:#6b7280; font-size:11px; }
+  .hud-row .value { font-weight:600; font-size:12px; }
+  #controls { position:fixed; top:16px; left:16px; z-index:10; display:flex; flex-wrap:wrap; gap:8px; align-items:center; max-width:52vw; }
+  .ctrl-btn { background:rgba(15,17,23,0.75); backdrop-filter:blur(8px); border:1px solid rgba(0,102,153,0.30); color:#b0bec5; padding:7px 14px; border-radius:6px; font-size:12px; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+  .ctrl-btn:hover { border-color:rgba(0,206,209,0.55); color:#00ced1; }
+  .ctrl-btn.active { background:rgba(0,206,209,0.12); border-color:#00ced1; color:#00ced1; }
+  .ctrl-sep { width:1px; height:24px; background:rgba(255,255,255,0.10); margin:0 4px; }
+  #mode-indicator { position:fixed; top:16px; left:50%; transform:translateX(-50%); z-index:10; background:rgba(15,17,23,0.70); border:1px solid rgba(0,102,153,0.30); border-radius:6px; padding:6px 16px; font-size:11px; letter-spacing:1px; color:#00ced1; text-transform:uppercase; }
+  #replay { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:10; display:none; align-items:center; gap:10px; background:rgba(15,17,23,0.78); backdrop-filter:blur(10px); border:1px solid rgba(0,102,153,0.30); border-radius:10px; padding:10px 20px; }
+  #replay.visible { display:flex; }
+  #replay button { background:rgba(0,206,209,0.10); border:1px solid rgba(0,206,209,0.25); color:#b0bec5; padding:6px 12px; border-radius:5px; cursor:pointer; font-size:12px; }
+  #replay input[type=range] { width:220px; accent-color:#00ced1; }
+  #replay span { font-size:11px; color:#6b7280; min-width:90px; text-align:center; }
+  #legend { position:fixed; bottom:24px; left:24px; z-index:10; background:rgba(15,17,23,0.72); backdrop-filter:blur(10px); border:1px solid rgba(0,102,153,0.30); border-radius:10px; padding:12px 16px; font-size:11px; line-height:1.9; }
+  #legend .lg { display:flex; align-items:center; gap:8px; }
+  #legend .dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+  body.print-theme { background:#ffffff; color:#0f1117; }
+  body.print-theme #hud, body.print-theme #controls .ctrl-btn, body.print-theme #replay, body.print-theme #legend, body.print-theme #mode-indicator { background:rgba(255,255,255,0.94); border-color:rgba(0,40,85,0.35); color:#0f1117; }
+  body.print-theme .hud-header, body.print-theme .hud-row .label { color:#5b6470; }
+  body.print-theme .hud-title { color:#0f1117; }
+  body.print-theme .hud-row { border-top:1px solid rgba(0,40,85,0.10); }
+  body.print-theme .ctrl-btn { color:#33414f; }
+  body.print-theme .ctrl-btn:hover, body.print-theme .ctrl-btn.active { color:#002855; border-color:#002855; }
+  body.print-theme #mode-indicator { color:#002855; }
 </style>
 </head>
 <body>
+<div id="scene-container"></div>
+
 <div id="controls">
-  <button class="ctrl-btn active" id="btn-live" title="Live SSE Stream from running TALOS API">LIVE SSE</button>
-  <button class="ctrl-btn" id="btn-replay" title="Conference Offline Replay from database">CONFERENCE REPLAY</button>
+  <button class="ctrl-btn active" id="btn-live">LIVE</button>
+  <button class="ctrl-btn" id="btn-replay">REPLAY</button>
   <span class="ctrl-sep"></span>
-  <button class="ctrl-btn" id="btn-reset" title="Reset camera view to default">RESET VIEW</button>
-  <button class="ctrl-btn" id="btn-2d3d" title="Toggle 2D/3D projection">2D/3D</button>
-  <span class="ctrl-sep"></span>
-  <button class="ctrl-btn score-btn active" id="btn-all" title="Show all papers">ALL</button>
-  <button class="ctrl-btn score-btn" id="btn-accept" title="Accepted only (score &gt;= 6.0)">ACCEPTED</button>
-  <button class="ctrl-btn score-btn" id="btn-elite" title="Elite only (score &gt;= 8.0)">ELITE</button>
-  <span class="ctrl-sep"></span>
-  <button class="ctrl-btn" id="btn-settings" title="Visual settings">SETTINGS</button>
+  <button class="ctrl-btn" id="btn-theme">THEME</button>
+  <button class="ctrl-btn" id="btn-reset">RESET VIEW</button>
 </div>
 
+<div id="mode-indicator">LIVE AJAX POLLING</div>
+
 <div id="hud">
-  <div class="hud-header">LATEST EVALUATION</div>
-  <div class="hud-empty" id="hud-empty">Awaiting evaluation events...</div>
-  <div id="hud-content" style="display:none;">
-    <div class="hud-badge" id="hud-badge">--</div>
-    <div class="hud-title" id="hud-title">--</div>
-    <div class="hud-score" id="hud-score">--</div>
-    <div class="hud-row"><span class="label">DRL Reward</span><span class="value" id="hud-reward">--</span></div>
-    <div class="hud-row"><span class="label">Router / Provider</span><span class="value" id="hud-provider">--</span></div>
-    <div class="hud-row"><span class="label">Source</span><span class="value" id="hud-source">--</span></div>
-  </div>
+  <div class="hud-header">Latest Evaluation</div>
+  <div><span class="hud-badge DRL" id="hud-pipeline">DRL / DAILY</span></div>
+  <div class="hud-title" id="hud-title">Awaiting telemetry...</div>
+  <span class="hud-score ACCEPT" id="hud-score">--</span>
+  <div class="hud-row"><span class="label">DRL Reward</span><span class="value" id="hud-reward">--</span></div>
+  <div class="hud-row"><span class="label">Provider</span><span class="value" id="hud-provider">--</span></div>
+  <div class="hud-row"><span class="label">Source</span><span class="value" id="hud-source">--</span></div>
 </div>
 
 <div id="replay">
   <button id="rp-play">PLAY</button>
   <button id="rp-speed" data-speed="1">1x</button>
-  <input type="range" id="rp-timeline" min="0" max="100" value="0" step="1">
-  <span id="rp-time">00:00 / 00:00</span>
+  <input type="range" id="rp-timeline" min="0" max="0" value="0" step="1">
+  <span id="rp-status">0 / 0</span>
 </div>
-<div id="settings-panel">
-  <div class="setting-row"><label>Particle Count</label><input type="range" id="particle-slider" min="200" max="3000" value="800" step="100"><span id="particle-val">800</span></div>
-  <div class="setting-row"><label>Rotation Speed</label><input type="range" id="speed-slider" min="0.1" max="3.0" value="0.5" step="0.1"><span id="speed-val">0.5</span></div>
-  <div class="setting-row"><label>Orbital Radius</label><input type="range" id="orbit-slider" min="2.5" max="8.0" value="4.5" step="0.1"><span id="orbit-val">4.5</span></div>
-  <div class="setting-row"><label>Beam Trail Len</label><input type="range" id="trail-slider" min="10" max="100" value="50" step="5"><span id="trail-val">50</span></div>
+
+<div id="legend">
+  <div class="lg"><span class="dot" style="background:#10b981"></span> Healthy</div>
+  <div class="lg"><span class="dot" style="background:#f59e0b"></span> Cooldown</div>
+  <div class="lg"><span class="dot" style="background:#ef4444"></span> Error / 403</div>
+  <div class="lg"><span class="dot" style="background:#06b6d4"></span> Standby</div>
 </div>
-<canvas id="glCanvas"></canvas>
-<div id="mode-indicator">LIVE SSE STREAM</div>
+
+<script src="/static/js/three.min.js"></script>
 <script>
-// ============================================================================
-// TALOS v5.10.10 -- 3D HOLOGRAPHIC KNOWLEDGE CONSTELLATION
-// Single-file, air-gapped WebGL 1.0 visualizer. Zero external dependencies.
-// ============================================================================
+(function () {
+  'use strict';
 
-// -- Minimal 3D Math Library (vector, matrix, quaternion) --
-const M4 = {
-  identity: () => new Float32Array([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]),
-  perspective: (fov, aspect, near, far) => {
-    const f = 1.0 / Math.tan(fov * Math.PI / 360);
-    const nf = 1 / (near - far);
-    return new Float32Array([f/aspect,0,0,0, 0,f,0,0, 0,0,(far+near)*nf,-1, 0,0,2*far*near*nf,0]);
-  },
-  lookAt: (eye, center, up) => {
-    let zx=eye[0]-center[0], zy=eye[1]-center[1], zz=eye[2]-center[2];
-    const zl = Math.sqrt(zx*zx+zy*zy+zz*zz)||1; zx/=zl;zy/=zl;zz/=zl;
-    let xx=up[1]*zz-up[2]*zy, xy=up[2]*zx-up[0]*zz, xz=up[0]*zy-up[1]*zx;
-    const xl=Math.sqrt(xx*xx+xy*xy+xz*xz)||1;xx/=xl;xy/=xl;xz/=xl;
-    const yx=zy*xz-zz*xy, yy=zz*xx-zx*xz, yz=zx*xy-zy*xx;
-    return new Float32Array([
-      xx,yx,zx,0, xy,yy,zy,0, xz,yz,zz,0,
-      -(xx*eye[0]+xy*eye[1]+xz*eye[2]),
-      -(yx*eye[0]+yy*eye[1]+yz*eye[2]),
-      -(zx*eye[0]+zy*eye[1]+zz*eye[2]), 1
-    ]);
-  },
-  multiply: (a, b) => {
-    const o = new Float32Array(16);
-    for(let r=0;r<4;r++) for(let c=0;c<4;c++){ let s=0;
-      for(let k=0;k<4;k++) s+=a[r+k*4]*b[k+c*4]; o[r+c*4]=s;}
-    return o;
-  },
-  scale: (m, v) => { const o=new Float32Array(m);
-    o[0]*=v[0];o[5]*=v[1];o[10]*=v[2]; return o; },
-  translate: (m, v) => { const o=new Float32Array(m);
-    o[12]+=m[0]*v[0]+m[4]*v[1]+m[8]*v[2];
-    o[13]+=m[1]*v[0]+m[5]*v[1]+m[9]*v[2];
-    o[14]+=m[2]*v[0]+m[6]*v[1]+m[10]*v[2]; return o; },
-  rotateX: (m, rad) => { const c=Math.cos(rad),s=Math.sin(rad); const o=new Float32Array(m);
-    const m1=m[4],m2=m[5],m3=m[6],m4=m[8],m5=m[9],m6=m[10];
-    o[4]=m1*c+m4*s;o[5]=m2*c+m5*s;o[6]=m3*c+m6*s;
-    o[8]=m4*c-m1*s;o[9]=m5*c-m2*s;o[10]=m6*c-m3*s; return o; },
-  rotateY: (m, rad) => { const c=Math.cos(rad),s=Math.sin(rad); const o=new Float32Array(m);
-    const m0=m[0],m2=m[2],m4=m[4],m6=m[6],m8=m[8],m10=m[10];
-    o[0]=m0*c-m8*s;o[2]=m2*c-m10*s;
-    o[8]=m0*s+m8*c;o[10]=m2*s+m10*c;
-    o[4]=m4*c-m6*s;o[6]=m6*c+m4*s; return o; },
-  rotateZ: (m, rad) => { const c=Math.cos(rad),s=Math.sin(rad); const o=new Float32Array(m);
-    const m0=m[0],m1=m[1],m4=m[4],m5=m[5];
-    o[0]=m0*c+m4*s;o[1]=m1*c+m5*s;
-    o[4]=m4*c-m0*s;o[5]=m5*c-m1*s; return o; },
-};
+  // -- Canonical 16-source list (mirrors src/ai/drl/talos_env.py) --
+  var SOURCE_NAMES = ["arxiv","openalex","semantic_scholar","crossref","dblp",
+    "pubmed","plos","core","osti","scigov",
+    "openarchives","ieee","elsevier","springer","openreview","openaire"];
+  var SOURCE_LABELS = ["arXiv","OpenAlex","Semantic Scholar","Crossref","DBLP",
+    "PubMed","PLOS","CORE","OSTI.gov","Science.gov",
+    "OpenArchives","IEEE","Elsevier","Springer","OpenReview","OpenAIRE"];
 
-const V3 = {
-  add: (a,b) => [a[0]+b[0], a[1]+b[1], a[2]+b[2]],
-  sub: (a,b) => [a[0]-b[0], a[1]-b[1], a[2]-b[2]],
-  scale: (v,s) => [v[0]*s, v[1]*s, v[2]*s],
-  length: (v) => Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]),
+  var STATE_COLORS = { healthy: 0x10b981, cooldown: 0xf59e0b, error: 0xef4444, standby: 0x06b6d4 };
 
-// -- Camera & scene state --
-let camera = { theta: 0, phi: Math.PI/6, radius: 14, target: [0,0,0], panX: 0, panY: 0 };
-let is3D = true;
-let scoreFilter = 'ALL';
-let particleCount = 800;
-let rotationSpeed = 0.5;
-let orbitRadius = 4.5;
-let trailLength = 50;
+  var printTheme = false;
+  var currentMode = 'live';
 
-// -- Canonical 16-source registry (matches backend SOURCE_REGISTRY) --
-const SOURCES = [
-  { name: 'arXiv',          slug: 'arxiv',          ring: 0, angle: 0.000 },
-  { name: 'IEEE',           slug: 'ieee',           ring: 0, angle: 0.393 },
-  { name: 'Elsevier',       slug: 'elsevier',       ring: 0, angle: 0.785 },
-  { name: 'PubMed',         slug: 'pubmed',         ring: 0, angle: 1.178 },
-  { name: 'OpenAIRE',       slug: 'openaire',       ring: 0, angle: 1.571 },
-  { name: 'OpenReview',     slug: 'openreview',     ring: 0, angle: 1.963 },
-  { name: 'SemanticScholar',slug: 'semantic_scholar', ring: 1, angle: 0.314 },
-  { name: 'CrossRef',       slug: 'crossref',       ring: 1, angle: 0.943 },
-  { name: 'DBLP',           slug: 'dblp',           ring: 1, angle: 1.571 },
-  { name: 'CORE',           slug: 'core',           ring: 1, angle: 2.199 },
-  { name: 'OpenArchives',   slug: 'openarchives',   ring: 1, angle: 2.827 },
-  { name: 'SciGov',         slug: 'scigov',         ring: 2, angle: 0.224 },
-  { name: 'OSTI',           slug: 'osti',           ring: 2, angle: 0.898 },
-  { name: 'PLOS',           slug: 'plos',           ring: 2, angle: 1.571 },
-  { name: 'Springer',       slug: 'springer',       ring: 2, angle: 2.244 },
-  { name: 'Zotero',         slug: 'zotero',         ring: 2, angle: 2.918 },
-];
-// Per-ring orbital inclinations and radii multipliers
-const RING_CFG = [
-  { radius: 1.0,  inclination: 0.30, tilt: 0.00 },
-  { radius: 1.45, inclination: 0.95, tilt: 0.35 },
-  { radius: 1.85, inclination: 1.50, tilt: 0.70 },
-];
+  var container = document.getElementById('scene-container');
+  var renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x0f1117, 1);
+  container.appendChild(renderer.domElement);
 
-// -- Active state for lockout cages and beam pulses --
-const lockout = {};   // slug -> expiry timestamp
-const beamPulses = []; // active animated beams
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
 
-// -- WebGL context & shader program cache --
-const canvas = document.getElementById('glCanvas');
-const gl = canvas.getContext('webgl', { antialias: true, alpha: false }) || canvas.getContext('experimental-webgl');
-if (!gl) { document.body.innerHTML = '<div style="color:#dc3545;padding:40px;">WebGL is not supported by this browser.</div>'; throw new Error('WebGL unavailable'); }
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  var keyLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  keyLight.position.set(5, 8, 6);
+  scene.add(keyLight);
+  var fillLight = new THREE.PointLight(0x00ced1, 0.5, 30);
+  fillLight.position.set(-6, -2, -4);
+  scene.add(fillLight);
 
-function compileShader(type, src) {
-  const sh = gl.createShader(type);
-  gl.shaderSource(sh, src);
-  gl.compileShader(sh);
-  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
-    throw new Error('Shader compile error: ' + gl.getShaderInfoLog(sh));
+  var orbit = { theta: 0, phi: Math.PI / 6, radius: 14 };
+  var panTarget = new THREE.Vector3(0, 0, 0);
+
+  var grid = null;
+  function buildGrid(print) {
+    if (grid) { scene.remove(grid); grid.geometry.dispose(); grid.material.dispose(); }
+    grid = new THREE.GridHelper(18, 18, print ? 0x6688aa : 0x224466, print ? 0xdde3ea : 0x16202c);
+    scene.add(grid);
   }
-  return sh;
-}
-function linkProgram(vsSrc, fsSrc) {
-  const vs = compileShader(gl.VERTEX_SHADER, vsSrc);
-  const fs = compileShader(gl.FRAGMENT_SHADER, fsSrc);
-  const prog = gl.createProgram();
-  gl.attachShader(prog, vs);
-  gl.attachShader(prog, fs);
-  gl.linkProgram(prog);
-  if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-    throw new Error('Program link error: ' + gl.getProgramInfoLog(prog));
+  buildGrid(false);
+
+  var coreMat = new THREE.MeshBasicMaterial({ color: 0xf39c12, wireframe: true });
+  var core = new THREE.Mesh(new THREE.IcosahedronGeometry(1.25, 1), coreMat);
+  scene.add(core);
+  var innerMat = new THREE.MeshBasicMaterial({ color: 0xf39c12, wireframe: true, transparent: true, opacity: 0.5 });
+  var innerCore = new THREE.Mesh(new THREE.IcosahedronGeometry(0.55, 1), innerMat);
+  scene.add(innerCore);
+
+  var lineGroup = new THREE.Group();
+  scene.add(lineGroup);
+  var coreLineMat = new THREE.LineBasicMaterial({ color: 0x2a3a4f, transparent: true, opacity: 0.55 });
+  var meshMat = new THREE.LineBasicMaterial({ color: 0x1a2634, transparent: true, opacity: 0.30 });
+  // -- Fibonacci spherical distribution (golden angle) --
+  function fibonacciSphere(i, n, radius) {
+    var y = 1 - (i / (n - 1)) * 2;
+    var rAtY = Math.sqrt(Math.max(0, 1 - y * y));
+    var theta = i * 2.399963229728653;
+    return new THREE.Vector3(Math.cos(theta) * rAtY * radius, y * radius, Math.sin(theta) * rAtY * radius);
   }
-  return prog;
-}
 
-// -- Shared shader pair (color + basic diffuse lighting via uLightDir) --
-const VS_LIT = `
-attribute vec3 aPos;
-attribute vec3 aColor;
-uniform mat4 uMVP;
-uniform mat4 uModel;
-varying vec3 vColor;
-varying vec3 vNormal;
-void main() {
-  gl_Position = uMVP * vec4(aPos, 1.0);
-  vColor = aColor;
-  vNormal = normalize((uModel * vec4(aPos, 1.0)).xyz);
-}`;
-const FS_LIT = `
-precision mediump float;
-varying vec3 vColor;
-varying vec3 vNormal;
-uniform vec3 uLightDir;
-uniform float uOpacity;
-void main() {
-  float diff = max(dot(normalize(vNormal), normalize(uLightDir)), 0.0);
-  float ambient = 0.35;
-  gl_FragColor = vec4(vColor * (ambient + diff * 0.85), uOpacity);
-}`;
+  // -- Soft radial glow texture for health aura sprites --
+  var glowTextureCache = {};
+  function makeGlowTexture(hex) {
+    if (glowTextureCache[hex]) return glowTextureCache[hex];
+    var size = 128;
+    var c = document.createElement('canvas');
+    c.width = c.height = size;
+    var ctx = c.getContext('2d');
+    var r = (hex >> 16) & 255, g = (hex >> 8) & 255, b = hex & 255;
+    var grad = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    grad.addColorStop(0, 'rgba(' + r + ',' + g + ',' + b + ',0.85)');
+    grad.addColorStop(0.35, 'rgba(' + r + ',' + g + ',' + b + ',0.35)');
+    grad.addColorStop(1, 'rgba(' + r + ',' + g + ',' + b + ',0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+    var tex = new THREE.CanvasTexture(c);
+    tex.needsUpdate = true;
+    glowTextureCache[hex] = tex;
+    return tex;
+  }
 
-// -- Particle shader (GL_POINTS with size attenuation) --
-const VS_POINT = `
-attribute vec3 aPos;
-attribute vec3 aColor;
-uniform mat4 uMVP;
-uniform float uPointSize;
-varying vec3 vColor;
-void main() {
-  gl_Position = uMVP * vec4(aPos, 1.0);
-  gl_PointSize = uPointSize;
-  vColor = aColor;
-}`;
-const FS_POINT = `
+  // -- Per-node counter badge (canvas-backed sprite) --
+  function makeCounterSprite() {
+    var c = document.createElement('canvas');
+    c.width = 64; c.height = 64;
+    var tex = new THREE.CanvasTexture(c);
+    var mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+    var spr = new THREE.Sprite(mat);
+    spr.scale.set(0.55, 0.55, 1);
+    return { sprite: spr, canvas: c, tex: tex };
+  }
+  function drawCounter(counter, count) {
+    var ctx = counter.canvas.getContext('2d');
+    ctx.clearRect(0, 0, 64, 64);
+    if (count <= 0) return;
+    ctx.fillStyle = printTheme ? '#002855' : '#00ced1';
+    ctx.font = 'bold 28px Segoe UI, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(count), 32, 34);
+    counter.tex.needsUpdate = true;
+  }
 
-// -- Geometry builders --
-function buildIcosahedron() {
-  // 12 vertices of a regular icosahedron (golden ratio t)
-  const t = (1 + Math.sqrt(5)) / 2;
-  const raw = [
-    [-1,t,0],[1,t,0],[-1,-t,0],[1,-t,0],
-    [0,-1,t],[0,1,t],[0,-1,-t],[0,1,-t],
-    [t,0,-1],[t,0,1],[-t,0,-1],[-t,0,1],
-  ];
-  const verts = raw.map(v => V3.scale(v, 1/V3.length(v)));
-  // 20 triangular faces as edge index pairs
-  const edges = [];
-  const faces = [
-    [0,11,5],[0,5,1],[0,1,7],[0,7,10],[0,10,11],
-    [1,5,9],[5,11,4],[11,10,2],[10,7,6],[7,1,8],
-    [3,9,4],[3,4,2],[3,2,6],[3,6,8],[3,8,9],
-    [4,9,5],[2,4,11],[6,2,10],[8,6,7],[9,8,1],
-  ];
-  const seen = {};
-  for (const f of faces) {
-    for (let i=0;i<3;i++) {
-      const a = f[i], b = f[(i+1)%3];
-      const k = a < b ? a+'-'+b : b+'-'+a;
-      if (!seen[k]) { seen[k]=1; edges.push([a,b]); }
+  // -- Theme-adaptive floating label badge (canvas-backed billboard sprite) --
+  function makeLabelSprite(text) {
+    var c = document.createElement('canvas');
+    c.width = 256; c.height = 64;
+    var tex = new THREE.CanvasTexture(c);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    var mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false });
+    var spr = new THREE.Sprite(mat);
+    spr.scale.set(1.6, 0.4, 1);
+    drawLabel({ canvas: c, tex: tex }, text);
+    return { sprite: spr, canvas: c, tex: tex };
+  }
+  function drawLabel(label, text) {
+    var ctx = label.canvas.getContext('2d');
+    ctx.clearRect(0, 0, 256, 64);
+    ctx.font = 'bold 30px Segoe UI, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (printTheme) {
+      // Academic print mode: high-contrast dark navy for paper screenshots.
+      ctx.fillStyle = '#002855';
+      ctx.fillText(text, 128, 32);
+    } else {
+      // Dark mode: cyan-white text with a soft dark shadow for legibility.
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+      ctx.shadowBlur = 8;
+      ctx.fillStyle = '#e0f2fe';
+      ctx.fillText(text, 128, 32);
+    }
+    label.tex.needsUpdate = true;
+  }
+
+  // -- Build the 16 satellite source nodes --
+  // v5.10.11: refined proportions -- sphere radius 0.24 (35% scaled-down from
+  // the original 0.37), aura halo sized at 2.2x the node diameter, and a
+  // floating theme-adaptive label badge above every node.
+  var NODE_RADIUS = 0.24;
+  var AURA_SCALE = NODE_RADIUS * 2 * 2.2;
+  var nodeData = [];
+  for (var i = 0; i < 16; i++) {
+    var pos = fibonacciSphere(i, 16, 4.5);
+    var group = new THREE.Group();
+    group.position.copy(pos);
+
+    var sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(NODE_RADIUS, 24, 24),
+      new THREE.MeshPhongMaterial({ color: 0x00ced1, emissive: 0x003333, shininess: 40 })
+    );
+    group.add(sphere);
+
+    var auraMat = new THREE.SpriteMaterial({ map: makeGlowTexture(STATE_COLORS.standby), transparent: true, opacity: 0.75, depthWrite: false });
+    var aura = new THREE.Sprite(auraMat);
+    aura.scale.set(AURA_SCALE, AURA_SCALE, 1);
+    group.add(aura);
+
+    var counter = makeCounterSprite();
+    counter.sprite.position.set(0, -(NODE_RADIUS + 0.32), 0);
+    group.add(counter.sprite);
+
+    var labelSprite = makeLabelSprite(SOURCE_LABELS[i]);
+    labelSprite.sprite.position.set(0, NODE_RADIUS + 0.52, 0);
+    group.add(labelSprite.sprite);
+
+    scene.add(group);
+    nodeData.push({ name: SOURCE_NAMES[i], label: SOURCE_LABELS[i], group: group, sphere: sphere, aura: aura, counter: counter, labelSprite: labelSprite, count: 0 });
+  }
+  // -- Connection lines: core -> all 16 satellites + faint neighbor mesh --
+  var linkVerts = [];
+  for (var j = 0; j < 16; j++) {
+    linkVerts.push(0, 0, 0);
+    linkVerts.push(nodeData[j].group.position.x, nodeData[j].group.position.y, nodeData[j].group.position.z);
+  }
+  for (var k = 0; k < 16; k++) {
+    var p = nodeData[k].group.position;
+    var nearest = [];
+    for (var m = 0; m < 16; m++) {
+      if (m === k) continue;
+      nearest.push({ idx: m, d: p.distanceTo(nodeData[m].group.position) });
+    }
+    nearest.sort(function (a, b) { return a.d - b.d; });
+    for (var n = 0; n < 3; n++) {
+      var q = nodeData[nearest[n].idx].group.position;
+      linkVerts.push(p.x, p.y, p.z, q.x, q.y, q.z);
     }
   }
-  const positions = [];
-  for (const [a,b] of edges) {
-    positions.push(...verts[a], ...verts[b]);
-  }
-  return new Float32Array(positions);
-}
-function buildSphere(radius, latBands, lonBands) {
-  const pos = [], norm = [];
-  for (let lat=0; lat<=latBands; lat++) {
-    const theta = lat * Math.PI / latBands;
-    const sinT = Math.sin(theta), cosT = Math.cos(theta);
-    for (let lon=0; lon<=lonBands; lon++) {
-      const phi = lon * 2*Math.PI / lonBands;
-      const sinP = Math.sin(phi), cosP = Math.cos(phi);
-      const x = cosP*sinT, y = cosT, z = sinP*sinT;
-      pos.push(radius*x, radius*y, radius*z);
-      norm.push(x,y,z);
+  var coreGeo = new THREE.BufferGeometry();
+  coreGeo.setAttribute('position', new THREE.Float32BufferAttribute(linkVerts, 3));
+  lineGroup.add(new THREE.LineSegments(coreGeo, coreLineMat));
+
+  var meshLinkVerts = [];
+  for (var a = 0; a < 16; a++) {
+    var pa = nodeData[a].group.position;
+    for (var b = a + 1; b < 16; b++) {
+      var pb = nodeData[b].group.position;
+      if (pa.distanceTo(pb) < 5.4) meshLinkVerts.push(pa.x, pa.y, pa.z, pb.x, pb.y, pb.z);
     }
   }
-  const idx = [];
-  for (let lat=0; lat<latBands; lat++) {
-    for (let lon=0; lon<lonBands; lon++) {
-      const a = lat*(lonBands+1)+lon;
-      const b = a+lonBands+1;
-      idx.push(a,b,a+1, b,b+1,a+1);
+  var meshGeo = new THREE.BufferGeometry();
+  meshGeo.setAttribute('position', new THREE.Float32BufferAttribute(meshLinkVerts, 3));
+  lineGroup.add(new THREE.LineSegments(meshGeo, meshMat));
+
+  // -- Energy laser pulse beam (core -> target node, fades over 1.2s) --
+  var laserGeo = new THREE.BufferGeometry();
+  laserGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0], 3));
+  var laserMat = new THREE.LineBasicMaterial({ color: 0xf39c12, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
+  var laser = new THREE.Line(laserGeo, laserMat);
+  laser.frustumCulled = false;
+  laser.visible = false;
+  scene.add(laser);
+  var laserT = -1;
+
+  function fireLaser(idx) {
+    var target = nodeData[idx].group.position;
+    var attr = laserGeo.attributes.position;
+    attr.setXYZ(0, 0, 0, 0);
+    attr.setXYZ(1, target.x, target.y, target.z);
+    attr.needsUpdate = true;
+    laserT = 0;
+    laser.visible = true;
+  }
+
+  function setAura(idx, hex) {
+    var mat = nodeData[idx].aura.material;
+    mat.map = makeGlowTexture(hex);
+    mat.map.needsUpdate = true;
+    mat.needsUpdate = true;
+  }
+  // -- HUD helpers --
+  function normalizeTitle(t) {
+    if (!t) return 'Untitled';
+    return String(t).replace(/\s+/g, ' ').trim().slice(0, 160);
+  }
+  function badgeForScore(s) { return s >= 8 ? 'ELITE' : (s >= 6 ? 'ACCEPT' : 'REJECT'); }
+  function auraForScore(s) {
+    if (s >= 8) return STATE_COLORS.healthy;
+    if (s >= 5.5) return STATE_COLORS.cooldown;
+    return STATE_COLORS.error;
+  }
+  function pipelineForSource(src) {
+    var s = String(src || '').toLowerCase();
+    if (s.indexOf('historic') !== -1 || s.indexOf('archive') !== -1) return 'Historic';
+    return 'Daily';
+  }
+
+  var elTitle = document.getElementById('hud-title');
+  var elScore = document.getElementById('hud-score');
+  var elReward = document.getElementById('hud-reward');
+  var elProvider = document.getElementById('hud-provider');
+  var elSource = document.getElementById('hud-source');
+  var elPipeline = document.getElementById('hud-pipeline');
+
+  function updateHud(p) {
+    elTitle.textContent = p.title || 'Untitled';
+    var badge = p.badge || badgeForScore(p.score);
+    var scoreTxt = (p.score != null && isFinite(p.score)) ? '  ' + p.score.toFixed(1) : '';
+    elScore.textContent = badge + scoreTxt;
+    elScore.className = 'hud-score ' + badge;
+    elReward.textContent = (p.reward != null) ? Number(p.reward).toFixed(3) : '--';
+    elProvider.textContent = p.provider || '--';
+    elSource.textContent = p.sourceLabel || p.source || '--';
+    elPipeline.textContent = (p.pipeline === 'Historic') ? 'HISTORIC ARCHIVE' : (p.pipeline === 'DRL' ? 'DRL FORAGER' : 'DAILY SEARCH');
+    elPipeline.className = 'hud-badge ' + p.pipeline;
+  }
+
+  function sourceIndex(src) {
+    var s = String(src || '').toLowerCase();
+    for (var i = 0; i < SOURCE_NAMES.length; i++) {
+      if (s.indexOf(SOURCE_NAMES[i]) !== -1 || SOURCE_NAMES[i].indexOf(s) !== -1) return i;
     }
-  }
-  const verts = [];
-  for (const i of idx) verts.push(pos[i*3],pos[i*3+1],pos[i*3+2]);
-  const norms = [];
-  for (const i of idx) norms.push(norm[i*3],norm[i*3+1],norm[i*3+2]);
-  return { verts: new Float32Array(verts), norms: new Float32Array(norms) };
-}
-function buildOrbitRing(radius, segments) {
-  const pts = [];
-  for (let i=0;i<segments;i++) {
-    const a = i/segments*2*Math.PI;
-    pts.push(radius*Math.cos(a), 0, radius*Math.sin(a));
-  }
-  return new Float32Array(pts);
-}
-function buildOctahedron(radius) {
-  const v = [
-    [0,1,0],[0,-1,0],[1,0,0],[-1,0,0],[0,0,1],[0,0,-1],
-  ].map(p => V3.scale(p, radius));
-  const edgeIdx = [[0,2],[0,3],[0,4],[0,5],[1,2],[1,3],[1,4],[1,5],[2,4],[4,3],[3,5],[5,2]];
-  const pts = [];
-  for (const [a,b] of edgeIdx) pts.push(...v[a], ...v[b]);
-  return new Float32Array(pts);
-}
-
-// -- Prebuilt geometry --
-const icosaVerts = buildIcosahedron();
-const coreSphere = buildSphere(0.55, 16, 24);
-const satSphere = buildSphere(0.28, 10, 14);
-const cageGeom = buildOctahedron(0.62);
-const rings = RING_CFG.map(cfg => ({ ...cfg, pts: buildOrbitRing(cfg.radius * orbitRadius, 128) }));
-
-// -- Satellite node world positions (recomputed when orbitRadius changes) --
-function satelliteWorldPos(src) {
-  const cfg = RING_CFG[src.ring];
-  const r = cfg.radius * orbitRadius;
-  let x = r * Math.cos(src.angle);
-  let z = r * Math.sin(src.angle);
-  let y = 0;
-  // Apply ring inclination (tilt about X axis) then global tilt about Y
-  const inc = cfg.inclination, tilt = cfg.tilt;
-  let y1 = y*Math.cos(inc) - z*Math.sin(inc);
-  let z1 = y*Math.sin(inc) + z*Math.cos(inc);
-  const x2 = x*Math.cos(tilt) - z1*Math.sin(tilt);
-  const z2 = x*Math.sin(tilt) + z1*Math.cos(tilt);
-  return [x2, y1, z2];
-}
-
-// -- Ambient space particles --
-let particleData = null;
-// -- GL buffer cache --
-const buffers = {};
-function getOrCreateStaticBuffer(key, data, itemSize) {
-  if (buffers[key]) return buffers[key];
-  const buf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-  gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-  buffers[key] = { buffer: buf, itemSize, count: data.length / itemSize };
-  return buffers[key];
-}
-
-// -- Draw helpers --
-function getUniform(prog, name) { return gl.getUniformLocation(prog, name); }
-
-function setMat4(prog, name, mat) {
-  gl.uniformMatrix4fv(gl.getUniformLocation(prog, name), false, mat);
-}
-
-function setVec3(prog, name, v) {
-  gl.uniform3fv(gl.getUniformLocation(prog, name), v);
-}
-
-function setAttr(prog, name, bufInfo, divisor) {
-  const loc = gl.getAttribLocation(prog, name);
-  gl.bindBuffer(gl.ARRAY_BUFFER, bufInfo.buffer);
-  gl.vertexAttribPointer(loc, bufInfo.itemSize, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(loc);
-  if (divisor) gl.vertexAttribDivisor(loc, divisor);
-}
-
-function drawLines(data, color, mvp, model, opacity) {
-  const prog = litProgram;
-  gl.useProgram(prog);
-  setMat4(prog, 'uMVP', mvp);
-  setMat4(prog, 'uModel', model);
-  setVec3(prog, 'uLightDir', [0.5, 0.7, 0.3]);
-  gl.uniform1f(getUniform(prog, 'uOpacity'), opacity);
-  // Build color array matching vertex count
-  const vcount = data.length/3;
-  const colors = new Float32Array(vcount*3);
-  for (let i=0;i<vcount;i++) { colors[i*3]=color[0];colors[i*3+1]=color[1];colors[i*3+2]=color[2]; }
-  const cbuf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, cbuf);
-  gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
-  const posBuf = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
-  gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-  gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
-  const posLoc = gl.getAttribLocation(prog, 'aPos');
-  gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(posLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, cbuf);
-  const colLoc = gl.getAttribLocation(prog, 'aColor');
-  gl.vertexAttribPointer(colLoc, 3, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(colLoc);
-  gl.drawArrays(gl.LINES, 0, vcount);
-  gl.deleteBuffer(cbuf); gl.deleteBuffer(posBuf);
-}
-
-function drawTriangles(verts, norms, color, mvp, model, opacity) {
-  const prog = litProgram;
-  gl.useProgram(prog);
-  setMat4(prog, 'uMVP', mvp);
-  setMat4(prog, 'uModel', model);
-  setVec3(prog, 'uLightDir', [0.5, 0.7, 0.3]);
-  gl.uniform1f(getUniform(prog, 'uOpacity'), opacity);
-  const vcount = verts.length/3;
-  const colors = new Float32Array(vcount*3);
-  for (let i=0;i<vcount;i++) { colors[i*3]=color[0];colors[i*3+1]=color[1];colors[i*3+2]=color[2]; }
-  const cbuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, cbuf);
-  gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
-  const pbuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, pbuf);
-  gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
-  const nbuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, nbuf);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vcount*3), gl.STATIC_DRAW);
-  gl.bindBuffer(gl.ARRAY_BUFFER, pbuf);
-  const posLoc = gl.getAttribLocation(prog, 'aPos');
-  gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(posLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, cbuf);
-  const colLoc = gl.getAttribLocation(prog, 'aColor');
-  gl.vertexAttribPointer(colLoc, 3, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(colLoc);
-  gl.drawArrays(gl.TRIANGLES, 0, vcount);
-  gl.deleteBuffer(cbuf); gl.deleteBuffer(pbuf); gl.deleteBuffer(nbuf);
-}
-
-function drawPoints(data, colors, mvp, pointSize) {
-  const prog = pointProgram;
-  gl.useProgram(prog);
-  setMat4(prog, 'uMVP', mvp);
-  gl.uniform1f(getUniform(prog, 'uPointSize'), pointSize);
-  const pbuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, pbuf);
-  gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-  const cbuf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, cbuf);
-  gl.bufferData(gl.ARRAY_BUFFER, colors, gl.STATIC_DRAW);
-  gl.bindBuffer(gl.ARRAY_BUFFER, pbuf);
-  const posLoc = gl.getAttribLocation(prog, 'aPos');
-  gl.vertexAttribPointer(posLoc, 3, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(posLoc);
-  gl.bindBuffer(gl.ARRAY_BUFFER, cbuf);
-  const colLoc = gl.getAttribLocation(prog, 'aColor');
-  gl.vertexAttribPointer(colLoc, 4, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(colLoc);
-  gl.drawArrays(gl.POINTS, 0, data.length/3);
-// -- Camera projection helpers --
-function getViewMatrix() {
-  const eye = [
-    camera.radius * Math.sin(camera.phi) * Math.cos(camera.theta),
-    camera.radius * Math.cos(camera.phi),
-    camera.radius * Math.sin(camera.phi) * Math.sin(camera.theta),
-  ];
-  return M4.lookAt(eye, [camera.panX, camera.panY, 0], [0,1,0]);
-}
-
-function getProjectionMatrix() {
-  const aspect = canvas.width / canvas.height;
-  if (is3D) {
-    return M4.perspective(45, aspect, 0.1, 100);
-  } else {
-    // Orthographic top-down projection (2D mode)
-    const h = orbitRadius * 2.8;
-    const w = h * aspect;
-    const l=-w, r=w, b=-h, t=h;
-    const n=1, f=100;
-    return new Float32Array([
-      2/(r-l),0,0,0, 0,2/(t-b),0,0,
-      0,0,-2/(f-n),0, -(r+l)/(r-l),-(t+b)/(t-b),-(f+n)/(f-n),1
-    ]);
-  }
-}
-
-// -- Mouse interaction --
-let mouseDown = false, mouseBtn = 0, lastMouse = [0,0];
-canvas.addEventListener('mousedown', e => {
-  mouseDown = true; mouseBtn = e.button;
-  lastMouse = [e.clientX, e.clientY];
-  if (mouseBtn === 1) canvas.classList.add('panning');
-});
-canvas.addEventListener('mouseup', e => {
-  mouseDown = false; canvas.classList.remove('panning');
-});
-canvas.addEventListener('mouseleave', () => { mouseDown = false; canvas.classList.remove('panning'); });
-canvas.addEventListener('mousemove', e => {
-  if (!mouseDown) return;
-  const dx = e.clientX - lastMouse[0];
-  const dy = e.clientY - lastMouse[1];
-  lastMouse = [e.clientX, e.clientY];
-  if (mouseBtn === 0) {
-    // Left drag: orbit
-    camera.theta -= dx * 0.005;
-    camera.phi = Math.max(0.05, Math.min(Math.PI - 0.05, camera.phi - dy * 0.005));
-  } else if (mouseBtn === 1) {
-    // Middle drag: pan
-    const s = 0.02;
-    camera.panX -= dx * s;
-    camera.panY += dy * s;
-  }
-});
-canvas.addEventListener('wheel', e => {
-  e.preventDefault();
-  camera.radius = Math.max(3, Math.min(40, camera.radius + e.deltaY * 0.01));
-}, { passive: false });
-
-// -- Resize handler --
-function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  gl.viewport(0, 0, canvas.width, canvas.height);
-}
-window.addEventListener('resize', resize);
-resize();
-
-// -- Main render loop --
-function render(time) {
-  gl.clearColor(0.059, 0.067, 0.090, 1.0);
-  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-  gl.enable(gl.DEPTH_TEST);
-  gl.enable(gl.BLEND);
-  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-
-  const view = getViewMatrix();
-  const proj = getProjectionMatrix();
-  const vp = M4.multiply(proj, view);
-
-  const coreRot = time * 0.0003 * rotationSpeed;
-  const coreModel = M4.rotateY(M4.identity(), coreRot);
-  const coreMVP = M4.multiply(vp, coreModel);
-
-  // 1. Ambient space particles
-  if (particleData) {
-    const pCol = new Float32Array(particleData.col);
-    drawPoints(particleData.pos, pCol, vp, 2.5);
+    var h = 0;
+    for (var j = 0; j < s.length; j++) h = (h * 31 + s.charCodeAt(j)) | 0;
+    return ((h % 16) + 16) % 16;
   }
 
-  // 2. Orbital ring grids
-  for (const ring of rings) {
-    const rModel = M4.rotateX(M4.rotateY(M4.identity(), ring.tilt), ring.inclination);
-    const rScale = ring.radius * orbitRadius;
-    const rM = M4.scale(rModel, [rScale, rScale, rScale]);
-    const rMVP = M4.multiply(vp, rM);
-    drawRing(ring.pts, [0, 0.4, 0.6], rMVP, rM, 0.35);
+  var recentlyHandled = new Set();
+  function dedupeKey(p) {
+    var t = normalizeTitle(p.title || p.Title);
+    var s = parseFloat(p.overall_score != null ? p.overall_score : (p.score != null ? p.score : 0));
+    if (isNaN(s)) s = 0;
+    return t + '|' + s.toFixed(1);
+  }
+  function isDuplicate(key, p) {
+    if (!p.title && !p.Title) return false;
+    if (recentlyHandled.has(key)) return true;
+    recentlyHandled.add(key);
+    if (recentlyHandled.size > 500) recentlyHandled.delete(recentlyHandled.values().next().value);
+    return false;
   }
 
-  // 3. Central TALOS core (icosahedron wireframe)
-  const coreScale = M4.scale(M4.identity(), [1.0, 1.0, 1.0]);
-  const coreMM = M4.multiply(coreModel, coreScale);
-  const coreMV = M4.multiply(vp, coreMM);
-  drawLines(icosaVerts, [0.953, 0.612, 0.071], coreMV, coreMM, 0.85);
+  function handlePaper(p) {
+    if (!p) return;
+    var key = dedupeKey(p);
+    if (isDuplicate(key, p)) return;
+    var title = normalizeTitle(p.title || p.Title);
+    var score = parseFloat(p.overall_score != null ? p.overall_score : (p.score != null ? p.score : 0));
+    if (isNaN(score)) score = 0;
+    var idx = sourceIndex(p.source);
+    fireLaser(idx);
+    setAura(idx, auraForScore(score));
+    nodeData[idx].count += 1;
+    drawCounter(nodeData[idx].counter, nodeData[idx].count);
+    updateHud({ title: title, score: score, badge: badgeForScore(score), reward: p.reward, provider: p.provider, source: p.source, sourceLabel: nodeData[idx].label, pipeline: pipelineForSource(p.source) });
+  }
+  // -- Live source telemetry (pre-flight health + ingestion status events) --
+  function setAuraByStatus(idx, status) {
+    setAura(idx, STATE_COLORS[status] || STATE_COLORS.standby);
+  }
 
-  // 4. Core inner sphere
-  drawTriangles(coreSphere.verts, coreSphere.norms, [0.953, 0.612, 0.071], coreMV, coreMM, 0.45);
+  function handleSourceSearching(p) {
+    var idx = sourceIndex(p.source);
+    fireLaser(idx);
+    setAura(idx, STATE_COLORS.cooldown);
+    elTitle.textContent = 'Searching ' + nodeData[idx].label + '...';
+    elScore.textContent = 'SEARCHING';
+    elScore.className = 'hud-score ACCEPT';
+    elReward.textContent = '--';
+    elProvider.textContent = '--';
+    elSource.textContent = nodeData[idx].label;
+    elPipeline.textContent = 'LIVE TELEMETRY';
+    elPipeline.className = 'hud-badge DRL';
+  }
 
-  // 5. 16 satellite nodes
-  for (const src of SOURCES) {
-    const pos = satelliteWorldPos(src);
-    const sModel = M4.translate(M4.identity(), [pos[0], pos[1], pos[2]]);
-    const sMVP = M4.multiply(vp, sModel);
-    const isLocked = lockout[src.slug] && lockout[src.slug] > time;
-    const nodeColor = isLocked ? [0.87, 0.21, 0.27] : [0, 0.808, 0.82];
-
-    drawTriangles(satSphere.verts, satSphere.norms, nodeColor, sMVP, sModel, 0.9);
-
-    // Lockout cage
-    if (isLocked) {
-      const pulse = 0.5 + 0.3 * Math.sin(time * 0.005);
-      const cageColor = [0.95, 0.61, 0.07];
-      drawLines(cageGeom, cageColor, sMVP, sModel, pulse);
+  function handleSourceStatus(p) {
+    var idx = sourceIndex(p.source);
+    var status = p.status || 'standby';
+    setAuraByStatus(idx, status);
+    if (p.count != null && !isNaN(Number(p.count))) {
+      nodeData[idx].count = Number(p.count);
+      drawCounter(nodeData[idx].counter, nodeData[idx].count);
     }
+    elTitle.textContent = nodeData[idx].label + ' - ' + String(status).toUpperCase();
+    elScore.textContent = String(status).toUpperCase();
+    elScore.className = 'hud-score ' + (status === 'error' ? 'REJECT' : 'ACCEPT');
+    elReward.textContent = (p.count != null ? String(p.count) : '--');
+    elProvider.textContent = '--';
+    elSource.textContent = nodeData[idx].label;
+    elPipeline.textContent = 'SOURCE STATUS';
+    elPipeline.className = 'hud-badge DRL';
   }
 
-  // 6. Active beam pulses
-// -- HUD update --
-function updateHUD(event) {
-  const content = document.getElementById('hud-content');
-  const empty = document.getElementById('hud-empty');
-  content.style.display = 'block';
-  empty.style.display = 'none';
-
-  const title = event.title || event.paper_title || 'Untitled Paper';
-  const score = parseFloat(event.overall_score || event.score || 0);
-  const pipeline = event.pipeline || event.pipeline_type || 'Unknown';
-  const reward = event.reward_signal || event.drl_reward;
-  const provider = event.provider || event.router_provider || '--';
-  const source = event.source || event.source_name || '--';
-
-  const badge = document.getElementById('hud-badge');
-  badge.textContent = pipeline;
-  badge.className = 'hud-badge';
-  if (pipeline.includes('DRL') || pipeline.includes('Agent')) badge.classList.add('DRL');
-  else if (pipeline.includes('Daily')) badge.classList.add('Daily');
-  else if (pipeline.includes('Historic') || pipeline.includes('Archive')) badge.classList.add('Historic');
-
-  document.getElementById('hud-title').textContent = title.length > 60 ? title.substring(0, 57) + '...' : title;
-
-  const scoreEl = document.getElementById('hud-score');
-  scoreEl.textContent = 'Score: ' + score.toFixed(2);
-  scoreEl.className = 'hud-score';
-  if (score >= 8.0) scoreEl.classList.add('ELITE');
-  else if (score >= 6.0) scoreEl.classList.add('ACCEPT');
-  else scoreEl.classList.add('REJECT');
-
-  const rewardEl = document.getElementById('hud-reward');
-  if (reward !== undefined && reward !== null) {
-    const r = parseFloat(reward);
-    rewardEl.textContent = (r >= 0 ? '+' : '') + r.toFixed(0);
-    rewardEl.style.color = r >= 20 ? '#28a745' : r >= 5 ? '#f39c12' : '#dc3545';
-  } else {
-    rewardEl.textContent = '--';
-    rewardEl.style.color = '#6b7280';
+  function handleSourceTelemetry(evt) {
+    var p = evt.payload || {};
+    if (evt.event_type === 'source_searching') handleSourceSearching(p);
+    else if (evt.event_type === 'source_status') handleSourceStatus(p);
   }
 
-  document.getElementById('hud-provider').textContent = provider;
-  document.getElementById('hud-source').textContent = source;
-}
+  // -- Pure AJAX polling engine (1-second interval, cache-busted) --
+  var lastSeenEvalId = null;
+  var pollTimer = null;
 
-function triggerBeam(sourceSlug) {
-  const src = SOURCES.find(s => s.slug === sourceSlug);
-  if (!src) return;
-  beamPulses.push({ target: src, startTime: performance.now(), duration: 1800 });
-  if (beamPulses.length > 8) beamPulses.shift();
-}
-
-function setLockout(sourceSlug, durationMs) {
-  lockout[sourceSlug] = performance.now() + durationMs;
-}
-
-function processEvent(evt) {
-  const type = evt.event_type || evt.type;
-  const payload = evt.payload || evt;
-
-  if (type === 'paper_evaluated' || type === 'paper_discovered') {
-    updateHUD(payload);
-    const src = payload.source || payload.source_name;
-    if (src) {
-      const match = SOURCES.find(s => s.slug === src || s.name === src ||
-        s.slug.toLowerCase().includes(src.toLowerCase()) ||
-        src.toLowerCase().includes(s.slug.toLowerCase()));
-      if (match) { triggerBeam(match.slug); setLockout(match.slug, 4000); }
-    }
-  } else if (type === 'agent_step' || type === 'router_decision') {
-    updateHUD(payload);
-    const src = payload.source || payload.source_name;
-    if (src) {
-      const match = SOURCES.find(s => s.slug === src || s.name === src);
-      if (match) { triggerBeam(match.slug); setLockout(match.slug, 2500); }
-    }
-  }
-}
-  for (let i = beamPulses.length - 1; i >= 0; i--) {
-    const bp = beamPulses[i];
-    const elapsed = time - bp.startTime;
-// -- LIVE SSE MODE --
-let sseSource = null;
-function startLiveSSE() {
-  if (sseSource) { sseSource.close(); sseSource = null; }
-  sseSource = new EventSource('/api/v1/visualizer/stream');
-  sseSource.onmessage = function(e) {
+  async function pollState() {
     try {
-      const evt = JSON.parse(e.data);
-      processEvent(evt);
-    } catch (err) { /* ignore heartbeats */ }
-  };
-  sseSource.onerror = function() {
-    if (sseSource) { sseSource.close(); sseSource = null; }
-    setTimeout(() => { if (currentMode === 'live') startLiveSSE(); }, 3000);
-  };
-  document.getElementById('mode-indicator').textContent = 'LIVE SSE STREAM';
-}
-    const dur = bp.duration;
-// -- OFFLINE REPLAY MODE --
-let replayEvents = [], replayIndex = 0, replayPlaying = false;
-let replaySpeed = 1, replayTimer = null, replayStartTime = 0, replayPausedAt = 0;
-
-function stopReplay() {
-  replayPlaying = false;
-  if (replayTimer) clearTimeout(replayTimer);
-  replayTimer = null;
-}
-
-async function loadDemoData() {
-  try {
-    const resp = await fetch('/api/v1/visualizer/demo-data');
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const papers = await resp.json();
-    replayEvents = [];
-    let t = 0;
-    for (const p of papers) {
-      replayEvents.push({
-        time: t,
-        event: {
-          event_type: 'paper_evaluated',
-          payload: {
-            title: p.title,
-            overall_score: p.overall_score,
-            pipeline: p.pipeline_type || 'Retrospective Evaluation',
-            source: p.source,
-            provider: p.provider || '--',
-            reward_signal: null,
-          }
-        }
+      var res = await fetch('/api/v1/visualizer/state?_t=' + Date.now(), {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
       });
-      t += 1500; // 1.5 seconds spacing
+      if (!res.ok) return;
+      var data = await res.json();
+      applyStateUpdate(data);
+    } catch (e) { /* backend offline; retry next tick */ }
+  }
+
+  function applyStateUpdate(data) {
+    if (!data) return;
+
+    // -- Refresh all 16 node auras + count badges from source health --
+    var sources = data.sources || {};
+    Object.keys(sources).forEach(function (slug) {
+      var idx = sourceIndex(slug);
+      var info = sources[slug];
+      setAuraByStatus(idx, info.status || 'standby');
+      if (info.count != null && !isNaN(Number(info.count))) {
+        nodeData[idx].count = Number(info.count);
+        drawCounter(nodeData[idx].counter, nodeData[idx].count);
+      }
+    });
+
+    // -- New evaluation? Fire laser + refresh the HUD card --
+    var ev = data.latest_evaluation;
+    if (ev && ev.id != null && ev.id !== lastSeenEvalId) {
+      lastSeenEvalId = ev.id;
+      var idx = sourceIndex(ev.source);
+      fireLaser(idx);
+      var score = parseFloat(ev.overall_score);
+      if (isNaN(score)) score = 0;
+      updateHud({
+        title: normalizeTitle(ev.title),
+        score: score,
+        badge: badgeForScore(score),
+        reward: ev.reward,
+        provider: ev.provider,
+        source: ev.source,
+        sourceLabel: nodeData[idx].label,
+        pipeline: pipelineForSource(ev.source)
+      });
     }
-    return replayEvents.length;
-  } catch (err) { console.error('Failed to load demo data:', err); return 0; }
-}
-
-function startReplay() {
-  stopReplay();
-  if (replayEvents.length === 0) return;
-  replayIndex = 0; replayPlaying = true;
-  replayStartTime = performance.now() - replayPausedAt;
-  document.getElementById('mode-indicator').textContent = 'CONFERENCE REPLAY';
-  replayTick();
-}
-
-function replayTick() {
-  if (!replayPlaying) return;
-  const elapsed = (performance.now() - replayStartTime) * replaySpeed;
-  let advanced = false;
-  while (replayIndex < replayEvents.length && replayEvents[replayIndex].time <= elapsed) {
-    processEvent(replayEvents[replayIndex].event);
-    replayIndex++; advanced = true;
   }
-  const total = replayEvents.length > 0 ? replayEvents[replayEvents.length-1].time : 1;
-  const slider = document.getElementById('rp-timeline');
-  slider.max = Math.ceil(total);
-  slider.value = Math.min(elapsed, total);
-  const totalMs = Math.ceil(total);
-  const curMs = Math.floor(elapsed);
-  const fmt = ms => `${String(Math.floor(ms/60000)).padStart(2,'0')}:${String(Math.floor((ms%60000)/1000)).padStart(2,'0')}`;
-  document.getElementById('rp-time').textContent = `${fmt(curMs)} / ${fmt(totalMs)}`;
-  if (replayIndex < replayEvents.length) {
-    const delay = (replayEvents[replayIndex].time - elapsed) / replaySpeed;
-    replayTimer = setTimeout(replayTick, Math.max(16, delay));
-  } else { replayPlaying = false; replayTimer = null; }
-}
 
-function pauseReplay() {
-  replayPlaying = false;
-  if (replayTimer) clearTimeout(replayTimer);
-  replayTimer = null;
-  replayPausedAt = performance.now() - replayStartTime;
-}
-
-// -- UI Event Handlers --
-let currentMode = 'live';
-
-document.getElementById('btn-live').addEventListener('click', () => {
-  stopReplay();
-  document.getElementById('btn-live').classList.add('active');
-  document.getElementById('btn-replay').classList.remove('active');
-  document.getElementById('replay').classList.remove('visible');
-  currentMode = 'live';
-  startLiveSSE();
-});
-
-document.getElementById('btn-replay').addEventListener('click', async () => {
-  if (sseSource) { sseSource.close(); sseSource = null; }
-  document.getElementById('btn-live').classList.remove('active');
-  document.getElementById('btn-replay').classList.add('active');
-  document.getElementById('replay').classList.add('visible');
-  stopReplay();
-  currentMode = 'replay';
-  const count = await loadDemoData();
-  if (count > 0) {
-    document.getElementById('mode-indicator').textContent = `CONFERENCE REPLAY (${count} papers)`;
-    replayPausedAt = 0;
-    startReplay();
-  } else {
-    document.getElementById('mode-indicator').textContent = 'REPLAY: NO DATA AVAILABLE';
+  function startPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollState();
+    pollTimer = setInterval(pollState, 1000);
   }
-});
 
-document.getElementById('rp-play').addEventListener('click', () => {
-  if (replayEvents.length === 0) return;
-  if (replayPlaying) { pauseReplay(); document.getElementById('rp-play').textContent = 'PLAY'; }
-  else { startReplay(); document.getElementById('rp-play').textContent = 'PAUSE'; }
-});
+  // -- Conference offline replay --
+  var replayEvents = [];
+  var replayIndex = 0;
+  var replayPlaying = false;
+  var replaySpeed = 1;
+  var replayTimer = null;
 
-document.getElementById('rp-speed').addEventListener('click', function() {
-  const speeds = [1, 2, 5];
-  const cur = parseInt(this.dataset.speed || '1');
-  const idx = speeds.indexOf(cur);
-  const next = speeds[(idx + 1) % speeds.length];
-  this.dataset.speed = next;
-  this.textContent = next + 'x';
-  replaySpeed = next;
-});
-
-document.getElementById('rp-timeline').addEventListener('input', function() {
-  seekReplay(this.value);
-});
-
-document.getElementById('btn-reset').addEventListener('click', () => {
-  camera = { theta: 0, phi: Math.PI/6, radius: 14, target: [0,0,0], panX: 0, panY: 0 };
-});
-
-document.getElementById('btn-2d3d').addEventListener('click', function() {
-  is3D = !is3D;
-  this.textContent = is3D ? '2D/3D' : '3D/2D';
-  this.classList.toggle('active', !is3D);
-  if (!is3D) { camera.phi = Math.PI/2 - 0.01; camera.radius = orbitRadius * 3.5; }
-});
-
-function setScoreFilter(filter, btn) {
-  scoreFilter = filter;
-  document.querySelectorAll('.score-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-document.getElementById('btn-all').addEventListener('click', function() { setScoreFilter('ALL', this); });
-document.getElementById('btn-accept').addEventListener('click', function() { setScoreFilter('ACCEPT', this); });
-document.getElementById('btn-elite').addEventListener('click', function() { setScoreFilter('ELITE', this); });
-
-document.getElementById('btn-settings').addEventListener('click', function() {
-  document.getElementById('settings-panel').classList.toggle('visible');
-});
-
-// -- Settings synchronisation --
-document.getElementById('particle-slider').addEventListener('input', function() {
-  particleCount = parseInt(this.value);
-  document.getElementById('particle-val').textContent = particleCount;
-  rebuildParticles(particleCount);
-});
-document.getElementById('speed-slider').addEventListener('input', function() {
-  rotationSpeed = parseFloat(this.value);
-  document.getElementById('speed-val').textContent = rotationSpeed.toFixed(1);
-});
-document.getElementById('orbit-slider').addEventListener('input', function() {
-  orbitRadius = parseFloat(this.value);
-  document.getElementById('orbit-val').textContent = orbitRadius.toFixed(1);
-  for (let i=0; i<rings.length; i++) {
-    rings[i].radius = RING_CFG[i].radius;
-    rings[i].pts = buildOrbitRing(RING_CFG[i].radius * orbitRadius, 128);
+  function loadDemoData() {
+    return fetch('/api/v1/visualizer/demo-data?limit=200')
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)); })
+      .then(function (papers) {
+        replayEvents = papers || [];
+        document.getElementById('rp-timeline').max = Math.max(replayEvents.length, 0);
+        document.getElementById('rp-timeline').value = 0;
+        document.getElementById('rp-status').textContent = '0 / ' + replayEvents.length;
+        replayIndex = 0;
+        return replayEvents.length;
+      })
+      .catch(function () { replayEvents = []; return 0; });
   }
-});
-document.getElementById('trail-slider').addEventListener('input', function() {
-  trailLength = parseInt(this.value);
-  document.getElementById('trail-val').textContent = trailLength;
-});
+  function startReplay() {
+    if (replayTimer) clearInterval(replayTimer);
+    replayPlaying = true;
+    replayTimer = setInterval(function () {
+      if (!replayPlaying) return;
+      if (replayIndex >= replayEvents.length) { pauseReplay(); document.getElementById('rp-play').textContent = 'PLAY'; return; }
+      handlePaper(replayEvents[replayIndex++]);
+      document.getElementById('rp-timeline').value = replayIndex;
+      document.getElementById('rp-status').textContent = replayIndex + ' / ' + replayEvents.length;
+    }, Math.max(300, 1200 / replaySpeed));
+  }
+  function pauseReplay() {
+    replayPlaying = false;
+    if (replayTimer) clearInterval(replayTimer);
+    replayTimer = null;
+  }
+  function seekReplay(v) {
+    replayIndex = parseInt(v) || 0;
+    document.getElementById('rp-status').textContent = replayIndex + ' / ' + replayEvents.length;
+  }
+  // -- Orbit camera controls (drag rotate, right-click pan, wheel zoom) --
+  var dragging = false, dragButton = 0, lastX = 0, lastY = 0;
+  renderer.domElement.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+  renderer.domElement.addEventListener('mousedown', function (e) {
+    dragging = true; dragButton = e.button; lastX = e.clientX; lastY = e.clientY;
+    if (dragButton === 2) renderer.domElement.classList.add('panning');
+  });
+  window.addEventListener('mousemove', function (e) {
+    if (!dragging) return;
+    var dx = e.clientX - lastX, dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    if (dragButton === 0) {
+      orbit.theta -= dx * 0.005;
+      orbit.phi -= dy * 0.005;
+      orbit.phi = Math.max(0.05, Math.min(Math.PI - 0.05, orbit.phi));
+    } else if (dragButton === 2) {
+      var forward = new THREE.Vector3(); camera.getWorldDirection(forward);
+      var rightV = new THREE.Vector3().crossVectors(forward, camera.up).normalize();
+      var upV = new THREE.Vector3().crossVectors(rightV, forward).normalize();
+      var panScale = orbit.radius * 0.0012;
+      panTarget.addScaledVector(rightV, -dx * panScale);
+      panTarget.addScaledVector(upV, dy * panScale);
+    }
+  });
+  window.addEventListener('mouseup', function () { dragging = false; renderer.domElement.classList.remove('panning'); });
+  renderer.domElement.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    orbit.radius *= (1 + Math.sign(e.deltaY) * 0.08);
+    orbit.radius = Math.max(4, Math.min(40, orbit.radius));
+  }, { passive: false });
 
-// -- Keyboard shortcuts --
-document.addEventListener('keydown', e => {
-  if (e.key.toLowerCase() === 'r') camera = { theta: 0, phi: Math.PI/6, radius: 14, target: [0,0,0], panX: 0, panY: 0 };
-  if (e.key.toLowerCase() === 't') { is3D = !is3D; document.getElementById('btn-2d3d').textContent = is3D ? '2D/3D' : '3D/2D'; }
-});
+  function resetCamera() {
+    orbit = { theta: 0, phi: Math.PI / 6, radius: 14 };
+    panTarget.set(0, 0, 0);
+  }
 
-// -- Bootstrap --
-startLiveSSE();
+  // -- Theme switching --
+  function applyTheme(print) {
+    printTheme = print;
+    renderer.setClearColor(print ? 0xffffff : 0x0f1117, 1);
+    document.body.classList.toggle('print-theme', print);
+    buildGrid(print);
+    coreMat.color.set(print ? 0x002855 : 0xf39c12);
+    innerMat.color.set(print ? 0x002855 : 0xf39c12);
+    coreLineMat.color.set(print ? 0x33445a : 0x2a3a4f);
+    meshMat.color.set(print ? 0x55606e : 0x1a2634);
+    laserMat.color.set(print ? 0x002855 : 0xf39c12);
+    for (var i = 0; i < nodeData.length; i++) {
+      nodeData[i].sphere.material.color.set(print ? 0x002855 : 0x00ced1);
+      drawCounter(nodeData[i].counter, nodeData[i].count);
+      drawLabel(nodeData[i].labelSprite, nodeData[i].label);
+    }
+  }
+
+  window.addEventListener('resize', function () {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  // -- Animation loop --
+  var clock = new THREE.Clock();
+  function animate() {
+    requestAnimationFrame(animate);
+    var dt = Math.min(clock.getDelta(), 0.1);
+
+    core.rotation.y += dt * 0.35;
+    core.rotation.x += dt * 0.12;
+    innerCore.rotation.y -= dt * 0.5;
+    innerCore.rotation.z += dt * 0.2;
+
+    for (var i = 0; i < nodeData.length; i++) {
+      var s = 1 + 0.06 * Math.sin(clock.elapsedTime * 2 + i);
+      nodeData[i].sphere.scale.setScalar(s);
+    }
+
+    if (laserT >= 0) {
+      laserT += dt;
+      var t = laserT / 1.2;
+      if (t >= 1) { laser.visible = false; laserT = -1; laserMat.opacity = 0; }
+      else { laserMat.opacity = Math.max(0, 1 - t); }
+    }
+
+    camera.position.set(
+      panTarget.x + orbit.radius * Math.sin(orbit.phi) * Math.sin(orbit.theta),
+      panTarget.y + orbit.radius * Math.cos(orbit.phi),
+      panTarget.z + orbit.radius * Math.sin(orbit.phi) * Math.cos(orbit.theta)
+    );
+    camera.lookAt(panTarget);
+
+    renderer.render(scene, camera);
+  }
+
+  // -- UI wiring --
+  function setMode(mode) {
+    currentMode = mode;
+    document.getElementById('btn-live').classList.toggle('active', mode === 'live');
+    document.getElementById('btn-replay').classList.toggle('active', mode === 'replay');
+    document.getElementById('replay').classList.toggle('visible', mode === 'replay');
+    document.getElementById('mode-indicator').textContent = mode === 'live' ? 'LIVE AJAX POLLING' : 'CONFERENCE OFFLINE REPLAY';
+    if (mode === 'live') {
+      pauseReplay();
+      startPolling();
+    } else {
+      recentlyHandled.clear();
+      loadDemoData().then(function (count) {
+        document.getElementById('rp-play').textContent = 'PLAY';
+        if (count > 0) document.getElementById('mode-indicator').textContent = 'CONFERENCE REPLAY (' + count + ' papers)';
+      });
+    }
+  }
+
+  document.getElementById('btn-live').addEventListener('click', function () { setMode('live'); });
+  document.getElementById('btn-replay').addEventListener('click', function () { setMode('replay'); });
+  document.getElementById('btn-theme').addEventListener('click', function () {
+    applyTheme(!printTheme);
+    this.classList.toggle('active', printTheme);
+    this.textContent = printTheme ? 'THEME: PRINT' : 'THEME';
+  });
+  document.getElementById('btn-reset').addEventListener('click', resetCamera);
+  document.getElementById('rp-play').addEventListener('click', function () {
+    if (replayPlaying) { pauseReplay(); this.textContent = 'PLAY'; }
+    else { startReplay(); this.textContent = 'PAUSE'; }
+  });
+  document.getElementById('rp-speed').addEventListener('click', function () {
+    var speeds = [1, 2, 5];
+    var cur = parseInt(this.dataset.speed || '1');
+    var next = speeds[(speeds.indexOf(cur) + 1) % speeds.length];
+    this.dataset.speed = next; this.textContent = next + 'x'; replaySpeed = next;
+    if (replayPlaying) startReplay();
+  });
+  document.getElementById('rp-timeline').addEventListener('input', function () { seekReplay(this.value); });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'r' || e.key === 'R') resetCamera();
+    if (e.key === 't' || e.key === 'T') document.getElementById('btn-theme').click();
+  });
+
+  // -- Bootstrap --
+  startPolling();
+  animate();
+})();
 </script>
 </body>
 </html>
-function seekReplay(timeVal) {
-  const val = parseFloat(timeVal);
-  replayPausedAt = val;
-  replayIndex = replayEvents.findIndex(e => e.time > val);
-  if (replayIndex < 0) replayIndex = replayEvents.length;
-  if (replayPlaying) { replayStartTime = performance.now() - val; }
-}
-    if (elapsed > dur) { beamPulses.splice(i,1); continue; }
-    const t = elapsed / dur;
-    const from = [0,0,0]; // core origin
-    const to = satelliteWorldPos(bp.target);
-    const n = trailLength;
-    const beamPts = new Float32Array(n * 3);
-    const beamCol = new Float32Array(n * 4);
-    for (let j = 0; j < n; j++) {
-      const u = j / (n-1);
-      const alpha = t < 0.5
-        ? Math.max(0, 1 - Math.abs(u - t*2) * 2)
-        : Math.max(0, 1 - Math.abs(u - (1 - (t-0.5)*2)) * 2);
-      const pt = V3.lerp(from, to, u);
-      beamPts[j*3]=pt[0]; beamPts[j*3+1]=pt[1]; beamPts[j*3+2]=pt[2];
-      beamCol[j*4]=0; beamCol[j*4+1]=0.808; beamCol[j*4+2]=0.82; beamCol[j*4+3]=alpha*0.8;
-    }
-    drawPoints(beamPts, beamCol, vp, 3.0);
-  }
 
-  requestAnimationFrame(render);
-}
 
-requestAnimationFrame(render);
-  gl.deleteBuffer(cbuf); gl.deleteBuffer(pbuf);
-}
 
-function drawRing(ringVerts, color, mvp, model, opacity) {
-  drawLines(ringVerts, color, mvp, model, opacity);
-}
-function rebuildParticles(count) {
-  const pos = [], col = [];
-  const palette = [[0,206,209],[0,102,153],[243,156,18],[255,255,255],[74,158,255]];
-  for (let i=0;i<count;i++) {
-    const r = 4 + Math.random()*18;
-    const th = Math.random()*2*Math.PI;
-    const ph = Math.acos(2*Math.random()-1);
-    pos.push(r*Math.sin(ph)*Math.cos(th), r*Math.sin(ph)*Math.sin(th), r*Math.cos(ph));
-    const c = palette[Math.floor(Math.random()*palette.length)];
-    const a = 0.25 + Math.random()*0.75;
-    col.push(c[0]/255, c[1]/255, c[2]/255, a);
-  }
-  particleData = { pos: new Float32Array(pos), col: new Float32Array(col), count };
-}
-rebuildParticles(particleCount);
-precision mediump float;
-varying vec3 vColor;
-void main() {
-  float d = length(gl_PointCoord - vec2(0.5));
-  float alpha = smoothstep(0.5, 0.0, d);
-  gl_FragColor = vec4(vColor, alpha);
-}`;
 
-const litProgram = linkProgram(VS_LIT, FS_LIT);
-const pointProgram = linkProgram(VS_POINT, FS_POINT);
-  normalize: (v) => { const l=V3.length(v)||1; return [v[0]/l,v[1]/l,v[2]/l]; },
-  cross: (a,b) => [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]],
-  dot: (a,b) => a[0]*b[0]+a[1]*b[1]+a[2]*b[2],
-  lerp: (a,b,t) => [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t],
-};
+
+

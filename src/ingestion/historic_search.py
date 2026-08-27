@@ -30,6 +30,8 @@ if _P: sys.path.insert(0, _P)
 import os
 import time
 import json
+import requests
+import threading
 from dotenv import load_dotenv
 import argparse
 
@@ -75,6 +77,48 @@ SOURCE_REGISTRY = [
     ("openaire", OpenAIRESource),
 ]
 ALL_SOURCE_NAMES = [name for name, _ in SOURCE_REGISTRY]
+
+
+# -- v5.10.11: Live visualizer telemetry helpers (non-blocking HTTP POST) --
+_VISUALIZER_EVENTS_URL = "http://127.0.0.1:8001/api/v1/visualizer/events"
+_SOURCE_KEY_BY_CLASS = {cls: name for name, cls in SOURCE_REGISTRY}
+
+
+def _source_key(source) -> str:
+    """Resolve the canonical lowercase slug for an instantiated source agent."""
+    return _SOURCE_KEY_BY_CLASS.get(type(source), type(source).__name__.lower())
+
+
+def _source_query(source) -> str:
+    """Return a human-readable query string for a source agent."""
+    query = getattr(source, "query", None)
+    if query:
+        return str(query)
+    terms = getattr(source, "search_terms", None)
+    if isinstance(terms, (list, tuple)):
+        return " OR ".join(str(t) for t in terms)
+    return ""
+
+
+def _emit_visualizer_event(event_type: str, payload: dict) -> None:
+    """Fire-and-forget POST to the live visualizer events endpoint.
+
+    Runs in a daemon thread so a slow or offline API server never blocks the
+    ingestion pipeline. Failures are swallowed (best-effort telemetry).
+    """
+    def _post():
+        try:
+            requests.post(
+                _VISUALIZER_EVENTS_URL,
+                json={"event_type": event_type, "payload": payload},
+                timeout=0.2,
+            )
+        except Exception:
+            pass
+    try:
+        threading.Thread(target=_post, daemon=True).start()
+    except Exception:
+        pass
 
 
 # -- v5.10.3: LLM Router Sub-Agent (two-stage provider selection) --
@@ -170,17 +214,33 @@ def main(sources=None):
     
     all_historic_papers = []
     for source in sources_to_search:
+        source_key = _source_key(source)
         if not getattr(source, "enabled", True):
             logger.warning("Skipping %s — disabled (no valid API key)", type(source).__name__)
+            _emit_visualizer_event("source_status", {
+                "source": source_key, "status": "error", "message": "disabled (no valid API key)",
+            })
             continue
+        _emit_visualizer_event("source_searching", {
+            "source": source_key, "query": _source_query(source),
+        })
         try:
             fetched = source.fetch_new_papers()
             if fetched:
                 all_historic_papers.extend(fetched)
+                _emit_visualizer_event("source_status", {
+                    "source": source_key, "status": "healthy", "count": len(fetched),
+                })
             else:
                 logger.info("No new papers from %s", type(source).__name__)
         except Exception as e:
             logger.error("Error fetching from %s: %s. Skipping source.", type(source).__name__, e)
+            message = str(e)
+            if "403" in message or "forbidden" in message.lower():
+                message = "403 Forbidden / Rate Limited"
+            _emit_visualizer_event("source_status", {
+                "source": source_key, "status": "error", "message": message,
+            })
             continue
 
     print(f"\nSUCCESS: Found {len(all_historic_papers)} potential papers across all sources.\n")

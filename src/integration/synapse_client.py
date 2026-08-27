@@ -263,6 +263,21 @@ class EventEmitter:
                     response.status_code,
                 )
                 _record_emission("success")
+                # -- v5.10.10: Non-blocking visualizer bridge --
+                # Push a copy to the TALOS visualizer ingestion endpoint so the
+                # 3D Neural Knowledge Constellation can render live events even
+                # when the SYNAPSE bus is the sole emitter in the pipeline.
+                try:
+                    self._session.post(
+                        "http://127.0.0.1:8001/api/v1/visualizer/events",
+                        json={
+                            "event_type": event["event_type"],
+                            "payload": event["payload"],
+                        },
+                        timeout=0.3,
+                    )
+                except Exception:
+                    pass
                 if callback:
                     callback(True, None)
                 return

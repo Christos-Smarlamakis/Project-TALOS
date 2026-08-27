@@ -39,7 +39,7 @@ SKIP_FILES = {
     "__init__.py",
     "_bump.py", "_fix_ai.py", "_fix_now.py", "_fix2.py", "_fix3.py", "_fix4.py",
     "_git_status.ps1",
-    "test_smoke.py",
+    "test_system_integrity.py",
 }
 
 # Mapping from import paths to documented names
