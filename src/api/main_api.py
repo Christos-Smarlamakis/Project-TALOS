@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.10.12
+Project: TALOS v5.10.13
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -99,8 +99,8 @@ logger = get_logger("api")
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-description="Facade REST API for the TALOS autonomous research platform (v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools)",
-version="5.10.12",
+description="Facade REST API for the TALOS autonomous research platform (v5.10.13 -- Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul)",
+version="5.10.13",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -603,7 +603,7 @@ class EvaluatePaperRequest(BaseModel):
 @app.on_event("startup")
 def on_startup():
     """Pre-warm singletons and log readiness."""
-    logger.info("TALOS FastAPI v5.10.12 starting up (Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools, port 8001)...")
+    logger.info("TALOS FastAPI v5.10.13 starting up (Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")

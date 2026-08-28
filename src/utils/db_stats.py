@@ -100,10 +100,10 @@ def main():
     
     # --- Γενική Εικόνα ---
     print_header("ΓΕΝΙΚΗ ΕΙΚΟΝΑ (OVERVIEW)")
-    print(f"📚 Συνολικά Άρθρα:      {stats['total_papers']}")
+    print(f"[PAPERS] Συνολικά Άρθρα:      {stats['total_papers']}")
     elite_pct = (stats['elite_papers'] / stats['total_papers'] * 100) if stats['total_papers'] > 0 else 0.0
-    print(f"💎 Elite Papers (>7/10): {stats['elite_papers']} ({elite_pct:.1f}%)")
-    print(f"🧠 Μέσος Όρος Score:    {stats['avg_score']} / 10")
+    print(f"[ELITE] Elite Papers (>7/10): {stats['elite_papers']} ({elite_pct:.1f}%)")
+    print(f"[AVG] Μέσος Όρος Score:    {stats['avg_score']} / 10")
     
     # --- Κατανομή ανά Πηγή ---
     print_header("ΚΑΤΑΝΟΜΗ ΑΝΑ ΠΗΓΗ (BY SOURCE)")
@@ -114,9 +114,9 @@ def main():
         
     # --- Υγεία Δεδομένων ---
     print_header("ΥΓΕΙΑ ΔΕΔΟΜΕΝΩΝ (DATA HEALTH)")
-    print(f"✅ Με DOI:              {stats['total_papers'] - stats['missing_doi']}")
-    print(f"⚠️ Χωρίς DOI:           {stats['missing_doi']}")
-    print(f"🧠 Με Embeddings:       {stats['embedded_papers']}")
+    print(f"[OK] Με DOI:              {stats['total_papers'] - stats['missing_doi']}")
+    print(f"[WARN] Χωρίς DOI:           {stats['missing_doi']}")
+    print(f"[EMBED] Με Embeddings:       {stats['embedded_papers']}")
     if stats['total_papers'] > stats['embedded_papers']:
         diff = stats['total_papers'] - stats['embedded_papers']
         print(f"   -> Σύσταση: Τρέξτε το 'embedding_generator.py' για {diff} άρθρα.")

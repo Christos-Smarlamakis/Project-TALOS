@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.12
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.13
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-27 (v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry, Interactive Visualizer, System Tray Companion & Rich TrueColor Telemetry)
+> **Last Updated:** 2026-08-28 (v5.10.13 -- Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul)
 
 ---
 
@@ -175,7 +175,8 @@ src/ingestion/*.py
 
 | Module | Path | Description |
 |--------|------|-------------|
-| **System Tray Companion (v5.10.12)** | `src/utils/tray_icon.py` | `launch_tray_icon_async()` -- pystray icon (navy/cyan "T") with Open 3D Visualizer, Show/Hide Console, Terminate Daemon |
+| **Desktop Control Hub (v5.10.13)** | `src/utils/tray_icon.py` | `launch_tray_icon_async()` -- 7-item pystray menu (3D Visualizer, Reports Folder, System Log, Swagger, Instant Search, Console, Terminate) with `_is_api_alive()` / `_ensure_api_server()` self-healing |
+| **DatabaseManager Persistence (v5.10.13)** | `src/core/database_manager.py` | Default `db_path=None` -> `get_active_profile_db_path()` (active profile DB `_profiles/<active>/talos_research.db`) |
 | **3D Visualizer (v5.10.12)** | `templates/live_foraging_visualizer.html` | Three.js constellation with 60 FPS laser beams, photon pulses, raycaster, snapshot |
 | **OPTICA Bridge (v5.10.7)** | `src/integration/optica_client.py` | REST client to Project OPTICA (port 8002) offloading heavy graphics |
 | **Daemon OS Autostart (v5.10.6)** | `src/utils/daemon_autostart.py` | Windows Startup shortcut + boot batch generator |
@@ -212,8 +213,8 @@ src/ingestion/*.py
 
 ---
 
-> **Last Updated:** 2026-08-27 (v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry, Interactive Visualizer, System Tray Companion & Rich TrueColor Telemetry)
-> **Project Version:** v5.10.12
+> **Last Updated:** 2026-08-28 (v5.10.13 -- Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul)
+> **Project Version:** v5.10.13
 > **Total .py modules under src/:** 80 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 14 + api 4 + mcp_server 1)
 
 

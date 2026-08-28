@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.10.12
+Project: TALOS v5.10.13
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -20,6 +20,11 @@ Description:
     Configuration, Search & Ingestion, Analysis & Insights, Daemons &
     CI/CD, and Diagnostics & Exit. Includes the new Vendored Graphify
 AST Knowledge Graph adapter (v5.9.12).
+
+    v5.10.13: Desktop Control Hub, Self-Healing Infrastructure, Active Profile
+    Persistence & Environment Canon Overhaul -- system tray control hub with
+    self-healing API auto-bootstrap, single point of truth database persistence,
+    and a professional section-by-section environment configuration redesign.
 
     v5.10.12: Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive
     Visualizer Tools -- 60 FPS animated laser beams with traveling photon

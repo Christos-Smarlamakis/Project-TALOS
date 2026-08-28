@@ -5,7 +5,7 @@
 #  This program is free software...
 """
 Module: database_manager.py (v5.0 - Multi-Provider Hybrid Embeddings)
-Project: TALOS v5.10.0
+Project: TALOS v5.10.13
 """
 import sqlite3
 import os
@@ -46,31 +46,16 @@ def get_active_profile_db_path():
 
 class DatabaseManager:
     def __init__(self, db_path=None, db_name="talos_research.db"):
-        if db_path:
-            self.db_path = db_path
+        # -- v5.10.13: single point of truth database persistence --
+        # Any component constructing DatabaseManager() without an explicit path
+        # now writes directly to the ACTIVE PROFILE database at
+        # _profiles/<active>/talos_research.db via get_active_profile_db_path().
+        # The db_name argument is retained for backward compatibility but is no
+        # longer consulted in the default path.
+        if db_path is None:
+            self.db_path = get_active_profile_db_path()
         else:
-            # Resolve actual project root by walking up from this file until talos.py is found
-            # (same pattern used by every src/*.py script in the project)
-            project_root = os.path.abspath(os.path.dirname(__file__))
-            while project_root and not os.path.exists(os.path.join(project_root, 'talos.py')):
-                parent = os.path.dirname(project_root)
-                if parent == project_root:  # reached filesystem root
-                    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-                    break
-                project_root = parent
-            # Canonical location: data/talos_research.db (takes priority over profiles)
-            data_dir = os.path.join(project_root, "data")
-            canonical_path = os.path.join(data_dir, db_name)
-            if os.path.exists(canonical_path):
-                self.db_path = canonical_path
-            else:
-                # Fallback to active profile DB; if neither exists, create in data/
-                profile_db = self._resolve_profile_db(project_root)
-                if profile_db:
-                    self.db_path = profile_db
-                else:
-                    os.makedirs(data_dir, exist_ok=True)
-                    self.db_path = canonical_path
+            self.db_path = db_path
 
         self.create_table()
         self._embedding_ids: List[int] = []

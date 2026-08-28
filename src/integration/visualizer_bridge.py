@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: visualizer_bridge.py
-Project: TALOS v5.10.12
+Project: TALOS v5.10.13
 Description:
     Centralized, fire-and-forget HTTP bridge that pushes evaluation telemetry
     to the 3D Knowledge Constellation Visualizer. Every search pipeline

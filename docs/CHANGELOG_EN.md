@@ -2,6 +2,28 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.13] - 2026-08-28 -- Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul
+
+### Added
+- **Desktop Control Hub System Tray** (`src/utils/tray_icon.py`): Expanded the pystray companion into a seven-item control surface -- Open 3D Visualizer, Open Reports Folder, Open System Log, Open API Docs (Swagger), Trigger Instant Search Cycle, Show / Hide Console Window, and Terminate Daemon. Tooltip retitled to `"TALOS v5.10.13 | Research Intelligence Mesh"`.
+- **Self-Healing Auto-Bootstrap** (`src/utils/tray_icon.py`): New `_is_api_alive(port=8001)` probes `http://127.0.0.1:8001/api/v1/health` with a 0.6s timeout; new `_ensure_api_server()` dynamically locates the project root and spawns `uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001` in a hidden background process (`subprocess.CREATE_NO_WINDOW` on Windows), polling until responsive (up to 3s). The Visualizer, Swagger, and instant-search actions self-heal the backend before opening.
+- **Native OS Desktop Bridge** (`src/utils/tray_icon.py`): Cross-platform path openers (`os.startfile` on Windows, `open` on macOS, `xdg-open` on Linux) for the reports folder (`data/reports`) and the system log (`data/logs/talos_system.log`).
+
+### Changed
+- **Single Point of Truth Database Persistence (BREAKING)** (`src/core/database_manager.py`): `DatabaseManager.__init__` now defaults `db_path=None` to `get_active_profile_db_path()` (the active profile database at `_profiles/<active>/talos_research.db`). The previous `data/talos_research.db` canonical-priority and legacy `_resolve_profile_db` walk-up logic were removed. Migration: any component that previously relied on the `data/` database must now pass an explicit `db_path`, or the data will land in the active profile database.
+- **Bi-directional 4-State Parabolic Telemetry & Synthetic ID Engine** (`src/api/main_api.py` + `src/integration/visualizer_bridge.py`): Documented the 4-state beam bridge (query_out / data_in / evaluation / error) that maps telemetry to per-source health and parabolic quadratic-bezier laser beams, plus the synthetic latest-evaluation override (`_live_eval_seq` / `_live_eval_state`) that mints strictly increasing ids so backlog re-evaluations keep the HUD advancing.
+- **OpenAIRE nested XML/JSON title parsing unwrap** (`src/ingestion/openaire_source.py`): `_first()` now unwraps nested `$` / `#text` / `value` dictionary wrappers so a title such as `[{"$": "Some Title"}]` resolves to the plain string; `src/api/main_api.py` additionally strips surviving dict reprs.
+- **Zero Emojis Protocol compliance** (`src/utils/db_stats.py`): Replaced emoji glyphs in the console metrics with plain-text bracketed markers (`[PAPERS]`, `[ELITE]`, `[AVG]`, `[OK]`, `[WARN]`, `[EMBED]`) so the statistics report runs on Greek Windows (cp1253) consoles without a UnicodeEncodeError.
+- **Professional Environment Configuration redesign** (`example.env` + `.env`): Reconstructed both files into six commented sections -- (1) Execution Matrix & Network Strategy, (2) Local AI Model Tiers, (3) Universal Cloud Mesh (9 providers), (4) 16 Academic Ingestion APIs, (5) Ecosystem Integrations, (6) System Notifications. Existing `.env` secrets preserved verbatim.
+- **Version strings synced across 6 core code files** (`config/settings.py`, `src/api/main_api.py`, `talos.py`, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py`) plus `docker-compose.yml` (`talos:5.10.13`) and `CITATION.cff` to v5.10.13.
+- **Roadmap re-aligned**: DSPy PRISMA Pipeline shifted to v5.10.14; CORTEX & n8n Gateway shifted to v5.10.15.
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed with v5.10.13 assertion.
+- `python src/utils/db_stats.py` confirmed paper counts in the active profile database.
+
 ## [v5.10.12] - 2026-08-27 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools
 
 ### Added

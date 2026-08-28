@@ -2,8 +2,8 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.10.12 (Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools)
-> **Last Updated:** 2026-08-27
+> **Current Version:** v5.10.13 (Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul)
+> **Last Updated:** 2026-08-28
 
 ---
 
@@ -179,8 +179,9 @@ Project ALEXANDRIA marks the full desktop and distributed release of the platfor
 | **v5.10.10** | Knowledge Constellation Viz | Real-time 3D WebGL visualizer, SSE streaming, 22 endpoints, offline replay | Complete |
 | **v5.10.11** | Vendored Three.js Constellation | Three.js r128 vendored, Health Aura Sprites, Print Theme, 1.5s polling bridge | Complete |
 | **v5.10.12** | Daemon Hardening, 3D Laser Telemetry & Tools | 60 FPS laser beams, photon pulses, snapshot/fullscreen/help, 1000ms AJAX polling, SQLite VACUUM | Complete |
-| **v5.10.13** | DSPy PRISMA Pipeline | Automated PRISMA 2020 SLR with PlanEval DSPy architecture | Next |
-| **v5.10.14** | CORTEX & n8n Gateway | Discord bot, n8n workflow templates, ecosystem integration | Upcoming |
+| **v5.10.13** | Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul | System tray control hub, self-healing API auto-bootstrap, active-profile DB persistence, 6-section .env canon | Complete |
+| **v5.10.14** | DSPy PRISMA Pipeline | Automated PRISMA 2020 SLR with PlanEval DSPy architecture | Next |
+| **v5.10.15** | CORTEX & n8n Gateway | Discord bot, n8n workflow templates, ecosystem integration | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine | Future |
 
 ---

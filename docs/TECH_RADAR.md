@@ -1,6 +1,6 @@
 # TALOS Tech Radar & Ecosystem Map
 
-> **Last Updated:** 2026-08-27 (v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools)
+> **Last Updated:** 2026-08-28 (v5.10.13 -- Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul)
 
 This document is the technology radar of Project TALOS. It catalogues the development stack, the agentic architecture, the document-comprehension tooling, and the simulation capabilities that surround the core TALOS research intelligence system. It tracks State-of-the-Art (SOTA) technologies and maps the surrounding research-intelligence ecosystem.
 
@@ -31,6 +31,10 @@ The development tooling that lets developers iterate on TALOS quickly and safely
 *   **Daemon OS Autostart (pywin32 Shell COM)**
     *   **What it is:** A Windows OS autostart orchestrator that generates a boot batch script and registers a Startup-folder shortcut for the 24/7 daemon.
     *   **Role in TALOS:** Keeps the autonomous research daemon running across reboots (minimized console, system icon) with configurable network strategy and target sources.
+
+*   **System Tray Automation & Native OS Desktop Bridge (v5.10.13)**
+    *   **What it is:** A pystray-based Desktop Control Hub plus a native OS desktop bridge (`os.startfile` / `open` / `xdg-open`) with self-healing API auto-bootstrap (`uvicorn` spawn on demand via `_ensure_api_server()`).
+    *   **Role in TALOS:** Gives the 24/7 daemon a seven-item tray menu (visualizer, reports folder, system log, Swagger docs, instant scrape, console toggle, terminate) that boots the FastAPI backend on demand.
 
 ## 2. Agentic & Core Architecture (TALOS v5.0)
 
@@ -80,4 +84,4 @@ Related systems and competitors that TALOS is evaluated against, tracked to keep
 
 ---
 
-> **Project Version:** v5.10.12 | **Last Updated:** 2026-08-27 (v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools)
+> **Project Version:** v5.10.13 | **Last Updated:** 2026-08-28 (v5.10.13 -- Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul)

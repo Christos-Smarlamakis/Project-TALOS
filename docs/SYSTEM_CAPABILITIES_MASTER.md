@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.12
+# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.13
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-08-27
-> **Version:** v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools
+> **Last Updated:** 2026-08-28
+> **Version:** v5.10.13 -- Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -560,7 +560,7 @@ For each evaluated paper, the AI generates:
 - **Elite Papers:** Overall score >= 7 highlighted in gold in search results tables
 - **Clickable Hyperlinks:** Crash report paths, Q-table paths, and report directories are clickable Rich `[link=file:///...]` terminal hyperlinks (v5.9.8)
 - **Ctrl+C Safety:** `safe_pause()` and `safe_select()` helpers for graceful interrupt handling
-- **System Tray Companion (v5.10.12):** `src/utils/tray_icon.py` launches a pystray icon (navy/cyan "T") next to the Windows clock with Open 3D Visualizer, Show / Hide Console (Win32 `ShowWindow`), and Terminate Daemon actions; initialized by `talos_service.py` on daemon startup.
+- **Desktop Control Hub System Tray (v5.10.13):** `src/utils/tray_icon.py` launches a pystray icon (navy/cyan "T") next to the Windows clock with a seven-item menu -- Open 3D Visualizer, Open Reports Folder, Open System Log, Open API Docs (Swagger), Trigger Instant Search Cycle, Show / Hide Console Window (Win32 `ShowWindow`), Terminate Daemon -- with self-healing auto-bootstrap (`_is_api_alive` / `_ensure_api_server`); initialized by `talos_service.py` on daemon startup.
 - **New Console Window Daemon Launch (v5.10.12):** Option 11 spawns the 24/7 daemon via `subprocess.Popen(..., creationflags=subprocess.CREATE_NEW_CONSOLE)` so the TUI stays interactive.
 - **Rich TrueColor DRL Telemetry (v5.10.12):** `live_agent_orchestrator.py` emits color-coded `[ACT]`, `[ROUTER]`, `[WARNING]`, `[RECOVERY]`, and `[EVAL]` badges with dynamic `[ELITE  +]` / `[ACCEPT v]` / `[REJECT X]` status.
 
@@ -728,7 +728,7 @@ For each evaluated paper, the AI generates:
 
 ---
 
-## Section 15: 3D WebGL / AJAX Visualizer & Recent Capabilities (v5.10.12)
+## Section 15: 3D WebGL / AJAX Visualizer & Recent Capabilities (v5.10.13)
 
 ### 15.0 3D WebGL / AJAX Knowledge Constellation Visualizer & Interactive Tools (v5.10.12)
 
@@ -829,6 +829,30 @@ For each evaluated paper, the AI generates:
 - `request_plot(plot_type, journal_template)` resolves the active profile DB path via `get_active_profile_db_path()` and POSTs `{data_source, plot_type, journal_template, override_params}` to `{OPTICA_API_BASE}/plot/generate` with graceful connection-error handling.
 - `config/settings.py` `OPTICA_API_BASE` (default `http://127.0.0.1:8002/api/v1`); mirrored in `config.template.json` and `example.env`.
 - TUI "Data Visualizations (via OPTICA)" menu option (Analysis & Insights group): plot type (`opex_dashboard` / `semantic_topology`) and journal template (`nature` / `science` / `cell`).
+
+### 15.14 Desktop Control Hub -- System Tray & Self-Healing Auto-Bootstrap (v5.10.13)
+
+- `src/utils/tray_icon.py` expanded into a seven-item Desktop Control Hub: Open 3D Visualizer, Open Reports Folder (`data/reports`), Open System Log (`data/logs/talos_system.log`), Open API Docs (Swagger, `/docs`), Trigger Instant Search Cycle (`POST /api/v1/scrape/trigger`), Show / Hide Console Window (Win32 `ShowWindow`), Terminate Daemon.
+- Tooltip title `"TALOS v5.10.13 | Research Intelligence Mesh"`; heavy imports (pystray, Pillow) remain lazy.
+- **Self-Healing Auto-Bootstrap flow:** `_is_api_alive(port=8001)` probes `GET /api/v1/health` (0.6s timeout); `_ensure_api_server()` locates the project root and spawns `uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001` with `subprocess.CREATE_NO_WINDOW` (Windows), polling until responsive (up to 3s).
+- **Native OS Desktop Bridge:** `os.startfile` (Windows), `open` (macOS), `xdg-open` (Linux) for filesystem targets.
+
+### 15.15 Hub-and-Spoke 3D Topology & Bi-directional 4-State Parabolic Telemetry (v5.10.13)
+
+- Hub-and-spoke constellation: gold icosahedron core (hub) surrounded by 16 Fibonacci-distributed satellite source nodes (spokes) with core-to-node connection lines plus a neighbor mesh.
+- Bi-directional 4-state beam bridge (`src/api/main_api.py` `_record_beam_event`): query_out -> standby (cyan) core->node beam; data_in/evaluation -> healthy (green) node->core beam; error -> red. Parabolic quadratic-bezier arcs rendered in `live_foraging_visualizer.html`.
+- **Synthetic ID Engine:** `_live_eval_seq` / `_live_eval_state` mint strictly increasing ids so backlog re-evaluations (UPDATE with unchanged max DB id) still advance the HUD.
+
+### 15.16 Database Persistence Architecture (v5.10.13)
+
+- Single point of truth: `DatabaseManager.__init__(db_path=None)` now defaults to `get_active_profile_db_path()` resolving `_profiles/<active>/talos_research.db`.
+- `get_active_profile_db_path()` reads `_profiles/active_profile.txt`, defaults to `"default"`, and creates the profile directory on demand.
+- Removed legacy `data/talos_research.db` canonical-priority and `_resolve_profile_db` walk-up logic.
+
+### 15.17 Professional Environment Configuration Canon (v5.10.13)
+
+- `example.env` + `.env` reconstructed into six commented sections: Execution Matrix & Network Strategy, Local AI Model Tiers, Universal Cloud Mesh (9 providers), 16 Academic Ingestion APIs, Ecosystem Integrations, System Notifications.
+- `.env` secrets preserved verbatim; guidance comments added above every variable.
 
 ---
 

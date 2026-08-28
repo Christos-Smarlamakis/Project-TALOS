@@ -4,9 +4,24 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-27 (v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools)
+> **Last Updated:** 2026-08-28 (v5.10.13 -- Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul)
 
 ---
+
+## Phase 43: Desktop Control Hub, Self-Healing Infrastructure & Persistence Guarantee (v5.10.13)
+
+### Status: COMPLETED (2026-08-28)
+
+- [x] **Desktop Control Hub System Tray** -- `src/utils/tray_icon.py` expanded to a seven-item menu (Open 3D Visualizer, Open Reports Folder, Open System Log, Open API Docs (Swagger), Trigger Instant Search Cycle, Show / Hide Console Window, Terminate Daemon); tooltip `"TALOS v5.10.13 | Research Intelligence Mesh"`.
+- [x] **Self-Healing Auto-Bootstrap** -- `_is_api_alive(port=8001)` health probe (0.6s timeout) plus `_ensure_api_server()` spawning a hidden `uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001` (CREATE_NO_WINDOW) with up-to-3s polling.
+- [x] **Native OS Desktop Bridge** -- cross-platform path openers for `data/reports` and `data/logs/talos_system.log`.
+- [x] **Single Point of Truth Database Persistence** -- `DatabaseManager.__init__` defaults `db_path=None` to `get_active_profile_db_path()` (active profile database).
+- [x] **Bi-directional 4-State Parabolic Telemetry & Synthetic ID Engine** -- documented the 4-state beam bridge and the synthetic latest-evaluation override (`_live_eval_seq` / `_live_eval_state`).
+- [x] **OpenAIRE nested XML/JSON title parsing unwrap** -- `_first()` unwraps `$` / `#text` / `value` dictionary wrappers.
+- [x] **Environment Canon Overhaul** -- `example.env` + `.env` reconstructed into six commented sections.
+- [x] **Roadmap re-aligned** -- DSPy PRISMA shifted to v5.10.14; CORTEX & n8n Gateway shifted to v5.10.15.
+- [x] **Version synced across 6 code files and the canonical documentation set** to v5.10.13.
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, db_stats.
 
 ## Phase 42: Autonomous Daemon Hardening, 3D Laser Telemetry & Tools (v5.10.12)
 

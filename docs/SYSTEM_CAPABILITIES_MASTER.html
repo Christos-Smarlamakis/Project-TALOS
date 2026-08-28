@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.10.12</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.10.13</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.10.12</h1>
+<h1>TALOS/ALEXANDRIA/ATHENA<br>System Capabilities Master Reference v5.10.13</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -302,8 +302,8 @@
   <strong>Document ID:</strong> TALOS-SYS-CAP-001 &nbsp;|&nbsp;
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
-  <strong>Last Updated:</strong> 2026-08-27 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools
+  <strong>Last Updated:</strong> 2026-08-28 &nbsp;|&nbsp;
+  <strong>Version:</strong> v5.10.13 -- Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul
 </div>
 
 <!-- ===================================================================== -->
@@ -855,7 +855,7 @@
   <li><strong>Elite Papers:</strong> Overall score >= 7 highlighted in gold</li>
   <li><strong>Clickable Hyperlinks:</strong> Rich <code>[link=file:///...]</code> terminal hyperlinks for reports and Q-tables</li>
   <li><strong>Ctrl+C Safety:</strong> <code>safe_pause()</code> and <code>safe_select()</code> helpers</li>
-  <li><strong>System Tray Companion (v5.10.12):</strong> <code>src/utils/tray_icon.py</code> launches a pystray icon (navy/cyan "T") next to the Windows clock with Open 3D Visualizer, Show / Hide Console (Win32 <code>ShowWindow</code>), and Terminate Daemon actions; initialized by <code>talos_service.py</code> on daemon startup.</li>
+  <li><strong>Desktop Control Hub System Tray (v5.10.13):</strong> <code>src/utils/tray_icon.py</code> launches a pystray icon (navy/cyan "T") next to the Windows clock with a seven-item menu -- Open 3D Visualizer, Open Reports Folder, Open System Log, Open API Docs (Swagger), Trigger Instant Search Cycle, Show / Hide Console Window (Win32 <code>ShowWindow</code>), Terminate Daemon -- with self-healing auto-bootstrap (<code>_is_api_alive</code> / <code>_ensure_api_server</code>); initialized by <code>talos_service.py</code> on daemon startup.</li>
   <li><strong>New Console Window Daemon Launch (v5.10.12):</strong> Option 11 spawns the 24/7 daemon via <code>subprocess.Popen(..., creationflags=subprocess.CREATE_NEW_CONSOLE)</code> so the TUI stays interactive.</li>
   <li><strong>Rich TrueColor DRL Telemetry (v5.10.12):</strong> <code>live_agent_orchestrator.py</code> emits color-coded <code>[ACT]</code>, <code>[ROUTER]</code>, <code>[WARNING]</code>, <code>[RECOVERY]</code>, and <code>[EVAL]</code> badges with dynamic <code>[ELITE  +]</code> / <code>[ACCEPT v]</code> / <code>[REJECT X]</code> status.</li>
 </ul>
@@ -1029,7 +1029,7 @@
 </ol>
 
 <!-- ===================================================================== -->
-<h2 id="s15">Section 15: 3D WebGL / AJAX Visualizer &amp; Recent Capabilities (v5.10.12)</h2>
+<h2 id="s15">Section 15: 3D WebGL / AJAX Visualizer &amp; Recent Capabilities (v5.10.13)</h2>
 
 <h3>15.0 3D WebGL / AJAX Knowledge Constellation Visualizer &amp; Interactive Tools (v5.10.12)</h3>
 <ul>
@@ -1112,8 +1112,36 @@
   <li><strong>TUI entry</strong> -- "Data Visualizations (via OPTICA)" in the Analysis &amp; Insights group (plot type + journal template prompts).</li>
 </ul>
 
+<h3 id="s15-14">15.14 Desktop Control Hub -- System Tray &amp; Self-Healing Auto-Bootstrap (v5.10.13)</h3>
+<ul>
+  <li><strong>Desktop Control Hub:</strong> <code>src/utils/tray_icon.py</code> expanded into a seven-item menu -- Open 3D Visualizer, Open Reports Folder (<code>data/reports</code>), Open System Log (<code>data/logs/talos_system.log</code>), Open API Docs (Swagger, <code>/docs</code>), Trigger Instant Search Cycle (<code>POST /api/v1/scrape/trigger</code>), Show / Hide Console Window (Win32 <code>ShowWindow</code>), Terminate Daemon.</li>
+  <li><strong>Tooltip:</strong> <code>"TALOS v5.10.13 | Research Intelligence Mesh"</code>; heavy imports (pystray, Pillow) remain lazy.</li>
+  <li><strong>Self-Healing Auto-Bootstrap:</strong> <code>_is_api_alive(port=8001)</code> probes <code>GET /api/v1/health</code> (0.6s timeout); <code>_ensure_api_server()</code> spawns <code>uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001</code> with <code>subprocess.CREATE_NO_WINDOW</code> (Windows), polling up to 3s.</li>
+  <li><strong>Native OS Desktop Bridge:</strong> <code>os.startfile</code> (Windows), <code>open</code> (macOS), <code>xdg-open</code> (Linux).</li>
+</ul>
+
+<h3 id="s15-15">15.15 Hub-and-Spoke 3D Topology &amp; Bi-directional 4-State Parabolic Telemetry (v5.10.13)</h3>
+<ul>
+  <li><strong>Hub-and-spoke topology:</strong> gold icosahedron core surrounded by 16 Fibonacci-distributed satellite nodes with core-to-node links plus a neighbor mesh.</li>
+  <li><strong>4-state beam bridge:</strong> <code>_record_beam_event</code> maps query_out -&gt; standby (cyan) core-&gt;node beam; data_in/evaluation -&gt; healthy (green) node-&gt;core beam; error -&gt; red. Parabolic quadratic-bezier arcs in <code>live_foraging_visualizer.html</code>.</li>
+  <li><strong>Synthetic ID Engine:</strong> <code>_live_eval_seq</code> / <code>_live_eval_state</code> mint strictly increasing ids so backlog re-evaluations advance the HUD.</li>
+</ul>
+
+<h3 id="s15-16">15.16 Database Persistence Architecture (v5.10.13)</h3>
+<ul>
+  <li><strong>Single point of truth:</strong> <code>DatabaseManager.__init__(db_path=None)</code> defaults to <code>get_active_profile_db_path()</code> resolving <code>_profiles/&lt;active&gt;/talos_research.db</code>.</li>
+  <li><strong>Resolver:</strong> reads <code>_profiles/active_profile.txt</code>, defaults to <code>"default"</code>, creates the profile directory on demand.</li>
+  <li><strong>Removed:</strong> legacy <code>data/talos_research.db</code> priority and <code>_resolve_profile_db</code> walk-up logic.</li>
+</ul>
+
+<h3 id="s15-17">15.17 Professional Environment Configuration Canon (v5.10.13)</h3>
+<ul>
+  <li><strong>Six sections:</strong> Execution Matrix &amp; Network Strategy, Local AI Model Tiers, Universal Cloud Mesh (9 providers), 16 Academic Ingestion APIs, Ecosystem Integrations, System Notifications.</li>
+  <li><strong>.env:</strong> secrets preserved verbatim; guidance comments added above every variable.</li>
+</ul>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.12</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.13</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

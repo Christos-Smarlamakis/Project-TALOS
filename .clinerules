@@ -1,5 +1,5 @@
 ﻿# TALOS Project Instructions for AI Coding Agents
-# Version: v5.10.12
+# Version: v5.10.13
 
 ## CONSTITUTION v2.0 — The 8-Point Master Initialization Standard
 
@@ -280,8 +280,8 @@
 
 ---
 
-> **Last Updated:** 2026-08-27 (v5.10.12 -- Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools)
-> **Project Version:** v5.10.12
+> **Last Updated:** 2026-08-28 (v5.10.13 -- Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul)
+> **Project Version:** v5.10.13
 
 ---
 
@@ -297,3 +297,10 @@
   5. `src/api/main_api.py` -- `app.version` FastAPI metadata string
 - **No legacy version strings are allowed to remain** in console prints, terminal headers, or metadata. Every user-facing string and every programmatic version identifier must match the canonical `config/settings.py:TALOS_VERSION`.
 - This rule is checked during every documentation sync audit -- stale version strings in any of these 5 files are treated as a sync failure and must be corrected immediately.
+
+---
+
+## CRITICAL: Direct Documentation Editing & Strict UTF-8 (Rule 8)
+- **Never use ad-hoc Python/PowerShell/Bash scripts to find-and-replace text in documentation files** (`*.md`, `*.html`, `*.cff`, `*.json`). Always edit documentation files directly using built-in file editing tools to preserve pure UTF-8 encoding and prevent multi-byte Greek character corruption.
+- All `*_GR.md` files, Greek documentation sections, and Greek prose MUST use pure Greek Unicode characters with accents. Zero transliterated "Greeklish" and zero mojibake (U+FFFD replacement characters).
+- After any documentation edit, verify that no file contains the Unicode replacement character (U+FFFD) or legacy 8-bit encoding artifacts.
