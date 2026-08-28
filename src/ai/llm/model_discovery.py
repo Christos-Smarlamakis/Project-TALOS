@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: model_discovery.py
-Project: TALOS v5.10.4
+Project: TALOS v5.10.14
 Description:
     Dynamic Model Discovery Engine for the TALOS LLM router. This module
     discovers which inference models are currently active across the local
@@ -83,6 +83,8 @@ DEFAULT_BENCHMARK_MODELS = {
     "llama-3.3-70b": {"provider": "cerebras", "swe_bench_score": 65.2, "mmlu_pro_score": 74.0, "context_window": 131072, "pricing_tier": "cloud"},
     "gemini-2.5-pro": {"provider": "gemini", "swe_bench_score": 63.8, "mmlu_pro_score": 78.0, "context_window": 1048576, "pricing_tier": "cloud"},
     "deepseek-chat": {"provider": "deepseek", "swe_bench_score": 60.5, "mmlu_pro_score": 72.0, "context_window": 65536, "pricing_tier": "cloud"},
+    "deepseek-v4-pro": {"provider": "deepseek", "swe_bench_score": 75.0, "mmlu_pro_score": 82.0, "context_window": 131072, "pricing_tier": "cloud"},
+    "deepseek-v4-flash": {"provider": "deepseek", "swe_bench_score": 62.0, "mmlu_pro_score": 74.0, "context_window": 131072, "pricing_tier": "cloud"},
 }
 
 # -- Default cloud discovery endpoints (OpenAI-compatible + Gemini) -----------

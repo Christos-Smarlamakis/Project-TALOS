@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.10.13
+Project: TALOS v5.10.14
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -20,6 +20,11 @@ Description:
     Configuration, Search & Ingestion, Analysis & Insights, Daemons &
     CI/CD, and Diagnostics & Exit. Includes the new Vendored Graphify
 AST Knowledge Graph adapter (v5.9.12).
+
+    v5.10.14: Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4
+    Cognitive Integration -- new auto_dynamic network strategy with interactive
+    Rich Privacy Safeguard consent, runtime resolution to strict_local /
+    local_first / cloud_first, and DeepSeek V4 Pro cognitive thinking injection.
 
     v5.10.13: Desktop Control Hub, Self-Healing Infrastructure, Active Profile
     Persistence & Environment Canon Overhaul -- system tray control hub with

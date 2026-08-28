@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.13
+# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.14
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-08-28
-> **Version:** v5.10.13 -- Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul
+> **Version:** v5.10.14 -- Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4 Cognitive Integration
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -853,6 +853,14 @@ For each evaluated paper, the AI generates:
 
 - `example.env` + `.env` reconstructed into six commented sections: Execution Matrix & Network Strategy, Local AI Model Tiers, Universal Cloud Mesh (9 providers), 16 Academic Ingestion APIs, Ecosystem Integrations, System Notifications.
 - `.env` secrets preserved verbatim; guidance comments added above every variable.
+
+### 15.18 Autonomous Execution Matrix & DeepSeek V4 Cognitive Integration (v5.10.14)
+
+- **5th Network Strategy `auto_dynamic`:** `src/ai/llm/model_manager.py` `select_execution_mode()` now offers Option 5 -- autonomous strategy selection with Privacy Guardrails; `src/core/ai_manager.py` `_resolve_strategies(model_type)` collapses it at runtime.
+- **Privacy Guardrail resolution policy (deterministic):** offline -> strict_local; online + non-deep task -> local_first; online + deep task + interactive consent -> cloud_first; refusal/offline -> strict_local; non-interactive -> local_first. Helpers: `_is_network_online()`, `_detect_vram_gb()`, `_resolve_auto_dynamic()`, `_prompt_auto_dynamic_consent()`, `_log_auto_matrix()`.
+- **HARD CONSTRAINT:** `strict_local` short-circuits before any cloud/auto-dynamic logic -- air-gapped operation is never overridden.
+- **DeepSeek V4 Cognitive Integration:** `_execute_openai_compatible_request()` injects `thinking={"type": "enabled"}` + `reasoning_effort="high"` for DeepSeek V4 models; default `DEEPSEEK_MODEL_CHAT` = `deepseek-v4-pro`.
+- **DeepSeek V4 catalog:** `deepseek-v4-pro` (SWE-bench 75.0 / MMLU-Pro 82.0) and `deepseek-v4-flash` added to `model_manager.py` and `DEFAULT_BENCHMARK_MODELS`.
 
 ---
 

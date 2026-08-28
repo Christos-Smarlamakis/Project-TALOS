@@ -2,6 +2,25 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.14] - 2026-08-28 -- Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4 Cognitive Integration
+
+### Added
+- **Auto-Dynamic Orchestration (2D Execution Matrix 5th Strategy)** (`src/ai/llm/model_manager.py`): `select_execution_mode()` now offers Option 5 -- `auto_dynamic` -- "Autonomous strategy selection with Privacy Guardrails". The TUI table, questionary choices, label map, summary panel, and legacy `.env` compatibility keys were all extended to cover the new strategy.
+- **Privacy Guardrail Resolution Engine** (`src/core/ai_manager.py`): `_resolve_strategies(model_type)` now collapses `auto_dynamic` into a concrete strategy at runtime. New private helpers `_is_network_online()`, `_detect_vram_gb()`, `_resolve_auto_dynamic()`, `_prompt_auto_dynamic_consent()`, and `_log_auto_matrix()` implement the deterministic policy: offline -> strict_local; online + non-deep task -> local_first; online + deep task + interactive consent -> cloud_first; refusal/offline -> strict_local; non-interactive -> local_first. A Rich Privacy Safeguard Panel compares Local GPU vs Cloud estimated service times before prompting for consent.
+- **DeepSeek V4 Cognitive Integration** (`src/core/ai_manager.py`): `_execute_openai_compatible_request()` now injects `thinking={"type": "enabled"}` and `reasoning_effort="high"` when the provider is `deepseek` and the resolved model name contains `v4`.
+
+### Changed
+- **DeepSeek V4 default model** (`config/settings.py`): `DEEPSEEK_MODEL_CHAT` default changed from `deepseek-chat` to `deepseek-v4-pro`; the OpenAI-compatible registry now defaults to the V4 Pro cognitive tier.
+- **DeepSeek V4 catalog** (`src/ai/llm/model_manager.py` + `src/ai/llm/model_discovery.py`): `DEEPSEEK_MODELS` now includes `deepseek-v4-pro` and `deepseek-v4-flash`; `DEFAULT_BENCHMARK_MODELS` adds both V4 variants (v4-pro SWE-bench 75.0 / MMLU-Pro 82.0).
+- **HARD CONSTRAINT -- strict_local is never overridden**: `_resolve_strategies()` short-circuits `strict_local` before any auto-dynamic or cloud logic.
+- **Version strings synced across 6 core code files** (`config/settings.py`, `src/api/main_api.py`, `talos.py`, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py`) plus `docker-compose.yml` (`talos:5.10.14`) and `CITATION.cff` to v5.10.14.
+- **Roadmap re-aligned**: DSPy PRISMA Pipeline shifted to v5.10.15; CORTEX & n8n Gateway shifted to v5.10.16.
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed with v5.10.14 assertion.
+
 ## [v5.10.13] - 2026-08-28 -- Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul
 
 ### Added

@@ -5,8 +5,8 @@
 #  This program is free software...
 #
 """
-Module: ai_manager.py (v3.9 - Universal Cloud Mesh & 2D Execution Matrix)
-Project: TALOS v5.10.4
+Module: ai_manager.py (v4.0 - Universal Cloud Mesh, 2D Execution Matrix & Auto-Dynamic Privacy Guardrails)
+Project: TALOS v5.10.14
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture
@@ -37,6 +37,12 @@ Description:
         requests to the alternative environment with [WARNING] logging.
     Falls back to legacy TALOS_EXECUTION_MODE / per-tier routing if the new
     strategy variables are not set.
+
+    v5.10.14: Autonomous Execution Matrix with Privacy Guardrails -- adds the
+    "auto_dynamic" network strategy. _resolve_strategies() collapses it to a
+    concrete strategy at runtime using connectivity, VRAM, task type, and
+    interactive Rich consent before any routing decision. DeepSeek V4 models
+    receive native thinking/reasoning injection in the OpenAI-compatible path.
 """
 
 import os, json, re, requests, sys
@@ -534,12 +540,27 @@ class AIManager:
     # -- v5.9.4: 2D Execution Matrix Strategy Resolution --
     # ==================================================================
 
-    def _resolve_strategies(self):
+    def _resolve_strategies(self, model_type="default"):
         """Resolve the effective Network and Hardware strategies for routing.
 
-        Reads TALOS_NETWORK_STRATEGY and TALOS_HARDWARE_STRATEGY from the
-        environment. If either is not set, falls back to the legacy
-        TALOS_EXECUTION_MODE mapping.
+        v5.10.14: Adds the "auto_dynamic" network strategy with Privacy
+        Guardrails. The raw TALOS_NETWORK_STRATEGY value is collapsed into one
+        of the four concrete strategies (strict_local, local_first, cloud_first,
+        strict_cloud) before any routing decision is made.
+
+        HARD CONSTRAINT: TALOS_NETWORK_STRATEGY == "strict_local" ALWAYS
+        resolves to strict_local. Cloud providers are never consulted.
+
+        auto_dynamic resolution policy:
+            - offline                               -> strict_local
+            - online + non-deep task                -> local_first
+            - online + deep task + interactive consent granted  -> cloud_first
+            - online + deep task + interactive consent refused  -> strict_local
+            - online + deep task + non-interactive  -> local_first
+
+        Args:
+            model_type (str): 'pro'/'heavy', 'flash'/'fast', or 'default'.
+                Used to derive the router task type for auto_dynamic decisions.
 
         Returns:
             tuple[str, str]: (network_strategy, hardware_strategy)
@@ -562,7 +583,157 @@ class AIManager:
             if not hardware:
                 hardware = "cpu_gpu_split"
 
+        # -- HARD CONSTRAINT (v5.10.14): strict_local is never overridden --
+        if network == "strict_local":
+            return network, hardware
+
+        # -- v5.10.14: auto_dynamic with Privacy Guardrails --
+        if network == "auto_dynamic":
+            return self._resolve_auto_dynamic(model_type, hardware)
+
         return network, hardware
+
+    @staticmethod
+    def _is_network_online(host="8.8.8.8", port=53, timeout=1.5):
+        """Return True when a lightweight TCP probe succeeds.
+
+        Uses a short timeout so air-gapped environments fail fast and are
+        reported as offline without blocking inference.
+
+        Args:
+            host (str): Probe host (public DNS resolver by default).
+            port (int): Probe port.
+            timeout (float): Socket connect timeout in seconds.
+
+        Returns:
+            bool: True when the probe succeeds, False otherwise.
+        """
+        import socket
+        try:
+            with socket.create_connection((host, port), timeout=timeout):
+                return True
+        except Exception:
+            return False
+
+    @staticmethod
+    def _detect_vram_gb():
+        """Return detected GPU VRAM in GB, or None when no GPU is present.
+
+        Returns:
+            float | None: Total VRAM in GB, or None on detection failure.
+        """
+        try:
+            from src.core.hardware import detect_vram_gb
+            return detect_vram_gb()
+        except Exception:
+            return None
+
+    def _resolve_auto_dynamic(self, model_type, hardware):
+        """Resolve auto_dynamic into a concrete network strategy.
+
+        The Privacy Guardrail ensures cloud routing only occurs after explicit
+        interactive consent for deep-research / architecture-report tasks. All
+        other paths resolve locally.
+
+        Args:
+            model_type (str): Router model type used to derive the task type.
+            hardware (str): The already-resolved hardware strategy.
+
+        Returns:
+            tuple[str, str]: (resolved_network_strategy, hardware_strategy)
+        """
+        task_type = self._task_type(model_type)
+        online = self._is_network_online()
+        vram_gb = self._detect_vram_gb()
+        is_deep = task_type in ("deep_research", "architecture_report")
+
+        if not online:
+            resolved, reason = "strict_local", "network offline; local-only enforced"
+        elif not is_deep:
+            resolved, reason = "local_first", "non-deep task; local-first default"
+        elif not sys.stdin.isatty():
+            resolved, reason = "local_first", "non-interactive session; cloud requires interactive consent"
+        else:
+            if self._prompt_auto_dynamic_consent(vram_gb):
+                resolved, reason = "cloud_first", "interactive consent granted for cloud execution"
+            else:
+                resolved, reason = "strict_local", "interactive consent refused; privacy guardrail enforced"
+
+        self._log_auto_matrix(task_type, resolved, reason)
+        return resolved, hardware
+
+    def _prompt_auto_dynamic_consent(self, vram_gb):
+        """Render a Rich Privacy Safeguard Panel and prompt for cloud consent.
+
+        Compares an estimated Local GPU service time against a nominal Cloud
+        service time for deep-research workloads, then asks the operator to
+        explicitly authorize cloud routing.
+
+        Args:
+            vram_gb (float | None): Detected GPU VRAM, or None on CPU-only hosts.
+
+        Returns:
+            bool: True when the operator consents to cloud routing.
+        """
+        try:
+            from rich.console import Console
+            from rich.panel import Panel
+            from rich.table import Table
+            from rich import box
+            import questionary
+            from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
+        except Exception:
+            return False  # cannot render or prompt -> remain local
+
+        console = Console()
+
+        # -- Heuristic service-time estimates (deterministic, clearly labeled) --
+        local_est = round(max(6.0, 45.0 - 1.5 * (vram_gb or 8.0)), 1)
+        cloud_est = 12.0
+
+        table = Table(box=box.ROUNDED, show_header=True, header_style="bold white")
+        table.add_column("Route", style="cyan", no_wrap=True)
+        table.add_column("Estimated Service Time", style="white", justify="right")
+        table.add_column("Data Boundary", style="dim", no_wrap=True)
+        table.add_row("Local GPU", f"{local_est} s", "On-premise (air-gapped)")
+        table.add_row("Cloud", f"{cloud_est} s", "External provider")
+
+        panel = Panel(
+            table,
+            title="[bold]Privacy Safeguard -- Auto-Dynamic Cloud Consent[/bold]",
+            border_style="yellow",
+            padding=(1, 2),
+        )
+        console.print()
+        console.print(panel)
+
+        try:
+            return questionary.confirm(
+                "Route this deep-research task to the cloud? (Local stays fully air-gapped)",
+                default=False,
+                style=TALOS_QUESTIONARY_STYLE,
+            ).ask() is True
+        except Exception:
+            return False
+
+    def _log_auto_matrix(self, task_type, resolved_strategy, reason):
+        """Emit the Rich XAI console line documenting the auto-dynamic decision.
+
+        Args:
+            task_type (str): The router task type for the request.
+            resolved_strategy (str): The concrete network strategy chosen.
+            reason (str): Human-readable rationale for the decision.
+        """
+        message = (
+            f"[AUTO-MATRIX] Task: {task_type} -> Strategy Resolved: "
+            f"{resolved_strategy} | Rationale: {reason}"
+        )
+        try:
+            from rich.console import Console
+            from rich.text import Text
+            Console().print(Text(message, style="bold cyan"))
+        except Exception:
+            print(message)
 
     # ==================================================================
     # -- Master Request Dispatcher --
@@ -599,7 +770,7 @@ class AIManager:
         Returns:
             Parsed response, or None if all providers fail.
         """
-        network_strategy, hardware_strategy = self._resolve_strategies()
+        network_strategy, hardware_strategy = self._resolve_strategies(model_type)
 
         # -- strict_local --
         if network_strategy == "strict_local":
@@ -961,11 +1132,23 @@ class AIManager:
         final_prompt = prompt
         if response_format == 'json':
             final_prompt += "\n\nIMPORTANT: Your response MUST be a single, valid JSON object. Do not include any text explanation before or after the JSON."
+
+        # -- v5.10.14: DeepSeek V4 cognitive integration --
+        # DeepSeek V4 models expose a native thinking surface. When the resolved
+        # model is a DeepSeek V4 variant, enable thinking and set a high
+        # reasoning-effort budget for chain-of-thought augmented responses.
+        payload = {
+            "model": provider['model_name'],
+            "messages": [{"role": "user", "content": final_prompt}],
+            "temperature": 0.5,
+        }
+        model_name = str(provider['model_name']).lower()
+        if provider_name == "deepseek" and "v4" in model_name:
+            payload["thinking"] = {"type": "enabled"}
+            payload["reasoning_effort"] = "high"
+
         try:
-            chat_completion = provider['client'].chat.completions.create(
-                model=provider['model_name'],
-                messages=[{"role": "user", "content": final_prompt}],
-                temperature=0.5)
+            chat_completion = provider['client'].chat.completions.create(**payload)
             response_text = chat_completion.choices[0].message.content
             if response_format == 'json':
                 try:

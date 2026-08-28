@@ -4,9 +4,22 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-28 (v5.10.13 -- Desktop Control Hub, Self-Healing Infrastructure, Active Profile Persistence & Environment Canon Overhaul)
+> **Last Updated:** 2026-08-28 (v5.10.14 -- Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4 Cognitive Integration)
 
 ---
+
+## Phase 44: Autonomous Matrix with Privacy Guardrails & DeepSeek V4 Integration (v5.10.14)
+
+### Status: COMPLETED (2026-08-28)
+
+- [x] **Auto-Dynamic Orchestration (Option 5)** -- `select_execution_mode()` gained `auto_dynamic` with full TUI table/choice/label/summary/env coverage.
+- [x] **Privacy Guardrail Resolution Engine** -- `_resolve_strategies(model_type)` collapses `auto_dynamic` at runtime (`_is_network_online`, `_detect_vram_gb`, `_resolve_auto_dynamic`, `_prompt_auto_dynamic_consent`, `_log_auto_matrix`).
+- [x] **HARD CONSTRAINT** -- `strict_local` short-circuits before any cloud/auto-dynamic logic.
+- [x] **DeepSeek V4 Cognitive Integration** -- `_execute_openai_compatible_request()` injects `thinking` + `reasoning_effort` for DeepSeek V4 models.
+- [x] **DeepSeek V4 catalog** -- `deepseek-v4-pro` (SWE-bench 75.0 / MMLU-Pro 82.0) and `deepseek-v4-flash` added to model manager and benchmark registry.
+- [x] **Version synced** -- 6 code files + Docker image + CITATION.cff to v5.10.14.
+- [x] **Roadmap re-aligned** -- DSPy PRISMA -> v5.10.15; CORTEX & n8n -> v5.10.16.
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version.
 
 ## Phase 43: Desktop Control Hub, Self-Healing Infrastructure & Persistence Guarantee (v5.10.13)
 

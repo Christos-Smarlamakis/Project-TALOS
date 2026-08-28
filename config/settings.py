@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.10.13
+Project: TALOS v5.10.14
 Description:
-    Canonical configuration hub for TALOS v5.10.13. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.10.14. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
@@ -85,7 +85,7 @@ GEMINI_PRO_MODEL = os.getenv("GEMINI_PRO_MODEL", "gemini-2.5-pro")
 
 # -- DeepSeek --
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
-DEEPSEEK_MODEL_CHAT = os.getenv("DEEPSEEK_MODEL_CHAT", "deepseek-chat")
+DEEPSEEK_MODEL_CHAT = os.getenv("DEEPSEEK_MODEL_CHAT", "deepseek-v4-pro")
 DEEPSEEK_BASE_URL = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
 
 # -- HuggingFace Inference API (Universal Cloud Mesh, v5.9.18) --
@@ -148,6 +148,10 @@ TALOS_CLOUD_PROVIDERS = [
 #                    rate limit, timeout), automatically fallback to local.
 #   "strict_cloud" : Pure cloud. Local tiers are NEVER called. Requires valid
 #                    cloud API keys (Gemini, DeepSeek, or HuggingFace).
+#   "auto_dynamic" : v5.10.14 Autonomous Execution Matrix. Resolves at runtime
+#                    to strict_local / local_first / cloud_first based on
+#                    connectivity, VRAM, task type, and Privacy Guardrail
+#                    consent. strict_local is NEVER overridden.
 TALOS_NETWORK_STRATEGY = os.getenv("TALOS_NETWORK_STRATEGY", "strict_local")
 
 # Hardware Strategy controls which local compute devices are used when
@@ -173,7 +177,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.10.13"
+TALOS_VERSION = "5.10.14"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.

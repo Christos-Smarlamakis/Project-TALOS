@@ -2,6 +2,25 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.10.14] - 2026-08-28 -- Αυτόνομος Πίνακας Εκτέλεσης με Προστατευτικές Δικλείδες Απορρήτου & Γνωσιακή Ενσωμάτωση DeepSeek V4
+
+### Προστέθηκε
+- **Αυτόνομη Δυναμική Ενορχήστρωση (5η Στρατηγική Πίνακα 2D)** (`src/ai/llm/model_manager.py`): Η `select_execution_mode()` προσφέρει πλέον την Επιλογή 5 -- `auto_dynamic` -- «Αυτόνομη επιλογή στρατηγικής με Προστατευτικές Δικλείδες Απορρήτου». Ο πίνακας TUI, οι επιλογές questionary, ο χάρτης ετικετών, το πάνελ σύνοψης και τα κληροδοτημένα κλειδιά συμβατότητας `.env` επεκτάθηκαν για τη νέα στρατηγική.
+- **Μηχανή Επίλυσης Προστατευτικών Δικλείδων Απορρήτου** (`src/core/ai_manager.py`): Η `_resolve_strategies(model_type)` καταρρέει πλέον την `auto_dynamic` σε συγκεκριμένη στρατηγική κατά τον χρόνο εκτέλεσης. Οι νέοι βοηθοί `_is_network_online()`, `_detect_vram_gb()`, `_resolve_auto_dynamic()`, `_prompt_auto_dynamic_consent()` και `_log_auto_matrix()` υλοποιούν τη ντετερμινιστική πολιτική: εκτός σύνδεσης -> strict_local; online + μη βαθιά εργασία -> local_first; online + βαθιά εργασία + διαδραστική συναίνεση -> cloud_first; άρνηση/εκτός σύνδεσης -> strict_local; μη διαδραστική -> local_first. Ένα Rich Πάνελ Προστασίας Απορρήτου συγκρίνει τον εκτιμώμενο χρόνο Τοπικής GPU έναντι Cloud πριν ζητήσει συναίνεση.
+- **Γνωσιακή Ενσωμάτωση DeepSeek V4** (`src/core/ai_manager.py`): Η `_execute_openai_compatible_request()` εγχέει πλέον `thinking={"type": "enabled"}` και `reasoning_effort="high"` όταν ο πάροχος είναι `deepseek` και το όνομα μοντέλου περιέχει `v4`.
+
+### Άλλαξε
+- **Προεπιλεγμένο μοντέλο DeepSeek V4** (`config/settings.py`): Η προεπιλογή `DEEPSEEK_MODEL_CHAT` άλλαξε από `deepseek-chat` σε `deepseek-v4-pro`.
+- **Κατάλογος DeepSeek V4** (`src/ai/llm/model_manager.py` + `src/ai/llm/model_discovery.py`): Το `DEEPSEEK_MODELS` περιλαμβάνει πλέον `deepseek-v4-pro` και `deepseek-v4-flash`; το `DEFAULT_BENCHMARK_MODELS` προσθέτει τις δύο παραλλαγές V4 (v4-pro SWE-bench 75.0 / MMLU-Pro 82.0).
+- **ΑΠΟΛΥΤΟΣ ΠΕΡΙΟΡΙΣΜΟΣ -- το strict_local δεν παρακάμπτεται ποτέ**: Η `_resolve_strategies()` βραχυκυκλώνει το `strict_local` πριν από κάθε λογική auto-dynamic ή cloud.
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 6 αρχεία κώδικα** (`config/settings.py`, `src/api/main_api.py`, `talos.py`, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py`) καθώς και `docker-compose.yml` (`talos:5.10.14`) και `CITATION.cff` σε v5.10.14.
+- **Επαναπροσδιορισμός οδικού χάρτη**: DSPy PRISMA Pipeline στην v5.10.15; CORTEX & n8n Gateway στην v5.10.16.
+
+### Επαλήθευση
+- `python -m compileall src config tests talos.py` πέρασε με μηδέν σφάλματα.
+- `python -m pytest tests/test_system_integrity.py -q` πέρασε.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε με ισχυρισμό v5.10.14.
+
 ## [v5.10.13] - 2026-08-28 -- Κεντρικός Κόμβος Ελέγχου Επιφάνειας Εργασίας, Αυτοθεραπευόμενη Υποδομή, Εμμονή Ενεργού Προφίλ & Ανανέωση Κανόνα Περιβάλλοντος
 
 ### Προστέθηκε

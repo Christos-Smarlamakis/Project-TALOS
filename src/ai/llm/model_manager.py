@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: model_manager.py
-Project: TALOS v5.10.0
+Project: TALOS v5.10.14
 Description:
     Interactive TUI for configuring all LLM tiers (Fast Edge CPU, Heavy Reasoning GPU,
     Cloud API) and setting the 2D Execution Matrix (Network Strategy & Hardware Strategy).
@@ -80,6 +80,7 @@ from src.core.hardware import (
 
 # -- Cloud provider defaults from the canonical settings hub --
 from config.settings import (
+    TALOS_VERSION,
     GEMINI_FLASH_MODEL as DEFAULT_GEMINI_FLASH,
     GEMINI_PRO_MODEL as DEFAULT_GEMINI_PRO,
     DEEPSEEK_MODEL_CHAT as DEFAULT_DEEPSEEK_MODEL,
@@ -378,6 +379,8 @@ GEMINI_MODELS = [
 ]
 
 DEEPSEEK_MODELS = [
+    ("deepseek-v4-pro", "V4 Pro (cognitive integration, thinking enabled)"),
+    ("deepseek-v4-flash", "V4 Flash (fast cognitive tier)"),
     ("deepseek-chat", "General purpose (cheapest)"),
     ("deepseek-reasoner", "Advanced reasoning (R1, more expensive)"),
 ]
@@ -1149,6 +1152,8 @@ def select_execution_mode(env_path):
          "Auth/Rate/Timeout -> auto-reroute to Local."),
         ("4", "Strict Cloud", "Pure cloud. No local models required.",
          "None -- cloud only."),
+        ("5", "Auto-Dynamic", "Autonomous strategy selection with Privacy Guardrails.",
+         "Runtime resolve: offline/VRAM/task + consent gate."),
     ]
     for row in network_rows:
         network_table.add_row(*row)
@@ -1172,6 +1177,10 @@ def select_execution_mode(env_path):
         questionary.Choice(
             title="[4] Strict Cloud -- Cloud only, no local models",
             value="strict_cloud"
+        ),
+        questionary.Choice(
+            title="[5] Auto-Dynamic Orchestration -- Autonomous strategy selection with Privacy Guardrails",
+            value="auto_dynamic"
         ),
         questionary.Separator(),
         questionary.Choice(title="[Cancel / Return to Main Menu]", value="__cancel__"),
@@ -1256,6 +1265,7 @@ def select_execution_mode(env_path):
         "local_first":  "Local-First (w/ Cloud Fallback)",
         "cloud_first":  "Cloud-First (w/ Local Fallback)",
         "strict_cloud": "Strict Cloud (Cloud-Only)",
+        "auto_dynamic": "Auto-Dynamic (Privacy Guardrails)",
     }
     hardware_labels = {
         "cpu_only":      "CPU Only (Neutrino)",
@@ -1277,6 +1287,8 @@ def select_execution_mode(env_path):
         summary_text.append("[Cloud primary. Auto-fallback to local on auth/rate/timeout.]\n", style="dim green")
     elif selected_network == "strict_cloud":
         summary_text.append("[Cloud-only. No local models needed. Internet required.]\n", style="dim green")
+    elif selected_network == "auto_dynamic":
+        summary_text.append("[Autonomous strategy selection. Cloud requires interactive consent.]\n", style="dim green")
 
     summary_text.append(f"\n  Hardware Strategy: ", style="dim")
     summary_text.append(f"{hardware_labels.get(selected_hardware, selected_hardware)}\n", style="bold magenta")
@@ -1330,6 +1342,13 @@ def select_execution_mode(env_path):
         os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
     elif selected_network == "cloud_first":
         new_fast, new_heavy = "cloud", "cloud"
+        mode_value = "hybrid"
+        _set_key(env_path, "TALOS_USE_LOCAL", "1")
+        _set_key(env_path, "TALOS_ALLOW_CLOUD_FALLBACK", "1")
+        os.environ["TALOS_USE_LOCAL"] = "1"
+        os.environ["TALOS_ALLOW_CLOUD_FALLBACK"] = "1"
+    elif selected_network == "auto_dynamic":
+        new_fast, new_heavy = "local", "local"
         mode_value = "hybrid"
         _set_key(env_path, "TALOS_USE_LOCAL", "1")
         _set_key(env_path, "TALOS_ALLOW_CLOUD_FALLBACK", "1")
@@ -1493,7 +1512,7 @@ def main():
 
         # -- Main menu header panel --
         header_panel = Panel(
-            "[bold white]TALOS v5.9.4[/]\n[dim]Multi-Tier AI Model Management | 2D Execution Matrix | Safety Locks Active[/]",
+            f"[bold white]TALOS v{TALOS_VERSION}[/]\n[dim]Multi-Tier AI Model Management | 2D Execution Matrix | Safety Locks Active[/]",
             border_style="bright_blue",
             box=box.ROUNDED,
             padding=(1, 2),
