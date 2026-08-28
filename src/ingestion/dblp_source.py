@@ -24,6 +24,12 @@ Description:
     Free to use — no API key required.
 """
 import requests
+
+try:
+    from src.utils.http_client import build_session
+except ImportError:
+    build_session = None
+
 import time
 from datetime import datetime
 from typing import List, Dict, Any
@@ -48,6 +54,7 @@ class DBLPSource:
         Args:
             config (dict): Application configuration dictionary.
         """
+        self.session = build_session() if build_session else requests
         self.query = config.get("dblp_query", "swarm intelligence")
         self.days_to_search = config.get("days_to_search_daily", 1)
         self.total_max_results = config.get("max_results_config", {}).get("dblp", 100)
@@ -74,7 +81,7 @@ class DBLPSource:
                 "format": "json"
             }
             try:
-                response = requests.get(self.base_url, params=params, timeout=20)
+                response = self.session.get(self.base_url, params=params, timeout=20)
                 response.raise_for_status()
                 data = response.json()
 
@@ -123,7 +130,7 @@ class DBLPSource:
         """
         params = {"q": query, "h": limit, "format": "json"}
         try:
-            response = requests.get(self.base_url, params=params, timeout=10)
+            response = self.session.get(self.base_url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
             results = []

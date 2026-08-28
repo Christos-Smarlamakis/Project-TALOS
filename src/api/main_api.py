@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.10.14
+Project: TALOS v5.10.16
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -99,8 +99,8 @@ logger = get_logger("api")
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-description="Facade REST API for the TALOS autonomous research platform (v5.10.14 -- Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4 Cognitive Integration)",
-version="5.10.14",
+description="Facade REST API for the TALOS autonomous research platform (v5.10.16 -- Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine)",
+version="5.10.16",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -603,7 +603,7 @@ class EvaluatePaperRequest(BaseModel):
 @app.on_event("startup")
 def on_startup():
     """Pre-warm singletons and log readiness."""
-    logger.info("TALOS FastAPI v5.10.14 starting up (Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4 Cognitive Integration, port 8001)...")
+    logger.info("TALOS FastAPI v5.10.16 starting up (Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")

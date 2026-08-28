@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.14
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.16
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-08-28 (v5.10.14 -- Αυτόνομος Πίνακας Εκτέλεσης με Προστατευτικές Δικλείδες Απορρήτου & Γνωσιακή Ενσωμάτωση DeepSeek V4)
+> **Τελευταία Ενημέρωση:** 2026-08-28 (v5.10.16 -- Βελτιστοποίηση Απόδοσης Μηδενικού Κινδύνου & Μηχανή Ακαδημαϊκής Εξαγωγής LaTeX/BibTeX)
 
 ---
 
@@ -12,7 +12,7 @@
 
 ```text
 USER INTERFACES
-  talos.py (Rich TUI -- μενού 15 επιλογών)       src/api/main_api.py (FastAPI -- 23 endpoints E01-E23)
+  talos.py (Rich TUI -- ιεραρχικό μενού 6 ομάδων)   src/api/main_api.py (FastAPI -- 23 endpoints E01-E23)
   React 18 + Tailwind CSS + Shadcn UI             templates/dashboard.html (Flask, legacy)
   src/utils/tray_icon.py (system tray)            templates/live_foraging_visualizer.html (Three.js)
 
@@ -29,7 +29,7 @@ SRC PACKAGES
   src/analysis/     (10 αρχεία)  citation_analyzer, author_profiler, recommender, knowledge_path, κ.ά.
   src/ingestion/    (23 αρχεία)  16 source agents + 7 pipelines
   src/integration/   (3 αρχεία)  synapse_client, optica_client, visualizer_bridge
-  src/utils/        (14 αρχεία)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, κ.ά.
+  src/utils/        (17 αρχεία)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, κ.ά.
   src/api/           (4 αρχεία)  main_api, synapse_routes, red_tester_routes, talos_service_api
   src/mcp_server.py              MCP stdio server (4 tools)
 
@@ -103,7 +103,7 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 | `src/ai/llm/` | 4 | `model_manager.py`, `query_translator.py`, `research_pivot.py`, `model_discovery.py` |
 | `src/analysis/` | 10 | `citation_analyzer.py`, `author_profiler.py`, `recommender.py`, `knowledge_path_generator.py`, `trend_analyzer.py`, `graphify_adapter.py`, `generate_baseline_report.py`, κ.ά. |
 | `src/ingestion/` | 23 | 16 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `pdf_downloader.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
-| `src/utils/` | 14 | `db_stats.py`, `logger.py`, `tray_icon.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, κ.ά. |
+| `src/utils/` | 17 | `db_stats.py`, `logger.py`, `tray_icon.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, `http_client.py`, `snapshot_manager.py`, `academic_export.py`, κ.ά. |
 
 ## 5. Πηγές (16 APIs)
 
@@ -175,6 +175,7 @@ src/ingestion/*.py
 
 | Module | Διαδρομή | Περιγραφή |
 |--------|----------|-----------|
+| **Universal TUI (v5.10.15)** | `talos.py` | Ενοποιημένο ιεραρχικό μενού 6 ομάδων -- 45/45 εκτελέσιμα modules, αναβίωση νεκρών υπομενού, σουίτα GWO Swarm |
 | **Desktop Control Hub (v5.10.13)** | `src/utils/tray_icon.py` | `launch_tray_icon_async()` -- pystray εικονίδιο 7 στοιχείων (3D Visualizer, Φάκελος Αναφορών, Καταγραφή Συστήματος, Swagger, Άμεση Αναζήτηση, Κονσόλα, Τερματισμός) με `_is_api_alive()` / `_ensure_api_server()` αυτοθεραπεία |
 | **DatabaseManager Persistence (v5.10.13)** | `src/core/database_manager.py` | Προεπιλογή `db_path=None` -> `get_active_profile_db_path()` (βάση ενεργού προφίλ `_profiles/<active>/talos_research.db`) |
 | **3D Visualizer (v5.10.12)** | `templates/live_foraging_visualizer.html` | Αστερισμός Three.js με 60 FPS ακτίνες λέιζερ, παλμούς φωτονίων, raycaster, στιγμιότυπο |
@@ -213,8 +214,8 @@ src/ingestion/*.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-08-28 (v5.10.14 -- Αυτόνομος Πίνακας Εκτέλεσης με Προστατευτικές Δικλείδες Απορρήτου & Γνωσιακή Ενσωμάτωση DeepSeek V4)
-> **Έκδοση Project:** v5.10.14
-> **Συνολικά .py modules στο src/:** 80 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 14 + api 4 + mcp_server 1)
+> **Τελευταία Ενημέρωση:** 2026-08-28 (v5.10.16 -- Βελτιστοποίηση Απόδοσης Μηδενικού Κινδύνου & Μηχανή Ακαδημαϊκής Εξαγωγής LaTeX/BibTeX)
+> **Έκδοση Project:** v5.10.16
+> **Συνολικά .py modules στο src/:** 83 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 17 + api 4 + mcp_server 1)
 
 

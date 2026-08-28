@@ -19,7 +19,15 @@ Description:
     Requires an API key via the ``SPRINGER_API_KEY`` environment variable.
     Gracefully disables itself if no key is configured.
 """
-import os, time, requests, random
+import os
+import time
+import requests
+import random
+
+try:
+    from src.utils.http_client import build_session
+except ImportError:
+    build_session = None
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
@@ -39,6 +47,7 @@ class SpringerNatureSource:
         Args:
             config (dict): Application configuration.
         """
+        self.session = build_session() if build_session else requests
         self.enabled = True
         self.api_key = os.getenv("SPRINGER_API_KEY")
         if not self.api_key:
@@ -64,7 +73,7 @@ class SpringerNatureSource:
         """
         for attempt in range(max_retries):
             try:
-                response = requests.get(self.base_url, params=params, timeout=30)
+                response = self.session.get(self.base_url, params=params, timeout=30)
                 if response.status_code in [429, 403]:
                     if attempt == max_retries - 1:
                         response.raise_for_status()

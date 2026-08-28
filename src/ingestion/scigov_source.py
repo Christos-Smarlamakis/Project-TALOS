@@ -21,6 +21,12 @@ Description:
 - Επιστρέφει τα δεδομένα σε πλήρη συμμόρφωση με το νέο, τυποποιημένο λεξικό.
 """
 import requests
+
+try:
+    from src.utils.http_client import build_session
+except ImportError:
+    build_session = None
+
 from typing import List, Dict, Any
 
 class ScienceGovSource:
@@ -31,6 +37,7 @@ class ScienceGovSource:
         """
         Αρχικοποιεί τον πράκτορα του Science.gov.
         """
+        self.session = build_session() if build_session else requests
         self.query = config.get("scigov_query", "unmanned systems")
         self.max_results = config.get("max_results_config", {}).get("scigov", 100)
         self.base_url = "https://api.science.gov/search/v2/records"
@@ -50,7 +57,7 @@ class ScienceGovSource:
             'sort': 'published_date:desc'
         }
         try:
-            response = requests.get(self.base_url, params=params, timeout=20)
+            response = self.session.get(self.base_url, params=params, timeout=20)
             response.raise_for_status()
             data = response.json()
             

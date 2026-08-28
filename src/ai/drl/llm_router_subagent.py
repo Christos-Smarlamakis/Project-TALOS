@@ -67,6 +67,7 @@ if _P:
     sys.path.insert(0, _P)
 
 import numpy as np
+import functools
 
 
 # -- Canonical weight labels -----------------------------------------------
@@ -119,6 +120,7 @@ MAX_SWE_BENCH_SCORE = float(max(
 ))
 
 
+@functools.lru_cache(maxsize=32)
 def relative_quality(raw_score):
     """Normalize a raw benchmark score to a relative quality in [0, 1].
 
@@ -151,6 +153,7 @@ TASK_MODIFIERS = {
 }
 
 
+@functools.lru_cache(maxsize=4096)
 def estimate_prompt_tokens(text):
     """Approximate the token length of a prompt from its character count.
 

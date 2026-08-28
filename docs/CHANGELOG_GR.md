@@ -2,6 +2,46 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.10.16] - 2026-08-28 -- Βελτιστοποίηση Απόδοσης Μηδενικού Κινδύνου & Μηχανή Ακαδημαϊκής Εξαγωγής LaTeX/BibTeX
+
+### Προστέθηκε
+- **Λειτουργία SQLite WAL & Εργοστάσιο Σύνδεσης PRAGMA** (`src/core/database_manager.py`): Προστέθηκαν οι ιδιωτικές βοηθητικές μέθοδοι `_apply_pragmas()` και `_connect()`. Κάθε σύνδεση ενεργοποιεί πλέον `journal_mode=WAL`, `busy_timeout=5000`, `cache_size=-64000`, `synchronous=NORMAL` και `temp_store=MEMORY`. Και τα 14 σημεία σύνδεσης δρομολογούνται μέσω `self._connect()`, επιτρέποντας μη-μπλοκαριστική ταυτόχρονη ανάγνωση μεταξύ της υπηρεσίας FastAPI (θύρα 8001) και του δαίμονα 24/7.
+- **Ασφαλής Διαδικτυακή Στιγμιοληψία** (`src/utils/snapshot_manager.py`): Νέα συνάρτηση `snapshot_database()` με χρήση `sqlite3.Connection.backup()` για συνεπή, χρονοσημασμένα αντίγραφα ασφαλείας στο `_profiles/<active>/backups/` με πολιτική διατήρησης (τελευταία 5). Συνδέεται αμέσως πριν από `VACUUM` (`db_stats.py`), τη μαζική επαναβαθμολόγηση (`recalculate_scores.py`) και την πλήρη επαναξιολόγηση (`reevaluate_database.py`).
+- **Συγκέντρωση Συνόδων HTTP** (`src/utils/http_client.py`): Νέα συνάρτηση `build_session()` που επιστρέφει `requests.Session` με συγκέντρωση συνδέσεων `HTTPAdapter` και ευγενικές κεφαλίδες. Μετεγκατάσταση και των 13 πηγών που βασίζονται στο `requests` και των τοπικών κλήσεων Ollama/Fast-edge στο `AIManager` σε μόνιμες συνόδους (TCP/TLS keep-alive). Οι τρεις πηγές βιβλιοθηκών-πελατών (Elsevier, OpenReview, PubMed) διατηρούν τα εγγενή τους μέσα μεταφοράς.
+- **Μηχανή Ακαδημαϊκής Εξαγωγής** (`src/utils/academic_export.py`): Εξαγωγέας μηδενικών εξαρτήσεων που παράγει BibTeX (`.bib`) με μοναδικά κλειδιά `AuthorYear`, πίνακες LaTeX longtable (`.tex`) έτοιμους για δημοσίευση και πίνακες υποψηφίων PRISMA. Εκτίθεται ως επιλογή 13 στο μενού Προηγμένης Ανάλυσης & Οπτικοποιήσεων.
+- **Ντετερμινιστική LRU Αποθήκευση**: Εφαρμόστηκε `@functools.lru_cache` σε αγνές βοηθητικές συναρτήσεις -- `estimate_prompt_tokens` (4096), `relative_quality` (32), `detect_protocol` (512), `_sanitize` (1024), `_cloud_key_for` (512) και `_task_type` (32).
+
+### Άλλαξε
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.10.16** στα 6 βασικά αρχεία κώδικα, `docker-compose.yml` (`talos:5.10.16`) και `CITATION.cff`.
+- **Προσαρμογή σημείου ελέγχου**: το `tests/test_openaire_source.py` εφαρμόζει πλέον patch στη σύνοδο της πηγής (`src.session.get`) αντί του `requests.get`.
+
+### Επαλήθευση
+- `python -m compileall -q src config tests talos.py` πέρασε.
+- `python -m pytest tests/test_system_integrity.py -q` πέρασε.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε (v5.10.16).
+- `python -m pytest tests/test_openaire_source.py -q` πέρασε (27 δοκιμές).
+
+
+## [v5.10.15] - 2026-08-28 -- Καθολική Αποκατάσταση Χαρακτηριστικών TUI & 100% Κάλυψη Κώδικα
+
+### Προστέθηκε
+- **Ενοποιημένο Ιεραρχικό TUI 6 Ομάδων** (`talos.py`): Αναδιοργάνωση της `main_menu()` σε έξι οπτικά ομαδοποιημένες ενότητες με διαχωριστικά Rich και το κανονικό `TALOS_QUESTIONARY_STYLE` -- (1) Διαμόρφωση & Προφίλ, (2) Αναζήτηση & Εισαγωγή Έρευνας, (3) Προηγμένη Ανάλυση & Οπτικοποιήσεις, (4) Πράκτορες DRL, Δαίμονες & Σμήνος GWO, (5) Συντήρηση Βάσης & Εργαλεία Δεδομένων, (6) Υγεία Συστήματος, Διαγνωστικά & CI/CD, συν Έξοδος.
+- **Αναβίωση Νεκρών Υπομενού** (`talos.py`): Οι `profile_settings_menu()`, `database_data_menu()` και `system_health_menu()` επανασυνδέθηκαν ως ζωντανοί, κλήσιμοι χειριστές από το κύριο μενού. Νέα υπομενού `search_ingestion_menu()`, `analysis_visualization_menu()` και `drl_gwo_menu()` εξήχθησαν από το προηγούμενο επίπεδο μενού.
+- **100% Κάλυψη Εκτελέσιμων Αρθρωμάτων (45/45)**: Κάθε ορφανό άρθρωμα συνδέθηκε στην ιεραρχία, συμπεριλαμβανομένων των Model Discovery (`model_discovery.py`), Model Provisioning (`model_provisioner.py`), GWO LLM Router Reward Shaper (`gwo_llm_router_reward_shaper.py`), Red Tester (`red_tester.py`), Daemon Autostart (`daemon_autostart.py`) και του πελάτη OPTICA.
+- **Σουίτα Σμήνους GWO** (`drl_gwo_menu`): Δέκτης Υπερπαραμέτρων, Διαμορφωτής Ανταμοιβής Δρομολογητή LLM και Ζωντανός Πίνακας Σμήνους 3D (Dash θύρα 8050) ενοποιήθηκαν σε ένα μενού.
+- **Νέοι Βοηθοί Rich** (`talos.py`): `_show_drl_status()`, `_run_model_discovery()`, `_probe_api_backend()`, `_open_capabilities_viewer()`, `_open_d3_architecture_graph()`, `_launch_gwo_dashboard()`.
+
+### Άλλαξε
+- **Ενίσχυση Χάρτη Σεναρίων**: Το `_SCRIPT_MAP` επεκτάθηκε με έξι ελλείποντα αρθρώματα; η `_resolve_script_path()` δεν επιστρέφει πλέον σιωπηλά στο `scripts/` και εγείρει περιγραφικό `FileNotFoundError` για μη χαρτογραφημένα σενάρια.
+- **Κατάσταση DRL**: Ο έλεγχος `models/gwo_foraging_hyperparameters.json` ενοποιήθηκε στην `_show_drl_status()`.
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 6 αρχεία κώδικα** (`config/settings.py`, `src/api/main_api.py`, `talos.py`, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py`) καθώς και `docker-compose.yml` (`talos:5.10.15`) και `CITATION.cff` σε v5.10.15.
+- **Επαναπροσδιορισμός οδικού χάρτη**: DSPy PRISMA Pipeline στην v5.10.16; CORTEX & n8n Gateway στην v5.10.17.
+
+### Επαλήθευση
+- `python -m compileall src config tests talos.py` πέρασε με μηδέν σφάλματα.
+- `python -m pytest tests/test_system_integrity.py -q` πέρασε.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε με ισχυρισμό v5.10.15.
+
 ## [v5.10.14] - 2026-08-28 -- Αυτόνομος Πίνακας Εκτέλεσης με Προστατευτικές Δικλείδες Απορρήτου & Γνωσιακή Ενσωμάτωση DeepSeek V4
 
 ### Προστέθηκε

@@ -37,6 +37,7 @@ from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 
 # Προσθέτουμε το root του project στο path για να βρει τα core modules
 from src.core.database_manager import DatabaseManager
+from src.utils.snapshot_manager import snapshot_database
 
 def recalculate_database_scores():
     """
@@ -109,6 +110,7 @@ def recalculate_database_scores():
         print("Η διαδικασία ακυρώθηκε από τον χρήστη.")
         return
 
+    snapshot_database()
     try:
         with sqlite3.connect(db_manager.db_path) as conn:
             cursor = conn.cursor()

@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.14
+# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.16
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-08-28
-> **Version:** v5.10.14 -- Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4 Cognitive Integration
+> **Version:** v5.10.16 -- Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.10.5" | `config/settings.py` |
+| TALOS_VERSION | "5.10.16" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -861,6 +861,14 @@ For each evaluated paper, the AI generates:
 - **HARD CONSTRAINT:** `strict_local` short-circuits before any cloud/auto-dynamic logic -- air-gapped operation is never overridden.
 - **DeepSeek V4 Cognitive Integration:** `_execute_openai_compatible_request()` injects `thinking={"type": "enabled"}` + `reasoning_effort="high"` for DeepSeek V4 models; default `DEEPSEEK_MODEL_CHAT` = `deepseek-v4-pro`.
 - **DeepSeek V4 catalog:** `deepseek-v4-pro` (SWE-bench 75.0 / MMLU-Pro 82.0) and `deepseek-v4-flash` added to `model_manager.py` and `DEFAULT_BENCHMARK_MODELS`.
+
+### 15.19 Universal TUI Feature Restoration & 100% Codebase Coverage (v5.10.15)
+
+- **Unified 6-group hierarchical TUI:** `talos.py` `main_menu()` reorganized into six sections -- Configuration & Profiles, Research Search & Ingestion, Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm, Database Maintenance & Data Tools, System Health/Diagnostics & CI/CD -- all using `TALOS_QUESTIONARY_STYLE`.
+- **Dead sub-menu revival:** `profile_settings_menu()`, `database_data_menu()`, `system_health_menu()` reconnected; new `search_ingestion_menu()`, `analysis_visualization_menu()`, `drl_gwo_menu()`.
+- **45/45 executable module coverage:** every orphaned module wired (Model Discovery, Model Provisioning, GWO LLM Router Reward Shaper, Red Tester, Daemon Autostart, OPTICA client).
+- **GWO Swarm suite:** tuner, router reward shaper, and 3D live dashboard (Dash port 8050) unified.
+- **Script map hardening:** `_resolve_script_path()` raises `FileNotFoundError` for unmapped scripts (no silent `scripts/` fallback).
 
 ---
 

@@ -21,6 +21,12 @@ Description:
     itself if no key is configured.
 """
 import requests
+
+try:
+    from src.utils.http_client import build_session
+except ImportError:
+    build_session = None
+
 import os
 import time
 import random
@@ -46,6 +52,7 @@ class IEEEXploreSource:
         Args:
             config (dict): Application configuration.
         """
+        self.session = build_session() if build_session else requests
         self.api_key = os.getenv("IEEE_API_KEY")
         self.enabled = True
         if not self.api_key:
@@ -71,7 +78,7 @@ class IEEEXploreSource:
         """
         for attempt in range(max_retries):
             try:
-                response = requests.get(self.base_url, params=params, timeout=30)
+                response = self.session.get(self.base_url, params=params, timeout=30)
                 if response.status_code in [429, 403]:
                     if attempt == max_retries - 1: response.raise_for_status()
                     backoff = initial_backoff * (2 ** attempt) + random.uniform(0, 1)

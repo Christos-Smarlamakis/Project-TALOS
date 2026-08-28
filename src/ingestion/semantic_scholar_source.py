@@ -21,6 +21,12 @@ Description:
 """
 import os
 import requests
+
+try:
+    from src.utils.http_client import build_session
+except ImportError:
+    build_session = None
+
 import time
 import random
 from datetime import datetime, timedelta
@@ -46,6 +52,7 @@ class SemanticScholarSource:
         Args:
             config (dict): Application configuration.
         """
+        self.session = build_session() if build_session else requests
         self.config = config
         self.query = config.get("semantic_scholar_query", "swarm intelligence")
         self.api_key = os.getenv("SEMANTIC_SCHOLAR_API_KEY")
@@ -67,8 +74,8 @@ class SemanticScholarSource:
         """
         for attempt in range(max_retries):
             try:
-                response = requests.get(f"{self.base_url}{endpoint}", params=params,
-                                        headers=self.headers, timeout=15)
+                response = self.session.get(f"{self.base_url}{endpoint}", params=params,
+                                            headers=self.headers, timeout=15)
                 if response.status_code == 429:
                     if attempt == max_retries - 1: response.raise_for_status()
                     backoff_time = initial_backoff * (2 ** attempt) + random.uniform(0, 1)

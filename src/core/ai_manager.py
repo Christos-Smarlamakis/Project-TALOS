@@ -6,7 +6,7 @@
 #
 """
 Module: ai_manager.py (v4.0 - Universal Cloud Mesh, 2D Execution Matrix & Auto-Dynamic Privacy Guardrails)
-Project: TALOS v5.10.14
+Project: TALOS v5.10.15
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture
@@ -45,10 +45,15 @@ Description:
     receive native thinking/reasoning injection in the OpenAI-compatible path.
 """
 
-import os, json, re, requests, sys
+import os, json, re, requests, sys, functools
 from dotenv import load_dotenv
 from typing import Union, List, Dict, Any, Tuple, Optional
 import numpy as np
+
+try:
+    from src.utils.http_client import build_session
+except ImportError:
+    build_session = None
 
 # -- v5.9.18: Universal Cloud Mesh provider metadata (single source of truth) --
 from config.settings import (
@@ -190,6 +195,7 @@ class AIManager:
     def __init__(self, config: Dict[str, Any]):
         load_dotenv()
         self.config = config
+        self._local_session = build_session() if build_session else requests
         self.providers = {}
         self.provider_priority = config.get("ai_provider_priority", ["gemini", "deepseek"])
         self.active_embedding_model = None  # set after first successful embedding generation
@@ -267,6 +273,7 @@ class AIManager:
             return None
 
     @staticmethod
+    @functools.lru_cache(maxsize=32)
     def _task_type(model_type):
         """Map a model_type string to a router task type.
 
@@ -410,7 +417,7 @@ class AIManager:
         if 'local' in self.providers and not self.providers['local']['circuit_open']:
             try:
                 p = self.providers['local']
-                resp = requests.post(
+                resp = self._local_session.post(
                     f"{p['ollama_url']}/api/embed",
                     json={"model": p['embedding_model'], "input": texts},
                     timeout=60
@@ -908,7 +915,7 @@ class AIManager:
 
         try:
             print(f"  > Attempting {label} request: {model} @ {base_url}")
-            response = requests.post(
+            response = self._local_session.post(
                 f"{base_url}/chat/completions",
                 json=payload,
                 timeout=120,

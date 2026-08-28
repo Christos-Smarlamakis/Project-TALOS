@@ -18,6 +18,12 @@ Description:
     configured query with date filtering. Free to use — no API key required.
 """
 import requests
+
+try:
+    from src.utils.http_client import build_session
+except ImportError:
+    build_session = None
+
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
@@ -25,6 +31,7 @@ from typing import List, Dict, Any
 class OSTISource:
     """Search agent for OSTI.gov."""
     def __init__(self, config: Dict[str, Any]):
+        self.session = build_session() if build_session else requests
         self.query = config.get("osti_query", "swarm intelligence")
         self.days_to_search = config.get("days_to_search_daily", 1)
         self.max_results = config.get("max_results_config", {}).get("osti", 100)
@@ -37,7 +44,7 @@ class OSTISource:
         params = {'q': self.query, 'size': self.max_results, 'sort': 'publication_date desc',
                   'publication_date_start': start_date}
         try:
-            response = requests.get(self.base_url, params=params, timeout=20)
+            response = self.session.get(self.base_url, params=params, timeout=20)
             response.raise_for_status()
             data = response.json()
             papers = []

@@ -165,7 +165,7 @@ class TestFetchAndSearch:
     def test_fetch_new_papers_success(self):
         src = OpenAIRESource({"openaire_query": "q", "days_to_search_daily": 7})
         payload = {"response": {"results": {"total": {"$": 1}, "result": [_result()]}}}
-        with patch("requests.get", return_value=self._mock_response(payload)):
+        with patch.object(src.session, "get", return_value=self._mock_response(payload)):
             papers = src.fetch_new_papers()
         assert len(papers) == 1
         assert papers[0]["source"] == "OpenAIRE"
@@ -174,7 +174,7 @@ class TestFetchAndSearch:
         src = OpenAIRESource({"openaire_query": "q"})
         payload = {"response": {"results": {"total": {"$": 1}, "result": [_result()]}}}
         responses = [self._mock_response({}, status=429), self._mock_response(payload)]
-        with patch("requests.get", side_effect=responses), \
+        with patch.object(src.session, "get", side_effect=responses), \
                 patch("time.sleep", return_value=None) as mock_sleep:
             papers = src.fetch_new_papers()
         assert len(papers) == 1
@@ -182,31 +182,31 @@ class TestFetchAndSearch:
 
     def test_fetch_new_papers_request_error_returns_empty(self):
         src = OpenAIRESource({"openaire_query": "q"})
-        with patch("requests.get",
+        with patch.object(src.session, "get",
                    side_effect=requests.exceptions.ConnectionError("boom")):
             assert src.fetch_new_papers() == []
 
     def test_search_papers_success(self):
         src = OpenAIRESource({"openaire_query": "q"})
         payload = {"response": {"results": {"result": [_result()]}}}
-        with patch("requests.get", return_value=self._mock_response(payload)):
+        with patch.object(src.session, "get", return_value=self._mock_response(payload)):
             assert len(src.search_papers("query", limit=3)) == 1
 
     def test_search_papers_request_error_returns_empty(self):
         src = OpenAIRESource({"openaire_query": "q"})
-        with patch("requests.get",
+        with patch.object(src.session, "get",
                    side_effect=requests.exceptions.ConnectionError("boom")):
             assert src.search_papers("query") == []
 
     def test_fetch_new_papers_null_response_returns_empty(self):
         src = OpenAIRESource({"openaire_query": "q"})
-        with patch("requests.get",
+        with patch.object(src.session, "get",
                    return_value=self._mock_response({"response": None})):
             assert src.fetch_new_papers() == []
 
     def test_search_papers_null_results_returns_empty(self):
         src = OpenAIRESource({"openaire_query": "q"})
-        with patch("requests.get",
+        with patch.object(src.session, "get",
                    return_value=self._mock_response(
                        {"response": {"results": None}})):
             assert src.search_papers("query") == []

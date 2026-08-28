@@ -33,6 +33,7 @@ import re
 import sys
 import subprocess
 import argparse
+import functools
 
 from pathlib import Path
 
@@ -117,6 +118,7 @@ class ModelProvisioner:
     # -- Protocol detection --------------------------------------------
     # ------------------------------------------------------------------
 
+    @functools.lru_cache(maxsize=512)
     def detect_protocol(self, model_name):
         """Return the delivery protocol for a model name.
 
@@ -149,6 +151,7 @@ class ModelProvisioner:
     # -- Local path resolution -----------------------------------------
     # ------------------------------------------------------------------
 
+    @functools.lru_cache(maxsize=1024)
     def _sanitize(self, model_name):
         """Convert a model name into a filesystem-safe directory name."""
         return re.sub(r"[^A-Za-z0-9._-]", "_", (model_name or "").strip())
@@ -239,6 +242,7 @@ class ModelProvisioner:
     # -- Cloud helper --------------------------------------------------
     # ------------------------------------------------------------------
 
+    @functools.lru_cache(maxsize=512)
     def _cloud_key_for(self, model_name):
         """Return the environment variable name holding the API key for a cloud model."""
         lowered = (model_name or "").lower()

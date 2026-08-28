@@ -39,6 +39,11 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any
 import requests
 
+try:
+    from src.utils.http_client import build_session
+except ImportError:
+    build_session = None
+
 
 class OpenAIRESource:
     """Search agent for the OpenAIRE Research Graph API.
@@ -70,6 +75,7 @@ class OpenAIRESource:
         Args:
             config (dict): Application configuration dictionary.
         """
+        self.session = build_session() if build_session else requests
         self.query = config.get("openaire_query", "artificial intelligence")
         self.days_to_search = config.get("days_to_search_daily", 1)
         self.total_max_results = config.get("max_results_config", {}).get("openaire", 50)
@@ -166,7 +172,7 @@ class OpenAIRESource:
                 "page": page,
             }
             try:
-                response = requests.get(self.BASE_URL, params=params, headers=self.headers, timeout=30)
+                response = self.session.get(self.BASE_URL, params=params, headers=self.headers, timeout=30)
                 if response.status_code == 429:
                     print("   WARNING [OpenAIRE]: Rate limit. Waiting 10 seconds...")
                     time.sleep(10)
@@ -221,7 +227,7 @@ class OpenAIRESource:
         """
         params = {"keywords": self._normalize_keywords(query), "format": "json", "size": limit, "page": 1}
         try:
-            response = requests.get(self.BASE_URL, params=params, headers=self.headers, timeout=15)
+            response = self.session.get(self.BASE_URL, params=params, headers=self.headers, timeout=15)
             response.raise_for_status()
             data = response.json()
             resp_obj = data.get("response") or {}

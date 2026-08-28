@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.14
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.16
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-28 (v5.10.14 -- Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4 Cognitive Integration)
+> **Last Updated:** 2026-08-28 (v5.10.16 -- Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine)
 
 ---
 
@@ -12,7 +12,7 @@
 
 ```text
 USER INTERFACES
-  talos.py (Rich TUI -- 15-option menu)         src/api/main_api.py (FastAPI -- 23 endpoints E01-E23)
+  talos.py (Rich TUI -- 6-group hierarchical menu)  src/api/main_api.py (FastAPI -- 23 endpoints E01-E23)
   React 18 + Tailwind CSS + Shadcn UI           templates/dashboard.html (Flask, legacy)
   src/utils/tray_icon.py (system tray)          templates/live_foraging_visualizer.html (Three.js)
 
@@ -29,7 +29,7 @@ SRC PACKAGES
   src/analysis/     (10 files)  citation_analyzer, author_profiler, recommender, knowledge_path, etc.
   src/ingestion/    (23 files)  16 source agents + 7 pipelines
   src/integration/   (3 files)  synapse_client, optica_client, visualizer_bridge
-  src/utils/        (14 files)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, etc.
+  src/utils/        (17 files)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, etc.
   src/api/           (4 files)  main_api, synapse_routes, red_tester_routes, talos_service_api
   src/mcp_server.py             MCP stdio server (4 tools)
 
@@ -103,7 +103,7 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 | `src/ai/llm/` | 4 | `model_manager.py`, `query_translator.py`, `research_pivot.py`, `model_discovery.py` |
 | `src/analysis/` | 10 | `citation_analyzer.py`, `author_profiler.py`, `recommender.py`, `knowledge_path_generator.py`, `trend_analyzer.py`, `graphify_adapter.py`, `generate_baseline_report.py`, etc. |
 | `src/ingestion/` | 23 | 16 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `pdf_downloader.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
-| `src/utils/` | 14 | `db_stats.py`, `logger.py`, `tray_icon.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, etc. |
+| `src/utils/` | 17 | `db_stats.py`, `logger.py`, `tray_icon.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, `http_client.py`, `snapshot_manager.py`, `academic_export.py`, etc. |
 
 ## 5. Sources (16 APIs)
 
@@ -175,6 +175,7 @@ src/ingestion/*.py
 
 | Module | Path | Description |
 |--------|------|-------------|
+| **Universal TUI (v5.10.15)** | `talos.py` | Unified 6-group hierarchical menu -- 45/45 executable modules, dead sub-menu revival, GWO Swarm suite |
 | **Desktop Control Hub (v5.10.13)** | `src/utils/tray_icon.py` | `launch_tray_icon_async()` -- 7-item pystray menu (3D Visualizer, Reports Folder, System Log, Swagger, Instant Search, Console, Terminate) with `_is_api_alive()` / `_ensure_api_server()` self-healing |
 | **DatabaseManager Persistence (v5.10.13)** | `src/core/database_manager.py` | Default `db_path=None` -> `get_active_profile_db_path()` (active profile DB `_profiles/<active>/talos_research.db`) |
 | **3D Visualizer (v5.10.12)** | `templates/live_foraging_visualizer.html` | Three.js constellation with 60 FPS laser beams, photon pulses, raycaster, snapshot |
@@ -213,8 +214,8 @@ src/ingestion/*.py
 
 ---
 
-> **Last Updated:** 2026-08-28 (v5.10.14 -- Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4 Cognitive Integration)
-> **Project Version:** v5.10.14
-> **Total .py modules under src/:** 80 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 14 + api 4 + mcp_server 1)
+> **Last Updated:** 2026-08-28 (v5.10.16 -- Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine)
+> **Project Version:** v5.10.16
+> **Total .py modules under src/:** 83 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 17 + api 4 + mcp_server 1)
 
 

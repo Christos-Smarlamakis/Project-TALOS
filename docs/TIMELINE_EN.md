@@ -4,9 +4,22 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-28 (v5.10.14 -- Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4 Cognitive Integration)
+> **Last Updated:** 2026-08-28 (v5.10.15 -- Universal TUI Feature Restoration & 100% Codebase Coverage)
 
 ---
+
+## Phase 45: Universal TUI Feature Restoration & 100% Codebase Coverage (v5.10.15)
+
+### Status: COMPLETED (2026-08-28)
+
+- [x] **Unified 6-group hierarchical TUI** -- `main_menu()` reorganized into six visually-grouped sections with `TALOS_QUESTIONARY_STYLE`.
+- [x] **Revived dead sub-menus** -- `profile_settings_menu()`, `database_data_menu()`, `system_health_menu()` reconnected; new `search_ingestion_menu()`, `analysis_visualization_menu()`, `drl_gwo_menu()`.
+- [x] **100% executable module coverage (45/45)** -- every orphaned module wired into the hierarchy.
+- [x] **GWO Swarm suite** -- tuner, LLM router reward shaper, and 3D live dashboard unified.
+- [x] **Script map hardening** -- `_resolve_script_path()` now raises `FileNotFoundError` on unmapped scripts.
+- [x] **Version synced** -- 6 code files + Docker image + CITATION.cff to v5.10.15.
+- [x] **Roadmap re-aligned** -- DSPy PRISMA -> v5.10.16; CORTEX & n8n -> v5.10.17.
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version.
 
 ## Phase 44: Autonomous Matrix with Privacy Guardrails & DeepSeek V4 Integration (v5.10.14)
 
@@ -515,6 +528,16 @@
 - [ ] **v6.2.0 -- Cross-Platform Frontend** -- Flutter desktop/mobile application (Windows, Linux, macOS, iOS, Android).
 - [ ] **v6.3.0 -- Advanced Visualization** -- Three.js / Deck.gl for 3D clustering, citation network graphs, and timeline animations.
 - [ ] **v6.4.0 -- Zero-Touch Deployment** -- PyInstaller standalone `.exe` build, Docker Swarm orchestration, Kubernetes Helm charts.
+
+## Phase 46: Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine (v5.10.16)
+
+- [x] **SQLite WAL mode + PRAGMA connection factory** in `DatabaseManager` (`busy_timeout=5000`, `cache_size=-64000`, `synchronous=NORMAL`, `temp_store=MEMORY`).
+- [x] **Safe online snapshotting** (`snapshot_manager.py`) before VACUUM, re-scoring, and re-evaluation.
+- [x] **HTTP session pooling** (`http_client.py`) across 13 ingestion sources and local Ollama/Fast-edge inference.
+- [x] **Deterministic LRU caching** on pure routing/provisioning helpers.
+- [x] **Zero-dependency academic exporter** (`academic_export.py`) for BibTeX (.bib) and LaTeX (.tex) artifacts.
+- [x] **Version synced** across 6 code files, docker-compose.yml, CITATION.cff, and 15+ documentation files to v5.10.16.
+
 
 ---
 

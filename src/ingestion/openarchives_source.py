@@ -18,7 +18,14 @@ Description:
     an API key via ``OPENARCHIVES_API_KEY``. Gracefully disables itself if
     no key is configured.
 """
-import os, requests, time
+import os
+import requests
+import time
+
+try:
+    from src.utils.http_client import build_session
+except ImportError:
+    build_session = None
 from datetime import datetime
 from typing import List, Dict, Any
 
@@ -26,6 +33,7 @@ from typing import List, Dict, Any
 class OpenArchivesSource:
     """Search agent for OpenArchives.gr."""
     def __init__(self, config: Dict[str, Any]):
+        self.session = build_session() if build_session else requests
         self.enabled = True
         self.api_key = os.getenv("OPENARCHIVES_API_KEY")
         if not self.api_key:
@@ -47,7 +55,7 @@ class OpenArchivesSource:
         while len(all_papers) < self.total_max_results:
             params = {'apiKey': self.api_key, 'general_term': self.query, 'page': page, 'pageSize': page_size}
             try:
-                response = requests.get(self.base_url, params=params, headers=self.headers, timeout=20)
+                response = self.session.get(self.base_url, params=params, headers=self.headers, timeout=20)
                 response.raise_for_status()
                 if not response.text: break
                 data = response.json()

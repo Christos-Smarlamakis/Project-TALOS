@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: model_discovery.py
-Project: TALOS v5.10.14
+Project: TALOS v5.10.15
 Description:
     Dynamic Model Discovery Engine for the TALOS LLM router. This module
     discovers which inference models are currently active across the local

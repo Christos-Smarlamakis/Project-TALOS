@@ -83,10 +83,38 @@ class DatabaseManager:
         result = self.execute_query(query, (table_name,), fetch_one=True)
         return result is not None
 
+    def _apply_pragmas(self, conn):
+        """Apply performance and concurrency PRAGMAs to an open SQLite connection.
+
+        WAL journal mode enables concurrent readers alongside a writer.
+        busy_timeout converts immediate lock failures into a bounded wait.
+        cache_size expands the in-memory page cache. synchronous=NORMAL is the
+        WAL-recommended durability level. temp_store=MEMORY keeps temporary
+        B-trees in RAM.
+
+        Args:
+            conn (sqlite3.Connection): Open connection to configure.
+        """
+        conn.execute("PRAGMA journal_mode=WAL;")
+        conn.execute("PRAGMA busy_timeout=5000;")
+        conn.execute("PRAGMA cache_size=-64000;")
+        conn.execute("PRAGMA synchronous=NORMAL;")
+        conn.execute("PRAGMA temp_store=MEMORY;")
+
+    def _connect(self):
+        """Open a new SQLite connection with performance PRAGMAs applied.
+
+        Returns:
+            sqlite3.Connection: A fresh connection to the active database.
+        """
+        conn = sqlite3.connect(self.db_path)
+        self._apply_pragmas(conn)
+        return conn
+
     # --- Query Execution ---
     def execute_query(self, query, params=(), commit=False, fetch_one=False, fetch_all=False):
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 cursor = conn.cursor()
                 cursor.execute(query, params)
                 if commit: conn.commit(); return cursor.lastrowid
@@ -98,7 +126,7 @@ class DatabaseManager:
 
     def execute_many(self, query, params_list, commit=False):
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 cursor = conn.cursor()
                 cursor.executemany(query, params_list)
                 if commit: conn.commit(); return cursor.rowcount
@@ -198,13 +226,13 @@ class DatabaseManager:
         return self.execute_query(q, (cutoff, limit), fetch_all=True) or []
 
     def get_all_papers_for_dashboard(self):
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             q = "SELECT id,doi,url,title,authors,publication_year,abstract,source,strategic_score,operational_score,tactical_score,playground_score,overall_score,in_zotero,oa_pdf_url FROM papers ORDER BY overall_score DESC"
             return [dict(row) for row in conn.cursor().execute(q)]
 
     def get_single_paper_details(self, paper_id):
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             paper = conn.cursor().execute("SELECT * FROM papers WHERE id=?", (paper_id,)).fetchone()
             return dict(paper) if paper else None
@@ -214,7 +242,7 @@ class DatabaseManager:
 
     # --- Embeddings ---
     def get_papers_needing_embedding(self, model=None):
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             if self._table_exists('embeddings'):
                 if model:
@@ -231,7 +259,7 @@ class DatabaseManager:
         self.execute_many("INSERT INTO embeddings (paper_id,embedding,embedding_model) VALUES (?,?,?)", updates, commit=True)
 
     def get_all_embeddings(self, model_filter=None):
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             if self._table_exists('embeddings'):
                 if model_filter:
@@ -246,19 +274,19 @@ class DatabaseManager:
 
     def get_papers_by_ids(self, ids):
         if not ids: return []
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             ph = ','.join('?' for _ in ids)
             q = f"SELECT id,doi,url,title,authors,publication_year,abstract,source,strategic_score,operational_score,tactical_score,playground_score,overall_score,in_zotero FROM papers WHERE id IN ({ph})"
             return [dict(r) for r in conn.cursor().execute(q, ids)]
 
     def get_recent_core_papers(self, limit=10, min_score=7.0):
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             return [dict(r) for r in conn.cursor().execute("SELECT title,doi,overall_score FROM papers WHERE overall_score>=? ORDER BY processed_at DESC LIMIT ?", (min_score, limit))]
 
     def get_recent_elite_papers(self, hours=24, min_score=7.0):
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             cutoff = datetime.now() - timedelta(hours=hours)
             return [dict(r) for r in conn.cursor().execute(
@@ -269,7 +297,7 @@ class DatabaseManager:
 
     def get_embedding_model_stats(self):
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 conn.row_factory = sqlite3.Row
                 if self._table_exists('embeddings'):
                     return [dict(r) for r in conn.cursor().execute("SELECT embedding_model as model, COUNT(DISTINCT paper_id) as count FROM embeddings GROUP BY embedding_model ORDER BY count DESC")]
@@ -316,7 +344,7 @@ class DatabaseManager:
     # --- DataFrame Export ---
     def get_all_papers_as_dataframe(self):
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 return pd.read_sql_query("SELECT * FROM papers", conn)
         except Exception as e:
             print(f"DataFrame load failed: {e}")
@@ -325,7 +353,7 @@ class DatabaseManager:
     # --- Statistics ---
     def get_database_statistics(self):
         stats = {}
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             c = conn.cursor()
             c.execute("SELECT COUNT(*) FROM papers"); stats['total_papers'] = c.fetchone()[0]
             try:
@@ -344,7 +372,7 @@ class DatabaseManager:
     # --- Enrichment ---
     def get_papers_for_enrichment(self):
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 c = conn.cursor()
                 c.execute("SELECT id,doi,abstract FROM papers WHERE (enrichment_status=0 OR enrichment_status IS NULL) AND doi IS NOT NULL")
                 return c.fetchall()
@@ -357,7 +385,7 @@ class DatabaseManager:
             pmcid=:pmcid,oa_status=:oa_status,journal_issn=:journal_issn,
             publisher=:publisher,enrichment_status=:status WHERE id=:paper_id"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 conn.cursor().executemany(q, update_list); conn.commit()
         except sqlite3.Error as e:
             print(f"Error in batch enrichment update: {e}")

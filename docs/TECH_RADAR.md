@@ -1,6 +1,6 @@
 # TALOS Tech Radar & Ecosystem Map
 
-> **Last Updated:** 2026-08-28 (v5.10.14 -- Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4 Cognitive Integration)
+> **Last Updated:** 2026-08-28 (v5.10.16 -- Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine)
 
 This document is the technology radar of Project TALOS. It catalogues the development stack, the agentic architecture, the document-comprehension tooling, and the simulation capabilities that surround the core TALOS research intelligence system. It tracks State-of-the-Art (SOTA) technologies and maps the surrounding research-intelligence ecosystem.
 
@@ -36,6 +36,7 @@ The development tooling that lets developers iterate on TALOS quickly and safely
     *   **What it is:** A pystray-based Desktop Control Hub plus a native OS desktop bridge (`os.startfile` / `open` / `xdg-open`) with self-healing API auto-bootstrap (`uvicorn` spawn on demand via `_ensure_api_server()`).
     *   **Role in TALOS:** Gives the 24/7 daemon a seven-item tray menu (visualizer, reports folder, system log, Swagger docs, instant scrape, console toggle, terminate) that boots the FastAPI backend on demand.
 
+*   **Universal TUI Feature Restoration & 100% Codebase Coverage (v5.10.15)**
 *   **Autonomous Execution Matrix & DeepSeek V4 Cognitive Integration (v5.10.14)**
     *   **What it is:** A 5th network strategy `auto_dynamic` with a Privacy Guardrail resolution engine (`_resolve_strategies` -> `_is_network_online` / `_detect_vram_gb` / `_resolve_auto_dynamic` / `_prompt_auto_dynamic_consent` / `_log_auto_matrix`) plus DeepSeek V4 native thinking injection (`thinking` + `reasoning_effort`).
     *   **Role in TALOS:** Enables autonomous local/cloud strategy selection with interactive Rich consent, while `strict_local` remains a hard, non-overridable air-gapped constraint.
@@ -88,4 +89,4 @@ Related systems and competitors that TALOS is evaluated against, tracked to keep
 
 ---
 
-> **Project Version:** v5.10.14 | **Last Updated:** 2026-08-28 (v5.10.14 -- Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4 Cognitive Integration)
+> **Project Version:** v5.10.16 | **Last Updated:** 2026-08-28 (v5.10.16 -- Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine)

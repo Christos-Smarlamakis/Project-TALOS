@@ -24,6 +24,12 @@ Description:
     Does not require an API key — uses the polite pool with email identification.
 """
 import requests
+
+try:
+    from src.utils.http_client import build_session
+except ImportError:
+    build_session = None
+
 import time
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
@@ -49,6 +55,7 @@ class OpenAlexSource:
         Args:
             config (dict): Application configuration dictionary.
         """
+        self.session = build_session() if build_session else requests
         self.query = config.get("openalex_query", "drone swarm intelligence")
         self.days_to_search = config.get("days_to_search_daily", 1)
         self.total_max_results = config.get("max_results_config", {}).get("openalex", 100)
@@ -82,7 +89,7 @@ class OpenAlexSource:
                 "mailto": self.mailto
             }
             try:
-                response = requests.get(self.base_url, params=params, timeout=20)
+                response = self.session.get(self.base_url, params=params, timeout=20)
                 if response.status_code == 429:
                     print("   WARNING [OpenAlex]: Rate limit. Waiting 10 seconds...")
                     time.sleep(10)
@@ -130,7 +137,7 @@ class OpenAlexSource:
         """
         params = {"search": query, "per_page": limit, "sort": "relevance", "mailto": self.mailto}
         try:
-            response = requests.get(self.base_url, params=params, timeout=10)
+            response = self.session.get(self.base_url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
             results = []

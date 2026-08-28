@@ -10,16 +10,23 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.10.14
+Project: TALOS v5.10.16
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
     Conda environment, API port, Synapse bus, execution mode, active
     LLM tiers, and the current active research focus from config.json.
-    15-option richly-grouped menu across five visual categories: Core & AI
-    Configuration, Search & Ingestion, Analysis & Insights, Daemons &
-    CI/CD, and Diagnostics & Exit. Includes the new Vendored Graphify
-AST Knowledge Graph adapter (v5.9.12).
+    Unified 6-group hierarchical menu covering 100% of the executable
+    codebase: Configuration & Profiles, Research Search & Ingestion,
+    Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
+    Database Maintenance & Data Tools, and System Health, Diagnostics &
+    CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.10.16: Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine --
+    enabled SQLite WAL mode and PRAGMA tuning, added online snapshotting before
+    destructive maintenance, introduced pooled HTTP sessions across ingestion
+    sources, memoized deterministic routing helpers, and shipped a zero-dependency
+    BibTeX/LaTeX academic export engine.
 
     v5.10.14: Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4
     Cognitive Integration -- new auto_dynamic network strategy with interactive
@@ -281,6 +288,7 @@ _SCRIPT_MAP = {
     "talos_service.py":           "ai/drl",
     # -- Optimizers --
     "gwo_foraging_hyperparameter_tuner.py": "ai/optimizers",
+    "gwo_llm_router_reward_shaper.py": "ai/optimizers",
     "gwo_live_dashboard.py":      "ai/optimizers",
     # -- Embeddings --
     "embedding_generator.py":     "ai/embeddings",
@@ -288,6 +296,7 @@ _SCRIPT_MAP = {
     # -- LLM --
     "query_translator.py":        "ai/llm",
     "model_manager.py":           "ai/llm",
+    "model_discovery.py":         "ai/llm",
     "research_pivot.py":          "ai/llm",
     # -- Analysis --
     "citation_analyzer.py":       "analysis",
@@ -309,10 +318,17 @@ _SCRIPT_MAP = {
     "generate_docs.py":           "utils",
     "verify_dependency_map.py":   "utils",
     "interactive_dashboard.py":   "utils",
+    "model_provisioner.py":       "utils",
+    "daemon_autostart.py":        "utils",
+    "academic_export.py":         "utils",
     # -- Core (profile manager is imported directly, but can also be run) --
     "profile_manager.py":         "core",
     # -- API --
     "talos_service_api.py":       "api",
+    # -- Testing --
+    "red_tester.py":              "ai/testing",
+    # -- Integration --
+    "optica_client.py":           "integration",
 }
 
 def safe_select(message, choices):
@@ -369,13 +385,24 @@ def prompt_source_selection():
 
 def _resolve_script_path(script_name):
     """Resolve a script filename to its full path inside src/<subdir>/.
-    Falls back to literal scripts/<name> if not in the map."""
+
+    Args:
+        script_name: The filename (e.g. "db_stats.py") to resolve.
+
+    Returns:
+        str: Absolute path to the script under src/.
+
+    Raises:
+        FileNotFoundError: If the script is not present in _SCRIPT_MAP.
+    """
     project_root = os.path.dirname(os.path.abspath(__file__))
     subdir = _SCRIPT_MAP.get(script_name)
-    if subdir:
-        return os.path.join(project_root, 'src', subdir, script_name)
-    # Fallback: old-style (should not happen post-migration)
-    return os.path.join(project_root, 'scripts', script_name)
+    if subdir is None:
+        raise FileNotFoundError(
+            f"Script '{script_name}' is not mapped in _SCRIPT_MAP. "
+            f"Add its src/ subdirectory to _SCRIPT_MAP in talos.py."
+        )
+    return os.path.join(project_root, 'src', subdir, script_name)
 
 def _build_info_panel(title, message, border_style="bright_blue"):
     """Build a styled Rich Panel for informational messages.
@@ -547,38 +574,51 @@ def author_tools_menu(python_exe):
                 if sel: run_script("author_trajectory_analyzer.py", python_exe, args=[sel])
 
 def database_data_menu(python_exe):
+    """Database maintenance, embeddings, scoring and enrichment sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
-    project_root = os.path.dirname(os.path.abspath(__file__))
-    ap = get_active_profile_name()
-    pdb = os.path.join(project_root, '_profiles', ap, 'talos_research.db')
-    rdb = os.path.join(project_root, 'data', 'talos_research.db')   # moved to data/
-    tdb = pdb if os.path.exists(pdb) else rdb
-    choice = safe_select("Database & Data:", choices=[
-        "1. Statistics & Health", "2. Metadata Enrichment", "3. Zotero Sync",
-        "4. Generate/Update Embeddings", "5. AI Re-evaluation", "6. Data Enrichment (Unpaywall)",
-        "7. Scientometrics Report", "8. PDF Downloader", questionary.Separator(), "Back"
+    choice = safe_select("Database Maintenance & Data Tools:", choices=[
+        questionary.Separator("  MAINTENANCE & SCORING"),
+        "1. Database Health & VACUUM Optimizer",
+        "2. Database Schema Migration",
+        "3. Recalculate Overall Scores",
+        "4. Re-evaluate Database with LLM",
+        questionary.Separator("  VECTOR EMBEDDINGS"),
+        "5. Batch Vector Embedding Generation",
+        "6. Vector Embedding Schema Migration",
+        questionary.Separator("  ENRICHMENT & INGESTION"),
+        "7. Metadata Enrichment",
+        "8. Open Access PDF Downloader",
+        "9. Unpaywall Data Enricher",
+        "10. Zotero Cloud Connector",
+        questionary.Separator(), "Back"
     ])
     if choice is None or "Back" in choice: return
-    if choice.startswith("1."): run_script("db_stats.py", python_exe)
-    elif choice.startswith("2."): run_script("metadata_enricher.py", python_exe)
-    elif choice.startswith("3."): run_script("zotero_connector.py", python_exe)
-    elif choice.startswith("4."): run_script("embedding_generator.py", python_exe)
-    elif choice.startswith("5."): run_script("reevaluate_database.py", python_exe)
-    elif choice.startswith("6."): run_script("data_enricher.py", python_exe)
-    elif choice.startswith("7."): run_script("trend_analyzer.py", python_exe, args=[tdb])
+    if choice.startswith("1."): run_script("db_stats.py", python_exe, args=["--optimize"])
+    elif choice.startswith("2."): run_script("migrate_database_schema.py", python_exe)
+    elif choice.startswith("3."): run_script("recalculate_scores.py", python_exe)
+    elif choice.startswith("4."): run_script("reevaluate_database.py", python_exe)
+    elif choice.startswith("5."): run_script("embedding_generator.py", python_exe)
+    elif choice.startswith("6."): run_script("db_embedding_upgrade.py", python_exe)
+    elif choice.startswith("7."): run_script("metadata_enricher.py", python_exe)
     elif choice.startswith("8."): run_script("pdf_downloader.py", python_exe)
+    elif choice.startswith("9."): run_script("data_enricher.py", python_exe)
+    elif choice.startswith("10."): run_script("zotero_connector.py", python_exe)
 
 def system_health_menu(python_exe):
+    """System health, diagnostics, chaos engineering and CI/CD sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
     project_root = os.path.dirname(os.path.abspath(__file__))
-    choice = safe_select("System Diagnostics:", choices=[
-        "1. Code Integrity Check", "2. Documentation Audit",
-        "3. Open Architecture Graph", "4. Architecture Intelligence Report",
-        "5. GWO Live Dashboard (Dash -- Real-Time 3D Swarm)",
-        questionary.Separator(), "6. Baseline Report (Standard)",
-        "7. Baseline Report (Academic -- 600 DPI)", "8. DRL Agent Status",
-        questionary.Separator(),
-        "9. Generate Codebase Docs (18 Languages, LOCAL Only)",
+    choice = safe_select("System Health, Diagnostics & CI/CD:", choices=[
+        questionary.Separator("  HEALTH & DIAGNOSTICS"),
+        "1. Code Integrity Check",
+        "2. API Backend Health Check",
+        "3. Dependency Map & Import Audit",
+        "4. DRL Agent Status",
+        questionary.Separator("  CI/CD & ENGINEERING"),
+        "5. Autonomous Red Tester (Chaos Engineering)",
+        "6. 18-Language Documentation Builder",
+        questionary.Separator("  REFERENCE VIEWERS"),
+        "7. System Capabilities Master Viewer",
         questionary.Separator(), "Back"
     ])
     if choice is None or "Back" in choice: return
@@ -595,93 +635,49 @@ def system_health_menu(python_exe):
         else:
             logger.warning("System Integrity verification not found at tests/test_system_integrity.py")
     elif choice.startswith("2."):
-        run_script("verify_dependency_map.py", python_exe, args=["--all"])
+        _probe_api_backend()
     elif choice.startswith("3."):
-        import webbrowser, socket
-        port = 8765
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.settimeout(0.5)
-            if s.connect_ex(('127.0.0.1', port)) != 0:
-                sd = os.path.join(project_root, "templates")
-                subprocess.Popen([python_exe, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", sd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            s.close()
-        except Exception: pass
-        webbrowser.open(f"http://localhost:{port}/architecture_graph.html")
+        mode = safe_select("Dependency audit mode:", choices=[
+            "--ci (CI exit-code-only)", "--all (full report)", "Back"
+        ])
+        if mode is not None and "Back" not in mode:
+            flag = "--ci" if "--ci" in mode else "--all"
+            run_script("verify_dependency_map.py", python_exe, args=[flag])
     elif choice.startswith("4."):
-        if questionary.confirm("Start now? (may take 60s)", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask():
-            run_script("architecture_intelligence_report.py", python_exe)
+        _show_drl_status(project_root)
     elif choice.startswith("5."):
-        import webbrowser, socket
         console.print(_build_info_panel(
-            "GWO Live Dashboard",
-            "Real-Time 3D Swarm Hunt\n"
-            "Starts a Dash server at http://localhost:8050\n"
-            "Shows live 3D scatter plot of GWO wolf pack convergence.\n"
-            "Auto-refreshes every 3 seconds.",
+            "Autonomous Red Tester (RL-Driven Chaos Engineering)",
+            "Stress-tests TALOS system components using a Non-Stationary\n"
+            "Epsilon-Greedy Multi-Armed Bandit. Diagnoses crashes with\n"
+            "LLM-as-a-Judge (Fast Edge tier) and saves Markdown reports.",
             border_style="bright_magenta",
         ))
-        dash_running = False
+        cycles_str = questionary.text("Number of test cycles (default 10):", default="10", style=TALOS_QUESTIONARY_STYLE, instruction=NAV_TEXT).ask()
+        cycles = 10
+        if cycles_str is not None:
+            try:
+                cycles = int(cycles_str.strip()) if cycles_str.strip() else 10
+            except ValueError:
+                cycles = 10
+                console.print("[yellow]Invalid input. Using default (10).[/yellow]")
         try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.settimeout(0.5)
-            if s.connect_ex(('127.0.0.1', 8050)) == 0:
-                dash_running = True
-            s.close()
-        except Exception:
-            pass
-        if not dash_running:
-            logger.info("Starting Dash server...")
-            script_path = _resolve_script_path("gwo_live_dashboard.py")
-            subprocess.Popen(
-                [python_exe, script_path],
-                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-            )
-            time.sleep(2)
-        webbrowser.open("http://localhost:8050")
-        logger.info("Dashboard opened in browser.")
-        logger.info("NOTE: Run GWO first from another terminal with --live flag.")
-        logger.info("  python src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py --live")
-    elif choice.startswith("6."): run_script("generate_baseline_report.py", python_exe)
-    elif choice.startswith("7."): run_script("generate_baseline_report.py", python_exe, args=["--academic"])
-    elif choice.startswith("8."):
-        mp = os.path.join(project_root, "models", "dddqn_trained.pth")
-        gp = os.path.join(project_root, "models", "gwo_foraging_hyperparameters.json")
-        try:
-            c = Console(); t = Table(show_header=False, box=None)
-            t.add_column("K"); t.add_column("V")
-            if os.path.exists(mp): t.add_row("Model", f"[green]Present ({os.path.getsize(mp)/1024:.0f}KB)")
-            else: t.add_row("Model", "[red]Not found")
-            if os.path.exists(gp):
-                import json
-                with open(gp) as f: p = json.load(f)
-                t.add_row("LR", f"[yellow]{p['learning_rate']:.6e}")
-                t.add_row("Gamma", f"[yellow]{p['gamma']:.4f}")
-                t.add_row("Epsilon Decay", f"[yellow]{p['epsilon_decay']:.6f}")
-                t.add_row("Best Fitness", f"[magenta]{p['best_fitness']:.1f}")
-                t.add_row("Best Reward", f"[green]{p['best_avg_reward']:.1f}")
-            else: t.add_row("GWO", "[red]Not found")
-            c.print(Panel(t, title="[bold]DRL Agent Status", border_style="cyan"))
-        except ImportError:
-            logger.info("=== DRL Agent Status ===")
-            if os.path.exists(mp):
-                logger.info("Model: %s (%.0fKB)", mp, os.path.getsize(mp) / 1024)
-            else:
-                logger.warning("No trained model")
-            if os.path.exists(gp):
-                import json
-                with open(gp) as f: p = json.load(f)
-                logger.info("LR=%s GAMMA=%s EPS=%s Fitness=%s",
-                            p['learning_rate'], p['gamma'], p['epsilon_decay'], p['best_fitness'])
-    elif choice.startswith("9."):
+            from src.ai.testing.red_tester import run_red_tester
+            run_red_tester(cycles=cycles)
+        except Exception as e:
+            console.print(f"[red]Error running Autonomous Red Tester: {e}[/red]")
+    elif choice.startswith("6."):
         console.print(_build_info_panel(
-            "Codebase Documentation Generator",
-            "18 Languages, LOCAL Only\n"
+            "Codebase Documentation Generator (18 Languages)",
             "Uses LOCAL Ollama -- zero cloud cost, full privacy.\n"
-            "Produces detailed Markdown docs for every code file you select.",
+            "Produces detailed Markdown docs for every code file selected.\n"
+            "[dim]Supports: English, Greek, Chinese, Hindi, Spanish, Arabic, and 12 more.[/dim]",
             border_style="bright_blue",
         ))
         if questionary.confirm("Launch documentation generator?", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask():
             run_script("generate_docs.py", python_exe)
+    elif choice.startswith("7."):
+        _open_capabilities_viewer()
     console.print(); safe_pause("Press Enter...")
 
 def api_keys_menu(python_exe):
@@ -748,22 +744,38 @@ def api_keys_menu(python_exe):
         safe_pause("\nPress Enter...")
 
 def profile_settings_menu(python_exe):
+    """Configuration & Profiles sub-menu: profiles, models, and API keys."""
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
-        c = safe_select("Profile & Settings:", choices=[
-            "1. Manage Profiles", "2. Research Goal (Query Translator)", "3. AI Model Management",
-            "4. API Keys Management", "5. API Diagnostics", "6. Research Pivot & Retrain",
+        c = safe_select("Configuration & Profiles:", choices=[
+            questionary.Separator("  PROFILES & RESEARCH FOCUS"),
+            "1. Manage Profiles",
+            "2. Research Pivot & Retrain",
+            "3. Research Goal (Query Translator)",
+            questionary.Separator("  MODEL CONFIGURATION"),
+            "4. AI Model Management (2D Matrix)",
+            "5. Model Discovery (Quality Scoring)",
+            "6. Model Provisioning CLI",
+            questionary.Separator("  API KEYS & DIAGNOSTICS"),
+            "7. API Keys Management",
+            "8. API Key Diagnostics",
             questionary.Separator(), "Back"
         ])
         if c is None or "Back" in c: return
         if c.startswith("1."): run_script("profile_manager.py", python_exe)
-        elif c.startswith("2."): run_script("query_translator.py", python_exe)
-        elif c.startswith("3."): run_script("model_manager.py", python_exe)
-        elif c.startswith("4."): api_keys_menu(python_exe)
-        elif c.startswith("5."):
-            tp = _resolve_script_path("api_health_check.py")
-            if os.path.exists(tp): subprocess.run([python_exe, tp], check=False)
-        elif c.startswith("6."): run_script("research_pivot.py", python_exe)
+        elif c.startswith("2."): run_script("research_pivot.py", python_exe)
+        elif c.startswith("3."): run_script("query_translator.py", python_exe)
+        elif c.startswith("4."):
+            console.print("\n[bold bright_cyan]Launching AI Model Manager...[/bold bright_cyan]\n")
+            try:
+                from src.ai.llm.model_manager import main as mm_main
+                mm_main()
+            except Exception as e:
+                console.print(f"[red]Error launching Model Manager: {e}[/red]")
+        elif c.startswith("5."): _run_model_discovery()
+        elif c.startswith("6."): run_script("model_provisioner.py", python_exe)
+        elif c.startswith("7."): api_keys_menu(python_exe)
+        elif c.startswith("8."): run_script("api_health_check.py", python_exe)
         safe_pause("\nPress Enter...")
 
 # -- v5.9.15: Silent Fast Boot --
@@ -1308,6 +1320,393 @@ def _generate_optica_plots():
         ))
 
 
+def _show_drl_status(project_root):
+    """Display DRL model and GWO hyperparameter status in a Rich panel.
+
+    Reads models/dddqn_trained.pth and models/gwo_foraging_hyperparameters.json.
+
+    Args:
+        project_root: Absolute path to the project root directory.
+    """
+    mp = os.path.join(project_root, "models", "dddqn_trained.pth")
+    gp = os.path.join(project_root, "models", "gwo_foraging_hyperparameters.json")
+    t = Table(show_header=False, box=box.SIMPLE, border_style="cyan")
+    t.add_column("Parameter", style="dim cyan")
+    t.add_column("Value", style="white")
+    if os.path.exists(mp):
+        t.add_row("DRL Model", f"[green]Present ({os.path.getsize(mp)/1024:.0f} KB)")
+    else:
+        t.add_row("DRL Model", "[red]Not found")
+    if os.path.exists(gp):
+        import json
+        with open(gp) as f:
+            p = json.load(f)
+        t.add_row("Learning Rate", f"[yellow]{p['learning_rate']:.6e}")
+        t.add_row("Gamma", f"[yellow]{p['gamma']:.4f}")
+        t.add_row("Epsilon Decay", f"[yellow]{p['epsilon_decay']:.6f}")
+        t.add_row("Best Fitness", f"[magenta]{p['best_fitness']:.1f}")
+        t.add_row("Best Reward", f"[green]{p['best_avg_reward']:.1f}")
+    else:
+        t.add_row("GWO Params", "[red]Not found")
+    console.print(Panel(
+        t,
+        title="[bold]DRL Agent Status[/bold]",
+        border_style="cyan",
+        box=box.ROUNDED,
+    ))
+
+
+def _run_model_discovery():
+    """Run the Model Discovery Engine in-process and render a Rich table."""
+    console.print(_build_info_panel(
+        "Model Discovery Engine",
+        "Discovering active models across the local Ollama tier and optional cloud providers.\n"
+        "[dim]Air-gapped fallback registry guarantees offline operation.[/dim]",
+        border_style="bright_blue",
+    ))
+    try:
+        from src.ai.llm.model_discovery import get_discovery_engine
+        engine = get_discovery_engine()
+        report = engine.discover_active_models(online=True)
+        active = report.get("active_models", [])
+        mode = report.get("mode", "unknown")
+        summary = Text(f"Discovery mode: {mode} | Active models: {len(active)}", style="bright_cyan")
+        console.print(Panel(
+            Align.center(summary),
+            title="[bold]Model Discovery[/bold]",
+            border_style="cyan",
+            box=box.ROUNDED,
+        ))
+        if active:
+            t = Table(show_header=True, box=box.SIMPLE, border_style="cyan")
+            t.add_column("Model", style="white")
+            t.add_column("Provider", style="dim cyan")
+            t.add_column("SWE-bench", style="yellow")
+            t.add_column("MMLU-Pro", style="yellow")
+            t.add_column("Context", style="dim")
+            t.add_column("Pricing", style="magenta")
+            for m in active:
+                t.add_row(
+                    str(m.get("name")),
+                    str(m.get("provider", "unknown")),
+                    f"{m.get('swe_bench_score')}" if m.get("swe_bench_score") is not None else "-",
+                    f"{m.get('mmlu_pro_score')}" if m.get("mmlu_pro_score") is not None else "-",
+                    str(m.get("context_window") or "-"),
+                    str(m.get("pricing_tier", "unknown")),
+                )
+            console.print(t)
+        else:
+            console.print("[yellow]No active models discovered.[/yellow]")
+    except Exception as exc:
+        console.print(f"[red]Model Discovery failed: {exc}[/red]")
+
+
+def _probe_api_backend():
+    """Probe the local TALOS FastAPI backend on port 8001."""
+    import socket
+    host, port = "127.0.0.1", 8001
+    console.print(_build_info_panel(
+        "API Backend Health Check",
+        f"Probing TALOS FastAPI backend at http://{host}:{port} ...",
+        border_style="bright_blue",
+    ))
+    try:
+        with socket.create_connection((host, port), timeout=2.0):
+            reachable = True
+    except OSError:
+        reachable = False
+    status = "[green]REACHABLE[/green]" if reachable else "[red]UNREACHABLE[/red]"
+    console.print(Panel(
+        f"API Backend: {status}  (http://{host}:{port})",
+        title="[bold]Health Check[/bold]",
+        border_style="green" if reachable else "red",
+        box=box.ROUNDED,
+        padding=(1, 2),
+    ))
+
+
+def _open_capabilities_viewer():
+    """Auto-bootstrap the FastAPI backend and open the capabilities reference."""
+    import socket
+    import webbrowser
+    host, port = "127.0.0.1", 8001
+    url = f"http://{host}:{port}/api/v1/capabilities"
+    console.print(_build_info_panel(
+        "System Capabilities Master Viewer",
+        "Serves the ultra-detailed capabilities whitepaper via the local FastAPI backend.",
+        border_style="bright_cyan",
+    ))
+    try:
+        with socket.create_connection((host, port), timeout=0.25):
+            listening = True
+    except OSError:
+        listening = False
+    if not listening:
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        try:
+            subprocess.Popen(
+                [sys.executable, "-m", "uvicorn", "src.api.main_api:app", "--host", host, "--port", str(port)],
+                cwd=project_root, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+        except OSError as exc:
+            console.print(f"[red][ERROR] FastAPI bootstrap failed: {exc}[/red]")
+            return
+        deadline = time.monotonic() + 3.0
+        while time.monotonic() < deadline:
+            try:
+                with socket.create_connection((host, port), timeout=0.25):
+                    listening = True
+                    break
+            except OSError:
+                time.sleep(0.15)
+    if not listening:
+        console.print("[red][ERROR] FastAPI did not become reachable on port 8001.[/red]")
+        return
+    webbrowser.open(url)
+    console.print(_build_info_panel("Capabilities Viewer Online", f"Opened {url}", border_style="green"))
+
+
+def _open_d3_architecture_graph(python_exe, project_root):
+    """Regenerate the D3 architecture graph and open it in the browser."""
+    console.print(_build_info_panel(
+        "Dynamic D3 Architecture Graph",
+        "Regenerates the dependency graph from the live codebase and opens the interactive D3 viewer.",
+        border_style="bright_cyan",
+    ))
+    run_script("generate_architecture_graph.py", python_exe)
+    import webbrowser, socket
+    port = 8765
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.settimeout(0.5)
+        if s.connect_ex(('127.0.0.1', port)) != 0:
+            sd = os.path.join(project_root, "templates")
+            subprocess.Popen([python_exe, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", sd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        s.close()
+    except Exception:
+        pass
+    webbrowser.open(f"http://localhost:{port}/architecture_graph.html")
+
+
+def _launch_gwo_dashboard(python_exe):
+    """Launch the GWO 3D Swarm live dashboard on Dash port 8050."""
+    import webbrowser, socket
+    console.print(_build_info_panel(
+        "GWO Live Dashboard",
+        "Real-Time 3D Swarm Hunt\n"
+        "Starts a Dash server at http://localhost:8050\n"
+        "Shows live 3D scatter plot of GWO wolf pack convergence.\n"
+        "Auto-refreshes every 3 seconds.",
+        border_style="bright_magenta",
+    ))
+    dash_running = False
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.settimeout(0.5)
+        if s.connect_ex(('127.0.0.1', 8050)) == 0:
+            dash_running = True
+        s.close()
+    except Exception:
+        pass
+    if not dash_running:
+        logger.info("Starting Dash server...")
+        script_path = _resolve_script_path("gwo_live_dashboard.py")
+        subprocess.Popen([python_exe, script_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(2)
+    webbrowser.open("http://localhost:8050")
+    logger.info("Dashboard opened in browser.")
+
+
+def search_ingestion_menu(python_exe):
+    """Research search and ingestion sub-menu."""
+    os.system('cls' if os.name == 'nt' else 'clear')
+    choice = safe_select("Research Search & Ingestion:", choices=[
+        questionary.Separator("  SEARCH & DISCOVERY"),
+        "1. Daily Search (16 APIs)",
+        "2. Historical Search (Deep Archive)",
+        "3. Grey Literature / Web Horizon Scan",
+        "4. Zotero Cloud Sync",
+        questionary.Separator("  BROWSING"),
+        "5. Interactive Dashboard",
+        questionary.Separator(), "Back"
+    ])
+    if choice is None or "Back" in choice: return
+    if choice.startswith("1."):
+        selected = prompt_source_selection()
+        if selected is None:
+            console.print("[dim]Source selection cancelled.[/dim]")
+        elif not selected:
+            console.print("[yellow]No sources selected.[/yellow]")
+        else:
+            run_script("daily_search.py", python_exe, args=["--sources"] + selected)
+    elif choice.startswith("2."):
+        if questionary.confirm("This may take a long time. Proceed?", default=False, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_CONFIRM).ask():
+            selected = prompt_source_selection()
+            if selected is None:
+                console.print("[dim]Source selection cancelled.[/dim]")
+            elif not selected:
+                console.print("[yellow]No sources selected.[/yellow]")
+            else:
+                run_script("historic_search.py", python_exe, args=["--sources"] + selected)
+    elif choice.startswith("3."):
+        run_script("grey_literature_miner.py", python_exe)
+    elif choice.startswith("4."):
+        run_script("zotero_connector.py", python_exe)
+    elif choice.startswith("5."):
+        run_script("interactive_dashboard.py", python_exe)
+
+
+def analysis_visualization_menu(python_exe):
+    """Advanced analysis and visualization sub-menu."""
+    os.system('cls' if os.name == 'nt' else 'clear')
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    ap = get_active_profile_name()
+    pdb = os.path.join(project_root, '_profiles', ap, 'talos_research.db')
+    rdb = os.path.join(project_root, 'data', 'talos_research.db')
+    tdb = pdb if os.path.exists(pdb) else rdb
+    choice = safe_select("Advanced Analysis & Visualizations:", choices=[
+        questionary.Separator("  VISUALIZATIONS"),
+        "1. 3D Knowledge Constellation Visualizer",
+        "2. Graphify AST Knowledge Graph",
+        "3. Dynamic D3 Architecture Graph",
+        "4. OPTICA Scientific Visualizations",
+        questionary.Separator("  KNOWLEDGE & CITATIONS"),
+        "5. Knowledge Path Generator (CHIRON)",
+        "6. Citation Network Analyzer (ORPHEUS)",
+        "7. Strategic Reading Recommender",
+        "8. Author Profiler & ORCID Trajectory",
+        "9. Scientometrics & Trend Analyzer",
+        questionary.Separator("  INTELLIGENCE & REPORTS"),
+        "10. Architecture Intelligence Report (NATO CDE)",
+        "11. Baseline Report (Standard)",
+        "12. Baseline Report (Academic -- 600 DPI)",
+        "13. Academic Export (BibTeX & LaTeX Tables)",
+        questionary.Separator(), "Back"
+    ])
+    if choice is None or "Back" in choice: return
+    if choice.startswith("1."): _launch_visualizer()
+    elif choice.startswith("2."): run_script("graphify_adapter.py", python_exe)
+    elif choice.startswith("3."): _open_d3_architecture_graph(python_exe, project_root)
+    elif choice.startswith("4."): _generate_optica_plots()
+    elif choice.startswith("5."): run_script("knowledge_path_generator.py", python_exe)
+    elif choice.startswith("6."): run_script("citation_analyzer.py", python_exe)
+    elif choice.startswith("7."): run_script("recommender.py", python_exe)
+    elif choice.startswith("8."): author_tools_menu(python_exe)
+    elif choice.startswith("9."): run_script("trend_analyzer.py", python_exe, args=[tdb])
+    elif choice.startswith("10."):
+        if questionary.confirm("Start now? (may take 60s)", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask():
+            run_script("architecture_intelligence_report.py", python_exe)
+    elif choice.startswith("11."):
+        console.print(_build_info_panel(
+            "Baseline Report (Standard)",
+            "Generates a standard baseline report with score distribution,\n"
+            "quad-layer averages, source distribution, and embedding coverage.",
+            border_style="green",
+        ))
+        run_script("generate_baseline_report.py", python_exe)
+    elif choice.startswith("12."):
+        console.print(_build_info_panel(
+            "Baseline Report (Academic -- 600 DPI)",
+            "Generates a publication-quality academic baseline report\n"
+            "with serif fonts, 600 DPI plots, and muted color palette\n"
+            "suitable for IEEE/Springer journals.",
+            border_style="yellow",
+        ))
+        run_script("generate_baseline_report.py", python_exe, args=["--academic"])
+    elif choice.startswith("13."):
+        console.print(_build_info_panel(
+            "Academic Export (BibTeX & LaTeX Tables)",
+            "Exports the elite literature set (overall_score >= 7) as\n"
+            "BibTeX (.bib) and a publication-ready LaTeX longtable (.tex)\n"
+            "for Overleaf and Zotero interoperability.",
+            border_style="green",
+        ))
+        run_script("academic_export.py", python_exe, args=["--elite", "--bib", "--tex"])
+
+
+def drl_gwo_menu(python_exe):
+    """DRL agents, daemons and GWO swarm sub-menu."""
+    os.system('cls' if os.name == 'nt' else 'clear')
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    choice = safe_select("DRL Agents, Daemons & GWO Swarm:", choices=[
+        questionary.Separator("  AUTONOMOUS OPERATIONS"),
+        "1. 24/7 Autonomous Daemon (new console)",
+        "2. Live DRL Agent (API Fetching)",
+        "3. Configure Daemon Autostart",
+        questionary.Separator("  DRL TRAINING"),
+        "4. Train DRL Agent (Simulated)",
+        "5. Offline DRL Training (Real DB Scores)",
+        questionary.Separator("  GWO SWARM"),
+        "6. GWO Hyperparameter Tuner",
+        "7. GWO LLM Router Reward Shaper",
+        "8. GWO 3D Swarm Live Dashboard",
+        questionary.Separator("  STATUS"),
+        "9. DRL Agent Status",
+        questionary.Separator(), "Back"
+    ])
+    if choice is None or "Back" in choice: return
+    if choice.startswith("1."):
+        _launch_daemon_in_new_console(project_root, python_exe)
+    elif choice.startswith("2."):
+        run_script("talos_live_agent.py", python_exe, args=["--verbose"])
+    elif choice.startswith("3."):
+        _configure_daemon_autostart(project_root)
+    elif choice.startswith("4."):
+        episodes = questionary.text(
+            "Number of episodes:", default="500",
+            validate=lambda t: t.isdigit() and int(t) > 0,
+            style=TALOS_QUESTIONARY_STYLE, instruction=NAV_TEXT,
+        ).ask()
+        if episodes:
+            run_script("drl_trainer.py", python_exe, args=["--episodes", episodes])
+    elif choice.startswith("5."):
+        episodes = questionary.text(
+            "Number of episodes:", default="500",
+            validate=lambda t: t.isdigit() and int(t) > 0,
+            style=TALOS_QUESTIONARY_STYLE, instruction=NAV_TEXT,
+        ).ask()
+        iters = questionary.text(
+            "Number of iterations:", default="100",
+            validate=lambda t: t.isdigit() and int(t) > 0,
+            style=TALOS_QUESTIONARY_STYLE, instruction=NAV_TEXT,
+        ).ask()
+        if episodes and iters:
+            run_script("train_agent.py", python_exe, args=["--episodes", episodes, "--iters", iters])
+    elif choice.startswith("6."):
+        wolves = questionary.text(
+            "Number of wolves:", default="12",
+            validate=lambda t: t.isdigit() and int(t) > 0,
+            style=TALOS_QUESTIONARY_STYLE, instruction=NAV_TEXT,
+        ).ask()
+        iterations = questionary.text(
+            "Number of iterations:", default="30",
+            validate=lambda t: t.isdigit() and int(t) > 0,
+            style=TALOS_QUESTIONARY_STYLE, instruction=NAV_TEXT,
+        ).ask()
+        live = questionary.confirm("Enable live mode?", default=False, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_CONFIRM).ask()
+        if wolves and iterations:
+            args = ["--wolves", wolves, "--iterations", iterations]
+            if live:
+                args.append("--live")
+            run_script("gwo_foraging_hyperparameter_tuner.py", python_exe, args=args)
+    elif choice.startswith("7."):
+        wolves = questionary.text(
+            "Number of wolves:", default="12",
+            validate=lambda t: t.isdigit() and int(t) > 0,
+            style=TALOS_QUESTIONARY_STYLE, instruction=NAV_TEXT,
+        ).ask()
+        iterations = questionary.text(
+            "Number of iterations:", default="30",
+            validate=lambda t: t.isdigit() and int(t) > 0,
+            style=TALOS_QUESTIONARY_STYLE, instruction=NAV_TEXT,
+        ).ask()
+        if wolves and iterations:
+            run_script("gwo_llm_router_reward_shaper.py", python_exe, args=["--wolves", wolves, "--iterations", iterations])
+    elif choice.startswith("8."):
+        _launch_gwo_dashboard(python_exe)
+    elif choice.startswith("9."):
+        _show_drl_status(project_root)
+
+
 def main_menu():
     python_exe = sys.executable or "python"
     project_root = os.path.dirname(os.path.abspath(__file__))
@@ -1389,319 +1788,39 @@ def main_menu():
 
         console.print(header_panel)
 
-        # -- v5.10.7: Richly-grouped 15-option menu (OPTICA Bridge added) --
+        # -- v5.10.15: Unified 6-group hierarchical menu (100% coverage) --
         choice = safe_select("Select operation:", choices=[
-            questionary.Separator("  [ CORE & AI CONFIGURATION ]"),
-            "  1. Configure AI Models & Execution Modes (Model Manager)",
-            "  2. View & Pivot Research Focus (Query Translator)",
-            questionary.Separator("  [ SEARCH & INGESTION ]"),
-            "  3. CLI Research Search (Interactive)",
-            questionary.Separator("  [ ANALYSIS & INSIGHTS ]"),
-            "  4. Metadata Enrichment",
-            "  5. Legacy Architecture Graph (D3.js)",
-            "  6. Advanced AST Knowledge Graph (Graphify)",
-            "  7. Data Visualizations (via OPTICA)",
-            questionary.Separator("  [ DAEMONS & CI/CD ]"),
-            "  8. Train DRL Agent (Offline GPU Trainer)",
-            "  9. Autonomous Red Tester (RL Chaos Fuzzer)",
-            " 10. Live DRL Agent (Real API Orchestration)",
-            " 11. Autonomous Research Process (24/7 Service)",
-            " 12. Configure Daemon & OS Autostart",
-            questionary.Separator("  [ DIAGNOSTICS & EXIT ]"),
-            " 13. Baseline Report (Standard)",
-            " 14. Baseline Report (Academic -- 600 DPI)",
-            " 15. DRL Agent Status",
-            " 16. Codebase Docs Generator (18 Languages)",
-            " 17. Verify Architecture Dependency Map (CI Audit)",
+            questionary.Separator("  [ 1. CONFIGURATION & PROFILES ]"),
+            "  1. Configuration & Profiles",
+            questionary.Separator("  [ 2. RESEARCH SEARCH & INGESTION ]"),
+            "  2. Research Search & Ingestion",
+            questionary.Separator("  [ 3. ADVANCED ANALYSIS & VISUALIZATIONS ]"),
+            "  3. Advanced Analysis & Visualizations",
+            questionary.Separator("  [ 4. DRL AGENTS, DAEMONS & GWO SWARM ]"),
+            "  4. DRL Agents, Daemons & GWO Swarm",
+            questionary.Separator("  [ 5. DATABASE MAINTENANCE & DATA TOOLS ]"),
+            "  5. Database Maintenance & Data Tools",
+            questionary.Separator("  [ 6. SYSTEM HEALTH, DIAGNOSTICS & CI/CD ]"),
+            "  6. System Health, Diagnostics & CI/CD",
             questionary.Separator(),
-            " 18. 3D Knowledge Constellation Visualizer (Browser Demo)",
-            questionary.Separator(),
-            " 19. Exit",
+            "  7. Exit",
         ])
         if choice is None or "Exit" in choice: break
         fm = "Press Enter to return..."
 
-        # -- Route menu choices (v5.10.10: 6 tools integrated) --
+        # -- Route to the selected sub-menu (v5.10.15: unified hierarchy) --
         if " 1." in choice:
-            # -- Model Manager: import and run main() in-process --
-            console.print("\n[bold bright_cyan]Launching AI Model Manager...[/bold bright_cyan]\n")
-            try:
-                from src.ai.llm.model_manager import main as mm_main
-                mm_main()
-            except Exception as e:
-                console.print(f"[red]Error launching Model Manager: {e}[/red]")
-                safe_pause("\nPress Enter...")
+            profile_settings_menu(python_exe)
         elif " 2." in choice:
-            # -- View & Pivot Research Focus (interactive workflow) --
-            _view_and_pivot_research_focus(python_exe, project_root)
+            search_ingestion_menu(python_exe)
         elif " 3." in choice:
-            choice2 = safe_select("CLI Research Search:", choices=[
-                questionary.Separator("  SEARCH & DISCOVERY"),
-                "3a. Daily Search (16 APIs)",
-                "3b. Historical Search (Deep Archive)",
-                "3c. Grey Literature / Web Horizon Scan",
-                "3d. Zotero Cloud Sync",
-                questionary.Separator("  ANALYSIS & INSIGHTS"),
-                "3e. Knowledge Path Generator",
-                "3f. Citation Network Analyzer",
-                "3g. Strategic Reading Report",
-                "3h. Author Analysis Tools",
-                "3i. Author Career Trajectory (ORCID)",
-                "3j. Interactive Dashboard",
-                questionary.Separator("  TRAINING & DATA"),
-                "3k. DRL Training (API Orchestrator)",
-                "3l. Compare Baselines (Pre/Post DRL)",
-                "3m. Open Access Data Enricher (Unpaywall)",
-                "3n. Architecture Intelligence Report (NATO CDE)",
-                questionary.Separator(), "Back"
-            ])
-            if choice2 is None or "Back" in choice2: continue
-            if "3a" in choice2:
-                selected = prompt_source_selection()
-                if selected is None:
-                    console.print("[dim]Source selection cancelled.[/dim]")
-                elif not selected:
-                    console.print("[yellow]No sources selected.[/yellow]")
-                else:
-                    run_script("daily_search.py", python_exe, args=["--sources"] + selected)
-            elif "3b" in choice2:
-                if questionary.confirm("This may take a long time. Proceed?", default=False, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_CONFIRM).ask():
-                    selected = prompt_source_selection()
-                    if selected is None:
-                        console.print("[dim]Source selection cancelled.[/dim]")
-                    elif not selected:
-                        console.print("[yellow]No sources selected.[/yellow]")
-                    else:
-                        run_script("historic_search.py", python_exe, args=["--sources"] + selected)
-            elif "3c" in choice2: run_script("grey_literature_miner.py", python_exe)
-            elif "3d" in choice2: run_script("zotero_connector.py", python_exe)
-            elif "3e" in choice2: run_script("knowledge_path_generator.py", python_exe)
-            elif "3f" in choice2: run_script("citation_analyzer.py", python_exe)
-            elif "3g" in choice2: run_script("recommender.py", python_exe)
-            elif "3h" in choice2: author_tools_menu(python_exe)
-            elif "3i" in choice2:
-                aid = questionary.text("Enter author ORCID iD:", style=TALOS_QUESTIONARY_STYLE, instruction=NAV_TEXT).ask()
-                if aid: run_script("author_trajectory_analyzer.py", python_exe, args=[aid.strip()])
-            elif "3j" in choice2:
-                run_script("interactive_dashboard.py", python_exe)
-                fm = "Dashboard terminated. Press Enter..."
-            elif "3k" in choice2: run_script("drl_trainer.py", python_exe)
-            elif "3l" in choice2:
-                info = _build_info_panel(
-                    "Compare Baselines -- Pre/Post DRL",
-                    "Generates a new academic baseline report and compares it\n"
-                    "against the previous one (Delta analysis).",
-                    border_style="yellow",
-                )
-                console.print(info)
-                if questionary.confirm("Generate new baseline and compare?", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_CONFIRM).ask():
-                    run_script("generate_baseline_report.py", python_exe, args=["--academic"])
-                    rb = os.path.join(project_root, "reports", "general_status_report")
-                    if os.path.exists(rb):
-                        folders = sorted([d for d in os.listdir(rb) if os.path.isdir(os.path.join(rb, d))], reverse=True)
-                        if len(folders) >= 2:
-                            comp = _build_info_panel(
-                                "Baseline Comparison",
-                                [f"[cyan]Latest:[/cyan]   {folders[0]}",
-                                 f"[cyan]Previous:[/cyan] {folders[1]}"],
-                                border_style="green",
-                            )
-                            console.print(comp)
-            elif "3m" in choice2: run_script("data_enricher.py", python_exe)
-            elif "3n" in choice2:
-                if questionary.confirm("Run architecture intelligence report? (may take 60s)", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_CONFIRM).ask():
-                    run_script("architecture_intelligence_report.py", python_exe)
+            analysis_visualization_menu(python_exe)
         elif " 4." in choice:
-            info = _build_info_panel(
-                "Metadata Enrichment",
-                "Enriches paper records with metadata from OpenAlex,\n"
-                "Crossref, DBLP, and Semantic Scholar (multi-source fallback chain).",
-                border_style="cyan",
-            )
-            console.print(info)
-            run_script("metadata_enricher.py", python_exe)
+            drl_gwo_menu(python_exe)
         elif " 5." in choice:
-            # -- Legacy Architecture Graph --
-            import webbrowser, socket
-            port = 8765
-            try:
-                s = socket.socket(socket.AF_INET, socket.SOCK_STREAM); s.settimeout(0.5)
-                if s.connect_ex(('127.0.0.1', port)) != 0:
-                    sd = os.path.join(project_root, "templates")
-                    subprocess.Popen([python_exe, "-m", "http.server", str(port), "--bind", "127.0.0.1", "--directory", sd], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                s.close()
-            except Exception: pass
-            webbrowser.open(f"http://localhost:{port}/architecture_graph.html")
+            database_data_menu(python_exe)
         elif " 6." in choice:
-            # -- Advanced AST Knowledge Graph (Graphify) --
-            info = _build_info_panel(
-                "Advanced AST Knowledge Graph -- Graphify",
-                "Runs the vendored Graphify AST pipeline against the\n"
-                "TALOS src/ directory. Extracts structural nodes and\n"
-                "edges via tree-sitter, builds a knowledge graph,\n"
-                "and exports JSON + HTML + Markdown report to\n"
-                "data/reports/graphify_out/.",
-                border_style="bright_magenta",
-            )
-            console.print(info)
-            if questionary.confirm(
-                "Launch Graphify AST pipeline? (may take 30-120s)",
-                default=True
-            ).ask():
-                try:
-                    from src.analysis.graphify_adapter import generate_ast_knowledge_graph
-                    generate_ast_knowledge_graph()
-                except Exception as e:
-                    console.print(f"[red][ERROR] Graphify pipeline failed: {e}[/red]")
-            safe_pause()
-        elif " 7." in choice:
-            # -- Data Visualizations (via OPTICA) --
-            _generate_optica_plots()
-        elif " 8." in choice:
-            # -- v5.10.10: Train DRL Agent (Offline GPU Trainer) --
-            info = _build_info_panel(
-                "Train DRL Agent -- Offline GPU Trainer",
-                "Trains the Double Dueling DQN agent against the TALOS\\n"
-                "Gymnasium environment. Requires CUDA for GPU acceleration.\\n"
-                "[dim]Interactive episode selection and profile-aware DB.[/dim]",
-                border_style="bright_green",
-            )
-            console.print(info)
-            run_script("drl_trainer.py", python_exe)
-        elif " 9." in choice:
-            # -- Autonomous Red Tester (RL Chaos Fuzzer) --
-            info = _build_info_panel(
-                "Autonomous Red Tester (RL-Driven Chaos Engineering)",
-                "Stress-tests TALOS system components using a Non-Stationary\n"
-                "Epsilon-Greedy Multi-Armed Bandit. Diagnoses crashes with\n"
-                "LLM-as-a-Judge (Fast Edge tier) and saves Markdown reports.\n"
-                "[dim]Displays Rich Q-table (Component Fragility) with Spinners,\n"
-                "Panels, and Tables. Emits Synapse events on each test cycle.[/dim]",
-                border_style="bright_magenta",
-            )
-            console.print(info)
-            cycles_str = questionary.text(
-                "Number of test cycles (default 10):",
-                default="10"
-            ).ask()
-            if cycles_str is not None:
-                try:
-                    cycles = int(cycles_str.strip()) if cycles_str.strip() else 10
-                except ValueError:
-                    cycles = 10
-                    console.print("[yellow]Invalid input. Using default (10).[/yellow]")
-                try:
-                    from src.ai.testing.red_tester import run_red_tester
-                    run_red_tester(cycles=cycles)
-                except Exception as e:
-                    console.print(f"[red]Error running Autonomous Red Tester: {e}[/red]")
-        elif "10." in choice:
-            # -- Live DRL Agent --
-            info = _build_info_panel(
-                "Live DRL Agent -- Real API Orchestration",
-                "The trained DRL agent selects the optimal API source in real-time\n"
-                "using the 16-source academic API environment.",
-                border_style="cyan",
-            )
-            console.print(info)
-            if questionary.confirm("Start live agent? (Ctrl+C to stop)", default=True).ask():
-                run_script("talos_live_agent.py", python_exe, args=["--verbose"])
-        elif "11." in choice:
-            # -- Autonomous Research Process (24/7 Service) --
-            info = _build_info_panel(
-                "Autonomous Research Process -- 24/7 + DRL",
-                "Runs INDEFINITELY. Uses the DRL agent to discover papers\n"
-                "around the clock with periodic AI evaluation and reporting.",
-                border_style="yellow",
-            )
-            console.print(info)
-            if questionary.confirm("Start autonomous process? (Ctrl+C to stop)", default=True).ask():
-                _launch_daemon_in_new_console(project_root, python_exe)
-        elif "12." in choice:
-            # -- Configure Daemon & OS Autostart --
-            info = _build_info_panel(
-                "Configure Daemon & OS Autostart",
-                "Configures the 24/7 daemon network strategy, target sources,\n"
-                "and an optional Windows OS autostart hook (Startup folder\n"
-                "shortcut with a minimized console and a system icon).",
-                border_style="bright_cyan",
-            )
-            console.print(info)
-            _configure_daemon_autostart(project_root)
-        elif "13." in choice:
-            info = _build_info_panel(
-                "Baseline Report (Standard)",
-                "Generates a standard baseline report with score distribution,\n"
-                "quad-layer averages, source distribution, and embedding coverage.",
-                border_style="green",
-            )
-            console.print(info)
-            run_script("generate_baseline_report.py", python_exe)
-        elif "14." in choice:
-            info = _build_info_panel(
-                "Baseline Report (Academic -- 600 DPI)",
-                "Generates a publication-quality academic baseline report\n"
-                "with serif fonts, 600 DPI plots, and muted color palette\n"
-                "suitable for IEEE/Springer journals.",
-                border_style="yellow",
-            )
-            console.print(info)
-            run_script("generate_baseline_report.py", python_exe, args=["--academic"])
-        elif "15." in choice:
-            # -- DRL Status: rich-powered display --
-            mp = os.path.join(project_root, "models", "dddqn_trained.pth")
-            gp = os.path.join(project_root, "models", "gwo_foraging_hyperparameters.json")
-            t = Table(show_header=False, box=box.SIMPLE, border_style="cyan")
-            t.add_column("Parameter", style="dim cyan")
-            t.add_column("Value", style="white")
-            if os.path.exists(mp):
-                t.add_row("DRL Model", f"[green]Present ({os.path.getsize(mp)/1024:.0f} KB)")
-            else:
-                t.add_row("DRL Model", "[red]Not found")
-            if os.path.exists(gp):
-                import json
-                with open(gp) as f: p = json.load(f)
-                t.add_row("Learning Rate", f"[yellow]{p['learning_rate']:.6e}")
-                t.add_row("Gamma", f"[yellow]{p['gamma']:.4f}")
-                t.add_row("Epsilon Decay", f"[yellow]{p['epsilon_decay']:.6f}")
-                t.add_row("Best Fitness", f"[magenta]{p['best_fitness']:.1f}")
-                t.add_row("Best Reward", f"[green]{p['best_avg_reward']:.1f}")
-            else:
-                t.add_row("GWO Params", "[red]Not found")
-            drl_panel = Panel(
-                t,
-                title="[bold]DRL Agent Status[/bold]",
-                border_style="cyan",
-                box=box.ROUNDED,
-            )
-            console.print(drl_panel)
-        elif "16." in choice:
-            info = _build_info_panel(
-                "Codebase Documentation Generator (18 Languages)",
-                "Uses LOCAL Ollama -- zero cloud cost, full privacy.\n"
-                "Produces detailed Markdown docs for every code file selected.\n"
-                "[dim]Supports: English, Greek, Chinese, Hindi, Spanish, Arabic, and 12 more.[/dim]",
-                border_style="bright_blue",
-            )
-            console.print(info)
-            if questionary.confirm("Launch documentation generator?", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask():
-                run_script("generate_docs.py", python_exe)
-
-        elif " 17." in choice:
-            # -- v5.10.10: Verify Architecture Dependency Map (CI Audit) --
-            info = _build_info_panel(
-                "Architecture Dependency Map Audit",
-                "CI/CD exit-code-only audit of the project dependency\\n"
-                "graph against docs/PROJECT_MAP.md Section 7.\\n"
-                "[dim]Reports stale and missing dependency entries.[/dim]",
-                border_style="yellow",
-            )
-            console.print(info)
-            run_script("verify_dependency_map.py", python_exe, args=["--ci"])
-
-        elif " 18." in choice:
-            # -- v5.10.10: 3D Holographic Knowledge Constellation Visualizer --
-            _launch_visualizer()
+            system_health_menu(python_exe)
 
         if choice and "Exit" not in choice:
             safe_pause(fm)

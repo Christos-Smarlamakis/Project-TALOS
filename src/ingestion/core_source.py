@@ -20,6 +20,12 @@ Description:
     for basic usage.
 """
 import requests
+
+try:
+    from src.utils.http_client import build_session
+except ImportError:
+    build_session = None
+
 import time
 import os
 from datetime import datetime, timedelta
@@ -40,6 +46,7 @@ class CORESource:
         Args:
             config (dict): Application configuration.
         """
+        self.session = build_session() if build_session else requests
         self.api_key = os.getenv("CORE_API_KEY")
         self.query = config.get("core_query", "swarm intelligence")
         self.days_to_search = config.get("days_to_search_daily", 1)
@@ -65,7 +72,7 @@ class CORESource:
         while len(all_papers) < self.total_max_results:
             params = {"q": self.query, "limit": page_size, "page": page, "sort": "publishedDate:desc"}
             try:
-                response = requests.get(self.base_url, params=params, headers=self.headers, timeout=20)
+                response = self.session.get(self.base_url, params=params, headers=self.headers, timeout=20)
                 response.raise_for_status()
                 data = response.json()
                 results_on_page = data.get('results', [])

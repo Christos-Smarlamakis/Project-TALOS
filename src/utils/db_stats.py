@@ -28,6 +28,7 @@ import os
 
 # Προσθέτουμε το root path
 from src.core.database_manager import DatabaseManager, get_active_profile_db_path
+from src.utils.snapshot_manager import snapshot_database
 
 def print_header(title):
     print(f"\n{'='*60}")
@@ -72,6 +73,7 @@ def optimize_database(db_path):
         cursor = conn.cursor()
         result = cursor.execute("PRAGMA integrity_check;").fetchone()
         report["integrity"] = str(result[0]) if result else "unknown"
+        snapshot_database(db_path)
         cursor.execute("VACUUM;")
         conn.commit()
         conn.close()

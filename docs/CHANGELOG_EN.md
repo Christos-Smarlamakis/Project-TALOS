@@ -2,6 +2,46 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.16] - 2026-08-28 -- Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine
+
+### Added
+- **SQLite WAL Mode & PRAGMA Connection Factory** (`src/core/database_manager.py`): Added private `_apply_pragmas()` and `_connect()` helpers. Every connection now enables `journal_mode=WAL`, `busy_timeout=5000`, `cache_size=-64000`, `synchronous=NORMAL`, and `temp_store=MEMORY`. All 14 connection sites (`execute_query`, `execute_many`, `get_all_papers_for_dashboard`, `get_single_paper_details`, `get_papers_needing_embedding`, `get_all_embeddings`, `get_papers_by_ids`, `get_recent_core_papers`, `get_recent_elite_papers`, `get_embedding_model_stats`, `get_all_papers_as_dataframe`, `get_database_statistics`, `get_papers_for_enrichment`, `update_papers_enrichment_batch`) now route through `self._connect()`, enabling non-blocking concurrent reads between the FastAPI service (port 8001) and the 24/7 daemon.
+- **Safe Online Snapshotting** (`src/utils/snapshot_manager.py`): New `snapshot_database()` uses `sqlite3.Connection.backup()` for consistent, timestamped online backups under `_profiles/<active>/backups/` with rolling retention (last 5). Wired immediately before `VACUUM` (`db_stats.py`), bulk re-scoring (`recalculate_scores.py`), and full re-evaluation (`reevaluate_database.py`).
+- **HTTP Session Pooling** (`src/utils/http_client.py`): New `build_session()` factory returning a `requests.Session` with `urllib3` `HTTPAdapter` connection pooling and polite headers. Migrated all 13 `requests`-based ingestion sources and the local Ollama/Fast-edge HTTP paths in `AIManager` to persistent sessions (TCP/TLS keep-alive). The three library-client sources (Elsevier, OpenReview, PubMed) retain their native transports.
+- **Academic Export Engine** (`src/utils/academic_export.py`): Zero-dependency exporter producing BibTeX (`.bib`) with collision-safe `AuthorYear` keys, publication-ready LaTeX longtables (`.tex`), and PRISMA candidate-set tables. Exposed as option 13 in the Advanced Analysis & Visualizations menu and registered in `_SCRIPT_MAP`.
+- **Deterministic LRU Caching**: `@functools.lru_cache` applied to pure helpers -- `estimate_prompt_tokens` (4096), `relative_quality` (32), `detect_protocol` (512), `_sanitize` (1024), `_cloud_key_for` (512), and `_task_type` (32).
+
+### Changed
+- **Version strings synchronized to 5.10.16** across the 6 core code files (`config/settings.py`, `src/api/main_api.py`, `talos.py`, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py`), `docker-compose.yml` (`talos:5.10.16`), and `CITATION.cff`.
+- **Test seam adjusted**: `tests/test_openaire_source.py` now patches the source session (`src.session.get`) rather than the module-level `requests.get`, matching the pooled-session migration.
+
+### Verification
+- `python -m compileall -q src config tests talos.py` passed.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.10.16).
+- `python -m pytest tests/test_openaire_source.py -q` passed (27 tests).
+
+
+## [v5.10.15] - 2026-08-28 -- Universal TUI Feature Restoration & 100% Codebase Coverage
+
+### Added
+- **Unified 6-Group Hierarchical TUI** (`talos.py`): Reorganized `main_menu()` into six visually-grouped sections using Rich separators and the canonical `TALOS_QUESTIONARY_STYLE` -- (1) Configuration & Profiles, (2) Research Search & Ingestion, (3) Advanced Analysis & Visualizations, (4) DRL Agents, Daemons & GWO Swarm, (5) Database Maintenance & Data Tools, (6) System Health, Diagnostics & CI/CD, plus Exit.
+- **Revived Dead Sub-Menus** (`talos.py`): `profile_settings_menu()`, `database_data_menu()`, and `system_health_menu()` reconnected as live, callable handlers from the main menu. New sub-menus `search_ingestion_menu()`, `analysis_visualization_menu()`, and `drl_gwo_menu()` extracted from the former flat menu.
+- **100% Executable Module Coverage (45/45)**: Every orphaned module wired into the hierarchy, including Model Discovery (`model_discovery.py`), Model Provisioning (`model_provisioner.py`), GWO LLM Router Reward Shaper (`gwo_llm_router_reward_shaper.py`), Red Tester (`red_tester.py`), Daemon Autostart (`daemon_autostart.py`), and the OPTICA client.
+- **GWO Swarm Suite** (`drl_gwo_menu`): Hyperparameter Tuner, LLM Router Reward Shaper, and 3D Swarm Live Dashboard (Dash port 8050) unified under one menu.
+- **New Rich Helpers** (`talos.py`): `_show_drl_status()`, `_run_model_discovery()`, `_probe_api_backend()`, `_open_capabilities_viewer()`, `_open_d3_architecture_graph()`, `_launch_gwo_dashboard()`.
+
+### Changed
+- **Script Map Hardening**: `_SCRIPT_MAP` extended with six missing modules; `_resolve_script_path()` no longer silently falls back to `scripts/` and now raises a descriptive `FileNotFoundError` for unmapped scripts.
+- **DRL Status**: `models/gwo_foraging_hyperparameters.json` inspection consolidated into `_show_drl_status()`.
+- **Version strings synced across 6 core code files** (`config/settings.py`, `src/api/main_api.py`, `talos.py`, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py`) plus `docker-compose.yml` (`talos:5.10.15`) and `CITATION.cff` to v5.10.15.
+- **Roadmap re-aligned**: DSPy PRISMA Pipeline shifted to v5.10.16; CORTEX & n8n Gateway shifted to v5.10.17.
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed with v5.10.15 assertion.
+
 ## [v5.10.14] - 2026-08-28 -- Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4 Cognitive Integration
 
 ### Added

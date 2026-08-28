@@ -8,7 +8,7 @@ authors:
     given-names: "Efstratios"
     orcid: "https://orcid.org/0009-0000-4727-4154"
 title: "Project TALOS: Tactical Agentic Literature Orchestration System"
-version: 5.10.14
+version: 5.10.16
 date-released: 2026-08-28
 url: "https://github.com/Christos-Smarlamakis/Project-TALOS"
 abstract: "Project TALOS is an autonomous research intelligence platform powered by deep reinforcement learning (DDDQN), multi-tier LLM orchestration, and the Grey Wolf Optimizer (GWO). It conducts end-to-end scientific literature discovery and evaluation across 16 academic APIs."

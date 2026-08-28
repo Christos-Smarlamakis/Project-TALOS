@@ -21,6 +21,12 @@ Description:
     submission date descending. Does not require an API key.
 """
 import requests
+
+try:
+    from src.utils.http_client import build_session
+except ImportError:
+    build_session = None
+
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Any
@@ -48,6 +54,7 @@ class ArxivSource:
             config (dict): Application configuration dictionary containing
                 ``arxiv_query``, ``days_to_search_daily``, and ``max_results_config``.
         """
+        self.session = build_session() if build_session else requests
         raw_query = config.get("arxiv_query", 'all:"mission planning"')
         clean_query = raw_query.replace("(", "").replace(")", "")
         self.search_terms = [term.strip() for term in clean_query.split(" OR ") if term.strip()]
@@ -81,7 +88,7 @@ class ArxivSource:
                     'sortBy': 'submittedDate', 'sortOrder': 'descending'
                 }
                 try:
-                    response = requests.get(self.base_url, params=params, timeout=30)
+                    response = self.session.get(self.base_url, params=params, timeout=30)
                     response.raise_for_status()
                     root = ET.fromstring(response.content)
                     namespace = {'atom': 'http://www.w3.org/2005/Atom'}

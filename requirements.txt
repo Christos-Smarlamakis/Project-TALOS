@@ -16,6 +16,8 @@ mcp                         # Model Context Protocol SDK
 google-generativeai         # Google Gemini API communication
 google-genai                # Google Gemini API (new SDK -- Grey Literature)
 openai                      # DeepSeek/OpenAI-compatible API communication
+huggingface_hub             # Hugging Face Hub client for model provisioning & snapshots
+dspy-ai                     # Stanford DSPy declarative framework for PRISMA pipeline
 
 # === Sources: Academic APIs & Integrations ===
 arxiv                       # ArXiv API client

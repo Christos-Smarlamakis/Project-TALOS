@@ -36,6 +36,7 @@ from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 # Προσθέτουμε το root του project στο path
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
+from src.utils.snapshot_manager import snapshot_database
 
 def load_configuration():
     project_root = _P if _P else os.getcwd()
@@ -77,6 +78,7 @@ def main():
         print("Η διαδικασία ακυρώθηκε.")
         return
 
+    snapshot_database()
     updated_count = 0
     for i, paper in enumerate(papers_to_update):
         # Το paper είναι tuple: (id, title, abstract, overall_score)

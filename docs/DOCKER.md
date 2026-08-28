@@ -70,7 +70,7 @@ to the host's `data/` directory.
 
 ```bash
 # Build the image
-docker build -t talos:5.10.14 .
+docker build -t talos:5.10.16 .
 
 # Run the API server
 docker run --rm -p 8001:8001 \
@@ -81,7 +81,7 @@ docker run --rm -p 8001:8001 \
   -v "$(pwd)/_profiles:/app/_profiles" \
   --env-file .env \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  talos:5.10.14
+  talos:5.10.16
 
 # Run the interactive TUI instead
 docker run --rm -it \
@@ -92,7 +92,7 @@ docker run --rm -it \
   -v "$(pwd)/_profiles:/app/_profiles" \
   --env-file .env \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  talos:5.10.14 python talos.py
+  talos:5.10.16 python talos.py
 ```
 
 On Windows PowerShell, replace `"$(pwd)/data:/app/data"` with
