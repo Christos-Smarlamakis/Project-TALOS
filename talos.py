@@ -1576,7 +1576,7 @@ def analysis_visualization_menu(python_exe):
         "8. Author Profiler & ORCID Trajectory",
         "9. Scientometrics & Trend Analyzer",
         questionary.Separator("  INTELLIGENCE & REPORTS"),
-        "10. Architecture Intelligence Report (NATO CDE)",
+        "10. Architecture Intelligence Report",
         "11. Baseline Report (Standard)",
         "12. Baseline Report (Academic -- 600 DPI)",
         "13. Academic Export (BibTeX & LaTeX Tables)",
