@@ -15,6 +15,7 @@
 [![License](https://img.shields.io/badge/License-AGPLv3-red?style=flat-square)](LICENSE)
 [![DOI](https://zenodo.org/badge/1191928488.svg)](https://doi.org/10.5281/zenodo.19224912)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker)](docs/DOCKER.md)
+[![System Capabilities](https://img.shields.io/badge/System_Capabilities-006699?style=flat-square&logo=html5&logoColor=white)](https://christos-smarlamakis.github.io/Project-TALOS/)
 
 ---
 

@@ -1,4 +1,4 @@
-# TALOS/ALEXANDRIA/ATHENA -- System Capabilities Master Reference v5.10.16
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.10.16
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
