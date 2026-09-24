@@ -4,7 +4,7 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-23 (v5.11.0 -- Κονσόλα Ζωντανής Τηλεμετρίας HUD, Ελαχιστοποίηση-σε-Δίσκο Win32, Bootstrap Linux Πολλαπλών Πλατφορμών & Μηχανή Ιστορικού Πλήρους Τίτλου)
+> **Τελευταία Ενημέρωση:** 2026-09-24 (v5.11.1 -- Εξυγίανση Υπομενού TUI & Πλήρης Έλεγχος Ιεραρχίας)
 
 ---
 
@@ -532,6 +532,16 @@
 - [x] **Μόνιμο Ιστορικό Αξιολόγησης** -- `src/utils/evaluation_history.py` (JSONL) + `_show_evaluation_history(limit=30)` προβολή πίνακα Rich στο `talos.py`.
 - [x] **Αυτόνομο Bootstrap Linux** -- `run_talos.sh` `detect_or_install_conda()` + `ensure_talosenv()` για Ubuntu/Debian/Linux Mint.
 - [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose.yml + CITATION.cff + 15 κανονικά έγγραφα σε v5.11.0 (2026-09-23).
+- [x] **Πύλες επαλήθευσης** -- compileall, test_system_integrity, test_talos_version, bash -n.
+
+## Φάση 48: Εξυγίανση Υπομενού TUI & Πλήρης Έλεγχος Ιεραρχίας (v5.11.1)
+
+### Κατάσταση: ΟΛΟΚΛΗΡΩΜΕΝΗ (2026-09-24)
+
+- [x] **Διόρθωση λίστας επιλογών Questionary** -- η `profile_settings_menu()` στο `talos.py` ξαναγράφτηκε με `questionary.Choice(title=..., value=...)`, φρουρό `__back__` και αυστηρά διαδοχική αρίθμηση 1-8.
+- [x] **Διορθώσεις δρομολόγησης** -- «1. Manage Profiles» -> `run_script("profile_manager.py", ...)`· «5. Model Discovery (Quality Scoring)» -> ενσωματωμένος `_run_model_discovery()`.
+- [x] **Ενιαία αισθητική υπομενού** -- κάθε υπομενού τυποποιήθηκε με ετικέτες `[ Back / Return to Main Menu ]` και `TALOS_QUESTIONARY_STYLE`.
+- [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose.yml + CITATION.cff + 19 κανονικά έγγραφα σε v5.11.1 (2026-09-24).
 - [x] **Πύλες επαλήθευσης** -- compileall, test_system_integrity, test_talos_version, bash -n.
 
 

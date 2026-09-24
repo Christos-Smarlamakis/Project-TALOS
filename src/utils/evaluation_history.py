@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: evaluation_history.py
-Project: TALOS v5.11.0
+Project: TALOS v5.11.1
 Description:
     Persistent evaluation history recorder and reader. Every paper evaluated by
     the live DRL agent and the 24/7 daemon is appended as a single JSON line to

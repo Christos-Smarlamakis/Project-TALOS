@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.11.0
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.11.1
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-09-23 (v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
+> **Last Updated:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit)
 
 ---
 
@@ -218,8 +218,8 @@ src/ingestion/*.py
 
 ---
 
-> **Last Updated:** 2026-09-23 (v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
-> **Project Version:** v5.11.0
+> **Last Updated:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit)
+> **Project Version:** v5.11.1
 > **Total .py modules under src/:** 85 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 19 + api 4 + mcp_server 1)
 
 

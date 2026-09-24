@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: tray_icon.py
-Project: TALOS v5.11.0
+Project: TALOS v5.11.1
 Description:
     Desktop Control Hub system tray companion for the TALOS autonomous research
     daemon. It renders a 16x16 navy/cyan icon and exposes a seven-item context
@@ -51,7 +51,7 @@ SWAGGER_URL = API_BASE_URL + "/docs"
 SCRAPE_TRIGGER_URL = API_BASE_URL + "/api/v1/scrape/trigger"
 
 # -- Canonical tray tooltip title --
-TRAY_TITLE = "TALOS v5.11.0 | Research Intelligence Mesh"
+TRAY_TITLE = "TALOS v5.11.1 | Research Intelligence Mesh"
 
 
 def _project_root():

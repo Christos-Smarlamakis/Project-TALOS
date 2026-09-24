@@ -2,6 +2,22 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.11.1] - 2026-09-24 -- Εξυγίανση Υπομενού TUI & Πλήρης Έλεγχος Ιεραρχίας
+
+### Διορθώθηκε
+- **Καταστροφή λίστας επιλογών Questionary στη `profile_settings_menu()`** (`talos.py`): αντικατάσταση της λίστας επιλογών βασισμένης σε συμβολοσειρές του `safe_select()` με ρητές καταχωρίσεις `questionary.Choice(title=..., value=...)` και ειδικό φρουρό `__back__`, εξαλείφοντας τη δυσλειτουργία διπλότυπων και αποκαθιστώντας αυστηρά διαδοχική αρίθμηση 1-8 με επιλογή `[ Back / Return to Main Menu ]`.
+- **Διορθώσεις δρομολόγησης:** η «1. Manage Profiles» καλεί τη `run_script("profile_manager.py", ...)` και η «5. Model Discovery (Quality Scoring)» τον ενσωματωμένο βοηθό `_run_model_discovery()` (χωρίς σιωπηλή αδράνεια υποδιεργασίας).
+
+### Άλλαξε
+- **Ενιαία αισθητική υπομενού:** κάθε υπομενού στο `talos.py` (`search_ingestion_menu`, `analysis_visualization_menu`, `drl_gwo_menu`, `database_data_menu`, `system_health_menu`, `author_tools_menu`, `api_keys_menu`) χρησιμοποιεί πλέον ετικέτα `[ Back / Return to Main Menu ]` με καθαρή διαδοχική αρίθμηση και το κανονικό θέμα `TALOS_QUESTIONARY_STYLE`.
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.11.1** στα 6 βασικά αρχεία κώδικα, το `docker-compose.yml` (`talos:5.11.1`), το `CITATION.cff` (ημερομηνία 2026-09-24) και τα 19 κανονικά αρχεία τεκμηρίωσης.
+
+### Επαλήθευση
+- `python -m compileall -q src config tests talos.py` πέρασε χωρίς σφάλματα.
+- `python -m pytest tests/test_system_integrity.py -q` πέρασε.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε (v5.11.1).
+- `bash -n run_talos.sh` πέρασε χωρίς συντακτικά σφάλματα.
+
 ## [v5.11.0] - 2026-09-23 -- Κονσόλα Ζωντανής Τηλεμετρίας HUD, Ελαχιστοποίηση-σε-Δίσκο Win32, Bootstrap Linux Πολλαπλών Πλατφορμών & Μηχανή Ιστορικού Πλήρους Τίτλου
 
 ### Προστέθηκε

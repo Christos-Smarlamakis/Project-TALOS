@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.11.0
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.11.1
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-23 (v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
+> **Τελευταία Ενημέρωση:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit)
 
 ---
 
@@ -218,8 +218,8 @@ src/ingestion/*.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-09-23 (v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
-> **Έκδοση Project:** v5.11.0
+> **Τελευταία Ενημέρωση:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit)
+> **Έκδοση Project:** v5.11.1
 > **Συνολικά .py modules στο src/:** 85 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 19 + api 4 + mcp_server 1)
 
 

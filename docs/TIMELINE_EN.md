@@ -4,7 +4,7 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-23 (v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
+> **Last Updated:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit)
 
 ---
 
@@ -548,6 +548,16 @@
 - [x] **Persistent Evaluation History** -- `src/utils/evaluation_history.py` JSONL recorder + `_show_evaluation_history(limit=30)` Rich TUI viewer in `talos.py`.
 - [x] **Autonomous Linux Bootstrap** -- `run_talos.sh` `detect_or_install_conda()` + `ensure_talosenv()` for Ubuntu/Debian/Linux Mint.
 - [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + 15 canonical docs to v5.11.0 (2026-09-23).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, bash -n.
+
+## Phase 48: TUI Sub-Menu Sanitization & Complete Hierarchy Audit (v5.11.1)
+
+### Status: COMPLETED (2026-09-24)
+
+- [x] **Questionary choice-list fix** -- `profile_settings_menu()` in `talos.py` rewritten with `questionary.Choice(title=..., value=...)` entries, a `__back__` sentinel, and strictly sequential 1-8 numbering.
+- [x] **Routing corrections** -- "1. Manage Profiles" -> `run_script("profile_manager.py", ...)`; "5. Model Discovery (Quality Scoring)" -> in-process `_run_model_discovery()`.
+- [x] **Unified sub-menu styling** -- every sub-menu standardized with `[ Back / Return to Main Menu ]` labels and `TALOS_QUESTIONARY_STYLE`.
+- [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + 19 canonical docs to v5.11.1 (2026-09-24).
 - [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, bash -n.
 
 

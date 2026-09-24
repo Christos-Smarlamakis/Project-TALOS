@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.11.0
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.11.1
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-09-23
-> **Version:** v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine
+> **Last Updated:** 2026-09-24
+> **Version:** v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -877,6 +877,12 @@ For each evaluated paper, the AI generates:
 - **Full-Title & Authors Telemetry:** `live_agent_orchestrator.py` [EVAL] renders the complete title and normalized author list over a two-line Rich structure; `ai_manager.py` `_sanitize_connection_error()` returns the locale-independent English message "Connection refused: target host or port is offline."
 - **Persistent Evaluation History:** `src/utils/evaluation_history.py` appends every evaluated paper to `data/history/daemon_evaluations.jsonl` (`record_evaluation()`, `read_evaluation_history()`, `verdict_for_score()`); `talos.py` `_show_evaluation_history(limit=30)` renders a Rich table.
 - **Autonomous Linux Bootstrap:** `run_talos.sh` `detect_or_install_conda()` (PATH + standard-dir detection, x86_64/aarch64 silent Miniconda3) and `ensure_talosenv()` (Python 3.11 `talosenv`); menu options 2-9 execute inside `talosenv`.
+
+### 15.21 TUI Sub-Menu Sanitization & Complete Hierarchy Audit (v5.11.1)
+
+- **Questionary choice-list fix:** `profile_settings_menu()` in `talos.py` rewritten with explicit `questionary.Choice(title=..., value=...)` entries, a `__back__` sentinel, and strictly sequential 1-8 numbering.
+- **Routing corrections:** "1. Manage Profiles" dispatches to `run_script("profile_manager.py", ...)`; "5. Model Discovery (Quality Scoring)" to the in-process `_run_model_discovery()` helper.
+- **Unified sub-menu styling:** all seven sub-menus (`search_ingestion_menu`, `analysis_visualization_menu`, `drl_gwo_menu`, `database_data_menu`, `system_health_menu`, `author_tools_menu`, `api_keys_menu`) standardized with `[ Back / Return to Main Menu ]` labels and the canonical `TALOS_QUESTIONARY_STYLE` theme.
 
 
 ---

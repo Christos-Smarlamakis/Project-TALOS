@@ -1,6 +1,6 @@
 # TALOS Tech Radar & Ecosystem Map
 
-> **Last Updated:** 2026-09-23 (v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
+> **Last Updated:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit)
 
 This document is the technology radar of Project TALOS. It catalogues the development stack, the agentic architecture, the document-comprehension tooling, and the simulation capabilities that surround the core TALOS research intelligence system. It tracks State-of-the-Art (SOTA) technologies and maps the surrounding research-intelligence ecosystem.
 
@@ -89,4 +89,4 @@ Related systems and competitors that TALOS is evaluated against, tracked to keep
 
 ---
 
-> **Project Version:** v5.11.0 | **Last Updated:** 2026-09-23 (v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
+> **Project Version:** v5.11.1 | **Last Updated:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit)

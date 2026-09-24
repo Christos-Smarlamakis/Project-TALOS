@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.11.0
+Project: TALOS v5.11.1
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,10 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.11.1: TUI Sub-Menu Sanitization & Complete Hierarchy Audit -- corrected
+    the Questionary choice-list duplication in the Configuration & Profiles
+    sub-menu and standardized sequential numbering across every sub-menu.
 
     v5.11.0: Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform
     Linux Bootstrap & Full-Title History Engine -- bottom-right glassmorphism
@@ -566,7 +570,7 @@ def author_tools_menu(python_exe):
     os.system('cls' if os.name == 'nt' else 'clear')
     choice = safe_select("Author Analysis Tools:", choices=[
         "1. Quick Profile (Profiler)", "2. Trajectory Analysis",
-        "3. Full Report (Profiler -> Trajectory)", questionary.Separator(), "Back"
+        "3. Full Report (Profiler -> Trajectory)", questionary.Separator(), "[ Back / Return to Main Menu ]"
     ])
     if choice is None or "Back" in choice: return
     if choice.startswith("1.") or choice.startswith("2."):
@@ -600,7 +604,7 @@ def database_data_menu(python_exe):
         "10. Zotero Cloud Connector",
         questionary.Separator("  EVALUATION HISTORY"),
         "11. View Recent Evaluation History",
-        questionary.Separator(), "Back"
+        questionary.Separator(), "[ Back / Return to Main Menu ]"
     ])
     if choice is None or "Back" in choice: return
     if choice.startswith("1."): run_script("db_stats.py", python_exe, args=["--optimize"])
@@ -630,7 +634,7 @@ def system_health_menu(python_exe):
         "6. 18-Language Documentation Builder",
         questionary.Separator("  REFERENCE VIEWERS"),
         "7. System Capabilities Master Viewer",
-        questionary.Separator(), "Back"
+        questionary.Separator(), "[ Back / Return to Main Menu ]"
     ])
     if choice is None or "Back" in choice: return
     if choice.startswith("1."):
@@ -726,8 +730,8 @@ def api_keys_menu(python_exe):
                 s = "[green][SET][/green]" if v.strip() else "[red][NOT SET][/red]"
                 keys_table.add_row(k, s, f"[magenta]{cat}[/magenta] | {d}")
         console.print(keys_table)
-        console.print("\n[1] Edit key  [2] API Diagnostics  [3] Back")
-        c = safe_select("Action:", ["1. Edit a key", "2. API Diagnostics", "3. Back"])
+        console.print("\n[1] Edit key  [2] API Diagnostics  [3] Back / Return to Main Menu")
+        c = safe_select("Action:", ["1. Edit a key", "2. API Diagnostics", "3. Back / Return to Main Menu"])
         if c is None or c.startswith("3"): return
         if c.startswith("1"):
             flat = []
@@ -759,34 +763,32 @@ def profile_settings_menu(python_exe):
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
         c = safe_select("Configuration & Profiles:", choices=[
-            questionary.Separator("  PROFILES & RESEARCH FOCUS"),
-            "1. Manage Profiles",
-            "2. Research Pivot & Retrain",
-            "3. Research Goal (Query Translator)",
-            questionary.Separator("  MODEL CONFIGURATION"),
-            "4. AI Model Management (2D Matrix)",
-            "5. Model Discovery (Quality Scoring)",
-            "6. Model Provisioning CLI",
-            questionary.Separator("  API KEYS & DIAGNOSTICS"),
-            "7. API Keys Management",
-            "8. API Key Diagnostics",
-            questionary.Separator(), "Back"
+            questionary.Choice(title="1. Manage Profiles", value="1. Manage Profiles"),
+            questionary.Choice(title="2. Research Pivot Wizard", value="2. Research Pivot Wizard"),
+            questionary.Choice(title="3. Research Goal (Query Translator / PYTHIA)", value="3. Research Goal (Query Translator / PYTHIA)"),
+            questionary.Choice(title="4. AI Model Management (2D Matrix)", value="4. AI Model Management (2D Matrix)"),
+            questionary.Choice(title="5. Model Discovery (Quality Scoring)", value="5. Model Discovery (Quality Scoring)"),
+            questionary.Choice(title="6. Model Provisioning CLI", value="6. Model Provisioning CLI"),
+            questionary.Choice(title="7. API Keys Management", value="7. API Keys Management"),
+            questionary.Choice(title="8. API Key Diagnostics", value="8. API Key Diagnostics"),
+            questionary.Separator(),
+            questionary.Choice(title="[ Back / Return to Main Menu ]", value="__back__")
         ])
-        if c is None or "Back" in c: return
-        if c.startswith("1."): run_script("profile_manager.py", python_exe)
-        elif c.startswith("2."): run_script("research_pivot.py", python_exe)
-        elif c.startswith("3."): run_script("query_translator.py", python_exe)
-        elif c.startswith("4."):
+        if c is None or c == "__back__": return
+        if c == "1. Manage Profiles": run_script("profile_manager.py", python_exe)
+        elif c == "2. Research Pivot Wizard": run_script("research_pivot.py", python_exe)
+        elif c == "3. Research Goal (Query Translator / PYTHIA)": run_script("query_translator.py", python_exe)
+        elif c == "4. AI Model Management (2D Matrix)":
             console.print("\n[bold bright_cyan]Launching AI Model Manager...[/bold bright_cyan]\n")
             try:
                 from src.ai.llm.model_manager import main as mm_main
                 mm_main()
             except Exception as e:
                 console.print(f"[red]Error launching Model Manager: {e}[/red]")
-        elif c.startswith("5."): _run_model_discovery()
-        elif c.startswith("6."): run_script("model_provisioner.py", python_exe)
-        elif c.startswith("7."): api_keys_menu(python_exe)
-        elif c.startswith("8."): run_script("api_health_check.py", python_exe)
+        elif c == "5. Model Discovery (Quality Scoring)": _run_model_discovery()
+        elif c == "6. Model Provisioning CLI": run_script("model_provisioner.py", python_exe)
+        elif c == "7. API Keys Management": api_keys_menu(python_exe)
+        elif c == "8. API Key Diagnostics": run_script("api_health_check.py", python_exe)
         safe_pause("\nPress Enter...")
 
 # -- v5.9.15: Silent Fast Boot --
@@ -1596,7 +1598,7 @@ def search_ingestion_menu(python_exe):
         "4. Zotero Cloud Sync",
         questionary.Separator("  BROWSING"),
         "5. Interactive Dashboard",
-        questionary.Separator(), "Back"
+        questionary.Separator(), "[ Back / Return to Main Menu ]"
     ])
     if choice is None or "Back" in choice: return
     if choice.startswith("1."):
@@ -1649,7 +1651,7 @@ def analysis_visualization_menu(python_exe):
         "11. Baseline Report (Standard)",
         "12. Baseline Report (Academic -- 600 DPI)",
         "13. Academic Export (BibTeX & LaTeX Tables)",
-        questionary.Separator(), "Back"
+        questionary.Separator(), "[ Back / Return to Main Menu ]"
     ])
     if choice is None or "Back" in choice: return
     if choice.startswith("1."): _launch_visualizer()
@@ -1710,7 +1712,7 @@ def drl_gwo_menu(python_exe):
         "8. GWO 3D Swarm Live Dashboard",
         questionary.Separator("  STATUS"),
         "9. DRL Agent Status",
-        questionary.Separator(), "Back"
+        questionary.Separator(), "[ Back / Return to Main Menu ]"
     ])
     if choice is None or "Back" in choice: return
     if choice.startswith("1."):

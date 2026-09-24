@@ -2,6 +2,22 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.11.1] - 2026-09-24 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit
+
+### Fixed
+- **Questionary choice-list corruption in `profile_settings_menu()`** (`talos.py`): replaced the string-based `safe_select()` choice list with explicit `questionary.Choice(title=..., value=...)` entries and a dedicated `__back__` sentinel, eliminating the duplication glitch and restoring strictly sequential 1-8 numbering plus a `[ Back / Return to Main Menu ]` option.
+- **Routing corrections:** "1. Manage Profiles" dispatches to `run_script("profile_manager.py", ...)` and "5. Model Discovery (Quality Scoring)" to the in-process `_run_model_discovery()` helper (no silent subprocess no-op).
+
+### Changed
+- **Unified sub-menu styling:** every sub-menu in `talos.py` (`search_ingestion_menu`, `analysis_visualization_menu`, `drl_gwo_menu`, `database_data_menu`, `system_health_menu`, `author_tools_menu`, `api_keys_menu`) now uses a `[ Back / Return to Main Menu ]` label with clean sequential numbering and the canonical `TALOS_QUESTIONARY_STYLE` theme.
+- **Version strings synchronized to 5.11.1** across the 6 core code files, `docker-compose.yml` (`talos:5.11.1`), `CITATION.cff` (date 2026-09-24), and the 19 canonical documentation files.
+
+### Verification
+- `python -m compileall -q src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.11.1).
+- `bash -n run_talos.sh` passed with zero syntax errors.
+
 ## [v5.11.0] - 2026-09-23 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine
 
 ### Added
