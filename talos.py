@@ -203,6 +203,31 @@ from rich.align import Align
 
 console = Console()
 
+# -- v5.11.1: Enable Windows VT100 (ANSI) virtual terminal processing --
+def _enable_windows_vt100():
+    """Enable ANSI/VT100 virtual terminal processing on Windows STDOUT.
+
+    prompt_toolkit emits cursor-positioning and screen-redraw escape
+    sequences that Windows ConHost ignores unless
+    ENABLE_VIRTUAL_TERMINAL_PROCESSING is set. Without it, menu renders
+    overwrite prior text without erasing, producing ghost-text artifacts.
+    """
+    if sys.platform != "win32":
+        return
+    try:
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        h_out = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
+        out_mode = ctypes.c_ulong()
+        kernel32.GetConsoleMode(h_out, ctypes.byref(out_mode))
+        # ENABLE_VIRTUAL_TERMINAL_PROCESSING (0x0004) | ENABLE_PROCESSED_OUTPUT (0x0001)
+        out_mode.value |= 0x0004 | 0x0001
+        kernel32.SetConsoleMode(h_out, out_mode)
+    except Exception:
+        pass
+
+_enable_windows_vt100()
+
 USE_LOCAL_MODEL = False
 
 # -- v5.9.2: Dynamic Focus Summarization --
@@ -343,19 +368,25 @@ _SCRIPT_MAP = {
     "optica_client.py":           "integration",
 }
 
-def safe_select(message, choices):
-    """Questionary select with graceful fallback.
-    Returns None on Ctrl+C (all menus treat None as 'Back')."""
+def safe_select(message, choices, style=TALOS_QUESTIONARY_STYLE, **kwargs):
+    """Safe questionary.select wrapper preventing Windows prompt_toolkit redraw bugs."""
+    sys.stdout.flush()
+    prompt_msg = message.strip() if (message and message.strip()) else "Select option:"
+    kwargs.pop("instruction", None)
+    kwargs.pop("use_indicator", None)
     try:
-        return questionary.select(message, choices=choices, use_indicator=True, pointer=">", style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask()
-    except KeyboardInterrupt:
+        return questionary.select(
+            prompt_msg,
+            choices=choices,
+            style=style,
+            use_indicator=False,
+            use_shortcuts=False,
+            pointer="> ",
+            **kwargs
+        ).ask()
+    except (KeyboardInterrupt, Exception):
+        sys.stdout.flush()
         return None
-    except Exception:
-        # Fancy select failed (e.g. limited console) -- plain fallback.
-        try:
-            return questionary.select(message, choices=choices, style=TALOS_QUESTIONARY_STYLE).unsafe_ask()
-        except KeyboardInterrupt:
-            return None
 
 def safe_pause(msg="Press Enter to return..."):
     """Pause prompt that swallows Ctrl+C so a stray interrupt at a pause
@@ -569,14 +600,15 @@ def check_first_run(python_exe):
 def author_tools_menu(python_exe):
     """Author-centric analysis tools: profiler, trajectory, and full report."""
     os.system('cls' if os.name == 'nt' else 'clear')
-    choice = safe_select("Author Analysis Tools:", choices=[
-        questionary.Choice(title="1. Author Profiler (Publication History)", value="1. Author Profiler (Publication History)"),
-        questionary.Choice(title="2. Author Trajectory Analyzer (ORCID Career Flow)", value="2. Author Trajectory Analyzer (ORCID Career Flow)"),
-        questionary.Choice(title="3. Full Report (Profiler -> Trajectory)", value="3. Full Report (Profiler -> Trajectory)"),
-        questionary.Separator(),
-        questionary.Choice(title="[ Back / Return to Previous Menu ]", value="__back__")
+    sys.stdout.flush()
+    console.print(Panel("[bold cyan]Author & Researcher Tools[/bold cyan]\n[dim]Scientometric profiling and ORCID career trajectory mapping[/dim]", style="cyan", border_style="cyan"))
+    choice = safe_select("Select author analysis tool:", choices=[
+        "1. Author Profiler (Publication History)",
+        "2. Author Trajectory Analyzer (ORCID Career Flow)",
+        "3. Full Report (Profiler -> Trajectory)",
+        "4. Back / Return to Previous Menu"
     ])
-    if choice is None or choice == "__back__": return
+    if not choice or "Back" in choice: return
     if choice.startswith("1.") or choice.startswith("2."):
         aid = questionary.text("Enter author name or ORCID iD:", style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask()
         scr = "author_profiler.py" if "1." in choice else "author_trajectory_analyzer.py"
@@ -592,26 +624,23 @@ def author_tools_menu(python_exe):
 def database_data_menu(python_exe):
     """Database maintenance, embeddings, scoring and enrichment sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
-    choice = safe_select("Database Maintenance & Data Tools:", choices=[
-        questionary.Separator("  MAINTENANCE & SCORING"),
-        questionary.Choice(title="1. Database Health & VACUUM Optimizer", value="1. Database Health & VACUUM Optimizer"),
-        questionary.Choice(title="2. Database Schema Migration", value="2. Database Schema Migration"),
-        questionary.Choice(title="3. Recalculate Overall Scores", value="3. Recalculate Overall Scores"),
-        questionary.Choice(title="4. Re-evaluate Database with LLM", value="4. Re-evaluate Database with LLM"),
-        questionary.Separator("  VECTOR EMBEDDINGS"),
-        questionary.Choice(title="5. Batch Vector Embedding Generation", value="5. Batch Vector Embedding Generation"),
-        questionary.Choice(title="6. Vector Embedding Schema Migration", value="6. Vector Embedding Schema Migration"),
-        questionary.Separator("  ENRICHMENT & INGESTION"),
-        questionary.Choice(title="7. Metadata Enrichment", value="7. Metadata Enrichment"),
-        questionary.Choice(title="8. Open Access PDF Downloader", value="8. Open Access PDF Downloader"),
-        questionary.Choice(title="9. Unpaywall Data Enricher", value="9. Unpaywall Data Enricher"),
-        questionary.Choice(title="10. Zotero Cloud Connector", value="10. Zotero Cloud Connector"),
-        questionary.Separator("  EVALUATION HISTORY"),
-        questionary.Choice(title="11. View Recent Evaluation History", value="11. View Recent Evaluation History"),
-        questionary.Separator(),
-        questionary.Choice(title="[ Back / Return to Main Menu ]", value="__back__")
+    sys.stdout.flush()
+    console.print(Panel("[bold cyan]Database Maintenance & Data Tools[/bold cyan]\n[dim]Database optimization, enrichment, and persistent storage utilities[/dim]", style="cyan", border_style="cyan"))
+    choice = safe_select("Select database utility:", choices=[
+        "1. Database Health & VACUUM Optimizer",
+        "2. Database Schema Migration",
+        "3. Recalculate Overall Scores",
+        "4. Re-evaluate Database with LLM",
+        "5. Batch Vector Embedding Generation",
+        "6. Vector Embedding Schema Migration",
+        "7. Metadata Enrichment",
+        "8. Open Access PDF Downloader",
+        "9. Unpaywall Data Enricher",
+        "10. Zotero Cloud Connector",
+        "11. View Recent Evaluation History",
+        "12. Back / Return to Main Menu"
     ])
-    if choice is None or choice == "__back__": return
+    if not choice or "Back" in choice: return
     if choice.startswith("1."): run_script("db_stats.py", python_exe, args=["--optimize"])
     elif choice.startswith("2."): run_script("migrate_database_schema.py", python_exe)
     elif choice.startswith("3."): run_script("recalculate_scores.py", python_exe)
@@ -627,22 +656,20 @@ def database_data_menu(python_exe):
 def system_health_menu(python_exe):
     """System health, diagnostics, chaos engineering and CI/CD sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
+    sys.stdout.flush()
+    console.print(Panel("[bold cyan]System Health, Diagnostics & CI/CD[/bold cyan]\n[dim]Stress testing, dependency verification, and test suites[/dim]", style="cyan", border_style="cyan"))
     project_root = os.path.dirname(os.path.abspath(__file__))
-    choice = safe_select("System Health, Diagnostics & CI/CD:", choices=[
-        questionary.Separator("  HEALTH & DIAGNOSTICS"),
-        questionary.Choice(title="1. Code Integrity Check", value="1. Code Integrity Check"),
-        questionary.Choice(title="2. API Backend Health Check", value="2. API Backend Health Check"),
-        questionary.Choice(title="3. Dependency Map & Import Audit", value="3. Dependency Map & Import Audit"),
-        questionary.Choice(title="4. DRL Agent Status", value="4. DRL Agent Status"),
-        questionary.Separator("  CI/CD & ENGINEERING"),
-        questionary.Choice(title="5. Autonomous Red Tester (Chaos Engineering)", value="5. Autonomous Red Tester (Chaos Engineering)"),
-        questionary.Choice(title="6. 18-Language Documentation Builder", value="6. 18-Language Documentation Builder"),
-        questionary.Separator("  REFERENCE VIEWERS"),
-        questionary.Choice(title="7. System Capabilities Master Viewer", value="7. System Capabilities Master Viewer"),
-        questionary.Separator(),
-        questionary.Choice(title="[ Back / Return to Main Menu ]", value="__back__")
+    choice = safe_select("Select health/CI operation:", choices=[
+        "1. Code Integrity Check",
+        "2. API Backend Health Check",
+        "3. Dependency Map & Import Audit",
+        "4. DRL Agent Status",
+        "5. Autonomous Red Tester (Chaos Engineering)",
+        "6. 18-Language Documentation Builder",
+        "7. System Capabilities Master Viewer",
+        "8. Back / Return to Main Menu"
     ])
-    if choice is None or choice == "__back__": return
+    if not choice or "Back" in choice: return
     if choice.startswith("1."):
         tp = os.path.join(project_root, 'tests', 'test_system_integrity.py')
         if not os.path.exists(tp):
@@ -720,6 +747,8 @@ def api_keys_menu(python_exe):
     ]
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
+        sys.stdout.flush()
+        console.print(Panel("[bold cyan]API Keys Configuration[/bold cyan]\n[dim]Configure API credentials and verify provider connectivity[/dim]", style="cyan", border_style="cyan"))
         vals = dotenv_values(env_path)
         keys_table = Table(
             title="[bold bright_cyan]API Keys Management[/bold bright_cyan]",
@@ -737,13 +766,12 @@ def api_keys_menu(python_exe):
                 keys_table.add_row(k, s, f"[magenta]{cat}[/magenta] | {d}")
         console.print(keys_table)
         console.print("\n[1] Edit key  [2] API Diagnostics  [3] Back / Return to Previous Menu")
-        c = safe_select("Action:", [
-            questionary.Choice(title="1. Edit a key", value="1. Edit a key"),
-            questionary.Choice(title="2. API Diagnostics", value="2. API Diagnostics"),
-            questionary.Separator(),
-            questionary.Choice(title="[ Back / Return to Previous Menu ]", value="__back__")
+        c = safe_select("Select API key operation:", [
+            "1. Edit a key",
+            "2. API Diagnostics",
+            "3. Back / Return to Previous Menu"
         ])
-        if c is None or c == "__back__": return
+        if not c or "Back" in c: return
         if c.startswith("1"):
             flat = []
             for cat, keys in ALL_KEYS:
@@ -773,19 +801,20 @@ def profile_settings_menu(python_exe):
     """Configuration & Profiles sub-menu: profiles, models, and API keys."""
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
-        c = safe_select("Configuration & Profiles:", choices=[
-            questionary.Choice(title="1. Manage Profiles", value="1. Manage Profiles"),
-            questionary.Choice(title="2. Research Pivot Wizard", value="2. Research Pivot Wizard"),
-            questionary.Choice(title="3. Research Goal (Query Translator / PYTHIA)", value="3. Research Goal (Query Translator / PYTHIA)"),
-            questionary.Choice(title="4. AI Model Management (2D Matrix)", value="4. AI Model Management (2D Matrix)"),
-            questionary.Choice(title="5. Model Discovery (Quality Scoring)", value="5. Model Discovery (Quality Scoring)"),
-            questionary.Choice(title="6. Model Provisioning CLI", value="6. Model Provisioning CLI"),
-            questionary.Choice(title="7. API Keys Management", value="7. API Keys Management"),
-            questionary.Choice(title="8. API Key Diagnostics", value="8. API Key Diagnostics"),
-            questionary.Separator(),
-            questionary.Choice(title="[ Back / Return to Main Menu ]", value="__back__")
+        sys.stdout.flush()
+        console.print(Panel("[bold cyan]Configuration & Profiles[/bold cyan]\n[dim]Manage research profiles, API keys, and model parameters[/dim]", style="cyan", border_style="cyan"))
+        c = safe_select("Select profile setting:", choices=[
+            "1. Manage Profiles",
+            "2. Research Pivot Wizard",
+            "3. Research Goal (Query Translator / PYTHIA)",
+            "4. AI Model Management (2D Matrix)",
+            "5. Model Discovery (Quality Scoring)",
+            "6. Model Provisioning CLI",
+            "7. API Keys Management",
+            "8. API Key Diagnostics",
+            "9. Back / Return to Main Menu"
         ])
-        if c is None or c == "__back__": return
+        if not c or "Back" in c: return
         if c == "1. Manage Profiles": run_script("profile_manager.py", python_exe)
         elif c == "2. Research Pivot Wizard": run_script("research_pivot.py", python_exe)
         elif c == "3. Research Goal (Query Translator / PYTHIA)": run_script("query_translator.py", python_exe)
@@ -1601,18 +1630,17 @@ def _launch_gwo_dashboard(python_exe):
 def search_ingestion_menu(python_exe):
     """Research search and ingestion sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
-    choice = safe_select("Research Search & Ingestion:", choices=[
-        questionary.Separator("  SEARCH & DISCOVERY"),
-        questionary.Choice(title="1. Daily Search Pipeline (16 APIs)", value="1. Daily Search Pipeline (16 APIs)"),
-        questionary.Choice(title="2. Historical Search (Deep Archive)", value="2. Historical Search (Deep Archive)"),
-        questionary.Choice(title="3. Grey Literature Miner", value="3. Grey Literature Miner"),
-        questionary.Choice(title="4. Zotero Cloud Sync", value="4. Zotero Cloud Sync"),
-        questionary.Separator("  BROWSING"),
-        questionary.Choice(title="5. Interactive Dashboard (Flask)", value="5. Interactive Dashboard (Flask)"),
-        questionary.Separator(),
-        questionary.Choice(title="[ Back / Return to Main Menu ]", value="__back__")
+    sys.stdout.flush()
+    console.print(Panel("[bold cyan]Research Search & Ingestion[/bold cyan]\n[dim]Query academic APIs, deep archives, and literature sources[/dim]", style="cyan", border_style="cyan"))
+    choice = safe_select("Select search operation:", choices=[
+        "1. Daily Search Pipeline (16 APIs)",
+        "2. Historical Search (Deep Archive)",
+        "3. Grey Literature Miner",
+        "4. Zotero Cloud Sync",
+        "5. Interactive Dashboard (Flask)",
+        "6. Back / Return to Main Menu"
     ])
-    if choice is None or choice == "__back__": return
+    if not choice or "Back" in choice: return
     if choice.startswith("1."):
         selected = prompt_source_selection()
         if selected is None:
@@ -1641,32 +1669,30 @@ def search_ingestion_menu(python_exe):
 def analysis_visualization_menu(python_exe):
     """Advanced analysis and visualization sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
+    sys.stdout.flush()
+    console.print(Panel("[bold cyan]Advanced Analysis & Visualizations[/bold cyan]\n[dim]Explore knowledge constellations, citation graphs, and bibliometrics[/dim]", style="cyan", border_style="cyan"))
     project_root = os.path.dirname(os.path.abspath(__file__))
     ap = get_active_profile_name()
     pdb = os.path.join(project_root, '_profiles', ap, 'talos_research.db')
     rdb = os.path.join(project_root, 'data', 'talos_research.db')
     tdb = pdb if os.path.exists(pdb) else rdb
-    choice = safe_select("Advanced Analysis & Visualizations:", choices=[
-        questionary.Separator("  VISUALIZATIONS"),
-        questionary.Choice(title="1. 3D Knowledge Constellation Visualizer", value="1. 3D Knowledge Constellation Visualizer"),
-        questionary.Choice(title="2. Graphify AST Knowledge Graph", value="2. Graphify AST Knowledge Graph"),
-        questionary.Choice(title="3. Dynamic D3 Architecture Graph", value="3. Dynamic D3 Architecture Graph"),
-        questionary.Choice(title="4. OPTICA Scientific Visualizations", value="4. OPTICA Scientific Visualizations"),
-        questionary.Separator("  KNOWLEDGE & CITATIONS"),
-        questionary.Choice(title="5. Knowledge Path Generator (CHIRON)", value="5. Knowledge Path Generator (CHIRON)"),
-        questionary.Choice(title="6. Citation Network Analyzer (ORPHEUS)", value="6. Citation Network Analyzer (ORPHEUS)"),
-        questionary.Choice(title="7. Strategic Reading Recommender", value="7. Strategic Reading Recommender"),
-        questionary.Choice(title="8. Author Profiler & ORCID Trajectory", value="8. Author Profiler & ORCID Trajectory"),
-        questionary.Choice(title="9. Scientometrics & Trend Analyzer", value="9. Scientometrics & Trend Analyzer"),
-        questionary.Separator("  INTELLIGENCE & REPORTS"),
-        questionary.Choice(title="10. Architecture Intelligence Report", value="10. Architecture Intelligence Report"),
-        questionary.Choice(title="11. Baseline Report (Standard)", value="11. Baseline Report (Standard)"),
-        questionary.Choice(title="12. Baseline Report (Academic -- 600 DPI)", value="12. Baseline Report (Academic -- 600 DPI)"),
-        questionary.Choice(title="13. Academic Export (BibTeX & LaTeX Tables)", value="13. Academic Export (BibTeX & LaTeX Tables)"),
-        questionary.Separator(),
-        questionary.Choice(title="[ Back / Return to Main Menu ]", value="__back__")
+    choice = safe_select("Select analysis tool:", choices=[
+        "1. 3D Knowledge Constellation Visualizer",
+        "2. Graphify AST Knowledge Graph",
+        "3. Dynamic D3 Architecture Graph",
+        "4. OPTICA Scientific Visualizations",
+        "5. Knowledge Path Generator (CHIRON)",
+        "6. Citation Network Analyzer (ORPHEUS)",
+        "7. Strategic Reading Recommender",
+        "8. Author Profiler & ORCID Trajectory",
+        "9. Scientometrics & Trend Analyzer",
+        "10. Architecture Intelligence Report",
+        "11. Baseline Report (Standard)",
+        "12. Baseline Report (Academic -- 600 DPI)",
+        "13. Academic Export (BibTeX & LaTeX Tables)",
+        "14. Back / Return to Main Menu"
     ])
-    if choice is None or choice == "__back__": return
+    if not choice or "Back" in choice: return
     if choice.startswith("1."): _launch_visualizer()
     elif choice.startswith("2."): run_script("graphify_adapter.py", python_exe)
     elif choice.startswith("3."): _open_d3_architecture_graph(python_exe, project_root)
@@ -1710,23 +1736,22 @@ def analysis_visualization_menu(python_exe):
 def drl_gwo_menu(python_exe):
     """DRL agents, daemons and GWO swarm sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
+    sys.stdout.flush()
+    console.print(Panel("[bold cyan]DRL Agents, Daemons & GWO Swarm[/bold cyan]\n[dim]Autonomous foraging, reinforcement learning, and swarm optimization[/dim]", style="cyan", border_style="cyan"))
     project_root = os.path.dirname(os.path.abspath(__file__))
-    choice = safe_select("DRL Agents, Daemons & GWO Swarm:", choices=[
-        questionary.Separator("--- DRL DAEMONS & LIVE AGENTS ---"),
-        questionary.Choice(title="1. 24/7 Autonomous Daemon (new console)", value="1. 24/7 Autonomous Daemon (new console)"),
-        questionary.Choice(title="2. Live DRL Agent (API Fetching)", value="2. Live DRL Agent (API Fetching)"),
-        questionary.Choice(title="3. Configure Daemon Autostart", value="3. Configure Daemon Autostart"),
-        questionary.Separator("--- DRL TRAINING & OPTIMIZATION ---"),
-        questionary.Choice(title="4. Train DRL Agent (Simulated)", value="4. Train DRL Agent (Simulated)"),
-        questionary.Choice(title="5. Offline DRL Training (Real DB Scores)", value="5. Offline DRL Training (Real DB Scores)"),
-        questionary.Choice(title="6. GWO Hyperparameter Tuner", value="6. GWO Hyperparameter Tuner"),
-        questionary.Choice(title="7. GWO LLM Router Reward Shaper", value="7. GWO LLM Router Reward Shaper"),
-        questionary.Choice(title="8. GWO 3D Swarm Live Dashboard", value="8. GWO 3D Swarm Live Dashboard"),
-        questionary.Choice(title="9. DRL Agent Status", value="9. DRL Agent Status"),
-        questionary.Separator(),
-        questionary.Choice(title="[ Back / Return to Main Menu ]", value="__back__")
+    choice = safe_select("Select DRL/GWO operation:", choices=[
+        "1. 24/7 Autonomous Daemon (new console)",
+        "2. Live DRL Agent (API Fetching)",
+        "3. Configure Daemon Autostart",
+        "4. Train DRL Agent (Simulated)",
+        "5. Offline DRL Training (Real DB Scores)",
+        "6. GWO Hyperparameter Tuner",
+        "7. GWO LLM Router Reward Shaper",
+        "8. GWO 3D Swarm Live Dashboard",
+        "9. DRL Agent Status",
+        "10. Back / Return to Main Menu"
     ])
-    if choice is None or choice == "__back__": return
+    if not choice or "Back" in choice: return
     if choice.startswith("1."):
         _launch_daemon_in_new_console(project_root, python_exe)
     elif choice.startswith("2."):

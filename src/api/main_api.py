@@ -180,6 +180,9 @@ def _get_ai() -> AIManager:
 # -- Background task store ----------------------------------------------------
 _task_store: Dict[str, dict] = {}
 _task_lock = threading.Lock()
+# Serializes the process-global sys.exit monkey-patch inside scrape tasks so
+# concurrent scrape triggers can never interleave patch/restore sequences.
+_scrape_task_lock = threading.Lock()
 
 
 def _create_task() -> str:
@@ -436,10 +439,15 @@ def _record_beam_event(event_type: str, payload: dict) -> None:
         _recent_beams.append(beam)
         _visualizer_eval_seq += 1
 
+    # -- Defensive cast: a malformed external payload must not 500 the endpoint --
+    try:
+        count_val = int(payload.get("count", 0) or 0)
+    except (TypeError, ValueError):
+        count_val = 0
     _record_source_status({
         "source": source,
         "status": health,
-        "count": int(payload.get("count", 0) or 0),
+        "count": count_val,
         "message": str(payload.get("message", "") or payload.get("error_msg", "") or payload.get("query", "") or ""),
     })
 
@@ -736,6 +744,9 @@ def _run_scrape_background(task_id: str, source_filter: Optional[List[str]]):
     process, since daily_search.main() calls sys.exit(1) on config load failure
     and other fatal errors.
     """
+    # -- Pre-demo hardening: force headless mode so local-model connection --
+    # -- failures never render an interactive prompt into the server console. --
+    os.environ["TALOS_HEADLESS"] = "1"
     try:
         _update_task(task_id, progress="Loading configuration...")
 
@@ -743,6 +754,9 @@ def _run_scrape_background(task_id: str, source_filter: Optional[List[str]]):
         from src.ingestion.daily_search import main as daily_search_main
 
         # -- Monkey-patch sys.exit to prevent process death --
+        # -- Serialized under _scrape_task_lock: a second scrape task waits --
+        # -- here instead of racing the patch/restore of a process-global. --
+        _scrape_task_lock.acquire()
         _orig_exit = sys.exit
 
         class _ScrapeExit(RuntimeError):
@@ -773,6 +787,7 @@ def _run_scrape_background(task_id: str, source_filter: Optional[List[str]]):
             )
         finally:
             sys.exit = _orig_exit
+            _scrape_task_lock.release()
 
     except Exception as e:
         logger.error("Background scrape [%s] failed: %s", task_id, e, exc_info=True)
@@ -854,8 +869,8 @@ def _run_gwo_background(task_id: str, wolves: int, iterations: int, rl_episodes:
                                     task_id,
                                     progress=f"GWO iteration {current_iter}/{iterations}",
                                 )
-                except (json.JSONDecodeError, OSError):
-                    pass  # file may be mid-write
+                except Exception:
+                    pass  # file may be mid-write or structurally unexpected
 
         monitor_thread = threading.Thread(target=_poll_progress, daemon=True)
         monitor_thread.start()
@@ -952,6 +967,9 @@ def list_tasks():
 
 def _run_evaluate_background(task_id: str, paper_id: int, model_type: str):
     """Background task: evaluate a single paper with the LLM and update the DB."""
+    # -- Pre-demo hardening: force headless mode so local-model connection --
+    # -- failures never render an interactive prompt into the server console. --
+    os.environ["TALOS_HEADLESS"] = "1"
     try:
         _update_task(task_id, progress=f"Fetching paper {paper_id}...")
         db = _get_db()
@@ -1317,7 +1335,9 @@ async def visualizer_sse_stream():
         last_heartbeat = time.time()
         while True:
             try:
-                event = _visualizer_event_queue.get(timeout=1.0)
+                # -- Non-blocking wait: offload the blocking queue.get to a --
+                # -- worker thread so the uvicorn event loop stays responsive. --
+                event = await asyncio.to_thread(_visualizer_event_queue.get, True, 1.0)
                 yield f"data: {json.dumps(event)}\n\n"
                 last_heartbeat = time.time()
             except _queue_mod.Empty:
@@ -1358,8 +1378,8 @@ def get_visualizer_demo_data(limit: int = Query(default=50, le=200)):
         List[dict]: Clean paper records consumed by the frontend visualizer.
     """
     try:
-        db_path = get_active_profile_db_path()
-        db = DatabaseManager(db_path=db_path)
+        # -- Cached singleton: avoids per-poll DDL + full embeddings reload --
+        db = _get_db()
         rows = db.execute_query(
             "SELECT id, title, overall_score, source, last_evaluated_at "
             "FROM papers WHERE overall_score IS NOT NULL "
@@ -1525,10 +1545,10 @@ def get_visualizer_state():
     with _sources_health_lock:
         runtime = dict(_sources_health_state)
 
-    # -- Open the active profile database on every request --
+    # -- Cached singleton: avoids per-poll DDL + full embeddings reload --
     db = None
     try:
-        db = DatabaseManager(db_path=get_active_profile_db_path())
+        db = _get_db()
     except Exception as exc:
         logger.error("Visualizer state: DB init failed: %s", exc)
 

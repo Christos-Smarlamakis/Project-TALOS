@@ -337,6 +337,11 @@ class DatabaseManager:
         sim = np.zeros(len(self._embedding_ids))
         v = (pn > 0) & (qn > 0)
         sim[v] = dot[v] / (pn[v] * qn)
+        # -- Bounds guard: argpartition raises ValueError when top_k exceeds --
+        # -- the number of embeddings loaded for the selected model filter. --
+        top_k = min(top_k, len(self._embedding_ids))
+        if top_k <= 0:
+            return []
         ti = np.argpartition(sim, -top_k)[-top_k:]
         sti = ti[np.argsort(sim[ti])][::-1]
         return [self._embedding_ids[i] for i in sti]
