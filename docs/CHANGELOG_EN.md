@@ -18,6 +18,23 @@ All notable changes to the TALOS project will be documented in this file. The pr
 - `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.11.1).
 - `bash -n run_talos.sh` passed with zero syntax errors.
 
+### Fixed -- Pre-Demo Stability Hardening Patch (HOU ICBE 2026, same-version patch; no version bump)
+
+- **Non-blocking SSE event loop** (`src/api/main_api.py:visualizer_sse_stream`, L1340): the blocking `_visualizer_event_queue.get(timeout=1.0)` call inside the async SSE generator was replaced with `await asyncio.to_thread(_visualizer_event_queue.get, True, 1.0)`. A connected `/api/v1/visualizer/stream` client no longer monopolizes the single uvicorn event loop (previously every other endpoint was starved to roughly 1 Hz while the visualizer's Live SSE mode was open).
+- **Cached DatabaseManager singleton in visualizer polling endpoints** (`main_api.py:get_visualizer_demo_data` L1382, `get_visualizer_state` L1551): per-request `DatabaseManager(db_path=...)` constructions replaced with the cached `_get_db()` singleton, eliminating per-poll DDL re-runs and full embeddings-table unpickling on every 1-1.5 s poll. Operational note: both endpoints now bind to the profile database that was active at server start; restart uvicorn after a mid-session profile switch.
+- **Headless background tasks** (`main_api.py:_run_scrape_background` L749, `_run_evaluate_background` L972): both tasks set `os.environ["TALOS_HEADLESS"] = "1"` at entry, so local-model connection failures can never reach the interactive `questionary` consent prompt in `AIManager._interactive_cloud_fallback()` from a BackgroundTasks thread (previously a hang hazard when the server console is a TTY).
+- **Scrape task concurrency serialization** (`main_api.py` L185, L759, L790): new module-level `_scrape_task_lock = threading.Lock()`; the process-global `sys.exit` monkey-patch/restore sequence in `_run_scrape_background` is bracketed by `_scrape_task_lock.acquire()`/`release()` (release inside the existing `finally`), so concurrent scrape triggers serialize instead of racing the patch and permanently corrupting `sys.exit`.
+- **Semantic search top_k bounds guard** (`src/core/database_manager.py:semantic_search` L342-344): `top_k` clamped to `min(top_k, len(self._embedding_ids))` with an early `return []` for `top_k <= 0`, preventing `ValueError: kth out of bounds` from `np.argpartition` when the model-filtered embedding count is smaller than the requested top_k.
+- **Visualizer events payload hardening** (`main_api.py:_record_beam_event` L442-446): the `count` field is cast inside `try/except (TypeError, ValueError)` defaulting to 0; a malformed external POST to `/api/v1/visualizer/events` can no longer trigger an unhandled 500.
+- **GWO progress monitor resilience** (`main_api.py:_run_gwo_background._poll_progress` L872): the file-read handler broadened from `except (json.JSONDecodeError, OSError)` to `except Exception`; structurally unexpected `gwo_history.json` content (e.g., a dict root causing `KeyError` on `history[-1]`) no longer kills the monitor thread.
+
+### Verification (hardening patch)
+- `python -m compileall -q src/api/main_api.py src/core/database_manager.py src/core/ai_manager.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.11.1).
+- Extended regression (`pytest tests/ -k "visualizer or api or synapse"`): 28 passed, 0 failed.
+- Runtime smoke checks: `main_api` imports cleanly (visualizer routes and `_scrape_task_lock` present); `semantic_search` verified with 2 embeddings at `top_k=50` and `top_k=0`.
+
 ## [v5.11.0] - 2026-09-23 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine
 
 ### Added

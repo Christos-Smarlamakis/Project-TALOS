@@ -4,7 +4,7 @@
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit)
+> **Last Updated:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit + Pre-Demo Stability Hardening Patch)
 
 ---
 
@@ -215,10 +215,15 @@ src/ingestion/*.py
 9. TALOS FastAPI runs on port 8001 (Synapse on 8000, OPTICA on 8002)
 10. The daemon spawns in a new console window (CREATE_NEW_CONSOLE) on Windows
 11. `src/utils/tray_icon.py` uses lazy imports so it degrades gracefully without pystray
+12. The SSE generator in `visualizer_sse_stream` must never call blocking `queue.Queue.get()` directly on the event loop -- always offload via `asyncio.to_thread` (pre-demo hardening patch)
+13. `get_visualizer_state` / `get_visualizer_demo_data` use the cached `_get_db()` singleton -- after switching the active profile, restart uvicorn so the singleton rebinds to the new profile database
+14. Background tasks (`_run_scrape_background`, `_run_evaluate_background`) set `TALOS_HEADLESS=1` at entry -- any new background task invoking AIManager must do the same, otherwise an interactive prompt may block a console-less worker thread
+15. The `sys.exit` monkey-patch in `_run_scrape_background` is serialized by the module-level `_scrape_task_lock` -- never patch process-global symbols without this lock
+16. `DatabaseManager.semantic_search` clamps `top_k` to the loaded embedding count (`min(top_k, len(self._embedding_ids))`) -- keep the clamp when modifying
 
 ---
 
-> **Last Updated:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit)
+> **Last Updated:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit + Pre-Demo Stability Hardening Patch)
 > **Project Version:** v5.11.1
 > **Total .py modules under src/:** 85 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 19 + api 4 + mcp_server 1)
 

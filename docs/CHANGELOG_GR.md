@@ -18,6 +18,23 @@
 - `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε (v5.11.1).
 - `bash -n run_talos.sh` πέρασε χωρίς συντακτικά σφάλματα.
 
+### Διορθώθηκε -- Πάτσμα Σταθερότητας Πριν από τη Ζωντανή Επίδειξη (HOU ICBE 2026, patch ίδιας έκδοσης· χωρίς αλλαγή αριθμού έκδοσης)
+
+- **Μη μπλοκάρισμα του SSE event loop** (`src/api/main_api.py:visualizer_sse_stream`, L1340): η μπλοκάρουσα κλήση `_visualizer_event_queue.get(timeout=1.0)` εντός της ασύγχρονης γεννήτριας SSE αντικαταστάθηκε με `await asyncio.to_thread(_visualizer_event_queue.get, True, 1.0)`. Ένας συνδεδεμένος πελάτης στο `/api/v1/visualizer/stream` δεν μονοπωλεί πλέον τον μοναδικό event loop του uvicorn (προηγουμένως όλα τα υπόλοιπα endpoints περιορίζονταν σε περίπου 1 Hz όσο ήταν ανοιχτή η ζωντανή λειτουργία SSE του οπτικοποιητή).
+- **Cached singleton DatabaseManager στα endpoints δειγματοληψίας του οπτικοποιητή** (`main_api.py:get_visualizer_demo_data` L1382, `get_visualizer_state` L1551): οι κατασκευές `DatabaseManager(db_path=...)` ανά αίτημα αντικαταστάθηκαν με το cached `_get_db()` singleton, εξαλείφοντας τις επαναλήψεις DDL και την πλήρη αποσειριοποίηση του πίνακα embeddings σε κάθε δειγματοληψία 1-1.5 δευτερολέπτων. Λειτουργική σημείωση: τα endpoints δεσμεύονται πλέον στη βάση του προφίλ που ήταν ενεργό κατά την εκκίνηση του διακομιστή· μετά από ενδιάμεση αλλαγή προφίλ απαιτείται επανεκκίνηση του uvicorn.
+- **Background tasks χωρίς διεπαφή (headless)** (`main_api.py:_run_scrape_background` L749, `_run_evaluate_background` L972): και τα δύο tasks θέτουν `os.environ["TALOS_HEADLESS"] = "1"` στην είσοδο, ώστε αποτυχίες σύνδεσης τοπικών μοντέλων να μην μπορούν πλέον να φτάσουν στο διαδραστικό prompt `questionary` της `AIManager._interactive_cloud_fallback()` από νήμα BackgroundTasks (προηγουμένως κίνδυνος αναστολής όταν η κονσόλα του διακομιστή είναι TTY).
+- **Σειριαλοποίηση ταυτόχρονων scrape tasks** (`main_api.py` L185, L759, L790): νέο καθολικό `_scrape_task_lock = threading.Lock()`· η ακολουθία monkey-patch/επαναφοράς του καθολικού `sys.exit` στη `_run_scrape_background` περικλείεται από `_scrape_task_lock.acquire()`/`release()` (απελευθέρωση εντός του υπάρχοντος `finally`), ώστε ταυτόχρονα triggers να σειριαλοποιούνται αντί να καταστρέφουν μόνιμα το `sys.exit`.
+- **Φράγμα ορίων top_k στη σημασιολογική αναζήτηση** (`src/core/database_manager.py:semantic_search` L342-344): το `top_k` φράσσεται στο `min(top_k, len(self._embedding_ids))` με πρώιμη επιστροφή `[]` για `top_k <= 0`, αποτρέποντας το `ValueError: kth out of bounds` της `np.argpartition` όταν τα embeddings του επιλεγμένου μοντέλου είναι λιγότερα από το ζητούμενο top_k.
+- **Ενίσχυση payload των visualizer events** (`main_api.py:_record_beam_event` L442-446): το πεδίο `count` μετατρέπεται εντός `try/except (TypeError, ValueError)` με προεπιλογή 0· ένα ακατάλληλο εξωτερικό POST στο `/api/v1/visualizer/events` δεν μπορεί πλέον να προκαλέσει ανεπίτρεπτο 500.
+- **Ανθεκτικότητα του monitor προόδου GWO** (`main_api.py:_run_gwo_background._poll_progress` L872): ο χειριστής ανάγνωσης αρχείου διευρύνθηκε από `except (json.JSONDecodeError, OSError)` σε `except Exception`· μη αναμενόμενη δομή του `gwo_history.json` (π.χ. ρίζα-λεξικό με `KeyError` στο `history[-1]`) δεν σκοτώνει πλέον το νήμα παρακολούθησης.
+
+### Επαλήθευση (patch σκλήρυνσης)
+- `python -m compileall -q src/api/main_api.py src/core/database_manager.py src/core/ai_manager.py` πέρασε χωρίς σφάλματα.
+- `python -m pytest tests/test_system_integrity.py -q` πέρασε.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε (v5.11.1).
+- Εκτεταμένη παλινδρόμηση (`pytest tests/ -k "visualizer or api or synapse"`): 28 πέρασαν, 0 απέτυχαν.
+- Έλεγχοι χρόνου εκτέλεσης: καθαρή εισαγωγή του `main_api` (routes οπτικοποιητή και `_scrape_task_lock` παρόντα)· η `semantic_search` επαληθεύτηκε με 2 embeddings για `top_k=50` και `top_k=0`.
+
 ## [v5.11.0] - 2026-09-23 -- Κονσόλα Ζωντανής Τηλεμετρίας HUD, Ελαχιστοποίηση-σε-Δίσκο Win32, Bootstrap Linux Πολλαπλών Πλατφορμών & Μηχανή Ιστορικού Πλήρους Τίτλου
 
 ### Προστέθηκε

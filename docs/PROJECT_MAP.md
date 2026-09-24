@@ -4,7 +4,7 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit)
+> **Τελευταία Ενημέρωση:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit + Pre-Demo Stability Hardening Patch)
 
 ---
 
@@ -215,10 +215,15 @@ src/ingestion/*.py
 9. Το TALOS FastAPI τρέχει στη θύρα 8001 (Synapse 8000, OPTICA 8002)
 10. Ο δαίμονας ξεκινά σε νέο παράθυρο κονσόλας (CREATE_NEW_CONSOLE) στα Windows
 11. Το `src/utils/tray_icon.py` χρησιμοποιεί lazy imports ώστε να υποβαθμίζεται ομαλά χωρίς pystray
+12. Η γεννήτρια SSE στη `visualizer_sse_stream` δεν πρέπει ποτέ να καλεί blocking `queue.Queue.get()` απευθείας στον event loop -- πάντα μέσω `asyncio.to_thread` (pre-demo hardening patch)
+13. Τα `get_visualizer_state` / `get_visualizer_demo_data` χρησιμοποιούν το cached singleton `_get_db()` -- μετά από αλλαγή ενεργού προφίλ απαιτείται επανεκκίνηση του uvicorn ώστε να επαναδεσμευτεί το singleton
+14. Τα background tasks (`_run_scrape_background`, `_run_evaluate_background`) θέτουν `TALOS_HEADLESS=1` στην είσοδο -- κάθε νέο background task που καλεί AIManager πρέπει να κάνει το ίδιο, αλλιώς κίνδυνος διαδραστικού prompt σε νήμα χωρίς κονσόλα
+15. Το monkey-patch του `sys.exit` στη `_run_scrape_background` σειριαλοποιείται από το καθολικό `_scrape_task_lock` -- ποτέ patching καθολικών symbols διεργασίας χωρίς αυτό το lock
+16. Η `DatabaseManager.semantic_search` φράσσει το `top_k` στο πλήθος των φορτωμένων embeddings (`min(top_k, len(self._embedding_ids))`) -- το φράγμα πρέπει να διατηρείται σε κάθε τροποποίηση
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit)
+> **Τελευταία Ενημέρωση:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit + Pre-Demo Stability Hardening Patch)
 > **Έκδοση Project:** v5.11.1
 > **Συνολικά .py modules στο src/:** 85 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 19 + api 4 + mcp_server 1)
 
