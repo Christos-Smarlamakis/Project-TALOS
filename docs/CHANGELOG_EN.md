@@ -2,6 +2,25 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.11.0] - 2026-09-23 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine
+
+### Added
+- **Live Telemetry HUD Console** (`templates/live_foraging_visualizer.html`): bottom-right glassmorphism stream (rgba(15,23,42,0.85) + backdrop blur + cyan border) with a 40-line ring buffer, auto-scroll, `[ACT]`/`[ROUTER]`/`[DATA]`/`[RECOVERY]`/`[WARNING]`/`[ERROR]`/`[EVAL]` color tags, `C`/`L` hotkey toggles, and automatic hide during PNG SNAPSHOT export.
+- **Win32 Close-to-Tray Hook** (`src/utils/tray_icon.py`): `enable_close_to_tray()` subclasses the console window procedure via `ctypes` (GetWindowLongPtrW / SetWindowLongPtrW / CallWindowProcW), intercepting `WM_CLOSE` and `WM_SYSCOMMAND`/`SC_CLOSE` to call `ShowWindow(SW_HIDE)` instead of terminating the daemon; a module-level WNDPROC reference prevents garbage collection.
+- **Full-Title & Authors Telemetry** (`src/ai/drl/live_agent_orchestrator.py`): [EVAL] telemetry now renders the complete title (no 55-character truncation) and a normalized author list over a two-line Rich structure; `src/core/ai_manager.py` adds `_sanitize_connection_error()` returning the locale-independent English message "Connection refused: target host or port is offline."
+- **Persistent Evaluation History** (`src/utils/evaluation_history.py`): every evaluated paper is appended to `data/history/daemon_evaluations.jsonl` (timestamp, title, authors, source, score, verdict, provider); `talos.py` gains `_show_evaluation_history(limit=30)` (Rich table) surfaced as "View Recent Evaluation History".
+- **Autonomous Linux Bootstrap** (`run_talos.sh`): `detect_or_install_conda()` (PATH + standard-directory detection, x86_64/aarch64 silent Miniconda3 download/install) and `ensure_talosenv()` (Python 3.11 `talosenv` create/activate); all menu options 2-9 execute inside `talosenv`.
+
+### Changed
+- **Version strings synchronized to 5.11.0** across the 6 core code files, `docker-compose.yml` (`talos:5.11.0`), and `CITATION.cff` (date 2026-09-23).
+
+### Verification
+- `python -m compileall -q src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.11.0).
+- `bash -n run_talos.sh` passed with zero syntax errors.
+
+
 ## [v5.10.16] - 2026-08-28 -- Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine
 
 ### Added

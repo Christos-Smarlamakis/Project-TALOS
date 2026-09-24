@@ -4,7 +4,7 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-28 (v5.10.15 -- Universal TUI Feature Restoration & 100% Codebase Coverage)
+> **Last Updated:** 2026-09-23 (v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
 
 ---
 
@@ -537,6 +537,19 @@
 - [x] **Deterministic LRU caching** on pure routing/provisioning helpers.
 - [x] **Zero-dependency academic exporter** (`academic_export.py`) for BibTeX (.bib) and LaTeX (.tex) artifacts.
 - [x] **Version synced** across 6 code files, docker-compose.yml, CITATION.cff, and 15+ documentation files to v5.10.16.
+
+## Phase 47: Live Telemetry HUD, Win32 Close-to-Tray & Linux Bootstrap (v5.11.0)
+
+### Status: COMPLETED (2026-09-23)
+
+- [x] **Live Telemetry HUD Console** -- bottom-right glassmorphism stream in `templates/live_foraging_visualizer.html` (40-line ring buffer, auto-scroll, `C`/`L` hotkeys, snapshot auto-hide).
+- [x] **Win32 Close-to-Tray Hook** -- `enable_close_to_tray()` subclasses the console WndProc (WM_CLOSE / SC_CLOSE to SW_HIDE) in `src/utils/tray_icon.py`.
+- [x] **Full-Title & Authors Telemetry** -- [EVAL] renders full title + normalized authors over a two-line Rich structure; `_sanitize_connection_error()` yields clean English socket errors.
+- [x] **Persistent Evaluation History** -- `src/utils/evaluation_history.py` JSONL recorder + `_show_evaluation_history(limit=30)` Rich TUI viewer in `talos.py`.
+- [x] **Autonomous Linux Bootstrap** -- `run_talos.sh` `detect_or_install_conda()` + `ensure_talosenv()` for Ubuntu/Debian/Linux Mint.
+- [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + 15 canonical docs to v5.11.0 (2026-09-23).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, bash -n.
+
 
 
 ---

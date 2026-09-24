@@ -34,6 +34,7 @@ from datetime import datetime
 #    emitted even when the daemon's stdout is piped or redirected). --
 from rich.console import Console
 from src.integration.visualizer_bridge import push_visualizer_event
+from src.utils.evaluation_history import record_evaluation, verdict_for_score
 
 # -- v5.10.3: module logger for router decision telemetry --
 logger = logging.getLogger(__name__)
@@ -551,21 +552,44 @@ def run_live_loop(agent, action_map, working_source_names, config,
                     else:
                         plain_status = "[REJECT X]"
                         status_badge = "[bold red][REJECT X][/bold red]"
-                    safe_title = paper.get("title", "Unknown Title")[:55]
+                    # -- v5.11.0: full title + normalized authors (no 55-char
+                    #    truncation) across a two-line Rich structure. --
+                    clean_title = paper.get("title", "Unknown Title") or "Unknown Title"
+                    raw_authors = paper.get("authors")
+                    if isinstance(raw_authors, list):
+                        authors_display = ", ".join(str(a) for a in raw_authors)
+                    elif raw_authors:
+                        authors_display = str(raw_authors)
+                    else:
+                        authors_display = "Unknown Authors"
+
                     eval_msg = (
-                        f"  └─ [EVAL] {safe_title:<55} | Score: {score:>4.1f}/10 | "
+                        f"  └─ [EVAL] {clean_title} | Score: {score:>4.1f}/10 | "
                         f"{plain_status} -> DB"
                     )
                     logger.info(eval_msg)
                     console.print(
                         f"  └─ [bold bright_blue][EVAL][/bold bright_blue] "
-                        f"[cyan]{safe_title:<55}[/cyan] | "
+                        f"[bold cyan]{clean_title}[/bold cyan]"
+                    )
+                    console.print(
+                        f"     [dim]Authors:[/] [italic white]{authors_display}[/] | "
                         f"Score: [bold white]{score:>4.1f}/10[/bold white] | "
                         f"{status_badge} [dim]-> DB[/dim]"
                     )
 
+                    # -- v5.11.0: persist the evaluation to the JSONL history --
+                    record_evaluation(
+                        title=clean_title,
+                        authors=authors_display,
+                        source=paper.get("source", "unknown"),
+                        score=score,
+                        verdict=verdict_for_score(score),
+                        provider=getattr(ai_manager, "last_provider_used", None),
+                    )
+
                     # -- v5.10.12 hotfix: centralized visualizer bridge (active push) --
-                    push_visualizer_event("paper_evaluated", paper.get("source", "unknown"), score, safe_title)
+                    push_visualizer_event("paper_evaluated", paper.get("source", "unknown"), score, clean_title)
 
                     if score > best_score:
                         best_score = score

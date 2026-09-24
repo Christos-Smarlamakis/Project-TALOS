@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.10.16
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.11.0
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-08-28
-> **Version:** v5.10.16 -- Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine
+> **Last Updated:** 2026-09-23
+> **Version:** v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -869,6 +869,15 @@ For each evaluated paper, the AI generates:
 - **45/45 executable module coverage:** every orphaned module wired (Model Discovery, Model Provisioning, GWO LLM Router Reward Shaper, Red Tester, Daemon Autostart, OPTICA client).
 - **GWO Swarm suite:** tuner, router reward shaper, and 3D live dashboard (Dash port 8050) unified.
 - **Script map hardening:** `_resolve_script_path()` raises `FileNotFoundError` for unmapped scripts (no silent `scripts/` fallback).
+
+### 15.20 Live Telemetry HUD Console, Win32 Close-to-Tray & Evaluation History Engine (v5.11.0)
+
+- **Live Telemetry HUD Console:** `templates/live_foraging_visualizer.html` gains a bottom-right glassmorphism telemetry stream (rgba(15,23,42,0.85) + backdrop blur + cyan border) with a 40-line ring buffer, auto-scroll, color-coded `[ACT]`/`[ROUTER]`/`[DATA]`/`[RECOVERY]`/`[WARNING]`/`[ERROR]`/`[EVAL]` tags, `C`/`L` hotkey toggles, and automatic hide during PNG SNAPSHOT export.
+- **Win32 Close-to-Tray Hook:** `src/utils/tray_icon.py` `enable_close_to_tray()` subclasses the console window procedure via `ctypes` (GetWindowLongPtrW / SetWindowLongPtrW / CallWindowProcW), intercepting `WM_CLOSE` and `WM_SYSCOMMAND`/`SC_CLOSE` to call `ShowWindow(SW_HIDE)` instead of terminating; a module-level WNDPROC reference prevents GC.
+- **Full-Title & Authors Telemetry:** `live_agent_orchestrator.py` [EVAL] renders the complete title and normalized author list over a two-line Rich structure; `ai_manager.py` `_sanitize_connection_error()` returns the locale-independent English message "Connection refused: target host or port is offline."
+- **Persistent Evaluation History:** `src/utils/evaluation_history.py` appends every evaluated paper to `data/history/daemon_evaluations.jsonl` (`record_evaluation()`, `read_evaluation_history()`, `verdict_for_score()`); `talos.py` `_show_evaluation_history(limit=30)` renders a Rich table.
+- **Autonomous Linux Bootstrap:** `run_talos.sh` `detect_or_install_conda()` (PATH + standard-dir detection, x86_64/aarch64 silent Miniconda3) and `ensure_talosenv()` (Python 3.11 `talosenv`); menu options 2-9 execute inside `talosenv`.
+
 
 ---
 

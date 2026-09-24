@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.10.16
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.11.0
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-08-28 (v5.10.16 -- Βελτιστοποίηση Απόδοσης Μηδενικού Κινδύνου & Μηχανή Ακαδημαϊκής Εξαγωγής LaTeX/BibTeX)
+> **Τελευταία Ενημέρωση:** 2026-09-23 (v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
 
 ---
 
@@ -29,7 +29,7 @@ SRC PACKAGES
   src/analysis/     (10 αρχεία)  citation_analyzer, author_profiler, recommender, knowledge_path, κ.ά.
   src/ingestion/    (23 αρχεία)  16 source agents + 7 pipelines
   src/integration/   (3 αρχεία)  synapse_client, optica_client, visualizer_bridge
-  src/utils/        (17 αρχεία)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, κ.ά.
+  src/utils/        (19 αρχεία)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, evaluation_history, κ.ά.
   src/api/           (4 αρχεία)  main_api, synapse_routes, red_tester_routes, talos_service_api
   src/mcp_server.py              MCP stdio server (4 tools)
 
@@ -187,6 +187,10 @@ src/ingestion/*.py
 | **SYNAPSE Emitter** | `src/integration/synapse_client.py` | EventEmitter που στέλνει JSON events στη θύρα 8000 |
 | **Visualizer Bridge (v5.10.12)** | `src/integration/visualizer_bridge.py` | `push_visualizer_event()` -- κεντρική γέφυρα HTTP push προς τον 3D Visualizer (θύρα 8001) |
 
+| **Ιστορικό Αξιολόγησης (v5.11.0)** | `src/utils/evaluation_history.py` | `record_evaluation()` / `read_evaluation_history()` / `verdict_for_score()` -- JSONL recorder στο `data/history/daemon_evaluations.jsonl`; προβολή πίνακα Rich `_show_evaluation_history(limit=30)` στο `talos.py` |
+| **Κονσόλα Ζωντανής Τηλεμετρίας HUD (v5.11.0)** | `templates/live_foraging_visualizer.html` | ροή glassmorphism κάτω δεξιά (buffer 40 γραμμών, αυτόματη κύλιση, συντομεύσεις `C`/`L`, απόκρυψη κατά το στιγμιότυπο) μέσω `appendConsoleLog()` |
+| **Ελαχιστοποίηση σε Δίσκο Win32 (v5.11.0)** | `src/utils/tray_icon.py` | η `enable_close_to_tray()` υποκλέπτει τη WndProc της κονσόλας (WM_CLOSE / SC_CLOSE σε SW_HIDE) ώστε το κλείσιμο να ελαχιστοποιεί σε δίσκο |
+
 ## 9. Βοηθητικά Αρχεία
 
 | Αρχείο/Φάκελος | Ρόλος |
@@ -214,8 +218,8 @@ src/ingestion/*.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-08-28 (v5.10.16 -- Βελτιστοποίηση Απόδοσης Μηδενικού Κινδύνου & Μηχανή Ακαδημαϊκής Εξαγωγής LaTeX/BibTeX)
-> **Έκδοση Project:** v5.10.16
-> **Συνολικά .py modules στο src/:** 83 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 17 + api 4 + mcp_server 1)
+> **Τελευταία Ενημέρωση:** 2026-09-23 (v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
+> **Έκδοση Project:** v5.11.0
+> **Συνολικά .py modules στο src/:** 85 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 19 + api 4 + mcp_server 1)
 
 

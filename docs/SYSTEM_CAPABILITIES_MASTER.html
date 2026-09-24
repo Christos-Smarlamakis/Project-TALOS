@@ -302,8 +302,8 @@
   <strong>Document ID:</strong> TALOS-SYS-CAP-001 &nbsp;|&nbsp;
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
-  <strong>Last Updated:</strong> 2026-08-28 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.10.16 -- Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine
+  <strong>Last Updated:</strong> 2026-09-23 &nbsp;|&nbsp;
+  <strong>Version:</strong> v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine
 </div>
 
 <!-- ===================================================================== -->
@@ -357,7 +357,7 @@
 <table>
   <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
   <tbody>
-    <tr><td>TALOS_VERSION</td><td>"5.10.16"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_VERSION</td><td>"5.11.0"</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
@@ -1158,8 +1158,17 @@
   <li><strong>Script map hardening:</strong> <code>_resolve_script_path()</code> raises <code>FileNotFoundError</code> on unmapped scripts.</li>
 </ul>
 
+<h3 id="s15-20">15.20 Live Telemetry HUD Console, Win32 Close-to-Tray &amp; Evaluation History Engine (v5.11.0)</h3>
+<ul>
+  <li><strong>Live Telemetry HUD Console:</strong> bottom-right glassmorphism telemetry stream (40-line ring buffer, auto-scroll, C/L hotkeys, snapshot auto-hide) with color-coded [ACT]/[ROUTER]/[DATA]/[RECOVERY]/[WARNING]/[ERROR]/[EVAL] tags.</li>
+  <li><strong>Win32 Close-to-Tray Hook:</strong> <code>enable_close_to_tray()</code> subclasses the console WndProc (WM_CLOSE / SC_CLOSE to SW_HIDE) via <code>ctypes</code>.</li>
+  <li><strong>Full-Title &amp; Authors Telemetry:</strong> [EVAL] renders the complete title and normalized authors; <code>_sanitize_connection_error()</code> returns a clean English message.</li>
+  <li><strong>Persistent Evaluation History:</strong> <code>src/utils/evaluation_history.py</code> JSONL recorder + <code>_show_evaluation_history(limit=30)</code> Rich TUI viewer.</li>
+  <li><strong>Autonomous Linux Bootstrap:</strong> <code>run_talos.sh</code> <code>detect_or_install_conda()</code> + <code>ensure_talosenv()</code> for Ubuntu/Debian/Linux Mint.</li>
+</ul>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.10.16</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.11.0</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

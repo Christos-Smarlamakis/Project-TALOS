@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: tray_icon.py
-Project: TALOS v5.10.13
+Project: TALOS v5.11.0
 Description:
     Desktop Control Hub system tray companion for the TALOS autonomous research
     daemon. It renders a 16x16 navy/cyan icon and exposes a seven-item context
@@ -9,6 +9,11 @@ Description:
     open the reports folder, open the system log, open the Swagger API docs,
     trigger an instant search cycle, toggle console visibility, and terminate
     the daemon.
+
+    v5.11.0 adds a native Win32 close-to-tray hook: the console window
+    procedure is subclassed so that WM_CLOSE and WM_SYSCOMMAND/SC_CLOSE hide
+    the daemon console (SW_HIDE) instead of terminating the background
+    process.
 
     The visualizer, Swagger docs, and instant-search actions self-heal the
     FastAPI backend first: they probe http://127.0.0.1:8001/api/v1/health and,
@@ -46,7 +51,7 @@ SWAGGER_URL = API_BASE_URL + "/docs"
 SCRAPE_TRIGGER_URL = API_BASE_URL + "/api/v1/scrape/trigger"
 
 # -- Canonical tray tooltip title --
-TRAY_TITLE = "TALOS v5.10.13 | Research Intelligence Mesh"
+TRAY_TITLE = "TALOS v5.11.0 | Research Intelligence Mesh"
 
 
 def _project_root():
@@ -206,6 +211,86 @@ def _toggle_console_visibility():
         pass
 
 
+# -- v5.11.0: global reference to the WNDPROC callback so the garbage
+#    collector never invalidates the function pointer while the console
+#    window remains subclassed. --
+_CLOSE_TO_TRAY_PROC = None
+
+
+def enable_close_to_tray():
+    """Intercept the console window's close button to minimize to tray.
+
+    On Windows, subclassing the console window procedure lets TALOS hide the
+    daemon console (SW_HIDE) when the operator clicks the close button, rather
+    than terminating the background daemon. Both WM_CLOSE (0x0010) and
+    WM_SYSCOMMAND/SC_CLOSE (0xF060) are intercepted and suppressed, returning
+    0 to the message loop so the process stays resident in the system tray.
+
+    A module-level reference to the WNDPROC callback is retained for the
+    lifetime of the process to prevent Python's garbage collector from
+    invalidating the C function pointer while the window is subclassed.
+
+    Returns:
+        bool: True when the hook was installed, False otherwise (non-Windows
+            or when the console window handle could not be resolved).
+    """
+    global _CLOSE_TO_TRAY_PROC
+    if sys.platform != "win32":
+        return False
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        user32 = ctypes.windll.user32
+        kernel32 = ctypes.windll.kernel32
+        hwnd = kernel32.GetConsoleWindow()
+        if not hwnd:
+            return False
+
+        # -- Window message constants -- 
+        WM_CLOSE = 0x0010
+        WM_SYSCOMMAND = 0x0112
+        SC_CLOSE = 0xF060
+        SW_HIDE = 0
+        GWLP_WNDPROC = -4
+
+        # -- Pointer-width-safe signatures so the 64-bit window procedure
+        #    address is not truncated by ctypes' default 32-bit restype. --
+        LRESULT = ctypes.c_ssize_t
+        WNDPROC = ctypes.WINFUNCTYPE(
+            LRESULT, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM
+        )
+        user32.GetWindowLongPtrW.restype = LRESULT
+        user32.GetWindowLongPtrW.argtypes = [wintypes.HWND, ctypes.c_int]
+        user32.SetWindowLongPtrW.restype = LRESULT
+        user32.SetWindowLongPtrW.argtypes = [wintypes.HWND, ctypes.c_int, LRESULT]
+        user32.CallWindowProcW.restype = LRESULT
+        user32.CallWindowProcW.argtypes = [
+            LRESULT, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM
+        ]
+
+        original_proc = user32.GetWindowLongPtrW(hwnd, GWLP_WNDPROC)
+
+        def _wnd_proc(hwnd_, msg, wparam, lparam):
+            # -- WM_CLOSE or WM_SYSCOMMAND/SC_CLOSE: hide instead of terminate --
+            if msg == WM_CLOSE:
+                user32.ShowWindow(hwnd_, SW_HIDE)
+                return 0
+            if msg == WM_SYSCOMMAND and (wparam & 0xFFF0) == SC_CLOSE:
+                user32.ShowWindow(hwnd_, SW_HIDE)
+                return 0
+            return user32.CallWindowProcW(original_proc, hwnd_, msg, wparam, lparam)
+
+        _CLOSE_TO_TRAY_PROC = WNDPROC(_wnd_proc)
+        user32.SetWindowLongPtrW(
+            hwnd, GWLP_WNDPROC,
+            ctypes.cast(_CLOSE_TO_TRAY_PROC, ctypes.c_void_p).value,
+        )
+        return True
+    except Exception:
+        return False
+
+
 def launch_tray_icon_async(on_show_hide=None, on_open_visualizer=None,
                            on_exit=None):
     """Launch the TALOS Desktop Control Hub tray icon in a daemon thread.
@@ -223,6 +308,10 @@ def launch_tray_icon_async(on_show_hide=None, on_open_visualizer=None,
             icon could not be started (pystray/Pillow missing, or a non-GUI
             session). The caller is free to ignore the returned handle.
     """
+    # -- v5.11.0: intercept WM_CLOSE so the console minimizes to tray instead
+    #    of terminating the daemon. Independent of pystray availability. --
+    enable_close_to_tray()
+
     try:
         import pystray
     except ImportError:

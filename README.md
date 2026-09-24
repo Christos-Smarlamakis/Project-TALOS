@@ -1,4 +1,4 @@
-﻿# Project TALOS (v5.10.16)
+﻿# Project TALOS (v5.11.0)
 
 ### **Tactical Agentic Literature Orchestration System**
 
@@ -49,11 +49,16 @@ TALOS acts as an autonomous "Research Architect," filtering noise and highlighti
   - **Port 8001** (port 8000 reserved for SYNAPSE event bus)
   - Auto-generated interactive docs at `http://localhost:8001/docs`
   - Models saved at `models/dddqn_trained.pth` and `models/talos_drl.pth`
-- **3D Knowledge Constellation Visualizer** (`templates/live_foraging_visualizer.html`) -- vendored Three.js r128 (zero CDN) with 60 FPS animated laser beams, traveling photon pulses, interactive click-to-fire nodes, PNG snapshot, fullscreen and help overlays, and a 1000ms pure-AJAX state poller (`GET /api/v1/visualizer/state`) resolving the active profile database.
+- **3D Knowledge Constellation Visualizer** (`templates/live_foraging_visualizer.html`) -- vendored Three.js r128 (zero CDN) with 60 FPS animated laser beams, traveling photon pulses, interactive click-to-fire nodes, PNG snapshot, fullscreen and help overlays, and a 1000ms pure-AJAX state poller (`GET /api/v1/visualizer/state`) resolving the active profile database, plus a bottom-right **Live Telemetry HUD Console** (glassmorphism auto-scroll stream with [ACT]/[ROUTER]/[DATA]/[EVAL]/[ERROR] event coloring and C/L hotkey toggles).
 - **Test Suite** -- `python -m pytest tests/test_system_integrity.py -q` for system health; `python -m pytest tests/test_multi_tier.py -k test_talos_version` for the version assertion.
 - **Autonomous Red Tester (RL-Driven Chaos Engineering)** (`src/ai/testing/red_tester.py`)
 - **Daemon OS Autostart Orchestrator** (`src/utils/daemon_autostart.py`) -- Windows Startup hook + boot batch generator for the 24/7 daemon (v5.10.6)
 - **Desktop Control Hub System Tray** (`src/utils/tray_icon.py`) -- a seven-item tray menu (Open 3D Visualizer, Open Reports Folder, Open System Log, Open API Docs (Swagger), Trigger Instant Search Cycle, Show / Hide Console Window, Terminate Daemon) with self-healing API auto-bootstrap (`_is_api_alive` / `_ensure_api_server`) that spawns the FastAPI backend on demand (v5.10.13)
+- **Win32 Close-to-Tray Hook** (`src/utils/tray_icon.py`) -- native console window-procedure interception (WM_CLOSE / SC_CLOSE to SW_HIDE) so closing the daemon console minimizes to the system tray instead of terminating the background process (v5.11.0)
+- **Full-Title & Authors Telemetry** -- [EVAL] telemetry now renders the complete paper title (no 55-character truncation) plus a normalized author list over a two-line Rich structure, with 100% English socket-error sanitization (v5.11.0)
+- **Persistent Evaluation History** (`src/utils/evaluation_history.py`) -- every evaluated paper is appended to `data/history/daemon_evaluations.jsonl`; a Rich table viewer (View Recent Evaluation History) is available in the TUI (v5.11.0)
+- **Autonomous Linux Bootstrap** (`run_talos.sh`) -- zero-touch Miniconda detection/installation (`detect_or_install_conda()`) and `talosenv` provisioning (`ensure_talosenv()`) for Ubuntu, Debian, and Linux Mint (v5.11.0)
+
 - **OPTICA Bridge Integration** (`src/integration/optica_client.py`) -- API client to Project OPTICA (port 8002) for heavy cnsplots/PyVis graphics; TUI "Data Visualizations (via OPTICA)" menu (v5.10.7)
   - **Non-Stationary Multi-Armed Bandit** with Epsilon-Greedy (epsilon=0.2, alpha=0.1) stress-tests system components via subprocess
   - **LLM-as-a-Judge Diagnostics**: Crash stderr sent to Fast Edge LLM (Neutrino-8B) for two-sentence human-readable diagnosis

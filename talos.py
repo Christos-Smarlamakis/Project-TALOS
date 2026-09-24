@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.10.16
+Project: TALOS v5.11.0
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,13 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.11.0: Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform
+    Linux Bootstrap & Full-Title History Engine -- bottom-right glassmorphism
+    telemetry console in the 3D visualizer, native close-to-tray window hook,
+    full title/authors [EVAL] telemetry with English error sanitization, a
+    persistent JSONL evaluation history recorder with a Rich TUI viewer, and a
+    zero-touch Miniconda/talosenv bootstrap in run_talos.sh.
 
     v5.10.16: Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine --
     enabled SQLite WAL mode and PRAGMA tuning, added online snapshotting before
@@ -180,6 +187,7 @@ from config.settings import SYNAPSE_BUS_URL
 from src.core.profile_manager import (
     get_active_profile_name, save_current_state_to_profile, set_active_profile_name,
 )
+from src.utils.evaluation_history import read_evaluation_history
 
 # -- Rich imports for the gorgeous terminal dashboard --
 from rich.console import Console
@@ -590,6 +598,8 @@ def database_data_menu(python_exe):
         "8. Open Access PDF Downloader",
         "9. Unpaywall Data Enricher",
         "10. Zotero Cloud Connector",
+        questionary.Separator("  EVALUATION HISTORY"),
+        "11. View Recent Evaluation History",
         questionary.Separator(), "Back"
     ])
     if choice is None or "Back" in choice: return
@@ -603,6 +613,7 @@ def database_data_menu(python_exe):
     elif choice.startswith("8."): run_script("pdf_downloader.py", python_exe)
     elif choice.startswith("9."): run_script("data_enricher.py", python_exe)
     elif choice.startswith("10."): run_script("zotero_connector.py", python_exe)
+    elif choice.startswith("11."): _show_evaluation_history()
 
 def system_health_menu(python_exe):
     """System health, diagnostics, chaos engineering and CI/CD sub-menu."""
@@ -1354,6 +1365,64 @@ def _show_drl_status(project_root):
         border_style="cyan",
         box=box.ROUNDED,
     ))
+
+
+def _show_evaluation_history(limit=30):
+    """Render the most recent daemon evaluations in a Rich table.
+
+    Reads data/history/daemon_evaluations.jsonl and displays the latest N
+    records with columns: #, Timestamp, Title, Authors, Source, Score, Verdict.
+
+    Args:
+        limit (int): Maximum number of records to display (default 30).
+    """
+    records = read_evaluation_history(limit=limit)
+    if not records:
+        console.print(Panel(
+            "[yellow]No evaluation history recorded yet.[/yellow]\n"
+            "[dim]Run the DRL live agent or the 24/7 daemon to populate the history.[/dim]",
+            title="[bold]Evaluation History[/bold]",
+            border_style="yellow",
+            box=box.ROUNDED,
+        ))
+        safe_pause()
+        return
+
+    t = Table(box=box.SIMPLE_HEAVY, border_style="cyan", expand=True)
+    t.add_column("#", style="dim", justify="right", no_wrap=True)
+    t.add_column("Timestamp", style="dim cyan", no_wrap=True)
+    t.add_column("Title", style="bold white", overflow="fold")
+    t.add_column("Authors", style="italic white", overflow="fold")
+    t.add_column("Source", style="cyan", no_wrap=True)
+    t.add_column("Score", style="bold white", justify="right", no_wrap=True)
+    t.add_column("Verdict", justify="center", no_wrap=True)
+
+    for i, rec in enumerate(records, start=1):
+        score = float(rec.get("score", 0.0) or 0.0)
+        verdict = rec.get("verdict", "REJECT")
+        if verdict == "ELITE":
+            verdict_cell = "[bold gold1]ELITE[/bold gold1]"
+        elif verdict == "ACCEPT":
+            verdict_cell = "[bold green]ACCEPT[/bold green]"
+        else:
+            verdict_cell = "[bold red]REJECT[/bold red]"
+        t.add_row(
+            str(i),
+            str(rec.get("timestamp", "--")),
+            str(rec.get("title", "Unknown Title")),
+            str(rec.get("authors", "Unknown Authors")),
+            str(rec.get("source", "unknown")),
+            f"{score:.1f}",
+            verdict_cell,
+        )
+
+    console.print(Panel(
+        t,
+        title=f"[bold]Evaluation History (last {len(records)})[/bold]",
+        border_style="cyan",
+        box=box.ROUNDED,
+    ))
+    safe_pause()
 
 
 def _run_model_discovery():

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ===========================================================================
 # script         : run_talos.sh
-# version        : v5.10.16 (Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine)
+# version        : v5.11.0 (Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
 # description    : Cross-Platform POSIX Dashboard for Project TALOS.
 #                  Implements Two-Column UI, IEEE WEIGD standard telemetry,
 #                  defensive error handling, Universal ASCII rendering, and
@@ -98,6 +98,106 @@ detect_and_activate_env() {
     return 1
 }
 
+# ---------------------------------------------------------------------------
+# [ v5.11.0 ] Zero-Touch Miniconda Bootstrap & talosenv Provisioning
+# ---------------------------------------------------------------------------
+
+detect_or_install_conda() {
+    # -- 1) Already available on PATH? --
+    if command -v conda >/dev/null 2>&1; then
+        return 0
+    fi
+
+    # -- 2) Standard install directories --
+    for _conda_dir in "$HOME/miniconda3" "/opt/conda" "$HOME/anaconda3"; do
+        if [ -f "$_conda_dir/etc/profile.d/conda.sh" ]; then
+            source "$_conda_dir/etc/profile.d/conda.sh" >/dev/null 2>&1
+            export PATH="$_conda_dir/bin:$PATH"
+            return 0
+        fi
+    done
+
+    # -- 3) Missing: detect architecture and install silently to ~/miniconda3 --
+    OS_TYPE=$(uname -s)
+    ARCH_TYPE=$(uname -m)
+    MC_URL=""
+
+    if [ "$OS_TYPE" = "Linux" ]; then
+        if [ "$ARCH_TYPE" = "aarch64" ] || [ "$ARCH_TYPE" = "arm64" ]; then
+            MC_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh"
+        else
+            MC_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+        fi
+    elif [ "$OS_TYPE" = "Darwin" ]; then
+        if [ "$ARCH_TYPE" = "arm64" ]; then
+            MC_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh"
+        else
+            MC_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
+        fi
+    fi
+
+    if [ -z "$MC_URL" ]; then
+        log_error "Unsupported architecture ($OS_TYPE/$ARCH_TYPE) for automatic Conda deployment."
+        return 1
+    fi
+
+    log_warn "Conda distribution not found. Initiating zero-touch Miniconda3 deployment..."
+    log_info "Downloading Miniconda3 for $OS_TYPE ($ARCH_TYPE)..."
+
+    local _installer="miniconda_installer.sh"
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL -o "$_installer" "$MC_URL" || { rm -f "$_installer"; log_error "Miniconda download failed."; return 1; }
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q -O "$_installer" "$MC_URL" || { rm -f "$_installer"; log_error "Miniconda download failed."; return 1; }
+    else
+        log_error "Neither curl nor wget is available to download Miniconda."
+        return 1
+    fi
+
+    log_info "Installing Miniconda3 to $HOME/miniconda3 (silent)..."
+    bash "$_installer" -b -p "$HOME/miniconda3" >/dev/null 2>&1
+    rm -f "$_installer"
+
+    if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
+        source "$HOME/miniconda3/etc/profile.d/conda.sh" >/dev/null 2>&1
+        export PATH="$HOME/miniconda3/bin:$PATH"
+        log_success "Miniconda3 subsystem successfully installed."
+        return 0
+    fi
+
+    log_error "Miniconda3 installation did not complete successfully."
+    return 1
+}
+
+ensure_talosenv() {
+    # -- Resolve or install Miniconda, then activate it --
+    detect_or_install_conda || return 1
+
+    # -- Source the conda profile so 'conda' is available in this shell --
+    local CONDA_BASE=""
+    if command -v conda >/dev/null 2>&1; then
+        CONDA_BASE="$(conda info --base 2>/dev/null || echo "$HOME/miniconda3")"
+    else
+        CONDA_BASE="$HOME/miniconda3"
+    fi
+    [ -f "$CONDA_BASE/etc/profile.d/conda.sh" ] && source "$CONDA_BASE/etc/profile.d/conda.sh" >/dev/null 2>&1
+
+    # -- Create talosenv if it does not exist --
+    if ! conda env list 2>/dev/null | grep -qw 'talosenv'; then
+        log_info "Provisioning 'talosenv' runtime (Python 3.11)..."
+        conda create -n talosenv python=3.11 -y >/dev/null 2>&1 || {
+            log_error "Failed to create 'talosenv' environment."
+            return 1
+        }
+    fi
+
+    conda activate talosenv >/dev/null 2>&1 || {
+        log_error "Failed to activate 'talosenv' environment."
+        return 1
+    }
+    return 0
+}
+
 # ===========================================================================
 # MAIN DASHBOARD (Two-Column User Interface)
 # ===========================================================================
@@ -116,7 +216,7 @@ show_menu() {
     echo -e "${C_IEEE_LIGHT}             ##      ##    ##  ##        ##    ##       ## ${C_RESET}"
     echo -e "${C_IEEE_LIGHT}             ##      ##    ##  ########   ######   ######  ${C_RESET}"
     echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
-    echo -e "  ${C_CYAN}Project TALOS v5.10.16 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)${C_RESET}"
+    echo -e "  ${C_CYAN}Project TALOS v5.11.0 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)${C_RESET}"
     echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
     echo -e "  [ SYSTEM TELEMETRY ]  API (8001): ${API_STATUS} | BUS (8000): ${SYNAPSE_STATUS} | OLLAMA (11434): ${OLLAMA_STATUS} | OPTICA (8002): ${OPTICA_STATUS}"
     echo -e "${C_IEEE_DARK}-----------------------------------------------------------------------------------------------------${C_RESET}"
@@ -149,49 +249,12 @@ show_menu() {
 do_setup() {
     clear
     log_info "Initiating Global Setup Sequence..."
-    
-    # Check for Conda
-    if ! command -v conda >/dev/null 2>&1 && [ ! -d "$HOME/miniconda3" ]; then
-        log_warn "Conda distribution not found on system PATH."
-        log_info "Initiating OS-Aware Zero-Click Miniconda3 Deployment..."
-        
-        OS_TYPE=$(uname -s)
-        ARCH_TYPE=$(uname -m)
-        MC_URL=""
-        
-        if [ "$OS_TYPE" = "Linux" ]; then
-            if [ "$ARCH_TYPE" = "aarch64" ]; then
-                MC_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh"
-            else
-                MC_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
-            fi
-        elif [ "$OS_TYPE" = "Darwin" ]; then
-            if [ "$ARCH_TYPE" = "arm64" ]; then
-                MC_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh"
-            else
-                MC_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
-            fi
-        fi
-        
-        if [ -n "$MC_URL" ]; then
-            log_info "Downloading Miniconda3 for $OS_TYPE ($ARCH_TYPE)..."
-            curl -# -k -o miniconda_installer.sh "$MC_URL"
-            log_info "Executing silent background installation to $HOME/miniconda3..."
-            bash miniconda_installer.sh -b -p "$HOME/miniconda3" >/dev/null 2>&1
-            rm miniconda_installer.sh
-            export PATH="$HOME/miniconda3/bin:$PATH"
-            log_success "Miniconda3 subsystem successfully installed."
-        else
-            log_error "Unsupported Architecture for automatic Conda deployment."
-            exit 1
-        fi
-    fi
 
-    log_info "Provisioning 'talosenv' runtime (Python 3.11)..."
-    detect_and_activate_env || true
-    conda create -n talosenv python=3.11 -y >/dev/null 2>&1 || true
-    source "$HOME/miniconda3/etc/profile.d/conda.sh" 2>/dev/null || true
-    conda activate talosenv >/dev/null 2>&1 || true
+    # -- v5.11.0: zero-touch Miniconda + talosenv bootstrap --
+    ensure_talosenv || { press_enter; return; }
+
+    log_info "Upgrading pip to the latest release..."
+    $PYTHON_CMD -m pip install --upgrade pip >/dev/null 2>&1
 
     log_info "Resolving and installing Python dependencies..."
     pip install -r requirements.txt >/dev/null 2>&1
@@ -200,11 +263,13 @@ do_setup() {
     log_info "Triggering Frontend Provisioner..."
     $PYTHON_CMD src/utils/frontend_provisioner.py
 
-    echo "[5/5] Provisioning Local AI Models (Universal Model Provisioner)..."
     log_info "Executing Universal Dynamic Model Provisioner (fast edge + heavy models)..."
     $PYTHON_CMD src/utils/model_provisioner.py || log_warn "Model provisioning skipped or offline."
 
-    log_success "TALOS v5.10.16 deployment finalized."
+    log_info "Validating database integrity (db_stats.py)..."
+    $PYTHON_CMD src/utils/db_stats.py || log_warn "Database statistics check skipped."
+
+    log_success "TALOS v5.11.0 deployment finalized."
     press_enter
 }
 
@@ -219,7 +284,7 @@ do_server() {
     fi
 
     log_info "Bootstrapping FastAPI Microservice..."
-    detect_and_activate_env
+    ensure_talosenv
     nohup $PYTHON_CMD -m uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001 > /dev/null 2>&1 &
     log_success "Microservice dispatched to background (PID: $!)."
     check_edge_server
@@ -229,7 +294,7 @@ do_server() {
 do_mcp_server() {
     clear
     log_info "Bootstrapping MCP Server..."
-    detect_and_activate_env
+    ensure_talosenv
     nohup $PYTHON_CMD src/mcp_server.py > /dev/null 2>&1 &
     log_success "MCP Server operational in background (PID: $!)."
     press_enter
@@ -245,13 +310,13 @@ do_provision_ui() {
         log_success "FastAPI Server detected."
     else
         log_info "FastAPI offline. Auto-starting backend..."
-        detect_and_activate_env
+        ensure_talosenv
         nohup $PYTHON_CMD -m uvicorn src.api.main_api:app --host 127.0.0.1 --port 8001 > /dev/null 2>&1 &
         sleep 2
     fi
 
     log_info "Deploying React User Interface..."
-    detect_and_activate_env
+    ensure_talosenv
     $PYTHON_CMD src/utils/frontend_provisioner.py "$@"
     press_enter
 }
@@ -266,21 +331,21 @@ do_cli() {
 do_daemon() {
     clear
     log_info "Engaging Autonomous Research Daemon..."
-    detect_and_activate_env
+    ensure_talosenv
     $PYTHON_CMD src/ai/drl/talos_service.py
 }
 
 do_live_drl() {
     clear
     log_info "Engaging Deep Reinforcement Learning Agent..."
-    detect_and_activate_env
+    ensure_talosenv
     $PYTHON_CMD src/ai/drl/talos_live_agent.py --verbose
 }
 
 do_auto_tester() {
     clear
     log_info "Deploying Autonomous Red Tester (RL Chaos Fuzzer)..."
-    detect_and_activate_env
+    ensure_talosenv
     $PYTHON_CMD src/ai/testing/red_tester.py "$@"
     press_enter
 }
@@ -288,7 +353,7 @@ do_auto_tester() {
 do_test() {
     clear
     log_info "Executing Comprehensive Pytest Suite..."
-    detect_and_activate_env
+    ensure_talosenv
     if ! command -v pytest >/dev/null 2>&1; then
         log_warn "Pytest framework absent. Initializing installation..."
         pip install pytest >/dev/null 2>&1
@@ -337,7 +402,7 @@ while true; do
         10)
             echo ""
         echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
-        echo -e "  Closing Project TALOS v5.10.16..."
+        echo -e "  Closing Project TALOS v5.11.0..."
         echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
             # Reset viewport constraint on exit
             printf '\033[8;24;80t' >/dev/null 2>&1 || true

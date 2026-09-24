@@ -102,6 +102,7 @@ from rich.console import Console
 from rich.panel import Panel
 from src.utils.logger import get_logger
 from src.integration.visualizer_bridge import push_visualizer_event
+from src.utils.evaluation_history import record_evaluation, verdict_for_score
 
 # -- System tray companion (optional; degrades gracefully when pystray is
 #    missing so headless or non-Windows daemons keep working). --
@@ -569,6 +570,23 @@ def _run_daemon_iteration(env, agent, notifier, sleep_action, verbose, epsilon,
         _daemon_paper = info.get("paper_data", {}) or {}
         _daemon_title = _daemon_paper.get("title", "Unknown") if isinstance(_daemon_paper, dict) else "Unknown"
         push_visualizer_event("paper_evaluated", routed_source, score, _daemon_title)
+
+        # -- v5.11.0: persist the daemon evaluation to the JSONL history --
+        _daemon_authors = _daemon_paper.get("authors") if isinstance(_daemon_paper, dict) else None
+        if isinstance(_daemon_authors, list):
+            _authors_display = ", ".join(str(a) for a in _daemon_authors)
+        elif _daemon_authors:
+            _authors_display = str(_daemon_authors)
+        else:
+            _authors_display = "Unknown Authors"
+        record_evaluation(
+            title=_daemon_title,
+            authors=_authors_display,
+            source=routed_source,
+            score=score,
+            verdict=verdict_for_score(score),
+            provider=routed_provider or "unknown",
+        )
 
         # -- Throttle: mandatory cooldown between API calls --
         # This keeps CPU at ~0% and gives APIs time to breathe.

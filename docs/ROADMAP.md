@@ -2,8 +2,8 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.10.16 (Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine)
-> **Last Updated:** 2026-08-28
+> **Current Version:** v5.11.0 (Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
+> **Last Updated:** 2026-09-23
 
 ---
 
@@ -132,8 +132,9 @@ The v5.10.x series transitions Project TALOS from an aggregator to a fully adapt
 | **v5.10.10** | 3D Holographic Knowledge Constellation | Real-time WebGL 1.0 3D visualizer streaming foraging events across all pipelines (DRL, Daily 16 APIs, Historic Archive). Dual-mode: Live SSE + Conference Offline Replay. FastAPI SSE endpoint, 22 REST API endpoints. | Complete |
 | **v5.10.11** | Vendored Three.js 3D Knowledge Constellation | Production-grade Three.js visualizer locally vendored in `static/js/three.min.js` (r128 UMD). Health Aura Sprites, Academic Print Theme, 1.5s Live Polling Bridge, `/static` FastAPI mount, Fibonacci-sphere 16-node constellation. Supersedes the v5.10.10 raw WebGL prototype. | Complete |
 | **v5.10.12** | Autonomous Daemon Hardening, 3D Laser Telemetry & Interactive Visualizer Tools | 60 FPS animated laser beams with traveling photon pulses, raycaster click-to-fire, PNG snapshot/fullscreen/help tools, 1000ms pure-AJAX state polling, active-profile DB resolution, and SQLite VACUUM optimizer. 23 FastAPI endpoints. | Complete |
-| **v5.10.16** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline (`src/ai/dspy_prisma_pipeline.py`) leveraging PlanEval architecture (Fast Edge Planner/Evaluator + Heavy Reasoning Executor). | Next |
-| **v5.10.17** | CORTEX & n8n Gateway | Live arXiv RSS & text evaluation Discord Bot (`src/integration/discord_evaluator.py`) and SYNAPSE n8n Workflow Gateway templates (`templates/n8n_workflows/`). | Upcoming |
+| **v5.11.0** | Live Telemetry HUD Console, Win32 Close-to-Tray & Linux Bootstrap | Bottom-right glassmorphism telemetry HUD console, native Win32 close-to-tray hook, full title/authors [EVAL] telemetry with English error sanitization, persistent JSONL evaluation history + TUI viewer, zero-touch Miniconda/talosenv Linux bootstrap. | Complete |
+| **v5.12.0** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline (`src/ai/dspy_prisma_pipeline.py`) leveraging PlanEval architecture (Fast Edge Planner/Evaluator + Heavy Reasoning Executor). | Next |
+| **v5.13.0** | CORTEX & n8n Gateway | Live arXiv RSS & text evaluation Discord Bot (`src/integration/discord_evaluator.py`) and SYNAPSE n8n Workflow Gateway templates (`templates/n8n_workflows/`). | Upcoming |
 
 ---
 
@@ -183,8 +184,9 @@ Project ALEXANDRIA marks the full desktop and distributed release of the platfor
 | **v5.10.14** | Autonomous Execution Matrix with Privacy Guardrails & DeepSeek V4 Cognitive Integration | auto_dynamic 5th network strategy, Rich privacy consent gate, DeepSeek V4 Pro thinking | Complete |
 | **v5.10.15** | Universal TUI Feature Restoration & 100% Codebase Coverage | Unified 6-group hierarchical TUI, 45/45 module coverage, dead sub-menu revival, GWO Swarm suite | Complete |
 | **v5.10.16** | Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine | SQLite WAL + PRAGMA tuning, safe online snapshotting, HTTP session pooling, deterministic LRU caching, BibTeX/LaTeX exporter | Complete |
-| **v5.10.17** | DSPy PRISMA Systematic Review Pipeline | Automated PRISMA 2020 SLR with PlanEval DSPy architecture | Next |
-| **v5.10.18** | CORTEX & n8n Gateway | Discord bot, n8n workflow templates, ecosystem integration | Upcoming |
+| **v5.11.0** | Live Telemetry HUD Console, Win32 Close-to-Tray & Linux Bootstrap | HUD telemetry console, close-to-tray hook, full-title/authors telemetry, JSONL evaluation history, zero-touch Linux bootstrap | Complete |
+| **v5.12.0** | DSPy PRISMA Systematic Review Pipeline | Automated PRISMA 2020 SLR with PlanEval DSPy architecture | Next |
+| **v5.13.0** | CORTEX & n8n Gateway | Discord bot, n8n workflow templates, ecosystem integration | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine | Future |
 
 ---

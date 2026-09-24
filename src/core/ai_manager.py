@@ -174,6 +174,22 @@ OPENAI_COMPATIBLE_REGISTRY = {
 }
 
 
+def _sanitize_connection_error(exc):
+    """Return a clean English message for a connection error.
+
+    Localized OS socket errors (for example ``WinError 10061`` on Windows)
+    are collapsed to a stable, locale-independent English phrase so the
+    daemon's logs remain consistent across regional OS installations.
+
+    Args:
+        exc (Exception): The original connection exception.
+
+    Returns:
+        str: A clean English description of the connection failure.
+    """
+    return "Connection refused: target host or port is offline."
+
+
 class AIManager:
     """Manages all LLM and embedding interactions with multi-provider fallback
     and circuit breaker pattern.
@@ -938,7 +954,7 @@ class AIManager:
                 print(f"  >!> {label} HTTP {response.status_code}: {response.text[:200]}")
                 return None
         except requests.exceptions.ConnectionError as e:
-            print(f"  [WARNING] {label} ({model}) connection refused: {e}")
+            print(f"  [WARNING] {label} ({model}) {_sanitize_connection_error(e)}")
             # -- v5.9.8: Local-to-Local Fast-Tier Fallback --
             # When the fast edge tier (CPU, port 11435) fails, automatically
             # fall back to local Ollama GPU (port 11434) FIRST before attempting

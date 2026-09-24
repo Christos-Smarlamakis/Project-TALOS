@@ -2,6 +2,25 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.11.0] - 2026-09-23 -- Κονσόλα Ζωντανής Τηλεμετρίας HUD, Ελαχιστοποίηση-σε-Δίσκο Win32, Bootstrap Linux Πολλαπλών Πλατφορμών & Μηχανή Ιστορικού Πλήρους Τίτλου
+
+### Προστέθηκε
+- **Κονσόλα Ζωντανής Τηλεμετρίας HUD** (`templates/live_foraging_visualizer.html`): ροή glassmorphism κάτω δεξιά (φόντο rgba(15,23,42,0.85) + θόλωση backdrop + κυανό περίγραμμα) με κυκλικό buffer 40 γραμμών, αυτόματη κύλιση, χρωματικές ετικέτες `[ACT]`/`[ROUTER]`/`[DATA]`/`[RECOVERY]`/`[WARNING]`/`[ERROR]`/`[EVAL]`, συντομεύσεις `C`/`L` και αυτόματη απόκρυψη κατά την εξαγωγή PNG SNAPSHOT.
+- **Ελαχιστοποίηση σε Δίσκο κατά το Κλείσιμο (Win32)** (`src/utils/tray_icon.py`): η `enable_close_to_tray()` υποκλέπτει τη διαδικασία παραθύρου της κονσόλας μέσω `ctypes` (GetWindowLongPtrW / SetWindowLongPtrW / CallWindowProcW), αναχαιτίζοντας τα `WM_CLOSE` και `WM_SYSCOMMAND`/`SC_CLOSE` ώστε να εκτελεί `ShowWindow(SW_HIDE)` αντί να τερματίζει τον δαίμονα· μια αναφορά WNDPROC σε επίπεδο module αποτρέπει τη συλλογή απορριμμάτων.
+- **Τηλεμετρία Πλήρους Τίτλου & Συγγραφέων** (`src/ai/drl/live_agent_orchestrator.py`): η τηλεμετρία [EVAL] αποδίδει πλέον τον πλήρη τίτλο (χωρίς περικοπή 55 χαρακτήρων) και κανονικοποιημένη λίστα συγγραφέων σε δομή Rich δύο γραμμών· το `src/core/ai_manager.py` προσθέτει την `_sanitize_connection_error()` που επιστρέφει το αγγλικό μήνυμα ανεξαρτήτως τοπικών ρυθμίσεων "Connection refused: target host or port is offline."
+- **Μόνιμο Ιστορικό Αξιολόγησης** (`src/utils/evaluation_history.py`): κάθε αξιολογημένη εργασία καταγράφεται στο `data/history/daemon_evaluations.jsonl` (χρονοσήμανση, τίτλος, συγγραφείς, πηγή, βαθμολογία, ετυμηγορία, πάροχος)· το `talos.py` αποκτά την `_show_evaluation_history(limit=30)` (πίνακας Rich) με επιλογή «Προβολή Πρόσφατου Ιστορικού Αξιολόγησης».
+- **Αυτόνομο Bootstrap Linux** (`run_talos.sh`): `detect_or_install_conda()` (ανίχνευση PATH + τυπικών καταλόγων, σιωπηλή λήψη/εγκατάσταση Miniconda3 για x86_64/aarch64) και `ensure_talosenv()` (δημιουργία/ενεργοποίηση `talosenv` Python 3.11)· όλες οι επιλογές μενού 2-9 εκτελούνται εντός `talosenv`.
+
+### Άλλαξε
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.11.0** στα 6 βασικά αρχεία κώδικα, το `docker-compose.yml` (`talos:5.11.0`) και το `CITATION.cff` (ημερομηνία 2026-09-23).
+
+### Επαλήθευση
+- `python -m compileall -q src config tests talos.py` πέρασε χωρίς σφάλματα.
+- `python -m pytest tests/test_system_integrity.py -q` πέρασε.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε (v5.11.0).
+- `bash -n run_talos.sh` πέρασε χωρίς συντακτικά σφάλματα.
+
+
 ## [v5.10.16] - 2026-08-28 -- Βελτιστοποίηση Απόδοσης Μηδενικού Κινδύνου & Μηχανή Ακαδημαϊκής Εξαγωγής LaTeX/BibTeX
 
 ### Προστέθηκε

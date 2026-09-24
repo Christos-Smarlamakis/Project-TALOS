@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.16
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.11.0
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-28 (v5.10.16 -- Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine)
+> **Last Updated:** 2026-09-23 (v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
 
 ---
 
@@ -29,7 +29,7 @@ SRC PACKAGES
   src/analysis/     (10 files)  citation_analyzer, author_profiler, recommender, knowledge_path, etc.
   src/ingestion/    (23 files)  16 source agents + 7 pipelines
   src/integration/   (3 files)  synapse_client, optica_client, visualizer_bridge
-  src/utils/        (17 files)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, etc.
+  src/utils/        (19 files)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, evaluation_history, etc.
   src/api/           (4 files)  main_api, synapse_routes, red_tester_routes, talos_service_api
   src/mcp_server.py             MCP stdio server (4 tools)
 
@@ -187,6 +187,10 @@ src/ingestion/*.py
 | **SYNAPSE Emitter** | `src/integration/synapse_client.py` | EventEmitter pushing JSON events to port 8000 |
 | **Visualizer Bridge (v5.10.12)** | `src/integration/visualizer_bridge.py` | `push_visualizer_event()` -- centralized HTTP push bridge to the 3D Visualizer (port 8001) |
 
+| **Evaluation History (v5.11.0)** | `src/utils/evaluation_history.py` | `record_evaluation()` / `read_evaluation_history()` / `verdict_for_score()` -- append-only JSONL recorder at `data/history/daemon_evaluations.jsonl`; `_show_evaluation_history(limit=30)` Rich TUI viewer in `talos.py` |
+| **Live Telemetry HUD Console (v5.11.0)** | `templates/live_foraging_visualizer.html` | bottom-right glassmorphism stream (40-line ring buffer, auto-scroll, `C`/`L` hotkeys, snapshot auto-hide) driven by `appendConsoleLog()` |
+| **Win32 Close-to-Tray Hook (v5.11.0)** | `src/utils/tray_icon.py` | `enable_close_to_tray()` subclasses the console WndProc (WM_CLOSE / SC_CLOSE to SW_HIDE) so closing minimizes to tray |
+
 ## 9. Auxiliary Files
 
 | File/Dir | Role |
@@ -214,8 +218,8 @@ src/ingestion/*.py
 
 ---
 
-> **Last Updated:** 2026-08-28 (v5.10.16 -- Zero-Risk Performance Optimization & Academic LaTeX/BibTeX Engine)
-> **Project Version:** v5.10.16
-> **Total .py modules under src/:** 83 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 17 + api 4 + mcp_server 1)
+> **Last Updated:** 2026-09-23 (v5.11.0 -- Live Telemetry HUD Console, Win32 Close-to-Tray, Cross-Platform Linux Bootstrap & Full-Title History Engine)
+> **Project Version:** v5.11.0
+> **Total .py modules under src/:** 85 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 19 + api 4 + mcp_server 1)
 
 
