@@ -4,7 +4,7 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit)
+> **Last Updated:** 2026-09-26 (v5.11.2 -- Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging)
 
 ---
 
@@ -559,6 +559,18 @@
 - [x] **Unified sub-menu styling** -- every sub-menu standardized with `[ Back / Return to Main Menu ]` labels and `TALOS_QUESTIONARY_STYLE`.
 - [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + 19 canonical docs to v5.11.1 (2026-09-24).
 - [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, bash -n.
+
+## Phase 49: Zero-Click Windows Onboarding & Pre-Flight Engine (v5.11.2)
+
+### Status: COMPLETED (2026-09-26)
+
+- [x] **Progress-aware pre-flight wizard** -- new `:AUTO_PREFLIGHT` routine in `run_talos.bat` with numbered `[Step 1/5]`-`[Step 5/5]` guidance, `[OK]` status ticks, and explicit time estimates for first-time users.
+- [x] **Silent Miniconda3 bootstrap** -- automatic ~85 MB download via native `curl.exe -# -fS` and silent `/S` install to `%USERPROFILE%\miniconda3` when no Conda runtime is detected.
+- [x] **`:DISCOVER_CONDA` subroutine** -- multi-root + PATH discovery of `condabin\conda.bat` with backwards-compatible back-fill of `CONDA_ACTIVATE_PATH` for all existing menu options.
+- [x] **Silent fast-path bypass gate** -- four suppressed startup checks (Conda, talosenv, .env, core package probe) skip the wizard entirely; daily launches reach the main menu in under one second.
+- [x] **Batch hardening** -- caret-escaped parentheses inside code blocks, clean `call`/`goto :EOF` stack discipline, strict CRLF verified byte-level (zero lone LF).
+- [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + 19 canonical docs to v5.11.2 (2026-09-26).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, bash -n, label/jump audit, UTF-8 integrity scan.
 
 
 

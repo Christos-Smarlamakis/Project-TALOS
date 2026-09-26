@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.11.1
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.11.2
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-09-24
-> **Version:** v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit
+> **Last Updated:** 2026-09-26
+> **Version:** v5.11.2 -- Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -883,6 +883,15 @@ For each evaluated paper, the AI generates:
 - **Questionary choice-list fix:** `profile_settings_menu()` in `talos.py` rewritten with explicit `questionary.Choice(title=..., value=...)` entries, a `__back__` sentinel, and strictly sequential 1-8 numbering.
 - **Routing corrections:** "1. Manage Profiles" dispatches to `run_script("profile_manager.py", ...)`; "5. Model Discovery (Quality Scoring)" to the in-process `_run_model_discovery()` helper.
 - **Unified sub-menu styling:** all seven sub-menus (`search_ingestion_menu`, `analysis_visualization_menu`, `drl_gwo_menu`, `database_data_menu`, `system_health_menu`, `author_tools_menu`, `api_keys_menu`) standardized with `[ Back / Return to Main Menu ]` labels and the canonical `TALOS_QUESTIONARY_STYLE` theme.
+
+### 15.22 Zero-Click Windows Pre-Flight Onboarding Wizard (v5.11.2)
+
+- **Progress-aware `:AUTO_PREFLIGHT` engine:** `run_talos.bat` gains a five-step guided setup wizard (`[Step 1/5]` through `[Step 5/5]`) with a reassuring header banner, per-step `[OK]` status ticks, and explicit time estimates, designed so non-technical researchers never face a blank or frozen console on a clean Windows PC.
+- **Silent Miniconda3 bootstrap:** when no Conda runtime is detected, the wizard downloads Miniconda3 (~85 MB) via native `curl.exe -# -fS` (live progress bar) and installs it silently with `start /wait ... /InstallationType=JustMe /RegisterPython=0 /S /D=%USERPROFILE%\miniconda3`; fatal failures pause with a clear `[ERROR]` and exit code 1.
+- **`:DISCOVER_CONDA` subroutine:** scans `%USERPROFILE%\miniconda3`, `%USERPROFILE%\anaconda3`, `C:\ProgramData\miniconda3`, `C:\ProgramData\anaconda3`, `%LOCALAPPDATA%\Continuum\anaconda3`, and PATH (`where conda`) for `condabin\conda.bat`; sets `CONDA_BAT`/`CONDA_ROOT` and back-fills the legacy `CONDA_ACTIVATE_PATH` so the existing `:ACTIVATE_CONDA` routine keeps working for all 10 menu options.
+- **Silent fast-path bypass gate:** four suppressed startup checks (`CONDA_BAT` defined, `CONDA_ROOT` defined, `.env` present, `<root>\envs\talosenv\python.exe -c "import questionary, rich, fastapi"` succeeds) jump straight to `:MAIN_MENU` in under one second on subsequent launches; any failure falls through to the full wizard.
+- **Automated provisioning steps:** Step 2 verifies/creates the `talosenv` Conda environment (Python 3.11); Step 3 initializes `.env` from `example.env`; Step 4 upgrades pip, installs `requirements.txt`, and runs `src/utils/frontend_provisioner.py` (one-time, 2-3 minutes); Step 5 performs the final integrity tick.
+- **Batch hardening:** caret-escaped parentheses inside parenthesized code blocks, clean `call`/`goto :EOF` stack discipline, and strict CRLF line endings verified byte-level (zero lone LF).
 
 
 ---

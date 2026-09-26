@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.11.1
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.11.2
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit + Pre-Demo Stability Hardening Patch)
+> **Last Updated:** 2026-09-26 (v5.11.2 -- Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging)
 
 ---
 
@@ -90,7 +90,7 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 |-------|-------------|
 | `talos.py` | Rich-powered TUI (15-option menu across five visual groups) |
 | `src/api/main_api.py` | Headless FastAPI facade (23 endpoints E01-E23, port 8001) with Synapse webhook + Red Tester routers |
-| `run_talos.bat` / `run_talos.sh` | Launcher scripts (TUI, API server, daemon, tests) |
+| `run_talos.bat` / `run_talos.sh` | Launcher scripts (TUI, API server, daemon, tests). v5.11.2: `run_talos.bat` adds `:AUTO_PREFLIGHT` (5-step onboarding wizard with silent Miniconda3 bootstrap), `:DISCOVER_CONDA` (multi-root + PATH discovery of `condabin\conda.bat`, back-fills `CONDA_ACTIVATE_PATH`), and a silent fast-path bypass gate (sub-1-second startup when Conda + `talosenv` + `.env` + core packages are already present) |
 | `src/mcp_server.py` | MCP stdio server exposing 4 tools (system_status, semantic_search, paper_details, trigger_scrape) |
 
 ## 4. Packages & Scripts Inventory
@@ -223,8 +223,8 @@ src/ingestion/*.py
 
 ---
 
-> **Last Updated:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit + Pre-Demo Stability Hardening Patch)
-> **Project Version:** v5.11.1
+> **Last Updated:** 2026-09-26 (v5.11.2 -- Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging)
+> **Project Version:** v5.11.2
 > **Total .py modules under src/:** 85 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 19 + api 4 + mcp_server 1)
 
 

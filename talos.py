@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.11.1
+Project: TALOS v5.11.2
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,10 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.11.2: Zero-Click Windows Pre-Flight Onboarding Wizard -- run_talos.bat
+    gains a progress-aware 5-step setup engine with silent Miniconda3
+    bootstrap and a sub-1-second fast-path bypass for daily launches.
 
     v5.11.1: TUI Sub-Menu Sanitization & Complete Hierarchy Audit -- corrected
     the Questionary choice-list duplication in the Configuration & Profiles

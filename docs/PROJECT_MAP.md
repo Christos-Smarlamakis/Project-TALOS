@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.11.1
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.11.2
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit + Pre-Demo Stability Hardening Patch)
+> **Τελευταία Ενημέρωση:** 2026-09-26 (v5.11.2 -- Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging)
 
 ---
 
@@ -90,7 +90,7 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 |--------|-----------|
 | `talos.py` | Rich TUI (μενού 15 επιλογών σε πέντε οπτικές ομάδες) |
 | `src/api/main_api.py` | Headless FastAPI facade (23 endpoints E01-E23, θύρα 8001) με Synapse webhook + Red Tester routers |
-| `run_talos.bat` / `run_talos.sh` | Scripts εκκίνησης (TUI, API server, daemon, tests) |
+| `run_talos.bat` / `run_talos.sh` | Scripts εκκίνησης (TUI, API server, daemon, tests). v5.11.2: το `run_talos.bat` προσθέτει `:AUTO_PREFLIGHT` (οδηγός onboarding 5 βημάτων με σιωπηλό bootstrap Miniconda3), `:DISCOVER_CONDA` (ανίχνευση `condabin\conda.bat` σε πολλαπλές ρίζες + PATH, συμπλήρωση `CONDA_ACTIVATE_PATH`) και σιωπηλή πύλη ταχείας παράκαμψης (εκκίνηση < 1 δευτ. όταν Conda + `talosenv` + `.env` + βασικά πακέτα υπάρχουν ήδη) |
 | `src/mcp_server.py` | MCP stdio server με 4 tools (system_status, semantic_search, paper_details, trigger_scrape) |
 
 ## 4. Απογραφή Πακέτων & Scripts
@@ -223,8 +223,8 @@ src/ingestion/*.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-09-24 (v5.11.1 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit + Pre-Demo Stability Hardening Patch)
-> **Έκδοση Project:** v5.11.1
+> **Τελευταία Ενημέρωση:** 2026-09-26 (v5.11.2 -- Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging)
+> **Έκδοση Project:** v5.11.2
 > **Συνολικά .py modules στο src/:** 85 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 19 + api 4 + mcp_server 1)
 
 

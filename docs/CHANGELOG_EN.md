@@ -2,6 +2,29 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.11.2] - 2026-09-26 -- Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging
+
+### Added
+- **Progress-aware pre-flight onboarding engine** (`run_talos.bat`, new `:AUTO_PREFLIGHT` routine): a five-step guided setup wizard (`[Step 1/5]` through `[Step 5/5]`) that runs automatically on first launch or whenever the environment is incomplete. It prints a reassuring header banner, per-step `[OK]` status ticks, and explicit time estimates so non-technical users never face a blank or frozen console:
+  - **Step 1/5 -- Conda runtime check:** if no Conda installation is detected, the wizard downloads Miniconda3 (~85 MB) with `curl.exe -# -fS` (native Windows curl with a live progress bar) and installs it silently via `start /wait` with `/InstallationType=JustMe /RegisterPython=0 /S /D=%USERPROFILE%\miniconda3`. Fatal failures pause with a clear `[ERROR]` message and exit code 1 instead of crashing.
+  - **Step 2/5 -- Isolated environment:** verifies or auto-creates the `talosenv` Conda environment (Python 3.11) using `conda info --envs | findstr` detection, then activates it in-session.
+  - **Step 3/5 -- Configuration:** initializes `.env` from `example.env` when missing (or creates an empty one as a fallback).
+  - **Step 4/5 -- Dependencies:** probes `import questionary, rich, fastapi`; on failure it upgrades pip, installs `requirements.txt` with live output, and runs `src/utils/frontend_provisioner.py`, clearly labelled as a one-time 2-3 minute operation.
+  - **Step 5/5 -- Integrity:** final interpreter sanity check and a "100% ready" confirmation before handing off to the main menu.
+- **`:DISCOVER_CONDA` subroutine** (`run_talos.bat`): scans the candidate roots (`%USERPROFILE%\miniconda3`, `%USERPROFILE%\anaconda3`, `C:\ProgramData\miniconda3`, `C:\ProgramData\anaconda3`, `%LOCALAPPDATA%\Continuum\anaconda3`) plus PATH (`where conda`) for `condabin\conda.bat`; sets `CONDA_BAT` and `CONDA_ROOT`, and back-fills the legacy `CONDA_ACTIVATE_PATH` (`Scripts\activate.bat`) so the existing `:ACTIVATE_CONDA` routine used by all 10 menu options continues to work unchanged.
+- **Silent fast-path bypass gate** (`run_talos.bat` startup): before the wizard, four silent checks run with all output suppressed (`CONDA_BAT` defined, `CONDA_ROOT` defined, `.env` present, `<root>\envs\talosenv\python.exe -c "import questionary, rich, fastapi"` succeeds). When all four pass, the script jumps directly to `:MAIN_MENU` with zero wizard output, keeping daily startup under one second; any failure falls through to the full `:AUTO_PREFLIGHT` wizard.
+
+### Changed
+- **Batch hardening:** all literal parentheses inside parenthesized `if`/`else` code blocks are caret-escaped (`^( ... ^)`) to prevent premature block termination; the wizard ends with `goto :EOF` and the caller performs the `goto :MAIN_MENU` jump so the `call` stack stays clean. Strict CRLF line endings preserved (367 CRLF, 0 lone LF verified byte-level).
+- **Version strings synchronized to 5.11.2** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata, `talos.py` docstring, `run_talos.bat` title/banner/setup log, `run_talos.sh` header/banner/logs, `tests/test_multi_tier.py` version assertion), plus `docker-compose.yml` (`talos:5.11.2`), `CITATION.cff` (version 5.11.2, date-released 2026-09-26), the user-facing strings in `src/utils/tray_icon.py` (`TRAY_TITLE`), `src/utils/evaluation_history.py`, `templates/live_foraging_visualizer.html`, and all 19 canonical documentation files.
+
+### Verification
+- `python -m compileall -q src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.11.2).
+- `bash -n run_talos.sh` passed with zero syntax errors.
+- `run_talos.bat` label/jump audit passed (all `call`/`goto` targets resolve); strict CRLF verified with zero lone LF; zero U+FFFD replacement glyphs across all modified files.
+
 ## [v5.11.1] - 2026-09-24 -- TUI Sub-Menu Sanitization & Complete Hierarchy Audit
 
 ### Fixed

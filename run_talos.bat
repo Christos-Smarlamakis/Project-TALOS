@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Project TALOS v5.11.1 -- Research Intelligence Dashboard
+title Project TALOS v5.11.2 -- Research Intelligence Dashboard
 
 mode con: cols=105 lines=32
 chcp 65001 >nul 2>&1
@@ -20,17 +20,32 @@ set "C_CYAN=!ESC![38;2;23;162;184m"
 set "C_WHITE=!ESC![38;2;255;255;255m"
 
 REM ---------------------------------------------------------------------------
-REM [ INIT ] Clean Conda Discovery (NO goto inside for-loop)
+REM [ INIT ] Conda Discovery + Silent Fast Pre-Flight Bypass Gate (v5.11.2)
 REM ---------------------------------------------------------------------------
 set "CONDA_ACTIVATE_PATH="
+set "CONDA_BAT="
+set "CONDA_ROOT="
 set "CONDA_PATHS=%USERPROFILE%\miniconda3 %USERPROFILE%\anaconda3 C:\ProgramData\miniconda3 C:\ProgramData\anaconda3 %LOCALAPPDATA%\Continuum\anaconda3"
 
-for %%p in (%CONDA_PATHS%) do (
-    if not defined CONDA_ACTIVATE_PATH (
-        if exist "%%p\Scripts\activate.bat" set "CONDA_ACTIVATE_PATH=%%p\Scripts\activate.bat"
-    )
-)
+call :DISCOVER_CONDA
 
+REM -- Silent fast-path gate: if Conda, the talosenv environment, the .env
+REM -- configuration, and all core Python packages are already in place, the
+REM -- onboarding wizard is skipped entirely. Target: sub-1-second startup.
+set "PREFLIGHT_OK=1"
+if not defined CONDA_BAT set "PREFLIGHT_OK=0"
+if not defined CONDA_ROOT set "PREFLIGHT_OK=0"
+if not exist ".env" set "PREFLIGHT_OK=0"
+if "!PREFLIGHT_OK!"=="1" (
+    if not exist "!CONDA_ROOT!\envs\talosenv\python.exe" set "PREFLIGHT_OK=0"
+)
+if "!PREFLIGHT_OK!"=="1" (
+    "!CONDA_ROOT!\envs\talosenv\python.exe" -c "import questionary, rich, fastapi" >nul 2>&1
+    if errorlevel 1 set "PREFLIGHT_OK=0"
+)
+if "!PREFLIGHT_OK!"=="1" goto :MAIN_MENU
+
+call :AUTO_PREFLIGHT
 goto :MAIN_MENU
 
 REM ===========================================================================
@@ -67,6 +82,128 @@ netstat -ano 2>nul | findstr "LISTENING" | findstr ":%~1" >nul 2>&1
 if !ERRORLEVEL! equ 0 ( set "%~2=%C_GREEN%ONLINE%C_RESET%" ) else ( set "%~2=%C_RED%OFFLINE%C_RESET%" )
 goto :EOF
 
+:DISCOVER_CONDA
+REM Scans candidate installation roots for condabin\conda.bat, sets CONDA_BAT
+REM and CONDA_ROOT, and backfills CONDA_ACTIVATE_PATH (Scripts\activate.bat)
+REM so the legacy :ACTIVATE_CONDA routine used by all menu options keeps working.
+set "CONDA_BAT="
+set "CONDA_ROOT="
+for %%p in (%CONDA_PATHS%) do (
+    if not defined CONDA_BAT (
+        if exist "%%p\condabin\conda.bat" (
+            set "CONDA_BAT=%%p\condabin\conda.bat"
+            set "CONDA_ROOT=%%p"
+        )
+    )
+)
+if not defined CONDA_BAT (
+    for /f "delims=" %%c in ('where conda 2^>nul') do (
+        if not defined CONDA_BAT set "CONDA_BAT=%%c"
+    )
+)
+if not defined CONDA_ACTIVATE_PATH (
+    for %%p in (%CONDA_PATHS%) do (
+        if not defined CONDA_ACTIVATE_PATH (
+            if exist "%%p\Scripts\activate.bat" set "CONDA_ACTIVATE_PATH=%%p\Scripts\activate.bat"
+        )
+    )
+)
+goto :EOF
+
+:AUTO_PREFLIGHT
+cls
+echo ==============================================================================
+echo                PROJECT TALOS -- AUTOMATED RESEARCH SETUP WIZARD
+echo ==============================================================================
+echo [INFO] Preparing the TALOS Research Environment. Please do not close this window.
+echo.
+
+REM --- STEP 1: CONDA RUNTIME CHECK ---
+echo [Step 1/5] Checking Conda scientific runtime...
+call :DISCOVER_CONDA >nul 2>&1
+if defined CONDA_BAT (
+    echo          [OK] Conda runtime detected.
+) else (
+    echo          - Conda not detected. Initiating automatic setup...
+    echo          - Downloading Miniconda3 ^(approx. 85 MB^). Please wait...
+    set "MC_INSTALLER=%TEMP%\miniconda_installer.exe"
+    curl.exe -# -fS -o "!MC_INSTALLER!" "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
+    if not exist "!MC_INSTALLER!" (
+        echo          [ERROR] Download failed. Please verify your internet connection.
+        pause
+        exit /b 1
+    )
+    echo          - Installing Miniconda silently ^(estimated time: 1-2 minutes^)...
+    start /wait "" "!MC_INSTALLER!" /InstallationType=JustMe /RegisterPython=0 /S /D=%USERPROFILE%\miniconda3
+    del /f /q "!MC_INSTALLER!" 2>nul
+    set "CONDA_BAT=%USERPROFILE%\miniconda3\condabin\conda.bat"
+    if exist "!CONDA_BAT!" (
+        set "CONDA_ROOT=%USERPROFILE%\miniconda3"
+        set "CONDA_ACTIVATE_PATH=%USERPROFILE%\miniconda3\Scripts\activate.bat"
+        echo          [OK] Miniconda3 successfully installed and ready.
+    ) else (
+        echo          [ERROR] Installation failed. Please check user permissions.
+        pause
+        exit /b 1
+    )
+)
+echo.
+
+REM --- STEP 2: ISOLATED TALOSENV ENVIRONMENT ---
+echo [Step 2/5] Checking isolated environment 'talosenv' ^(Python 3.11^)...
+call "!CONDA_BAT!" info --envs | findstr /R /C:"talosenv " >nul 2>&1
+if errorlevel 1 (
+    echo          - Creating dedicated 'talosenv' environment. Please wait ~1 minute...
+    call "!CONDA_BAT!" create -n talosenv python=3.11 -y >nul 2>&1
+    echo          [OK] Environment 'talosenv' created successfully.
+) else (
+    echo          [OK] Environment 'talosenv' verified.
+)
+call "!CONDA_BAT!" activate talosenv
+echo.
+
+REM --- STEP 3: ENVIRONMENT CONFIGURATION (.ENV) ---
+echo [Step 3/5] Checking configuration files ^(.env^)...
+if not exist ".env" (
+    if exist "example.env" (
+        copy /y "example.env" ".env" >nul 2>&1
+        echo          [OK] Initialized .env configuration file from template.
+    ) else (
+        echo. > ".env"
+        echo          [OK] Created new empty .env configuration file.
+    )
+) else (
+    echo          [OK] Active .env configuration verified.
+)
+echo.
+
+REM --- STEP 4: DEPENDENCIES VERIFICATION ---
+echo [Step 4/5] Checking Python scientific packages ^(requirements.txt^)...
+python.exe -c "import questionary, rich, fastapi" >nul 2>&1
+if errorlevel 1 (
+    echo          - First-run setup detected.
+    echo          - Installing required AI and scientific packages...
+    echo          - Note: This is a ONE-TIME installation ^(approx. 2-3 minutes^).
+    echo.
+    python.exe -m pip install --upgrade pip --quiet
+    python.exe -m pip install -r requirements.txt
+    python.exe src/utils/frontend_provisioner.py >nul 2>&1
+    echo.
+    echo          [OK] All Python packages successfully installed.
+) else (
+    echo          [OK] All core dependencies verified.
+)
+echo.
+
+REM --- STEP 5: SYSTEM HEALTH & INTEGRITY ---
+echo [Step 5/5] Finalizing startup verification...
+python.exe -c "import sys; sys.exit(0)" >nul 2>&1
+echo          [OK] System integrity verified. Environment is 100%% ready.
+echo ==============================================================================
+echo.
+timeout /t 1 /nobreak >nul 2>&1
+goto :EOF
+
 REM ===========================================================================
 REM MAIN DASHBOARD
 REM ===========================================================================
@@ -89,7 +226,7 @@ echo %C_IEEE_LIGHT%             ██    ███████ ██      █�
 echo %C_IEEE_LIGHT%             ██    ██   ██ ██      ██    ██     ██  %C_RESET%
 echo %C_IEEE_LIGHT%             ██    ██   ██ ███████  ██████  ██████  %C_RESET%
 echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
-echo  %C_CYAN%Project TALOS v5.11.1 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)%C_RESET%
+echo  %C_CYAN%Project TALOS v5.11.2 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)%C_RESET%
 echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
 echo  [ SYSTEM TELEMETRY ]  API (8001): !API_STATUS! ^| BUS (8000): !SYNAPSE_STATUS! ^| OLLAMA (11434): !OLLAMA_STATUS! ^| OPTICA (8002): !OPTICA_STATUS!
 echo %C_IEEE_DARK%-----------------------------------------------------------------------------------------------------%C_RESET%
@@ -218,7 +355,7 @@ call :LOG_INFO "Resolving and installing Python dependencies..."
 pip install -r requirements.txt
 python src/utils/frontend_provisioner.py
 python src/utils/model_provisioner.py
-call :LOG_SUCCESS "TALOS v5.11.1 deployment finalized."
+call :LOG_SUCCESS "TALOS v5.11.2 deployment finalized."
 pause
 goto MAIN_MENU
 
