@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.12.1
+Project: TALOS v5.12.2
 Description:
-    Canonical configuration hub for TALOS v5.12.1. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.12.2. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
@@ -64,6 +64,13 @@ OLLAMA_BASE_URL = os.getenv(
 
 # -- Legacy local model configuration (used by ai_manager.py init) --
 LOCAL_MODEL_BASE_URL = OLLAMA_BASE_URL + "/v1"
+
+# -- Local GPU chat model (standard Ollama, port 11434) --
+# llama3.1:8b is the preferred default: it is a verified-installed model with
+# zero thinking/reasoning overhead, so local responses are fast and
+# deterministic. Overridable via the LOCAL_GPU_MODEL or LOCAL_MODEL_NAME
+# environment variable.
+LOCAL_GPU_MODEL = os.getenv("LOCAL_GPU_MODEL", "llama3.1:8b")
 
 # -- Default tier for requests when not explicitly specified --
 DEFAULT_TIER = os.getenv("TALOS_DEFAULT_TIER", "fast")
@@ -177,7 +184,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.12.1"
+TALOS_VERSION = "5.12.2"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.

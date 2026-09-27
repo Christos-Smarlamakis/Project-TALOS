@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.12.1
+Project: TALOS v5.12.2
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,14 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.12.2: Self-Healing AI Manager & Heuristic Search Optimizer -- the core
+    AIManager gains a fast pre-flight Ollama probe with detached background
+    spawn, silent provider trimming (STANDBY_NO_KEY), secure on-demand .env
+    key injection, and a google.genai GA SDK migration; the Research Setup
+    Wizard strips English stopwords from heuristic boolean queries so IEEE
+    Xplore, Scopus, and arXiv fallback queries return records instead of zero
+    hits.
 
     v5.12.1: Research Wizard Query Transparency & CLI Fast-Dispatch Engine --
     Step 1 renders a styled Rich query-preview table (top primary sources with
@@ -822,40 +830,65 @@ def api_keys_menu(python_exe):
             if os.path.exists(tp): subprocess.run([python_exe, tp], check=False)
         safe_pause("\nPress Enter...")
 
+def _current_strategy_key():
+    """Return the active ai_execution_strategy key for display, or 'unset'.
+
+    Returns:
+        str: The current strategy key (e.g. 'strict_local') or 'unset'.
+    """
+    try:
+        from src.utils.ai_strategy_selector import _current_strategy
+        return _current_strategy() or "unset"
+    except Exception:
+        return "unset"
+
+
+def _launch_strategy_selector():
+    """Launch the interactive AI execution strategy switcher in-process."""
+    try:
+        from src.utils.ai_strategy_selector import select_ai_execution_strategy
+        select_ai_execution_strategy(None)
+    except Exception as e:
+        console.print(f"[red]Error launching strategy switcher: {e}[/red]")
+
+
 def profile_settings_menu(python_exe):
     """Configuration & Profiles sub-menu: profiles, models, and API keys."""
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
         sys.stdout.flush()
         console.print(Panel("[bold cyan]Configuration & Profiles[/bold cyan]\n[dim]Manage research profiles, API keys, and model parameters[/dim]", style="cyan", border_style="cyan"))
+        strategy_entry = f"2. AI Execution Strategy Switcher (Current: {_current_strategy_key()})"
         c = safe_select("Select profile setting:", choices=[
             "1. Manage Profiles",
-            "2. Run Research Setup Wizard (Interactive Guide)",
-            "3. Research Pivot Wizard",
-            "4. Research Goal (Query Translator / PYTHIA)",
-            "5. AI Model Management (2D Matrix)",
-            "6. Model Discovery (Quality Scoring)",
-            "7. Model Provisioning CLI",
-            "8. API Keys Management",
-            "9. API Key Diagnostics",
-            "10. Back / Return to Main Menu"
+            strategy_entry,
+            "3. Run Research Setup Wizard (Interactive Guide)",
+            "4. Research Pivot Wizard",
+            "5. Research Goal (Query Translator / PYTHIA)",
+            "6. AI Model Management (2D Matrix)",
+            "7. Model Discovery (Quality Scoring)",
+            "8. Model Provisioning CLI",
+            "9. API Keys Management",
+            "10. API Key Diagnostics",
+            "11. Back / Return to Main Menu"
         ])
         if not c or "Back" in c: return
         if c == "1. Manage Profiles": run_script("profile_manager.py", python_exe)
-        elif c == "2. Run Research Setup Wizard (Interactive Guide)": run_script("research_setup_wizard.py", python_exe)
-        elif c == "3. Research Pivot Wizard": run_script("research_pivot.py", python_exe)
-        elif c == "4. Research Goal (Query Translator / PYTHIA)": run_script("query_translator.py", python_exe)
-        elif c == "5. AI Model Management (2D Matrix)":
+        elif "AI Execution Strategy Switcher" in c: _launch_strategy_selector()
+        elif c == "3. Run Research Setup Wizard (Interactive Guide)": run_script("research_setup_wizard.py", python_exe)
+        elif c == "4. Research Pivot Wizard": run_script("research_pivot.py", python_exe)
+        elif c == "5. Research Goal (Query Translator / PYTHIA)": run_script("query_translator.py", python_exe)
+        elif c == "6. AI Model Management (2D Matrix)":
             console.print("\n[bold bright_cyan]Launching AI Model Manager...[/bold bright_cyan]\n")
             try:
                 from src.ai.llm.model_manager import main as mm_main
                 mm_main()
             except Exception as e:
                 console.print(f"[red]Error launching Model Manager: {e}[/red]")
-        elif c == "6. Model Discovery (Quality Scoring)": _run_model_discovery()
-        elif c == "7. Model Provisioning CLI": run_script("model_provisioner.py", python_exe)
-        elif c == "8. API Keys Management": api_keys_menu(python_exe)
-        elif c == "9. API Key Diagnostics": run_script("api_health_check.py", python_exe)
+        elif c == "7. Model Discovery (Quality Scoring)": _run_model_discovery()
+        elif c == "8. Model Provisioning CLI": run_script("model_provisioner.py", python_exe)
+        elif c == "9. API Keys Management": api_keys_menu(python_exe)
+        elif c == "10. API Key Diagnostics": run_script("api_health_check.py", python_exe)
         safe_pause("\nPress Enter...")
 
 # -- v5.9.15: Silent Fast Boot --
@@ -2008,8 +2041,27 @@ def _cli_help_table():
     table.add_row("--wizard", "Launch the 4-step Research Setup Wizard (src/utils/research_setup_wizard.py).")
     table.add_row("--daily", "Trigger the Daily Search ingestion pipeline (src/ingestion/daily_search.py).")
     table.add_row("--stats", "Run the Database Statistics health report (src/utils/db_stats.py).")
+    table.add_row("--strategy [mode]", "Switch the AI execution strategy (strict_local, local_first, cloud_first, strict_cloud, auto_dynamic). Omit [mode] for the interactive switcher.")
     table.add_row("--help, -h", "Display this CLI flag reference.")
     return table
+
+
+def _parse_strategy_flag(argv):
+    """Detect the --strategy / --mode flag and its optional mode argument.
+
+    Args:
+        argv (list[str]): Command-line arguments following the script name.
+
+    Returns:
+        tuple[bool, str or None]: (flag_present, target_strategy_or_None).
+    """
+    for i, arg in enumerate(argv):
+        if arg in ("--strategy", "--mode"):
+            target = None
+            if i + 1 < len(argv) and not argv[i + 1].startswith("--"):
+                target = argv[i + 1]
+            return True, target
+    return False, None
 
 
 def _handle_cli_flags(argv):
@@ -2034,6 +2086,13 @@ def _handle_cli_flags(argv):
         return True
     if "--stats" in argv:
         run_script("db_stats.py", python_exe)
+        return True
+    # -- v5.12.2: AI execution strategy switcher (--strategy / --mode). --
+    flag_present, strategy_target = _parse_strategy_flag(argv)
+    if flag_present:
+        from src.utils.ai_strategy_selector import select_ai_execution_strategy
+        if not select_ai_execution_strategy(strategy_target):
+            sys.exit(1)
         return True
     return False
 

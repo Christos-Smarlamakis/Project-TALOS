@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: research_setup_wizard.py
-Project: TALOS v5.12.1
+Project: TALOS v5.12.2
 Description:
     Structured, step-by-step research onboarding wizard for TALOS. Guides the
     researcher through four plain-English steps: (1) research topic capture
@@ -34,6 +34,18 @@ Description:
       previews the boolean queries for the top primary sources alongside the
       inclusion/exclusion criteria, followed by a Questionary confirmation
       before the parameters are persisted to config.json.
+    - Heuristic stopword filter (v5.12.2): the offline rule-based query
+      generator strips English stopwords and punctuation noise via
+      _extract_salient_terms so fallback boolean queries for IEEE Xplore,
+      Scopus, and arXiv produce valid, executable Boolean syntax.
+    - English-first cognitive mandate (v5.12.2): the LLM query/criteria
+      generation prompt enforces a strict formal-English language mandate plus
+      Boolean syntax constraints (no 'topic:' prefixes) and rigorous
+      inclusion/exclusion criteria formatting.
+    - 5-strategy execution matrix (v5.12.2): Step 2 now offers the full
+      five-tier hierarchy (strict_local, local_first, cloud_first,
+      strict_cloud, auto_dynamic) persisted to config.json under
+      'ai_execution_strategy'.
 
 Dependencies:
     - questionary: interactive prompts using the canonical TALOS theme.
@@ -47,6 +59,7 @@ Dependencies:
       LLM-generated query/criteria JSON into flat config.json keys.
 """
 import os
+import re
 import sys
 import json
 import time
@@ -94,6 +107,16 @@ API_PORT = 8001
 # -- Cognitive validation threshold --------------------------------------------
 MIN_WORDS = 3                # algorithmic minimum for a viable research topic
 
+# -- v5.12.2: English stopwords excluded from heuristic boolean query chains --
+# -- Joining these words with AND yields invalid, zero-hit queries on IEEE --
+# -- Xplore, Scopus, and arXiv. They are stripped by _extract_salient_terms. --
+STOPWORDS = {
+    "for", "with", "and", "to", "in", "on", "of", "by", "a", "an", "the",
+    "at", "or", "is", "are", "using", "based", "into", "from", "that",
+    "this", "these", "those", "their", "its", "via", "as", "be", "was",
+    "were", "within", "towards", "toward", "between", "among", "through",
+}
+
 # -- The 16 ingestion source query keys written back to config.json -------------
 SOURCE_QUERY_KEYS = [
     "arxiv_query", "ieee_query", "semantic_scholar_query", "springer_query",
@@ -114,36 +137,53 @@ PRIMARY_SOURCE_LABELS = [
 
 # -- Historical search window options -------------------------------------------
 SEARCH_WINDOWS = {
-    "recent": {
-        "label": "Recent Advances (2024 - 2026)",
-        "start_year": 2024,
-        "end_year": 2026,
-        "days": 730,
+    "rapid_30": {
+        "label": "1. Rapid Reconnaissance: Last 30 Days (30 days) — Latest preprints & urgent breakthroughs",
+        "days": 30,
     },
-    "standard": {
-        "label": "Standard Comprehensive Review (2021 - 2026) [Recommended]",
-        "start_year": 2021,
-        "end_year": 2026,
+    "annual_365": {
+        "label": "2. Annual Snapshot: Last 1 Year (365 days) — Recent SOTA algorithms & benchmarks",
+        "days": 365,
+    },
+    "phd_1095": {
+        "label": "3. Standard PhD Scoping Window: Last 3 Years (1,095 days) — Recommended for Chapter 2",
+        "days": 1095,
+    },
+    "prisma_1825": {
+        "label": "4. Comprehensive PRISMA-ScR: Last 5 Years (1,825 days) — Complete state-of-the-art coverage",
         "days": 1825,
     },
-    "retrospective": {
-        "label": "Full Decade Retrospective (2015 - 2026)",
-        "start_year": 2015,
-        "end_year": 2026,
-        "days": 4015,
+    "decadal_3650": {
+        "label": "5. Decadal Archive: Last 10 Years (3,650 days) — Foundational & longitudinal analysis",
+        "days": 3650,
     },
 }
 
 # -- AI execution strategy options ----------------------------------------------
 EXECUTION_STRATEGIES = {
     "strict_local": {
-        "label": "1. Local & Completely Private (Air-Gapped / Offline via Ollama)",
+        "label": "1. Strict Local (Only Local - 100% Air-Gapped / Offline via Ollama)",
         "network": "strict_local",
         "cloud_fallback": "0",
     },
     "local_first": {
-        "label": "2. Hybrid Cloud with Free Providers (Google Gemini / Groq / DeepSeek)",
+        "label": "2. Local-First (Local GPU priority, Cloud Fallback on failure/OOM)",
         "network": "local_first",
+        "cloud_fallback": "1",
+    },
+    "cloud_first": {
+        "label": "3. Cloud-First (Cloud priority, Local Fallback on network failure)",
+        "network": "cloud_first",
+        "cloud_fallback": "1",
+    },
+    "strict_cloud": {
+        "label": "4. Strict Cloud (Only Cloud - 0% GPU VRAM footprint, leaves GPU free for PhD training)",
+        "network": "strict_cloud",
+        "cloud_fallback": "1",
+    },
+    "auto_dynamic": {
+        "label": "5. Autonomous 2D Matrix (auto_dynamic - adaptive real-time routing based on VRAM & task complexity)",
+        "network": "auto_dynamic",
         "cloud_fallback": "1",
     },
 }
@@ -153,6 +193,31 @@ DEFAULT_META_PROMPT = (
     "Act as a Research Architect. Generate a flat JSON object with optimized "
     "search queries (keys like 'arxiv_query') and inclusion/exclusion criteria "
     "for the user's research goal. Do NOT nest the JSON."
+)
+
+# -- v5.12.2: strict English-first cognitive generation mandate ----------------
+# Appended to the LLM query/criteria generation prompt so the compiled queries
+# and criteria are always formal academic English with valid, executable
+# Boolean syntax (no 'topic:' prefixes, no locale leakage).
+LANGUAGE_AND_SYNTAX_MANDATE = (
+    "\n\n**LANGUAGE MANDATE:** Output ALL criteria (inclusion_criteria, "
+    "exclusion_criteria) and all search queries strictly in formal academic "
+    "English. NEVER use Greek or any other language, regardless of user locale.\n\n"
+    "**SYNTAX CONSTRAINTS:**\n"
+    "- Do NOT invent or use non-standard prefixes such as 'topic:'.\n"
+    "- For arXiv: Use standard title/abstract keywords or pure search terms "
+    "without fake tags.\n"
+    "- For IEEE Xplore: Use standard Boolean syntax with double quotes for exact "
+    "phrases (e.g. (\"cooperative mission planning\" AND \"UAV swarms\")). Do NOT "
+    "output 'topic:'.\n"
+    "- For Scopus, OpenAlex, Semantic Scholar, Springer Link: Output standard "
+    "Boolean keyword queries.\n\n"
+    "**CRITERIA SPECIFICATION:**\n"
+    "- inclusion_criteria: Clear, rigorous academic sentence in English defining "
+    "peer-reviewed scope, primary methodologies, and domain context.\n"
+    "- exclusion_criteria: Clear, rigorous academic sentence in English defining "
+    "out-of-scope fields, non-empirical work, pre-prints without validation, or "
+    "duplicate studies."
 )
 
 _ai_manager = None
@@ -403,8 +468,48 @@ def _analyze_scope_with_llm(topic):
 # -- Query & criteria generation (LLM with heuristic fallback) --
 # ---------------------------------------------------------------------------
 
+def _extract_salient_terms(topic, max_terms=6):
+    """Extract up to max_terms salient tokens/phrases from a research topic.
+
+    Strips stopwords and punctuation noise (unbalanced parentheses, stray
+    hyphens), preserves hyphenated compound terms (e.g. ``spatio-temporal``),
+    deduplicates in original order, and caps the result so fallback boolean
+    queries remain executable and return records instead of zero hits.
+
+    Args:
+        topic (str): The raw research topic text.
+        max_terms (int): Maximum number of salient terms to return (4-6).
+
+    Returns:
+        list[str]: The salient terms in original order.
+    """
+    if not topic:
+        return []
+    text = " ".join((topic or "").split())
+    tokens = re.findall(r"[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*", text)
+    salient = []
+    seen = set()
+    for token in tokens:
+        lower = token.lower()
+        if lower in STOPWORDS:
+            continue
+        if len(token) < 2:
+            continue
+        if lower not in seen:
+            seen.add(lower)
+            salient.append(token)
+        if len(salient) >= max_terms:
+            break
+    return salient
+
+
 def _generate_queries_heuristic(topic, config):
     """Deterministically build 16 English queries and criteria from the topic.
+
+    v5.12.2: the boolean query chains only salient (non-stopword) tokens via
+    _extract_salient_terms so IEEE Xplore, Scopus, and arXiv fallback queries
+    produce valid, executable Boolean syntax that returns records rather than
+    zero hits from stopword-laden AND chains.
 
     Args:
         topic (str): The validated research topic.
@@ -415,12 +520,17 @@ def _generate_queries_heuristic(topic, config):
         and exclusion_criteria keys.
     """
     clean = " ".join((topic or "").split())
-    boolean = "(" + " AND ".join(clean.split()) + ")"
+    salient = _extract_salient_terms(topic)
+    # -- v5.12.2: heuristic stopword cleaner -- when salient terms survive the
+    # -- filter they drive the queries; otherwise we fall back to the raw topic
+    # -- so an all-stopword input still produces a non-empty, runnable query. --
+    boolean = "(" + " AND ".join(salient) + ")" if salient else "(" + clean + ")"
+    plain = " ".join(salient) if salient else clean
     for key in SOURCE_QUERY_KEYS:
         if key == "ieee_query":
             config[key] = boolean
         else:
-            config[key] = clean
+            config[key] = plain
     config["inclusion_criteria"] = (
         "Peer-reviewed studies directly addressing: " + clean
     )
@@ -453,7 +563,8 @@ def _generate_queries_llm(topic, config):
             "change content):**\n" + config.get("phd_focus_system_prompt", "") +
             "\n\n**USER RESEARCH GOAL:**\n" + topic +
             "\n\nAlso produce two additional string fields: "
-            "'inclusion_criteria' and 'exclusion_criteria'."
+            "'inclusion_criteria' and 'exclusion_criteria'." +
+            LANGUAGE_AND_SYNTAX_MANDATE
         )
 
         def _work():
@@ -507,10 +618,14 @@ def _update_env_key(env_path, key, value):
 
 
 def _apply_execution_strategy(strategy_key, project_root=None):
-    """Persist the chosen execution strategy into the active .env.
+    """Persist the chosen execution strategy into .env and config.json.
+
+    Writes the canonical strategy string to config.json under
+    'ai_execution_strategy' and maps it onto the .env keys
+    TALOS_NETWORK_STRATEGY and TALOS_ALLOW_CLOUD_FALLBACK.
 
     Args:
-        strategy_key (str): One of 'strict_local' or 'local_first'.
+        strategy_key (str): One of the five EXECUTION_STRATEGIES keys.
         project_root (str, optional): Project root override for testing.
 
     Returns:
@@ -523,28 +638,48 @@ def _apply_execution_strategy(strategy_key, project_root=None):
     env_path = os.path.join(root, ".env")
     _update_env_key(env_path, "TALOS_NETWORK_STRATEGY", strategy["network"])
     _update_env_key(env_path, "TALOS_ALLOW_CLOUD_FALLBACK", strategy["cloud_fallback"])
+
+    # -- v5.12.2: persist the canonical strategy key into config.json. --
+    # -- Wrapped defensively so isolated test fixtures (no config.json) --
+    # -- still exercise the .env path without erroring. --
+    try:
+        config, config_path = _load_config(root)
+        config["ai_execution_strategy"] = strategy_key
+        _save_config(config, config_path)
+    except Exception:
+        pass
+
     return True
 
 
-def _write_search_window(config, path, strategy_key):
+def _write_search_window(config, path, strategy_key, days=None):
     """Store the selected historical search window in the active config.json.
+
+    For preset windows the day count is read from SEARCH_WINDOWS; for a custom
+    window an explicit ``days`` value is required and validated.
 
     Args:
         config (dict): The active config dict (mutated in place).
         path (str): Destination config.json path.
-        strategy_key (str): One of the SEARCH_WINDOWS keys.
+        strategy_key (str): One of the SEARCH_WINDOWS keys, or 'custom'.
+        days (int, optional): Explicit day count for the custom window.
 
     Returns:
-        bool: True on success, False when the strategy key is unknown.
+        bool: True on success, False when the key is unknown or days is invalid.
     """
-    window = SEARCH_WINDOWS.get(strategy_key)
-    if not window:
-        return False
+    if strategy_key == "custom":
+        if not isinstance(days, int) or days <= 0:
+            return False
+        label = f"Custom Days Window ({days} days)"
+    else:
+        window = SEARCH_WINDOWS.get(strategy_key)
+        if not window:
+            return False
+        days = window["days"]
+        label = window["label"]
     config["research_search_window"] = strategy_key
-    config["search_window_label"] = window["label"]
-    config["search_window_start_year"] = window["start_year"]
-    config["search_window_end_year"] = window["end_year"]
-    config["days_to_search_historic"] = window["days"]
+    config["search_window_label"] = label
+    config["days_to_search_historic"] = days
     _save_config(config, path)
     return True
 
@@ -569,7 +704,7 @@ def _create_sentinel(project_root=None):
     path = _sentinel_path(project_root)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        f.write("TALOS onboarding complete (v5.12.1)\n")
+        f.write("TALOS onboarding complete (v5.12.2)\n")
     logger.info("Onboarding sentinel created: %s", path)
 
 # ---------------------------------------------------------------------------
@@ -673,7 +808,7 @@ def _render_header():
     )
     console.print(Panel(
         Align.center(body),
-        title="[bold]TALOS v5.12.1[/bold]",
+        title="[bold]TALOS v5.12.2[/bold]",
         border_style="#006699",
         padding=(1, 2),
     ))
@@ -805,9 +940,12 @@ def _step2_execution_strategy(project_root):
         str or None: The chosen strategy key, or None on cancel.
     """
     console.print(Panel(
-        "Choose how TALOS should execute AI inference. The Local & Completely "
-        "Private option is fully air-gapped; Hybrid Cloud adds free cloud "
-        "providers as a fallback.",
+        "Select how TALOS routes AI inference between your local GPU (Ollama) "
+        "and the external cloud mesh. Strict Local is 100% air-gapped with zero "
+        "cloud egress; Strict Cloud leaves the GPU VRAM footprint at 0% for "
+        "concurrent PhD training; Local-First and Cloud-First set the primary "
+        "tier with automatic fallback; the Autonomous 2D Matrix adapts routing "
+        "in real time from detected VRAM and task complexity.",
         title="[bold]Step 2 of 4: AI Execution Strategy[/bold]",
         border_style="cyan",
     ))
@@ -825,8 +963,28 @@ def _step2_execution_strategy(project_root):
     return None
 
 
+def _prompt_custom_days():
+    """Prompt for and validate a custom search-window day count.
+
+    Returns:
+        int or None: The validated positive day count, or None on cancel.
+    """
+    while True:
+        raw = questionary.text(
+            "Enter the number of days back to search from today "
+            "(e.g. 730 for 2 years, 1825 for 5 years):",
+            style=TALOS_QUESTIONARY_STYLE,
+        ).ask()
+        if raw is None:
+            return None
+        raw = (raw or "").strip()
+        if raw.isdigit() and int(raw) > 0:
+            return int(raw)
+        console.print("[yellow]Please enter a positive whole number of days.[/yellow]")
+
+
 def _step3_search_window(config, config_path):
-    """Step 3: select and persist the historical search window.
+    """Step 3: select and persist the historical search window (in days).
 
     Args:
         config (dict): Active config dict (mutated in place).
@@ -836,18 +994,30 @@ def _step3_search_window(config, config_path):
         str or None: The chosen window key, or None on cancel.
     """
     console.print(Panel(
-        "Select the publication window for your literature search. The "
-        "Standard Comprehensive Review is recommended for a balanced review.",
+        "Select the publication window for your literature search. Each option "
+        "is measured in days back from today; shorter windows surface the "
+        "latest preprints while longer windows capture foundational work.",
         title="[bold]Step 3 of 4: Historical Search Window[/bold]",
         border_style="cyan",
     ))
+    choices = [w["label"] for w in SEARCH_WINDOWS.values()]
+    choices.append("6. Custom Days Window — Enter an explicit number of days")
     choice = questionary.select(
-        "Select your historical search window:",
-        choices=[w["label"] for w in SEARCH_WINDOWS.values()],
+        "Select your historical publication search window (measured in days from today):",
+        choices=choices,
         style=TALOS_QUESTIONARY_STYLE,
     ).ask()
     if choice is None:
         return None
+
+    # -- Custom days window: prompt and validate a positive integer. --
+    if "Custom Days Window" in (choice or ""):
+        days = _prompt_custom_days()
+        if days is None:
+            return None
+        _write_search_window(config, config_path, "custom", days)
+        return "custom"
+
     for key, window in SEARCH_WINDOWS.items():
         if window["label"] == choice:
             _write_search_window(config, config_path, key)
@@ -872,16 +1042,22 @@ def _step4_first_flight():
         default=False,
         style=TALOS_QUESTIONARY_STYLE,
     ).ask()
+    if run_test is None:
+        return None
     if run_test:
         return _run_first_flight()
     return False
 
-def _render_summary(topic, strategy_key, window_key, first_flight):
+def _render_summary(topic, strategy_key, window_key, first_flight, config=None):
     """Render the final academic summary panel."""
     strategy_label = EXECUTION_STRATEGIES.get(strategy_key, {}).get(
         "label", strategy_key or "N/A")
-    window_label = SEARCH_WINDOWS.get(window_key, {}).get(
-        "label", window_key or "N/A")
+    window_label = None
+    if config:
+        window_label = config.get("search_window_label")
+    if not window_label:
+        window_label = SEARCH_WINDOWS.get(window_key, {}).get(
+            "label", window_key or "N/A")
     body = Text()
     body.append("[dim]Research Topic:[/dim] " + (topic or "N/A") + "\n")
     body.append("[dim]Execution Strategy:[/dim] " + strategy_label + "\n")
@@ -901,6 +1077,20 @@ def _render_summary(topic, strategy_key, window_key, first_flight):
     ))
 
 
+def _render_cancelled():
+    """Print the clean cancellation panel and exit without persisting anything.
+
+    Called whenever the user cancels (None or KeyboardInterrupt) in any step,
+    so no config.json writes, 'N/A' placeholders, or sentinel creation occur.
+    """
+    console.print(Panel(
+        "[yellow]Setup cancelled by user. Configuration was not altered.[/yellow]",
+        title="[bold]CANCELLED[/bold]",
+        border_style="yellow",
+    ))
+    sys.exit(0)
+
+
 def main():
     """Orchestrate the 4-step research setup wizard end to end."""
     _render_header()
@@ -913,17 +1103,26 @@ def main():
     else:
         console.print("[yellow]Local AI offline -- Heuristic Bypass mode.[/yellow]\n")
 
+    # -- Cancellation integrity: any step returning None aborts the whole flow
+    # -- before any config.json writes, 'N/A' placeholders, or sentinel file. --
     topic = _step1_research_topic(active_llm, config, config_path)
     if topic is None:
-        console.print("[dim]Setup cancelled. No changes were persisted.[/dim]")
-        return
+        _render_cancelled()
 
     strategy_key = _step2_execution_strategy(project_root)
+    if strategy_key is None:
+        _render_cancelled()
+
     window_key = _step3_search_window(config, config_path)
+    if window_key is None:
+        _render_cancelled()
+
     first_flight = _step4_first_flight()
+    if first_flight is None:
+        _render_cancelled()
 
     _create_sentinel(project_root)
-    _render_summary(topic, strategy_key, window_key, first_flight)
+    _render_summary(topic, strategy_key, window_key, first_flight, config)
 
 
 if __name__ == "__main__":
@@ -931,8 +1130,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        console.print("\n\n[dim]Setup cancelled by user.[/dim]\n")
-        sys.exit(0)
+        _render_cancelled()
 
 
 

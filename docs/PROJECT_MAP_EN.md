@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.12.1
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.12.2
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-09-27 (v5.12.1 -- Research Wizard Query Transparency & CLI Fast-Dispatch Engine)
+> **Last Updated:** 2026-09-27 (v5.12.2 -- Self-Healing AI Manager, 5-Tier Strategy Matrix & Research Wizard Integrity Engine)
 
 ---
 
@@ -64,7 +64,7 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 
 | Module | Role |
 |--------|------|
-| `ai_manager.py` | Multi-provider LLM manager (Gemini, DeepSeek, HuggingFace, Ollama) with circuit breakers, JSON/text/embedding modes, and `last_provider_used` attribution |
+| `ai_manager.py` | Multi-provider LLM manager (Gemini, DeepSeek, HuggingFace, Ollama) with circuit breakers, JSON/text/embedding modes, and `last_provider_used` attribution; v5.12.2 adds self-healing Ollama probe/spawn (`probe_local_ollama`), provider trimming (`STANDBY_NO_KEY`), on-demand .env key injection, google.genai GA SDK, thinking-model parser (`_strip_thinking_tags()` / `_extract_assistant_content()`), and `LOCAL_GPU_MODEL` baseline |
 | `database_manager.py` | SQLite persistence (20+ columns), 4-layer scoring (strategic/operational/tactical/playground), embeddings table, cosine semantic search, enrichment state machine |
 | `hardware.py` | Single source of truth for GPU detection and VRAM queries; CPU fallback with graceful degradation |
 | `notifier.py` | Telegram / Discord / Email alerting for high-score papers |
@@ -195,7 +195,7 @@ src/utils/research_setup_wizard.py
 | **Evaluation History (v5.11.0)** | `src/utils/evaluation_history.py` | `record_evaluation()` / `read_evaluation_history()` / `verdict_for_score()` -- append-only JSONL recorder at `data/history/daemon_evaluations.jsonl`; `_show_evaluation_history(limit=30)` Rich TUI viewer in `talos.py` |
 | **Live Telemetry HUD Console (v5.11.0)** | `templates/live_foraging_visualizer.html` | bottom-right glassmorphism stream (40-line ring buffer, auto-scroll, `C`/`L` hotkeys, snapshot auto-hide) driven by `appendConsoleLog()` |
 | **Win32 Close-to-Tray Hook (v5.11.0)** | `src/utils/tray_icon.py` | `enable_close_to_tray()` subclasses the console WndProc (WM_CLOSE / SC_CLOSE to SW_HIDE) so closing minimizes to tray |
-| **Research Setup Wizard (v5.12.0)** | `src/utils/research_setup_wizard.py` | `_ensure_local_ai_runtime()` (probe/spawn ports 11434+11435 with 2s bounded wait), `_analyze_scope_heuristic()` / `_analyze_scope_with_llm()`, `_generate_queries_llm()` / `_generate_queries_heuristic()`, `_apply_execution_strategy()`, `_write_search_window()`, `_create_sentinel()`, `_render_query_preview()` (query-transparency table + confirmation gate, v5.12.1) -- 4-step English-first onboarding with failsafe heuristic bypass |
+| **Research Setup Wizard (v5.12.0)** | `src/utils/research_setup_wizard.py` | `_ensure_local_ai_runtime()` (probe/spawn ports 11434+11435 with 2s bounded wait), `_analyze_scope_heuristic()` / `_analyze_scope_with_llm()`, `_generate_queries_llm()` / `_generate_queries_heuristic()`, `_apply_execution_strategy()`, `_write_search_window()`, `_create_sentinel()`, `_render_query_preview()` (query-transparency table + confirmation gate, v5.12.1), `_extract_salient_terms()` (heuristic stopword cleaner, v5.12.2), `_prompt_custom_days()` / `_step3_search_window()` (day-based window), `_render_cancelled()` (cancellation integrity), `LANGUAGE_AND_SYNTAX_MANDATE` (English-first mandate), 5-tier `EXECUTION_STRATEGIES` + `ai_strategy_selector.py` (strategy switcher) -- 4-step English-first onboarding with failsafe heuristic bypass |
 
 ## 9. Auxiliary Files
 
@@ -232,8 +232,8 @@ src/utils/research_setup_wizard.py
 
 ---
 
-> **Last Updated:** 2026-09-27 (v5.12.1 -- Research Wizard Query Transparency & CLI Fast-Dispatch Engine)
-> **Project Version:** v5.12.1
+> **Last Updated:** 2026-09-27 (v5.12.2 -- Self-Healing AI Manager, 5-Tier Strategy Matrix & Research Wizard Integrity Engine)
+> **Project Version:** v5.12.2
 > **Total .py modules under src/:** 86 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 20 + api 4 + mcp_server 1)
 
 

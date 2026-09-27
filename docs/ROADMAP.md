@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.12.1 (Research Wizard Query Transparency & CLI Fast-Dispatch Engine)
+> **Current Version:** v5.12.2 (Self-Healing AI Manager, 5-Tier Strategy Matrix & Research Wizard Integrity Engine)
 > **Last Updated:** 2026-09-27
 
 ---
@@ -196,6 +196,7 @@ Project ALEXANDRIA marks the full desktop and distributed release of the platfor
 | **v5.11.3** | Ecosystem Integrity & Dependency Alignment | OpenReview V2 fix, 11435 batch circuit breaker, FastAPI lifespan, warning suppression, GWO status check, verifier repair; 7 concurrency fixes sealed | Complete |
 | **v5.12.0** | Research Setup Wizard & Cognitive Onboarding | 4-step English-first wizard, local AI auto-spawn with heuristic bypass, first-run sentinel, ISO/IEC 25010 usability | Complete |
 | **v5.12.1** | Research Wizard Query Transparency & CLI Fast-Dispatch Engine | Step 1 query-preview table + confirmation gate; CLI fast-dispatch flags (--wizard/--daily/--stats/--help) | Complete |
+| **v5.12.2** | Self-Healing AI Manager, 5-Tier Strategy Matrix & Research Wizard Integrity Engine | Self-healing Ollama probe/spawn, 5-tier execution strategy matrix, day-based search windows, cancellation integrity, thinking-model parser, English-first mandate, LOCAL_GPU_MODEL baseline | Complete |
 | **v5.13.0** | DSPy PRISMA Systematic Review Pipeline | Automated PRISMA 2020 SLR with PlanEval DSPy architecture | Next |
 | **v5.14.0** | CORTEX & n8n Gateway | Discord bot, n8n workflow templates, ecosystem integration | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine | Future |

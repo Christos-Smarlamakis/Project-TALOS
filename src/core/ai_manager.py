@@ -5,8 +5,8 @@
 #  This program is free software...
 #
 """
-Module: ai_manager.py (v4.0 - Universal Cloud Mesh, 2D Execution Matrix & Auto-Dynamic Privacy Guardrails)
-Project: TALOS v5.10.15
+Module: ai_manager.py (v4.1 - Self-Healing AI Manager, Universal Cloud Mesh & Auto-Dynamic Privacy Guardrails)
+Project: TALOS v5.12.2
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture
@@ -48,9 +48,16 @@ Description:
     breaker (_fast_edge_offline_memo) so a failed CPU edge endpoint (port
     11435) is skipped for the remainder of the batch, and suppresses the
     google.generativeai end-of-support FutureWarning at lazy-import time.
+
+    v5.12.2: Self-Healing AI Manager & Heuristic Search Optimizer -- adds a
+    fast pre-flight Ollama probe with detached background spawn
+    (probe_local_ollama / _ensure_local_ollama_runtime), silent provider
+    trimming (STANDBY_NO_KEY / STANDBY_NO_SDK lifecycle states), secure
+    on-demand .env key injection (_prompt_cloud_key / _persist_env_key), and a
+    clean migration to the google.genai GA SDK for Gemini text generation.
 """
 
-import os, json, re, requests, sys, functools
+import os, json, re, requests, sys, functools, subprocess, time
 from dotenv import load_dotenv
 from typing import Union, List, Dict, Any, Tuple, Optional
 import numpy as np
@@ -70,6 +77,7 @@ from config.settings import (
     OPENROUTER_BASE_URL, OPENROUTER_DEFAULT_MODEL,
     DEEPSEEK_BASE_URL, DEEPSEEK_MODEL_CHAT,
     HF_BASE_URL, HF_MODEL_NAME,
+    LOCAL_GPU_MODEL,
 )
 
 # -- Lazy SDK imports (Constitution II: cloud providers are OPTIONAL) --
@@ -132,6 +140,159 @@ try:
     _GENAI_V2 = True
 except ImportError:
     _GENAI_V2 = False
+
+
+# -- v5.12.2: Self-Healing AI Manager -- provider lifecycle states. --
+# Cloud providers that lack an API key are parked in STANDBY_NO_KEY so the
+# failover chain can distinguish "unconfigured" from "configured but broken"
+# without emitting noisy runtime warning cascades or attempting network calls.
+STANDBY_NO_KEY = "STANDBY_NO_KEY"
+STANDBY_NO_SDK = "STANDBY_NO_SDK"
+ACTIVE = "ACTIVE"
+
+# Maps a provider alias to its API-key environment variable and a human-readable
+# label used by the secure interactive on-demand key prompt.
+CLOUD_KEY_ENV_MAP = {
+    "gemini": {"env_key": "GEMINI_API_KEY", "label": "Gemini"},
+    "deepseek": {"env_key": "DEEPSEEK_API_KEY", "label": "DeepSeek"},
+    "nvidia": {"env_key": "NVIDIA_API_KEY", "label": "NVIDIA NIM"},
+    "groq": {"env_key": "GROQ_API_KEY", "label": "Groq"},
+    "cerebras": {"env_key": "CEREBRAS_API_KEY", "label": "Cerebras"},
+    "github": {"env_key": "GITHUB_TOKEN", "label": "GitHub Models"},
+    "mistral": {"env_key": "MISTRAL_API_KEY", "label": "Mistral"},
+    "huggingface": {"env_key": "HF_API_KEY", "label": "HuggingFace"},
+    "openrouter": {"env_key": "OPENROUTER_API_KEY", "label": "OpenRouter"},
+}
+
+
+def _resolve_project_root() -> str:
+    """Resolve the TALOS project root by walking up until talos.py is found.
+
+    Returns:
+        str: Absolute path to the project root directory.
+    """
+    path = os.path.abspath(os.path.dirname(__file__))
+    while path and not os.path.exists(os.path.join(path, "talos.py")):
+        parent = os.path.dirname(path)
+        if parent == path:
+            break
+        path = parent
+    return path
+
+
+def probe_local_ollama(port: int = 11434, timeout: float = 0.8) -> bool:
+    """Perform a fast pre-flight liveness probe against the local Ollama runtime.
+
+    Issues a lightweight GET request to the Ollama ``/api/tags`` endpoint. The
+    call is intentionally small and quick so the pre-flight never stalls startup.
+
+    Args:
+        port: TCP port of the local Ollama service (default 11434).
+        timeout: Per-request timeout in seconds (default 0.8).
+
+    Returns:
+        bool: True when the runtime answers HTTP 200, False otherwise.
+    """
+    url = f"http://127.0.0.1:{port}/api/tags"
+    try:
+        resp = requests.get(url, timeout=timeout)
+        return resp.status_code == 200
+    except Exception:
+        return False
+
+
+def _spawn_local_ollama() -> None:
+    """Spawn the local Ollama service as a detached background process.
+
+    The process is fully detached (no console window on Windows) and inherits no
+    TTY so it survives the lifetime of the calling Python process.
+    """
+    creationflags = 0
+    if os.name == "nt":
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+    try:
+        subprocess.Popen(
+            ["ollama", "serve"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            creationflags=creationflags,
+        )
+    except Exception as e:
+        print(f"  >!> Failed to spawn local Ollama service: {e}")
+
+
+def _is_interactive_tty() -> bool:
+    """Return True when the process is attached to an interactive terminal.
+
+    Headless daemons and API workers have no TTY and must never render prompts.
+
+    Returns:
+        bool: True when interactive, False when headless or non-TTY.
+    """
+    if os.getenv("TALOS_HEADLESS") == "1":
+        return False
+    try:
+        return sys.stdin is not None and sys.stdin.isatty()
+    except Exception:
+        return False
+
+
+def _strip_thinking_tags(text: str) -> str:
+    """Extract the final answer from text that may contain <think> tags.
+
+    Reasoning models (e.g. DeepSeek-R1, QwQ, gemma4) wrap their
+    chain-of-thought in <think>...</think> tags. The real answer is whatever
+    follows the closing </think> tag. When no answer follows, the full text
+    (minus the tags) is returned so the caller never loses content.
+
+    Args:
+        text: Raw assistant text possibly containing <think> tags.
+
+    Returns:
+        str: The cleaned final answer text.
+    """
+    if not text:
+        return ""
+    text = text.strip()
+    if "<think>" in text.lower():
+        idx = text.lower().rfind("</think>")
+        if idx != -1:
+            tail = text[idx + len("</think>"):].strip()
+            if tail:
+                return tail
+        # -- No answer after the closing tag: strip every think tag. --
+        text = re.sub(r"<\s*/?\s*think\s*>", "", text, flags=re.IGNORECASE).strip()
+    return text
+
+
+def _extract_assistant_content(message: Dict[str, Any]) -> str:
+    """Extract the final answer from an OpenAI-style assistant message.
+
+    Thinking/reasoning models may place their chain-of-thought in a separate
+    ``reasoning_content`` field (leaving ``content`` empty) or wrap it inside
+    ``<think>...</think>`` tags inside ``content``. This helper recovers the
+    actual answer so callers never receive an empty string.
+
+    Args:
+        message: The assistant message mapping from an OpenAI-compatible reply.
+
+    Returns:
+        str: The cleaned final answer text (may be empty if none present).
+    """
+    content = (message.get("content") or "").strip()
+    reasoning = (message.get("reasoning_content") or "").strip()
+    thinking = (message.get("thinking") or "").strip()
+
+    # -- Case 1: the model returned only a reasoning/thinking surface with no
+    # -- plain content (e.g. reasoning_content on DeepSeek, thinking on Ollama). --
+    if not content:
+        return reasoning or thinking
+
+    # -- Case 2: content contains <think>...</think> chain-of-thought tags. --
+    if content:
+        content = _strip_thinking_tags(content)
+
+    return content
 
 
 # -- v5.9.18: Universal Cloud Mesh -- OpenAI-compatible provider registry --
@@ -239,46 +400,72 @@ class AIManager:
         # -- v5.10.2: LLM Router Sub-Agent (provider selection delegate) --
         self.router = self._init_router()
 
-        # --- Gemini Provider ---
+        # -- v5.12.2: provider lifecycle tracking -- each provider is ACTIVE,
+        # -- STANDBY_NO_KEY (unconfigured), or STANDBY_NO_SDK (key present but
+        # -- the optional SDK is absent). Missing keys are recorded silently. --
+        self.provider_status = {}
+
+        # --- Gemini Provider (google.genai GA SDK preferred; v1 fallback) ---
         gemini_api_key = os.getenv("GEMINI_API_KEY")
-        if gemini_api_key and _try_import_genai():
-            _genai.configure(api_key=gemini_api_key)
-            self.providers['gemini'] = {
-                'flash_model': _genai.GenerativeModel(config.get("pre_screening_model", "gemini-2.5-flash-lite")),
-                'pro_model': _genai.GenerativeModel(config.get("model_for_daily_search", "gemini-2.5-pro")),
-                'embedding_model': "models/embedding-001",
-                'consecutive_failures': 0, 'circuit_open': False
-            }
-            print("INFO: Gemini provider initialized.")
-        elif gemini_api_key:
-            print(f"WARNING: Gemini API key found but google-generativeai not installed ({_genai_import_error}). Skipping Gemini.")
+        if gemini_api_key:
+            if _GENAI_V2:
+                self.providers['gemini'] = {
+                    'client': genai_client.Client(api_key=gemini_api_key),
+                    'flash_model': config.get("pre_screening_model", "gemini-2.5-flash-lite"),
+                    'pro_model': config.get("model_for_daily_search", "gemini-2.5-pro"),
+                    'embedding_model': "models/embedding-001",
+                    'sdk': 'v2',
+                    'consecutive_failures': 0, 'circuit_open': False
+                }
+                self.provider_status['gemini'] = ACTIVE
+                print("INFO: Gemini provider initialized (google.genai GA SDK).")
+            elif _try_import_genai():
+                _genai.configure(api_key=gemini_api_key)
+                self.providers['gemini'] = {
+                    'flash_model': _genai.GenerativeModel(config.get("pre_screening_model", "gemini-2.5-flash-lite")),
+                    'pro_model': _genai.GenerativeModel(config.get("model_for_daily_search", "gemini-2.5-pro")),
+                    'embedding_model': "models/embedding-001",
+                    'sdk': 'v1',
+                    'consecutive_failures': 0, 'circuit_open': False
+                }
+                self.provider_status['gemini'] = ACTIVE
+                print("INFO: Gemini provider initialized (legacy google.generativeai).")
+            else:
+                self.provider_status['gemini'] = STANDBY_NO_SDK
+        else:
+            self.provider_status['gemini'] = STANDBY_NO_KEY
 
         # --- Universal Cloud Mesh (v5.9.18): OpenAI-compatible provider registry ---
         # Dictionary-driven initialization. Each entry supplies the environment
         # variable key name, base URL, default model, and model-override key.
-        # Providers without a configured key are skipped gracefully (Constitution
+        # Providers without a configured key are parked silently (Constitution
         # II: cloud providers are OPTIONAL, never required for local operation).
         for provider_name, meta in OPENAI_COMPATIBLE_REGISTRY.items():
             api_key = os.getenv(meta["env_key"], "")
-            if api_key and _try_import_openai():
+            if not api_key:
+                self.provider_status[provider_name] = STANDBY_NO_KEY
+                continue
+            if _try_import_openai():
                 model_name = os.getenv(meta["model_env_key"], meta["default_model"])
                 self.providers[provider_name] = {
                     'client': _openai.OpenAI(api_key=api_key, base_url=meta["base_url"]),
                     'model_name': model_name,
                     'consecutive_failures': 0, 'circuit_open': False
                 }
+                self.provider_status[provider_name] = ACTIVE
                 print(f"INFO: {provider_name.capitalize()} provider initialized ({model_name}).")
-            elif api_key:
-                print(f"WARNING: {meta['env_key']} found but openai not installed "
-                      f"({_openai_import_error}). Skipping {provider_name}.")
+            else:
+                self.provider_status[provider_name] = STANDBY_NO_SDK
 
         # --- Local Model Provider (Ollama) ---
         local_url = os.getenv("LOCAL_MODEL_BASE_URL", "http://localhost:11434/v1")
         self.local_enabled = os.getenv("TALOS_USE_LOCAL", "").lower() in ("1", "true", "yes")
         if self.local_enabled and _try_import_openai():
+            # -- v5.12.2: self-healing pre-flight probe + detached background spawn. --
+            self._ensure_local_ollama_runtime()
             self.providers['local'] = {
                 'client': _openai.OpenAI(api_key=os.getenv("LOCAL_MODEL_API_KEY", "ollama"), base_url=local_url),
-                'model_name': os.getenv("LOCAL_MODEL_NAME", "gemma3:12b"),
+                'model_name': os.getenv("LOCAL_MODEL_NAME", LOCAL_GPU_MODEL),
                 'embedding_model': os.getenv("LOCAL_EMBEDDING_MODEL", "nomic-embed-text"),
                 'ollama_url': local_url.replace("/v1", ""),
                 'consecutive_failures': 0, 'circuit_open': False
@@ -289,7 +476,215 @@ class AIManager:
             self.provider_priority.insert(0, 'local')  # local first when enabled
 
         self.FAILURE_THRESHOLD = config.get("failure_threshold", 5)
-        print(f"INFO: AIManager v3.8 (2D Execution Matrix) initialized.")
+        print(f"INFO: AIManager v4.1 (Self-Healing AI Manager, 2D Execution Matrix) initialized.")
+
+    def _ensure_local_ollama_runtime(self) -> bool:
+        """Self-healing pre-flight for the local Ollama service (v5.12.2).
+
+        Probes ``http://127.0.0.1:11434/api/tags``. When offline it consults the
+        ``auto_start_local_llm`` config flag, offers an interactive Questionary
+        prompt in CLI/Wizard contexts, spawns ``ollama serve`` detached, and then
+        polls the health endpoint for up to 3.0 seconds before giving up.
+
+        Returns:
+            bool: True when the runtime is reachable (or came online), False otherwise.
+        """
+        if probe_local_ollama():
+            return True
+
+        auto_start = bool(self.config.get("auto_start_local_llm", True))
+        should_spawn = auto_start
+
+        # -- Interactive CLI/Wizard: ask for consent before spawning a process. --
+        if _is_interactive_tty():
+            try:
+                import questionary
+                from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
+                answer = questionary.confirm(
+                    "Local Ollama service (port 11434) is offline. Would you like TALOS to launch it in the background? (Y/n)",
+                    default=True,
+                    style=TALOS_QUESTIONARY_STYLE,
+                ).ask()
+                should_spawn = answer is not False  # None (Esc) falls back to default True
+            except Exception:
+                should_spawn = auto_start
+
+        if not should_spawn:
+            print("INFO: Local Ollama offline and auto-start declined. Local tiers will fail gracefully.")
+            return False
+
+        print("INFO: Local Ollama offline. Spawning `ollama serve` in the background...")
+        _spawn_local_ollama()
+
+        # -- Bounded 3.0s wait with 0.5s polling for the health probe to go green. --
+        deadline = time.monotonic() + 3.0
+        while time.monotonic() < deadline:
+            if probe_local_ollama():
+                print("INFO: Local Ollama is now online.")
+                return True
+            time.sleep(0.5)
+
+        print("WARNING: Local Ollama did not come online within 3.0s. Continuing with graceful degradation.")
+        return False
+
+    def _persist_env_key(self, key: str, value: str) -> None:
+        """Append (or update) a KEY=value entry in the project .env file.
+
+        The file is created when missing and remains excluded from version control
+        via the repository .gitignore. Existing lines for the same key are replaced
+        in place so duplicate keys never accumulate.
+
+        Args:
+            key: Environment variable name.
+            value: Secret value to persist (stored unquoted, matching dotenv).
+        """
+        try:
+            env_path = os.path.join(_resolve_project_root(), ".env")
+            lines = []
+            if os.path.exists(env_path):
+                with open(env_path, "r", encoding="utf-8") as handle:
+                    lines = handle.read().splitlines()
+            new_line = f"{key}={value}"
+            updated = False
+            for idx, line in enumerate(lines):
+                if line.strip().startswith(f"{key}="):
+                    lines[idx] = new_line
+                    updated = True
+                    break
+            if not updated:
+                if lines and lines[-1].strip() != "":
+                    lines.append("")
+                lines.append(new_line)
+            with open(env_path, "w", encoding="utf-8") as handle:
+                handle.write("\n".join(lines) + "\n")
+        except Exception as e:
+            print(f"  >!> Could not persist {key} to .env: {e}")
+
+    def _register_cloud_provider_on_demand(self, provider_name: str) -> bool:
+        """Register a cloud provider after its API key is obtained interactively.
+
+        Called after ``_prompt_cloud_key`` succeeds so the failover chain can use
+        the provider without a full AIManager reconstruction.
+
+        Args:
+            provider_name: Canonical provider alias.
+
+        Returns:
+            bool: True when the provider is now registered and ACTIVE.
+        """
+        if provider_name == "gemini":
+            api_key = os.getenv("GEMINI_API_KEY")
+            if not api_key:
+                return False
+            if _GENAI_V2:
+                self.providers['gemini'] = {
+                    'client': genai_client.Client(api_key=api_key),
+                    'flash_model': self.config.get("pre_screening_model", "gemini-2.5-flash-lite"),
+                    'pro_model': self.config.get("model_for_daily_search", "gemini-2.5-pro"),
+                    'embedding_model': "models/embedding-001",
+                    'sdk': 'v2',
+                    'consecutive_failures': 0, 'circuit_open': False
+                }
+            elif _try_import_genai():
+                _genai.configure(api_key=api_key)
+                self.providers['gemini'] = {
+                    'flash_model': _genai.GenerativeModel(self.config.get("pre_screening_model", "gemini-2.5-flash-lite")),
+                    'pro_model': _genai.GenerativeModel(self.config.get("model_for_daily_search", "gemini-2.5-pro")),
+                    'embedding_model': "models/embedding-001",
+                    'sdk': 'v1',
+                    'consecutive_failures': 0, 'circuit_open': False
+                }
+            else:
+                return False
+            self.provider_status['gemini'] = ACTIVE
+            return True
+
+        meta = OPENAI_COMPATIBLE_REGISTRY.get(provider_name)
+        if not meta:
+            return False
+        api_key = os.getenv(meta["env_key"], "")
+        if not api_key or not _try_import_openai():
+            return False
+        model_name = os.getenv(meta["model_env_key"], meta["default_model"])
+        self.providers[provider_name] = {
+            'client': _openai.OpenAI(api_key=api_key, base_url=meta["base_url"]),
+            'model_name': model_name,
+            'consecutive_failures': 0, 'circuit_open': False
+        }
+        self.provider_status[provider_name] = ACTIVE
+        return True
+
+    def _prompt_cloud_key(self, provider_name: str) -> Optional[str]:
+        """Securely prompt for a missing cloud API key (v5.12.2).
+
+        In interactive mode, when local inference fails and the operator consents
+        to cloud fallback but the provider key is absent, this renders a masked
+        Questionary password prompt. A non-empty key is validated, injected into
+        ``os.environ``, and appended cleanly to the project ``.env`` file.
+
+        Args:
+            provider_name: Canonical provider alias (e.g. ``gemini``, ``deepseek``).
+
+        Returns:
+            str | None: The accepted key, or None when skipped/cancelled.
+        """
+        meta = CLOUD_KEY_ENV_MAP.get(provider_name)
+        if not meta or not _is_interactive_tty():
+            return None
+        try:
+            import questionary
+            from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
+            key = questionary.password(
+                f"Enter your {meta['label']} API key (will be securely saved to .env) [Leave empty to skip]:",
+                style=TALOS_QUESTIONARY_STYLE,
+            ).ask()
+        except Exception:
+            return None
+
+        key = (key or "").strip()
+        if not key:
+            return None
+        if len(key) < 8:
+            print(f"  >!> Provided {meta['label']} API key is too short to be valid. Skipping.")
+            return None
+
+        os.environ[meta["env_key"]] = key
+        self._persist_env_key(meta["env_key"], key)
+        print(f"INFO: {meta['label']} API key accepted and saved to .env.")
+        return key
+
+    def _ensure_cloud_credential(self, provider_name: str) -> bool:
+        """Ensure a cloud provider is registered, prompting for a key if needed.
+
+        Used by the interactive cloud-fallback path (v5.12.2). When the provider
+        is already ACTIVE it returns immediately. Otherwise, in interactive mode,
+        it prompts for the key, persists it to .env, and registers the provider.
+
+        Args:
+            provider_name: Canonical provider alias.
+
+        Returns:
+            bool: True when the provider is ACTIVE, False otherwise.
+        """
+        if self.provider_status.get(provider_name) == ACTIVE:
+            return True
+        key = self._prompt_cloud_key(provider_name)
+        if key is None:
+            return False
+        return self._register_cloud_provider_on_demand(provider_name)
+
+    def _ensure_cloud_credential_for_fallback(self) -> None:
+        """Prompt for a missing cloud key before routing cloud-first (v5.12.2).
+
+        Inspects the provider priority for the first cloud provider lacking a
+        credential and, in interactive mode, offers a secure masked prompt.
+        """
+        for provider_name in self.provider_priority:
+            if provider_name == "local":
+                continue
+            if self.provider_status.get(provider_name) == STANDBY_NO_KEY:
+                self._ensure_cloud_credential(provider_name)
+                return
 
     # ==================================================================
     # -- v5.10.2: LLM Router Sub-Agent integration --
@@ -699,6 +1094,9 @@ class AIManager:
         else:
             if self._prompt_auto_dynamic_consent(vram_gb):
                 resolved, reason = "cloud_first", "interactive consent granted for cloud execution"
+                # -- v5.12.2: secure on-demand cloud key injection when the --
+                # -- chosen cloud provider lacks a configured credential. --
+                self._ensure_cloud_credential_for_fallback()
             else:
                 resolved, reason = "strict_local", "interactive consent refused; privacy guardrail enforced"
 
@@ -933,7 +1331,7 @@ class AIManager:
             label = "CPU Edge"
         else:
             base_url = os.getenv("LOCAL_MODEL_BASE_URL", "http://localhost:11434/v1")
-            model = os.getenv("LOCAL_MODEL_NAME", "gemma3:12b")
+            model = os.getenv("LOCAL_MODEL_NAME", LOCAL_GPU_MODEL)
             label = "GPU Ollama"
 
         # -- v5.11.3: Fast-Edge batch circuit breaker -- a known-offline edge --
@@ -969,7 +1367,8 @@ class AIManager:
             )
             if response.status_code == 200:
                 data = response.json()
-                response_text = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                message = (data.get("choices") or [{}])[0].get("message", {}) or {}
+                response_text = _extract_assistant_content(message)
                 if not response_text:
                     print(f"  >!> {label} returned empty response.")
                     return None
@@ -1139,13 +1538,28 @@ class AIManager:
         provider = self.providers['gemini']
         model = provider['pro_model'] if model_type == 'pro' else provider['flash_model']
         try:
-            if response_format == 'json':
-                gen_config = _genai.types.GenerationConfig(response_mime_type="application/json")
-                response = model.generate_content(prompt, generation_config=gen_config)
-                return json.loads(response.text)
+            if provider.get('sdk') == 'v2':
+                # -- v5.12.2: google.genai GA SDK (supported, no FutureWarning). --
+                client = provider['client']
+                if response_format == 'json':
+                    gen_config = genai_types.GenerateContentConfig(
+                        response_mime_type="application/json")
+                    response = client.models.generate_content(
+                        model=model, contents=prompt, config=gen_config)
+                    return json.loads(response.text)
+                else:
+                    response = client.models.generate_content(
+                        model=model, contents=prompt)
+                    return response.text
             else:
-                response = model.generate_content(prompt)
-                return response.text
+                # -- Legacy google.generativeai (v1) fallback path. --
+                if response_format == 'json':
+                    gen_config = _genai.types.GenerationConfig(response_mime_type="application/json")
+                    response = model.generate_content(prompt, generation_config=gen_config)
+                    return json.loads(response.text)
+                else:
+                    response = model.generate_content(prompt)
+                    return response.text
         except Exception as e:
             print(f"  >!> Gemini execution error: {e}")
             if "429" in str(e) or "resource exhausted" in str(e).lower():
@@ -1207,7 +1621,15 @@ class AIManager:
 
         try:
             chat_completion = provider['client'].chat.completions.create(**payload)
-            response_text = chat_completion.choices[0].message.content
+            message = chat_completion.choices[0].message
+            # -- v5.12.2: recover the answer from thinking/reasoning models --
+            # -- that emit reasoning_content or <think> tags instead of plain --
+            # -- content (e.g. DeepSeek V4 with thinking enabled). --
+            message_dict = {
+                "content": getattr(message, "content", None),
+                "reasoning_content": getattr(message, "reasoning_content", None),
+            }
+            response_text = _extract_assistant_content(message_dict)
             if response_format == 'json':
                 try:
                     parsed = json.loads(self._clean_json_string(response_text))
@@ -1342,7 +1764,7 @@ class AIManager:
                 return
             models = [m['name'] for m in resp.json().get('models', [])]
 
-            local_model = os.getenv("LOCAL_MODEL_NAME", "gemma3:12b")
+            local_model = os.getenv("LOCAL_MODEL_NAME", LOCAL_GPU_MODEL)
             local_embedding = os.getenv("LOCAL_EMBEDDING_MODEL", "nomic-embed-text")
 
             missing = [m for m in (local_model, local_embedding)

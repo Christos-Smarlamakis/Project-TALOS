@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_research_setup_wizard.py
-Project: TALOS v5.12.1
+Project: TALOS v5.12.2
 Description:
     Hermetic unit tests for the Research Setup Wizard. Verifies three contract
     areas without any live Ollama, Fast Edge, or FastAPI dependency:
@@ -89,6 +89,43 @@ class TestQueryGeneration:
         assert "exclusion_criteria" in config
         assert "AND" in config["ieee_query"]
 
+    def test_heuristic_boolean_excludes_stopwords(self):
+        config = {}
+        wizard._generate_queries_heuristic(
+            "spatio-temporal attention for drone swarms", config)
+        assert config["ieee_query"] == "(spatio-temporal AND attention AND drone AND swarms)"
+
+    def test_extract_salient_terms_strips_stopwords(self):
+        terms = wizard._extract_salient_terms(
+            "a framework for the cooperative drone swarms")
+        assert terms == ["framework", "cooperative", "drone", "swarms"]
+
+    def test_extract_salient_terms_preserves_hyphenated_compound(self):
+        terms = wizard._extract_salient_terms("spatio-temporal modeling")
+        assert terms[0] == "spatio-temporal"
+
+    def test_llm_guidance_includes_language_mandate(self, monkeypatch):
+        captured = {}
+
+        def fake_evaluate(self, **kwargs):
+            captured.update(kwargs)
+            return {
+                "arxiv_query": "drone swarms",
+                "inclusion_criteria": "peer-reviewed studies",
+                "exclusion_criteria": "non-empirical work",
+            }
+
+        mock_ai = type("MockAI", (), {"evaluate_paper_json": fake_evaluate})()
+        monkeypatch.setattr(wizard, "_get_ai_manager", lambda: mock_ai)
+        config = {"query_translator_prompt": "Act as Research Architect.",
+                  "phd_focus_system_prompt": "core framework"}
+        assert wizard._generate_queries_llm("drone swarms", config) is True
+        guidance = captured.get("abstract", "")
+        assert "LANGUAGE MANDATE" in guidance
+        assert "SYNTAX CONSTRAINTS" in guidance
+        assert "CRITERIA SPECIFICATION" in guidance
+        assert "topic:" in guidance
+
 
 class TestPersistence:
     """Execution strategy and search-window selection persistence."""
@@ -96,18 +133,65 @@ class TestPersistence:
     def test_search_window_persisted(self, tmp_path):
         config = {}
         path = os.path.join(str(tmp_path), "config.json")
-        assert wizard._write_search_window(config, path, "standard") is True
+        assert wizard._write_search_window(config, path, "prisma_1825") is True
         with open(path, encoding="utf-8") as f:
             saved = json.load(f)
-        assert saved["research_search_window"] == "standard"
+        assert saved["research_search_window"] == "prisma_1825"
         assert saved["days_to_search_historic"] == 1825
-        assert saved["search_window_start_year"] == 2021
-        assert saved["search_window_end_year"] == 2026
+        assert saved["search_window_label"]
 
     def test_search_window_invalid_key(self, tmp_path):
         config = {}
         path = os.path.join(str(tmp_path), "config.json")
         assert wizard._write_search_window(config, path, "bogus") is False
+
+    def test_search_windows_have_five_presets(self):
+        assert set(wizard.SEARCH_WINDOWS.keys()) == {
+            "rapid_30", "annual_365", "phd_1095", "prisma_1825", "decadal_3650"}
+        assert wizard.SEARCH_WINDOWS["rapid_30"]["days"] == 30
+        assert wizard.SEARCH_WINDOWS["annual_365"]["days"] == 365
+        assert wizard.SEARCH_WINDOWS["phd_1095"]["days"] == 1095
+        assert wizard.SEARCH_WINDOWS["prisma_1825"]["days"] == 1825
+        assert wizard.SEARCH_WINDOWS["decadal_3650"]["days"] == 3650
+
+    def test_search_window_custom_days(self, tmp_path):
+        config = {}
+        path = os.path.join(str(tmp_path), "config.json")
+        assert wizard._write_search_window(config, path, "custom", 730) is True
+        with open(path, encoding="utf-8") as f:
+            saved = json.load(f)
+        assert saved["research_search_window"] == "custom"
+        assert saved["days_to_search_historic"] == 730
+        assert "730" in saved["search_window_label"]
+
+    def test_search_window_custom_invalid_days(self, tmp_path):
+        config = {}
+        path = os.path.join(str(tmp_path), "config.json")
+        assert wizard._write_search_window(config, path, "custom", 0) is False
+        assert wizard._write_search_window(config, path, "custom", None) is False
+        assert wizard._write_search_window(config, path, "custom", -5) is False
+
+    def test_prompt_custom_days_parses_integer(self, monkeypatch):
+        class FakeQuestion:
+            def ask(self):
+                return "730"
+        monkeypatch.setattr(wizard.questionary, "text", lambda *a, **k: FakeQuestion())
+        assert wizard._prompt_custom_days() == 730
+
+    def test_prompt_custom_days_rejects_non_integer(self, monkeypatch):
+        answers = iter(["abc", "0", "-3", "1825"])
+        class FakeQuestion:
+            def ask(self):
+                return next(answers)
+        monkeypatch.setattr(wizard.questionary, "text", lambda *a, **k: FakeQuestion())
+        assert wizard._prompt_custom_days() == 1825
+
+    def test_prompt_custom_days_cancel(self, monkeypatch):
+        class FakeQuestion:
+            def ask(self):
+                return None
+        monkeypatch.setattr(wizard.questionary, "text", lambda *a, **k: FakeQuestion())
+        assert wizard._prompt_custom_days() is None
 
     def test_execution_strategy_env_written(self, tmp_path):
         env_path = os.path.join(str(tmp_path), ".env")
@@ -121,6 +205,33 @@ class TestPersistence:
 
     def test_execution_strategy_invalid_key(self, tmp_path):
         assert wizard._apply_execution_strategy("bogus", str(tmp_path)) is False
+
+    def test_execution_strategies_has_five_entries(self):
+        keys = set(wizard.EXECUTION_STRATEGIES.keys())
+        assert keys == {"strict_local", "local_first", "cloud_first",
+                        "strict_cloud", "auto_dynamic"}
+        for key, strategy in wizard.EXECUTION_STRATEGIES.items():
+            assert strategy["network"] == key
+
+    def test_execution_strategy_persists_to_config(self, tmp_path):
+        config_path = os.path.join(str(tmp_path), "config.json")
+        with open(config_path, "w", encoding="utf-8") as f:
+            json.dump({}, f)
+        assert wizard._apply_execution_strategy("cloud_first", str(tmp_path)) is True
+        with open(config_path, encoding="utf-8") as f:
+            saved = json.load(f)
+        assert saved["ai_execution_strategy"] == "cloud_first"
+
+    def test_execution_strategy_all_five_persist_network(self, tmp_path):
+        env_path = os.path.join(str(tmp_path), ".env")
+        for key in ("strict_local", "local_first", "cloud_first",
+                    "strict_cloud", "auto_dynamic"):
+            with open(env_path, "w", encoding="utf-8") as f:
+                f.write("")
+            assert wizard._apply_execution_strategy(key, str(tmp_path)) is True
+            with open(env_path, encoding="utf-8") as f:
+                content = f.read()
+            assert f"TALOS_NETWORK_STRATEGY={key}" in content
 
     def test_update_env_key_writes_without_quotes(self, tmp_path):
         env_path = os.path.join(str(tmp_path), ".env")

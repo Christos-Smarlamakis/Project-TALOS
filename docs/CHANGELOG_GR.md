@@ -2,6 +2,36 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.12.2] - 2026-09-27 -- Αυτο-Θεραπευόμενος Διαχειριστής ΤΝ, Πίνακας Στρατηγικών 5 Επιπέδων & Μηχανή Ακεραιότητας Οδηγού Έρευνας
+
+### Προστέθηκε
+
+- **Αυτο-θεραπευόμενος έλεγχος & εκκίνηση τοπικού Ollama** (`src/core/ai_manager.py:probe_local_ollama()` / `_ensure_local_ollama_runtime()`): ένας γρήγορος έλεγχος ζωντάνιας πριν την πτήση εκδίδει ένα ελαφρύ `GET http://127.0.0.1:11434/api/tags` (χρονικό όριο 0,8s). Όταν το runtime είναι εκτός σύνδεσης, ο διαχειριστής συμβουλεύεται τη σημαία `auto_start_local_llm`, προσφέρει επιβεβαίωση Questionary (`TALOS_QUESTIONARY_STYLE`, «Θα θέλατε να το εκκινήσει το TALOS στο παρασκήνιο;», προεπιλογή True) σε διαδραστικές συνεδρίες CLI/Wizard, εκκινεί το `ollama serve` αποσπασμένα (`CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS` στα Windows) και ελέγχει το health endpoint έως 3,0s (ανά 0,5s) πριν υποβαθμίσει ομαλά.
+- **Ασφαλής έγχυση κλειδιού cloud κατά παραγγελία** (`_prompt_cloud_key()` / `_persist_env_key()` / `_register_cloud_provider_on_demand()` / `_ensure_cloud_credential_for_fallback()`): σε διαδραστική λειτουργία, όταν η τοπική εξαγωγή συμπεράσματος αποτυγχάνει και ο χειριστής συναινεί σε υποχώρηση cloud αλλά το κλειδί του παρόχου απουσιάζει, το TALOS αποδίδει ένα καλυμμένο prompt `questionary.password`, επικυρώνει το κλειδί, το εισάγει στο `os.environ`, το προσαρτά καθαρά στο `.env` (gitignored, χωρίς διπλότυπα) και καταχωρεί τον πάροχο άμεσα.
+- **Ευρετικό φίλτρο stopwords ερωτημάτων** (`src/utils/research_setup_wizard.py:_extract_salient_terms()`): ο εκτός σύνδεσης γεννήτορας ερωτημάτων βάσει κανόνων αφαιρεί πλέον τα αγγλικά stopwords (`for`, `with`, `and`, `the` κ.ά.) και τον θόρυβο στίξης (μη κλειστές παρενθέσεις, περιπλανώμενες παύλες) διατηρώντας τα ενωτικά σύνθετα (`spatio-temporal`), οριοθετώντας το boolean ερώτημα σε 4-6 κύριους όρους ώστε τα fallback ερωτήματα IEEE Xplore, Scopus και arXiv να παράγουν έγκυρη, εκτελέσιμη Boolean σύνταξη αντί για μηδενικά αποτελέσματα. Τρεις νέες ερμητικές δοκιμές κατοχυρώνουν τη συμπεριφορά.
+- **Πίνακας Στρατηγικών Εκτέλεσης ΤΝ 5 Επιπέδων** (`src/utils/research_setup_wizard.py:EXECUTION_STRATEGIES` / `src/utils/ai_strategy_selector.py`): το Βήμα 2 προσφέρει πλέον την πλήρη ιεραρχία πέντε επιπέδων -- `strict_local` (100% εκτός δικτύου/air-gapped), `local_first` (προτεραιότητα τοπικής GPU με υποχώρηση cloud σε αποτυχία/OOM), `cloud_first` (προτεραιότητα cloud με τοπική υποχώρηση σε αποτυχία δικτύου), `strict_cloud` (αποτύπωμα GPU VRAM 0% ώστε να αφήσει την GPU του σταθμού ελεύθερη για ταυτόχρονες διδακτορικές εκπαιδεύσεις βαθιάς μάθησης) και `auto_dynamic` (αυτόνομος δρομολογητής 2D που προσαρμόζεται σε VRAM και πολυπλοκότητα εργασίας) -- αποθηκευμένα στο `config.json` (`ai_execution_strategy`) και στο `.env` (`TALOS_NETWORK_STRATEGY`). Εκτίθεται μέσω νέας σημαίας CLI `--strategy [mode]` και καταχώρισης «AI Execution Strategy Switcher» στο TUI.
+- **Παράθυρο ιστορικής αναζήτησης βάσει ημερών** (`_step3_search_window()` / `_prompt_custom_days()`): το Βήμα 3 μετρά πλέον το παράθυρο σε ημέρες από σήμερα με προεπιλογές (30, 365, 1.095, 1.825, 3.650 ημέρες) συν προσαρμοσμένη εισαγωγή θετικού ακέραιου αριθμού ημερών, αποθηκεύοντας το `days_to_search_historic` (αντικαθιστώντας τα παλαιά πεδία έτους έναρξης/λήξης).
+- **Ακεραιότητα σήματος & ακύρωσης** (`_render_cancelled()`): η ακύρωση οποιουδήποτε βήματος (None ή KeyboardInterrupt) ματαιώνει πλέον ολόκληρη τη ροή πριν από οποιαδήποτε εγγραφή στο config.json, εξαλείφει τα placeholders `'N/A'` και προστατεύει το σήμα `data/.talos_onboarded`.
+- **Ανθεκτικότητα μοντέλων σκέψης/λογικής** (`src/core/ai_manager.py:_strip_thinking_tags()` / `_extract_assistant_content()`): οι αναλυτές τοπικών και cloud αποκρίσεων ξετυλίγουν πλέον το `reasoning_content`, το εγγενές `thinking` του Ollama και τις ετικέτες `<think>...</think>` ώστε τα μοντέλα σκέψης (`gemma4:12b`, DeepSeek-R1) να μην επιστρέφουν ποτέ κενές συμβολοσειρές.
+- **Εντολή αγγλικής πρώτης γλώσσας** (`LANGUAGE_AND_SYNTAX_MANDATE`): το prompt παραγωγής ερωτημάτων/κριτηρίων LLM επιβάλλει αυστηρά τυπικά ακαδημαϊκά αγγλικά στα `inclusion_criteria` / `exclusion_criteria` και απαγορεύει ψευδή προθέματα όπως `topic:`.
+
+### Άλλαξε
+
+- **Περικοπή παρόχων** (`src/core/ai_manager.py`): οι πάροχοι cloud (Gemini, NVIDIA, Groq, Cerebras, GitHub Models, Mistral, DeepSeek, HuggingFace, OpenRouter) καταχωρούνται μόνο όταν το κλειδί API τους είναι παρόν και μη κενό· τα απουσιάζοντα κλειδιά σταθμεύουν σιωπηλά ως `STANDBY_NO_KEY` σε νέο χάρτη `provider_status` αντί να παράγουν θορυβώδεις καταρράκτες προειδοποιήσεων ή απόπειρες δικτύου.
+- **Μετεγκατάσταση Google GenAI GA SDK** (`_execute_gemini_request()` / εκκίνηση παρόχου Gemini): η παραγωγή κειμένου Gemini προτιμά πλέον το `google.genai` GA SDK (`genai_types.GenerateContentConfig`), υποχωρώντας στο παλαιό `google.generativeai` μόνο όταν το GA SDK δεν είναι διαθέσιμο -- εξαλείφοντας τη διαδρομή `FutureWarning` λήξης υποστήριξης για νέες εγκαταστάσεις.
+- **Βάση τοπικής GPU** (`config/settings.py`): το `LOCAL_GPU_MODEL` ορίζεται πλέον στο επαληθευμένο-εγκατεστημένο `"llama3.1:8b"` (μηδενικό κόστος σκέψης/λογικής) ενώ φιλοξενεί ομαλά το `gemma4:12b` μέσω της διόρθωσης του αναλυτή.
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.12.2** στα 6 βασικά αρχεία κώδικα καθώς και `docker-compose.yml` (`talos:5.12.2`), `CITATION.cff` (έκδοση 5.12.2, ημερομηνία κυκλοφορίας 2026-09-27), τις συμβολοσειρές χρήστη σε `src/utils/tray_icon.py`, `src/utils/evaluation_history.py`, `templates/live_foraging_visualizer.html`, `src/utils/research_setup_wizard.py` και τα 19 κανονικά έγγραφα τεκμηρίωσης.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` πέρασε με μηδέν σφάλματα.
+- `python -m pytest tests/test_system_integrity.py -q` πέρασε.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε (v5.12.2).
+- `python -m pytest tests/test_research_setup_wizard.py -q` πέρασε (28 δοκιμές).
+- `python src/utils/verify_dependency_map.py --ci` επέστρεψε έξοδο 0.
+- `bash -n run_talos.sh` πέρασε με μηδέν συντακτικά σφάλματα.
+- Αυστηρή σάρωση αποκωδικοποίησης UTF-8 σε όλα τα τροποποιημένα αρχεία: μηδέν glyphs αντικατάστασης U+FFFD.
+
 ## [v5.12.1] - 2026-09-27 -- Διαφάνεια Ερωτημάτων Οδηγού Έρευνας & Μηχανή Γρήγορης Αποστολής CLI
 
 ### Προστέθηκε

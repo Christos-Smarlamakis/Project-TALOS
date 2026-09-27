@@ -2,6 +2,36 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.12.2] - 2026-09-27 -- Self-Healing AI Manager, 5-Tier Strategy Matrix & Research Wizard Integrity Engine
+
+### Added
+
+- **Self-healing local Ollama probe & spawn** (`src/core/ai_manager.py:probe_local_ollama()` / `_ensure_local_ollama_runtime()`): a fast pre-flight liveness probe issues a lightweight `GET http://127.0.0.1:11434/api/tags` (0.8s timeout). When the runtime is offline, the manager consults the `auto_start_local_llm` config flag, offers a `TALOS_QUESTIONARY_STYLE` Questionary confirm ("Would you like TALOS to launch it in the background?", default True) in interactive CLI/Wizard sessions, spawns `ollama serve` detached (`CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS` on Windows), and polls the health endpoint for up to 3.0s (0.5s interval) before degrading gracefully.
+- **Secure on-demand cloud key injection** (`_prompt_cloud_key()` / `_persist_env_key()` / `_register_cloud_provider_on_demand()` / `_ensure_cloud_credential_for_fallback()`): in interactive mode, when local inference fails and the operator consents to cloud fallback but the provider key is missing, TALOS renders a masked `questionary.password` prompt, validates the key, injects it into `os.environ`, appends it cleanly to the project `.env` (gitignored, dedup-safe), and registers the provider on the fly.
+- **Heuristic query stopword cleaner** (`src/utils/research_setup_wizard.py:_extract_salient_terms()`): the offline rule-based query generator now strips English stopwords (`for`, `with`, `and`, `the`, etc.) and punctuation noise (unbalanced parentheses, stray hyphens) while preserving hyphenated compounds (`spatio-temporal`), capping the boolean query at 4-6 salient tokens so IEEE Xplore, Scopus, and arXiv fallback queries produce valid, executable Boolean syntax instead of zero-hit stopword chains. Three new hermetic tests lock the behavior.
+- **5-Tier AI Execution Strategy Matrix** (`src/utils/research_setup_wizard.py:EXECUTION_STRATEGIES` / `src/utils/ai_strategy_selector.py`): Step 2 now offers the full five-tier hierarchy -- `strict_local` (100% air-gapped/offline), `local_first` (local GPU priority with cloud fallback on failure/OOM), `cloud_first` (cloud priority with local fallback on network failure), `strict_cloud` (0% GPU VRAM footprint to leave the workstation GPU free for concurrent PhD deep-learning runs), and `auto_dynamic` (autonomous 2D router adapting to VRAM and task complexity) -- persisted to `config.json` (`ai_execution_strategy`) and `.env` (`TALOS_NETWORK_STRATEGY`). Exposed via a new `--strategy [mode]` CLI flag and an "AI Execution Strategy Switcher" entry in the TUI.
+- **Day-based historical search window** (`_step3_search_window()` / `_prompt_custom_days()`): Step 3 now measures the window in days from today with presets (30, 365, 1,095, 1,825, 3,650 days) plus a custom positive-integer prompt, persisting `days_to_search_historic` (replacing legacy start/end year fields).
+- **Sentinel & cancellation integrity** (`_render_cancelled()`): cancelling any step (None or KeyboardInterrupt) now aborts the whole flow before any config.json write, eliminates `'N/A'` placeholders, and guards the `data/.talos_onboarded` sentinel.
+- **Thinking/reasoning model resilience** (`src/core/ai_manager.py:_strip_thinking_tags()` / `_extract_assistant_content()`): the local and cloud response parsers unwrap `reasoning_content`, Ollama-native `thinking`, and `<think>...</think>` tags so thinking models (`gemma4:12b`, DeepSeek-R1) never return empty strings.
+- **English-first cognitive mandate** (`LANGUAGE_AND_SYNTAX_MANDATE`): the LLM query/criteria generation prompt enforces strictly formal academic English in `inclusion_criteria` / `exclusion_criteria` and disallows hallucinated prefixes such as `topic:`.
+
+### Changed
+
+- **Provider trimming** (`src/core/ai_manager.py`): cloud providers (Gemini, NVIDIA, Groq, Cerebras, GitHub Models, Mistral, DeepSeek, HuggingFace, OpenRouter) are registered only when their API key is present and non-empty; missing keys are parked silently as `STANDBY_NO_KEY` in a new `provider_status` map instead of generating noisy runtime warning cascades or attempting network connections.
+- **Google GenAI GA SDK migration** (`_execute_gemini_request()` / Gemini provider init): Gemini text generation now prefers the `google.genai` GA SDK (`genai_types.GenerateContentConfig`), falling back to the legacy `google.generativeai` path only when the GA SDK is unavailable -- eliminating the end-of-support `FutureWarning` path for new installs.
+- **Local GPU baseline** (`config/settings.py`): `LOCAL_GPU_MODEL` now defaults to verified-installed `"llama3.1:8b"` (zero thinking/reasoning overhead) while gracefully accommodating `gemma4:12b` through the parser fix.
+- **Version strings synchronized to 5.12.2** across the 6 core code files plus `docker-compose.yml` (`talos:5.12.2`), `CITATION.cff` (version 5.12.2, date-released 2026-09-27), the user-facing strings in `src/utils/tray_icon.py`, `src/utils/evaluation_history.py`, `templates/live_foraging_visualizer.html`, `src/utils/research_setup_wizard.py`, and all 19 canonical documentation files.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.12.2).
+- `python -m pytest tests/test_research_setup_wizard.py -q` passed (28 tests).
+- `python src/utils/verify_dependency_map.py --ci` returned exit 0.
+- `bash -n run_talos.sh` passed with zero syntax errors.
+- Strict UTF-8 decode scan across all modified files: zero U+FFFD replacement glyphs.
+
 ## [v5.12.1] - 2026-09-27 -- Research Wizard Query Transparency & CLI Fast-Dispatch Engine
 
 ### Added

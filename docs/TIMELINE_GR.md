@@ -4,7 +4,7 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-27 (v5.12.1 -- Διαφάνεια Ερωτημάτων Οδηγού Έρευνας & Μηχανή Γρήγορης Αποστολής CLI)
+> **Τελευταία Ενημέρωση:** 2026-09-27 (v5.12.2 -- Αυτο-Θεραπευόμενος Διαχειριστής ΤΝ, Πίνακας Στρατηγικών 5 Επιπέδων & Μηχανή Ακεραιότητας Οδηγού Έρευνας)
 
 ---
 
@@ -596,6 +596,26 @@
 - [x] **Σημαίες γρήγορης αποστολής CLI** -- το `talos.py` αποκτά `--wizard`, `--daily`, `--stats` και `--help`/`-h` μέσω `_handle_cli_flags()` / `_cli_help_table()`, καθεμία αποστέλλεται μέσω `run_script()` και εξέρχεται με 0.
 - [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose.yml + CITATION.cff + μεταδεδομένα tray/visualizer/evaluation-history/wizard + 19 κανονικά έγγραφα σε v5.12.1 (2026-09-27).
 - [x] **Πύλες επαλήθευσης** -- compileall, test_system_integrity, test_talos_version, `talos.py --help` (έξοδος 0), verify_dependency_map --ci (έξοδος 0), bash -n, σάρωση ακεραιότητας UTF-8 (μηδέν glyphs U+FFFD).
+
+---
+
+## Φάση 53: Αυτο-Θεραπευόμενος Διαχειριστής ΤΝ, Πίνακας 5 Στρατηγικών & Ακεραιότητα Οδηγού (v5.12.2)
+
+### Κατάσταση: ΟΛΟΚΛΗΡΩΜΕΝΗ (2026-09-27)
+
+- [x] **Αυτο-θεραπευόμενος έλεγχος & εκκίνηση Ollama** -- η `probe_local_ollama()` εκδίδει έλεγχο `GET /api/tags` 0,8s πριν την πτήση· η `_ensure_local_ollama_runtime()` συμβουλεύεται το `auto_start_local_llm`, προσφέρει επιβεβαίωση `TALOS_QUESTIONARY_STYLE`, εκκινεί το `ollama serve` αποσπασμένα και ελέγχει έως 3,0s πριν την ομαλή υποβάθμιση.
+- [x] **Περικοπή παρόχων** -- οι πάροχοι cloud καταχωρούνται μόνο όταν υπάρχει κλειδί· τα απουσιάζοντα κλειδιά σταθμεύουν σιωπηλά ως `STANDBY_NO_KEY` σε νέο χάρτη `provider_status` (χωρίς καταρράκτες προειδοποιήσεων ή απόπειρες δικτύου).
+- [x] **Έγχυση κλειδιού cloud κατά παραγγελία** -- οι `_prompt_cloud_key()` / `_persist_env_key()` / `_register_cloud_provider_on_demand()` προτρέπουν με ασφάλεια, επικυρώνουν, αποθηκεύουν στο `.env` και καταχωρούν πάροχο κατά τη διάρκεια εκτέλεσης.
+- [x] **Μετεγκατάσταση Google GenAI GA SDK** -- η `_execute_gemini_request()` προτιμά το `google.genai` (`GenerateContentConfig`), υποχωρώντας στο παλαιό `google.generativeai` μόνο όταν το GA SDK απουσιάζει.
+- [x] **Ευρετικό φίλτρο stopwords ερωτημάτων** -- η `_extract_salient_terms()` αφαιρεί αγγλικά stopwords και θόρυβο στίξης από τα fallback boolean ερωτήματα, οριοθετώντας σε 4-6 κύριους όρους για έγκυρα ερωτήματα IEEE Xplore / Scopus / arXiv.
+- [x] **Πίνακας στρατηγικών εκτέλεσης 5 επιπέδων** -- οι `EXECUTION_STRATEGIES` + `ai_strategy_selector.py` εκθέτουν `strict_local` / `local_first` / `cloud_first` / `strict_cloud` (αποτύπωμα GPU VRAM 0%) / `auto_dynamic`, αποθηκευμένα σε config.json + .env και εκτεθειμένα μέσω `--strategy [mode]` συν τον διακόπτη TUI.
+- [x] **Παράθυρο ιστορικής αναζήτησης βάσει ημερών** -- προεπιλογές Βήματος 3 (30/365/1095/1825/3650 ημέρες) συν προσαρμοσμένες θετικές ακέραιες ημέρες μέσω `_prompt_custom_days()`, αποθηκεύοντας `days_to_search_historic`.
+- [x] **Ακεραιότητα σήματος & ακύρωσης** -- η `_render_cancelled()` ματαιώνει σε κάθε ακύρωση, εξαλείφει τις εγγραφές 'N/A' στο config και προστατεύει το σήμα `data/.talos_onboarded`.
+- [x] **Ανθεκτικότητα αναλυτή σκέψης/λογικής** -- οι `_strip_thinking_tags()` / `_extract_assistant_content()` ξετυλίγουν τα `reasoning_content`, `thinking` και `<think>`.
+- [x] **Εντολή αγγλικής πρώτης γλώσσας** -- η `LANGUAGE_AND_SYNTAX_MANDATE` επιβάλλει ακαδημαϊκά αγγλικά και απαγορεύει τα προθέματα `topic:`.
+- [x] **Βάση τοπικής GPU** -- το `LOCAL_GPU_MODEL` ορίζεται στο επαληθευμένο `llama3.1:8b`.
+- [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose.yml + CITATION.cff + μεταδεδομένα tray/visualizer/evaluation-history/wizard + 19 κανονικά έγγραφα σε v5.12.2 (2026-09-27).
+- [x] **Πύλες επαλήθευσης** -- compileall, test_system_integrity, test_talos_version, test_research_setup_wizard (28 δοκιμές), verify_dependency_map --ci (έξοδος 0), bash -n, σάρωση ακεραιότητας UTF-8 (μηδέν glyphs U+FFFD).
 
 
 

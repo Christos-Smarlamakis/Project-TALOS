@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.12.1
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.12.2
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-27 (v5.12.1 -- Διαφάνεια Ερωτημάτων Οδηγού Έρευνας & Μηχανή Γρήγορης Αποστολής CLI)
+> **Τελευταία Ενημέρωση:** 2026-09-27 (v5.12.2 -- Αυτο-Θεραπευόμενος Διαχειριστής ΤΝ, Πίνακας Στρατηγικών 5 Επιπέδων & Μηχανή Ακεραιότητας Οδηγού Έρευνας)
 
 ---
 
@@ -64,7 +64,7 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 
 | Module | Ρόλος |
 |--------|-------|
-| `ai_manager.py` | Multi-provider LLM manager (Gemini, DeepSeek, HuggingFace, Ollama) με circuit breakers, λειτουργίες JSON/text/embedding, και απόδοση `last_provider_used` |
+| `ai_manager.py` | Multi-provider LLM manager (Gemini, DeepSeek, HuggingFace, Ollama) με circuit breakers, λειτουργίες JSON/text/embedding, και απόδοση `last_provider_used`; v5.12.2 προσθέτει αυτο-θεραπευόμενο έλεγχο/εκκίνηση Ollama (`probe_local_ollama`), περικοπή παρόχων (`STANDBY_NO_KEY`), έγχυση κλειδιού .env κατά παραγγελία, google.genai GA SDK, αναλυτή μοντέλων σκέψης (`_strip_thinking_tags()` / `_extract_assistant_content()`) και βάση `LOCAL_GPU_MODEL` |
 | `database_manager.py` | Αποθήκευση SQLite (20+ στήλες), βαθμολόγηση 4 επιπέδων (strategic/operational/tactical/playground), πίνακας embeddings, σημασιολογική αναζήτηση συνημιτόνου, state machine εμπλουτισμού |
 | `hardware.py` | Μοναδική πηγή αλήθειας για ανίχνευση GPU και ερωτήματα VRAM; CPU fallback με ομαλή υποβάθμιση |
 | `notifier.py` | Ειδοποιήσεις Telegram / Discord / Email για papers υψηλής βαθμολογίας |
@@ -195,7 +195,7 @@ src/utils/research_setup_wizard.py
 | **Ιστορικό Αξιολόγησης (v5.11.0)** | `src/utils/evaluation_history.py` | `record_evaluation()` / `read_evaluation_history()` / `verdict_for_score()` -- JSONL recorder στο `data/history/daemon_evaluations.jsonl`; προβολή πίνακα Rich `_show_evaluation_history(limit=30)` στο `talos.py` |
 | **Κονσόλα Ζωντανής Τηλεμετρίας HUD (v5.11.0)** | `templates/live_foraging_visualizer.html` | ροή glassmorphism κάτω δεξιά (buffer 40 γραμμών, αυτόματη κύλιση, συντομεύσεις `C`/`L`, απόκρυψη κατά το στιγμιότυπο) μέσω `appendConsoleLog()` |
 | **Ελαχιστοποίηση σε Δίσκο Win32 (v5.11.0)** | `src/utils/tray_icon.py` | η `enable_close_to_tray()` υποκλέπτει τη WndProc της κονσόλας (WM_CLOSE / SC_CLOSE σε SW_HIDE) ώστε το κλείσιμο να ελαχιστοποιεί σε δίσκο |
-| **Οδηγός Ρύθμισης Έρευνας (v5.12.0)** | `src/utils/research_setup_wizard.py` | `_ensure_local_ai_runtime()` (έλεγχος/εκκίνηση θυρών 11434+11435 με οριοθετημένη αναμονή 2s), `_analyze_scope_heuristic()` / `_analyze_scope_with_llm()`, `_generate_queries_llm()` / `_generate_queries_heuristic()`, `_apply_execution_strategy()`, `_write_search_window()`, `_create_sentinel()`, `_render_query_preview()` (πίνακας διαφάνειας ερωτημάτων + επιβεβαίωση, v5.12.1) -- ενσωμάτωση 4 βημάτων με προτεραιότητα στα Αγγλικά και failsafe ευρετική παράκαμψη |
+| **Οδηγός Ρύθμισης Έρευνας (v5.12.0)** | `src/utils/research_setup_wizard.py` | `_ensure_local_ai_runtime()` (έλεγχος/εκκίνηση θυρών 11434+11435 με οριοθετημένη αναμονή 2s), `_analyze_scope_heuristic()` / `_analyze_scope_with_llm()`, `_generate_queries_llm()` / `_generate_queries_heuristic()`, `_apply_execution_strategy()`, `_write_search_window()`, `_create_sentinel()`, `_render_query_preview()` (πίνακας διαφάνειας ερωτημάτων + επιβεβαίωση, v5.12.1), `_extract_salient_terms()` (ευρετικό φίλτρο stopwords, v5.12.2), `_prompt_custom_days()` / `_step3_search_window()` (παράθυρο βάσει ημερών), `_render_cancelled()` (ακεραιότητα ακύρωσης), `LANGUAGE_AND_SYNTAX_MANDATE` (εντολή αγγλικής πρώτης γλώσσας), 5-tier `EXECUTION_STRATEGIES` + `ai_strategy_selector.py` (διακόπτης στρατηγικής) -- ενσωμάτωση 4 βημάτων με προτεραιότητα στα Αγγλικά και failsafe ευρετική παράκαμψη |
 
 ## 9. Βοηθητικά Αρχεία
 
@@ -232,8 +232,8 @@ src/utils/research_setup_wizard.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-09-27 (v5.12.1 -- Διαφάνεια Ερωτημάτων Οδηγού Έρευνας & Μηχανή Γρήγορης Αποστολής CLI)
-> **Έκδοση Project:** v5.12.1
+> **Τελευταία Ενημέρωση:** 2026-09-27 (v5.12.2 -- Αυτο-Θεραπευόμενος Διαχειριστής ΤΝ, Πίνακας Στρατηγικών 5 Επιπέδων & Μηχανή Ακεραιότητας Οδηγού Έρευνας)
+> **Έκδοση Project:** v5.12.2
 > **Συνολικά .py modules στο src/:** 86 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 20 + api 4 + mcp_server 1)
 
 

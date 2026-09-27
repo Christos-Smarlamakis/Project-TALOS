@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.12.1
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.12.2
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-09-27
-> **Version:** v5.12.1 -- Research Wizard Query Transparency & CLI Fast-Dispatch Engine
+> **Version:** v5.12.2 -- Self-Healing AI Manager, 5-Tier Strategy Matrix & Research Wizard Integrity Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.12.1" | `config/settings.py` |
+| TALOS_VERSION | "5.12.2" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -940,6 +940,24 @@ For each evaluated paper, the AI generates:
 - **CLI fast-dispatch engine** (`talos.py:_handle_cli_flags()` / `_cli_help_table()`): lightweight `sys.argv` parsing in `if __name__ == "__main__"` supports `--wizard` (launch `research_setup_wizard.py`), `--daily` (launch `daily_search.py`), `--stats` (launch `db_stats.py`), and `--help` / `-h` (render a Rich flag-reference table). Each flag dispatches through the existing `run_script()` helper and exits cleanly with code 0; no flags preserve the interactive `main_menu()` flow.
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.12.1), `python talos.py --help` (exit 0), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+### 15.26 Self-Healing AI Manager, 5-Tier Strategy Matrix & Research Wizard Integrity Engine (v5.12.2)
+
+**Overview:** v5.12.2 hardens the AI manager for zero-touch local operation and cleans heuristic fallback queries for valid boolean execution. It adds a self-healing Ollama probe/spawn, lazy on-demand cloud credential injection, silent provider trimming, a google.genai GA SDK migration, and a heuristic stopword filter.
+
+- **Self-healing Ollama probe & spawn** (`src/core/ai_manager.py:probe_local_ollama()` / `_ensure_local_ollama_runtime()`): a 0.8s `GET http://127.0.0.1:11434/api/tags` pre-flight; when offline it consults `auto_start_local_llm`, offers a `TALOS_QUESTIONARY_STYLE` confirm, spawns `ollama serve` detached (`CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS` on Windows), and polls up to 3.0s (0.5s interval) before graceful degradation.
+- **Provider trimming** (`provider_status` map): cloud providers (Gemini, NVIDIA, Groq, Cerebras, GitHub Models, Mistral, DeepSeek, HuggingFace, OpenRouter) register only when their API key is present; missing keys are parked silently as `STANDBY_NO_KEY` without warning cascades or network attempts.
+- **On-demand cloud key injection** (`_prompt_cloud_key()` / `_persist_env_key()` / `_register_cloud_provider_on_demand()` / `_ensure_cloud_credential_for_fallback()`): interactive masked `questionary.password` prompt, key validation, `os.environ` injection, clean `.env` append (gitignored, dedup-safe), and runtime provider registration.
+- **Google GenAI GA SDK migration** (`_execute_gemini_request()`): prefers `google.genai` (`genai_types.GenerateContentConfig`) with legacy `google.generativeai` fallback, eliminating the end-of-support `FutureWarning`.
+- **Heuristic stopword filter** (`src/utils/research_setup_wizard.py:_extract_salient_terms()`): strips English stopwords and punctuation noise, preserves hyphenated compounds, and caps boolean queries at 4-6 salient tokens for valid IEEE Xplore / Scopus / arXiv queries.
+- **5-Tier AI execution strategy matrix** (`research_setup_wizard.py:EXECUTION_STRATEGIES` / `ai_strategy_selector.py`): the full five-tier hierarchy -- `strict_local` (100% air-gapped), `local_first` (local GPU priority, cloud fallback on OOM), `cloud_first` (cloud priority, local fallback on network failure), `strict_cloud` (0% GPU VRAM footprint to leave the workstation GPU free for concurrent PhD deep-learning runs such as ST-GNNs / HMADRL), and `auto_dynamic` (autonomous 2D router adapting to VRAM and task complexity) -- persisted to `config.json` (`ai_execution_strategy`) and `.env` (`TALOS_NETWORK_STRATEGY`), exposed via `--strategy [mode]` and the TUI switcher.
+- **Day-based historical search window** (`_step3_search_window()` / `_prompt_custom_days()`): PRISMA-ScR day windows (30d, 365d, 1095d, 1825d, 3650d) plus custom positive-integer days, persisting `days_to_search_historic`.
+- **Sentinel & cancellation integrity** (`_render_cancelled()`): graceful abort on any cancellation, zero `'N/A'` config writes, guarded `data/.talos_onboarded` sentinel.
+- **Thinking/reasoning model parser** (`_strip_thinking_tags()` / `_extract_assistant_content()`): unwraps `reasoning_content`, `thinking`, and `<think>` tags across the Ollama/OpenAI endpoints.
+- **English-first cognitive mandate** (`LANGUAGE_AND_SYNTAX_MANDATE`): enforces formal academic English in inclusion/exclusion criteria, disallowing hallucinated `topic:` prefixes.
+- **Local GPU baseline** (`LOCAL_GPU_MODEL`): defaults to verified `llama3.1:8b`.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.12.2), `pytest tests/test_research_setup_wizard.py` (28 tests), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 
 ---

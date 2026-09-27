@@ -4,7 +4,7 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-27 (v5.12.1 -- Research Wizard Query Transparency & CLI Fast-Dispatch Engine)
+> **Last Updated:** 2026-09-27 (v5.12.2 -- Self-Healing AI Manager, 5-Tier Strategy Matrix & Research Wizard Integrity Engine)
 
 ---
 
@@ -612,6 +612,26 @@
 - [x] **CLI fast-dispatch flags** -- `talos.py` gains `--wizard`, `--daily`, `--stats`, and `--help`/`-h` via `_handle_cli_flags()` / `_cli_help_table()`, each dispatching through `run_script()` and exiting 0.
 - [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/evaluation-history/wizard metadata + 19 canonical docs to v5.12.1 (2026-09-27).
 - [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, `talos.py --help` (exit 0), verify_dependency_map --ci (exit 0), bash -n, UTF-8 integrity scan (zero U+FFFD glyphs).
+
+---
+
+## Phase 53: Self-Healing AI Manager, 5-Strategy Matrix & Wizard Integrity (v5.12.2)
+
+### Status: COMPLETED (2026-09-27)
+
+- [x] **Self-healing Ollama probe & spawn** -- `probe_local_ollama()` issues a 0.8s `GET /api/tags` pre-flight; `_ensure_local_ollama_runtime()` consults `auto_start_local_llm`, offers a `TALOS_QUESTIONARY_STYLE` confirm, spawns `ollama serve` detached, and polls up to 3.0s before graceful degradation.
+- [x] **Provider trimming** -- cloud providers are registered only when their key is present; missing keys are parked silently as `STANDBY_NO_KEY` in a new `provider_status` map (no warning cascades, no network attempts).
+- [x] **On-demand cloud key injection** -- `_prompt_cloud_key()` / `_persist_env_key()` / `_register_cloud_provider_on_demand()` securely prompt, validate, persist to `.env`, and register a provider at runtime.
+- [x] **Google GenAI GA SDK migration** -- `_execute_gemini_request()` prefers `google.genai` (`GenerateContentConfig`), falling back to legacy `google.generativeai` only when the GA SDK is absent.
+- [x] **Heuristic query stopword cleaner** -- `_extract_salient_terms()` strips English stopwords and punctuation noise from fallback boolean queries, capping at 4-6 salient tokens for valid IEEE Xplore / Scopus / arXiv queries.
+- [x] **5-Tier execution strategy matrix** -- `EXECUTION_STRATEGIES` + `ai_strategy_selector.py` expose `strict_local` / `local_first` / `cloud_first` / `strict_cloud` (0% GPU VRAM footprint) / `auto_dynamic`, persisted to config.json + .env and exposed via `--strategy [mode]` plus the TUI switcher.
+- [x] **Day-based historical search window** -- Step 3 presets (30/365/1095/1825/3650 days) plus custom positive-integer days via `_prompt_custom_days()`, persisting `days_to_search_historic`.
+- [x] **Sentinel & cancellation integrity** -- `_render_cancelled()` aborts on any cancellation, eliminates 'N/A' config writes, and guards the `data/.talos_onboarded` sentinel.
+- [x] **Thinking/reasoning parser resilience** -- `_strip_thinking_tags()` / `_extract_assistant_content()` unwrap `reasoning_content`, `thinking`, and `<think>` tags.
+- [x] **English-first cognitive mandate** -- `LANGUAGE_AND_SYNTAX_MANDATE` enforces academic English and disallows `topic:` prefixes.
+- [x] **Local GPU baseline** -- `LOCAL_GPU_MODEL` defaults to verified `llama3.1:8b`.
+- [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/evaluation-history/wizard metadata + 19 canonical docs to v5.12.2 (2026-09-27).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, test_research_setup_wizard (28 tests), verify_dependency_map --ci (exit 0), bash -n, UTF-8 integrity scan (zero U+FFFD glyphs).
 
 
 
