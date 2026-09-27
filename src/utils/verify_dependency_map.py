@@ -793,24 +793,33 @@ def extract_actual_functions(py_file):
 def scan_all_functions(project_root):
     """Scan all .py files and extract actual function/class definitions.
 
+    Walks the modern ``src/`` package tree recursively, then the project root,
+    producing ``src/...``-relative keys for the DDD layout plus bare filenames
+    for root-level entry points (e.g. ``talos.py``).
+
+    Args:
+        project_root (Path): Absolute path to the project root directory.
+
     Returns:
-        dict: {filepath: [function_names]}
+        dict: {filepath: [function/class names]}
     """
+    # -- Normalize the project root to a Path (defensive against str input). --
+    root_path = Path(project_root) if not isinstance(project_root, Path) else project_root
+    src_dir = root_path / "src"
+
     actual = {}
 
-    for py_file in sorted(SCRIPTS_DIR.glob("*.py")):
-        fname = py_file.name
-        if fname in SKIP_FILES or fname == "verify_dependency_map.py":
-            continue
-        actual[fname] = extract_actual_functions(py_file)
+    # -- Scan the DDD src/ package tree (core, ingestion, ai, analysis, utils, api) --
+    if src_dir.exists():
+        for py_file in sorted(src_dir.rglob("*.py")):
+            fname = py_file.name
+            if fname in SKIP_FILES or fname == "verify_dependency_map.py":
+                continue
+            rel_path = str(py_file.relative_to(root_path)).replace("\\", "/")
+            actual[rel_path] = extract_actual_functions(py_file)
 
-    for py_file in sorted(CORE_DIR.glob("*.py")):
-        fname = py_file.name
-        if fname in SKIP_FILES:
-            continue
-        actual[f"core/{fname}"] = extract_actual_functions(py_file)
-
-    for py_file in sorted(project_root.glob("*.py")):
+    # -- Scan root-level .py files (e.g. talos.py) --
+    for py_file in sorted(root_path.glob("*.py")):
         fname = py_file.name
         if fname.startswith("_") or fname in SKIP_FILES:
             continue
