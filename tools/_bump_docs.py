@@ -16,7 +16,8 @@ FILES = [
     "docs/IP_PROTECTION_STRATEGY.md",
     "docs/SYSTEM_CAPABILITIES_MASTER.md",
     "docs/SYSTEM_CAPABILITIES_MASTER.html",
-    "docs/TECH_RADAR.md",
+    "docs/internal/TECH_RADAR.md",
+    "docs/internal/TECH_RADAR_GR.md",
 ]
 
 BASE = Path.cwd()

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.11.2
+Project: TALOS v5.11.3
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -75,6 +75,7 @@ import threading
 import time
 import asyncio
 import queue as _queue_mod
+from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, List, Dict, Any
@@ -96,11 +97,38 @@ from src.api.red_tester_routes import router as red_tester_router
 from src.utils.logger import get_logger
 logger = get_logger("api")
 
+# -- FastAPI lifespan (v5.11.3: replaces the deprecated @app.on_event hooks) ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application startup and shutdown lifecycle.
+
+    Startup pre-warms the DatabaseManager singleton and logs readiness lines.
+    Shutdown is an explicit no-op: background workers are daemon threads and
+    the visualizer queues are process-owned, so no teardown is required.
+
+    Args:
+        app (FastAPI): The FastAPI application instance.
+
+    Yields:
+        None: Control returns to the server for the duration of its lifetime.
+    """
+    # -- Startup --
+    logger.info("TALOS FastAPI v5.11.3 starting up (Ecosystem Integrity, Deprecation Elimination & Dependency Alignment, port 8001)...")
+    _get_db()  # warm DatabaseManager
+    logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
+    logger.info("API docs: http://localhost:8001/docs")
+    logger.info("Capabilities reference: http://localhost:8001/api/v1/capabilities")
+    logger.info("Synapse webhook: http://localhost:8001/api/v1/synapse/webhook")
+    yield
+    # -- Shutdown: no explicit teardown required (daemon threads, process-owned queues) --
+
+
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-description="Facade REST API for the TALOS autonomous research platform (v5.11.2 -- Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging)",
-version="5.11.2",
+    description="Facade REST API for the TALOS autonomous research platform (v5.11.3 -- Ecosystem Integrity, Deprecation Elimination & Dependency Alignment)",
+    version="5.11.3",
+    lifespan=lifespan,
 )
 app.add_middleware(
     CORSMiddleware,
@@ -607,17 +635,6 @@ class EvaluatePaperRequest(BaseModel):
 # =============================================================================
 # ENDPOINTS
 # =============================================================================
-
-@app.on_event("startup")
-def on_startup():
-    """Pre-warm singletons and log readiness."""
-    logger.info("TALOS FastAPI v5.11.2 starting up (Zero-Click Windows Pre-Flight Onboarding Wizard, port 8001)...")
-    _get_db()  # warm DatabaseManager
-    logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
-    logger.info("API docs: http://localhost:8001/docs")
-    logger.info("Capabilities reference: http://localhost:8001/api/v1/capabilities")
-    logger.info("Synapse webhook: http://localhost:8001/api/v1/synapse/webhook")
-
 
 # -- GET /api/v1/health -------------------------------------------------------
 

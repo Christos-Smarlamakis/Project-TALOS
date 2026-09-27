@@ -43,6 +43,11 @@ Description:
     concrete strategy at runtime using connectivity, VRAM, task type, and
     interactive Rich consent before any routing decision. DeepSeek V4 models
     receive native thinking/reasoning injection in the OpenAI-compatible path.
+
+    v5.11.3: Ecosystem Integrity hardening -- adds the Fast-Edge batch circuit
+    breaker (_fast_edge_offline_memo) so a failed CPU edge endpoint (port
+    11435) is skipped for the remainder of the batch, and suppresses the
+    google.generativeai end-of-support FutureWarning at lazy-import time.
 """
 
 import os, json, re, requests, sys, functools
@@ -101,6 +106,17 @@ def _try_import_genai() -> bool:
     if _genai_available:
         return True
     try:
+        # -- v5.11.3: silence the google.generativeai end-of-support notice. --
+        # -- Module-scoped filter is primary; the message-scoped filter covers --
+        # -- emissions whose stacklevel attributes the warning to the caller. --
+        import warnings
+        warnings.filterwarnings(
+            "ignore", category=FutureWarning, module="google.generativeai"
+        )
+        warnings.filterwarnings(
+            "ignore", category=FutureWarning,
+            message="All support for the.*",
+        )
         import google.generativeai as genai
         _genai = genai
         _genai_available = True
@@ -216,6 +232,10 @@ class AIManager:
         self.provider_priority = config.get("ai_provider_priority", ["gemini", "deepseek"])
         self.active_embedding_model = None  # set after first successful embedding generation
         self.last_provider_used = None
+        # -- v5.11.3: Fast-Edge batch circuit breaker -- once the CPU edge --
+        # -- endpoint (port 11435) is observed offline, all remaining fast-tier --
+        # -- calls in this batch skip it instantly instead of paying timeouts. --
+        self._fast_edge_offline_memo = False
         # -- v5.10.2: LLM Router Sub-Agent (provider selection delegate) --
         self.router = self._init_router()
 
@@ -916,6 +936,16 @@ class AIManager:
             model = os.getenv("LOCAL_MODEL_NAME", "gemma3:12b")
             label = "GPU Ollama"
 
+        # -- v5.11.3: Fast-Edge batch circuit breaker -- a known-offline edge --
+        # -- endpoint is skipped immediately; the GPU Ollama fallback runs --
+        # -- without waiting for another connection timeout. --
+        if use_edge and self._fast_edge_offline_memo:
+            print("  [INFO] Fast tier (11435) marked offline for current batch. "
+                  "Immediate fallback to local GPU active.")
+            return self._execute_ollama_http(
+                prompt, response_format, use_edge=False, allow_prompt=allow_prompt
+            )
+
         final_prompt = prompt
         if response_format == 'json':
             final_prompt += (
@@ -961,6 +991,11 @@ class AIManager:
             # cloud fallback. This preserves air-gapped operation and avoids
             # unnecessary cloud API calls when only the edge endpoint is down.
             if use_edge:
+                # -- v5.11.3: memoize the offline edge endpoint so the rest of --
+                # -- the batch never waits on port 11435 connection timeouts. --
+                self._fast_edge_offline_memo = True
+                print("  [INFO] Fast tier (11435) marked offline for current batch. "
+                      "Immediate fallback to local GPU active.")
                 print("  [WARNING] Fast tier (11435) offline. Falling back to local Ollama (11434)...")
                 # -- Try the GPU Ollama endpoint --
                 gpu_result = self._execute_ollama_http(

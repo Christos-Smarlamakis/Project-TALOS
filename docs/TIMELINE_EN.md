@@ -4,7 +4,7 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-26 (v5.11.2 -- Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging)
+> **Last Updated:** 2026-09-26 (v5.11.3 -- Ecosystem Integrity, Deprecation Elimination & Dependency Alignment)
 
 ---
 
@@ -571,6 +571,20 @@
 - [x] **Batch hardening** -- caret-escaped parentheses inside code blocks, clean `call`/`goto :EOF` stack discipline, strict CRLF verified byte-level (zero lone LF).
 - [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + 19 canonical docs to v5.11.2 (2026-09-26).
 - [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, bash -n, label/jump audit, UTF-8 integrity scan.
+
+## Phase 50: Ecosystem Integrity & Dependency Alignment (v5.11.3)
+
+### Status: COMPLETED (2026-09-26)
+
+- [x] **Seven-fix source audit (7/7 verified)** -- non-blocking SSE via `await asyncio.to_thread(_visualizer_event_queue.get, True, 1.0)` (`main_api.py`); cached `_get_db()` singleton on visualizer polling; `TALOS_HEADLESS=1` injected in `_run_scrape_background`/`_run_evaluate_background`; `_scrape_task_lock = threading.Lock()` serializing the `sys.exit` monkey-patch; `semantic_search` top_k clamp (database_manager.py); `_record_beam_event` payload guards; GWO monitor `except Exception` resilience.
+- [x] **OpenReview V2 dispatch** -- new `OpenReviewSource._query_notes()` helper: `search_notes(term=)` preferred, `get_notes(content={"title": ...})` fallback, bare `get_notes(limit=)` retry on `TypeError`; 4 new hermetic tests in `tests/test_openreview_source.py`.
+- [x] **Fast-Edge batch circuit breaker** -- `AIManager._fast_edge_offline_memo` skips a known-offline port-11435 endpoint for the remainder of the batch with instant GPU (11434) fallback and an `[INFO]` log line.
+- [x] **Deprecation elimination** -- FastAPI `lifespan` context manager replaces `@app.on_event("startup")` (zero `on_event` warnings); paired module/message FutureWarning filters silence the `google.generativeai` end-of-support notice.
+- [x] **GWO status multi-path check** -- `_show_drl_status` probes foraging/router/legacy GWO artifacts with `Present` vs `Default Baseline Active` messaging.
+- [x] **Dependency verifier repair** -- dual-language Section 7 header regex (English + Greek master) + language-tagged fence support (```text) + whitelist expansion; stale `scripts/` paths corrected to `src/utils/`; `--ci` exit 0 restored.
+- [x] **Release codification** -- the pre-demo stability hardening (formerly a same-version v5.11.2 patch) is formally sealed under v5.11.3 together with the 5 ecosystem-integrity fixes, with full changelog canon, timeline phase, and capabilities whitepaper section.
+- [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/evaluation-history metadata + 19 canonical docs to v5.11.3 (2026-09-26).
+- [x] **Verification gates passed** -- compileall, test_system_integrity (zero on_event warnings), test_talos_version, test_openreview_source, verify_dependency_map --ci (exit 0), full multi-tier regression, bash -n, UTF-8 integrity scan (zero U+FFFD glyphs).
 
 
 

@@ -1,5 +1,5 @@
 ﻿# TALOS Project Instructions for AI Coding Agents
-# Version: v5.11.2
+# Version: v5.11.3
 
 ## CONSTITUTION v2.0 — The 8-Point Master Initialization Standard
 
@@ -49,9 +49,9 @@
 
 ### V. VERIFICATION-FIRST WORKFLOW
 - After ANY code change, run `python -m py_compile <file>` for EVERY changed .py file.
-- After ANY architectural change, run `python scripts/verify_dependency_map.py` to audit
+- After ANY architectural change, run `python src/utils/verify_dependency_map.py` to audit
   the dependency graph against PROJECT_MAP.md Section 7.
-- After ANY database schema change, run `python scripts/db_stats.py` to verify integrity.
+- After ANY database schema change, run `python src/utils/db_stats.py` to verify integrity.
 - After ANY documentation change, run `python tests/test_system_integrity.py` for system health.
 - No change is "complete" until ALL four verification gates pass:
   1. `py_compile` (syntax)
@@ -60,8 +60,8 @@
   4. `test_system_integrity.py` (runtime health)
 - If ANY gate fails, fix the issue BEFORE proceeding.
 
-### VI. THE MANDATORY 15-FILE DOCUMENTATION SYNCHRONICITY RULE
-- Every version bump (e.g., v5.6.0 to v5.7.0) MUST synchronize EXACTLY these 15 files:
+### VI. THE MANDATORY 16-FILE DOCUMENTATION SYNCHRONICITY RULE
+- Every version bump (e.g., v5.6.0 to v5.7.0) MUST synchronize EXACTLY these 16 files:
   1. `.clinerules` — The Constitution (this file)
   2. `README.md` — Project overview and quickstart
   3. `docs/ROADMAP.md` — Strategic roadmap and version history
@@ -76,13 +76,21 @@
   12. `docs/internal/IP_PROTECTION_STRATEGY.md` — IP protection strategy
   13. `docs/SYSTEM_CAPABILITIES_MASTER.md` — 9-section capabilities reference (Markdown)
   14. `docs/SYSTEM_CAPABILITIES_MASTER.html` — 9-section capabilities reference (HTML)
-  15. `docs/TECH_RADAR.md` — Technology radar and stack choices
-- If ANY of these 15 files references a stale version, the ENTIRE documentation set
+  15. `docs/internal/TECH_RADAR.md` — Technology radar and stack choices (English, CONFIDENTIAL)
+  16. `docs/internal/TECH_RADAR_GR.md` — Technology radar (Greek master, CONFIDENTIAL)
+- If ANY of these 16 files references a stale version, the ENTIRE documentation set
   is considered OUT OF DATE and must be brought into sync BEFORE the task is complete.
 - The synchronization checklist: version string, "Last Updated" date, feature lists,
   architecture descriptions, endpoint counts, dependency graph references.
-- This rule is NON-NEGOTIABLE. The 15-file set IS the canonical documentation surface.
-- Prior 12-file rule (v5.6.0) is SUPERSEDED by this 15-file rule (v5.7.0).
+- This rule is NON-NEGOTIABLE. The 16-file set IS the canonical documentation surface.
+- Prior 12-file rule (v5.6.0) is SUPERSEDED by this 16-file rule (v5.7.0).
+- CONFIDENTIAL / INTERNAL: `docs/TECH_RADAR.md` and `docs/TECH_RADAR_GR.md` were
+  relocated from `docs/` to `docs/internal/` (v5.11.3) to shield proprietary
+  competitive research strategies (PAIR-DRL, Colibrì 2.8T MoE streaming, Laya
+  System 1, Tri-Tier routing, Headroom token compression) from public exposure.
+  The confidential internal set under `docs/internal/` now holds 7 files: the API
+  handover, UX/UI blueprint, and IP protection strategy (EN + GR), plus the two
+  TECH_RADAR files (English + Greek master).
 
 ### VII. EXHAUSTIVE CAPABILITIES SYNC RULE
 - During every version bump, the AI agent MUST scan all changelogs (CHANGELOG_EN.md,
@@ -243,10 +251,10 @@
 ## Testing
 - `python -m py_compile <file>` for syntax validation
 - `python talos.py` for full integration test
-- `python scripts/db_stats.py` for database health check
+- `python src/utils/db_stats.py` for database health check
 - `python tests/test_system_integrity.py` for system health check
-- `python scripts/verify_dependency_map.py` for dependency map audit (AST vs PROJECT_MAP.md)
-- `python scripts/verify_dependency_map.py --ci` for CI/CD exit-code-only check
+- `python src/utils/verify_dependency_map.py` for dependency map audit (AST vs PROJECT_MAP.md)
+- `python src/utils/verify_dependency_map.py --ci` for CI/CD exit-code-only check
 - Local mode: `ollama pull gemma3:12b && ollama pull nomic-embed-text` then set TALOS_USE_LOCAL=1
 
 ---
@@ -268,7 +276,7 @@
 
 ## CRITICAL: Documentation Sync — All 15 Canonical Files
 - After **ANY significant code change** (new feature, bugfix, refactor, breaking change), the 15 canonical files MUST be updated.
-- See Section VI above for the complete 15-file list and synchronization requirements.
+- See Section VI above for the complete 16-file list and synchronization requirements.
 - **Each changelog entry MUST include:**
   - Exact filename and version number
   - WHAT exactly changed: function signatures, line counts, new flags/arguments, new/deleted imports
@@ -280,8 +288,8 @@
 
 ---
 
-> **Last Updated:** 2026-09-26 (v5.11.2 -- Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging)
-> **Project Version:** v5.11.2
+> **Last Updated:** 2026-09-26 (v5.11.3 -- Ecosystem Integrity, Deprecation Elimination & Dependency Alignment)
+> **Project Version:** v5.11.3
 
 ---
 

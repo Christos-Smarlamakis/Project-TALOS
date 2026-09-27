@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: openreview.py
-Project: TALOS v5.10.0
+Module: openreview_source.py
+Project: TALOS v5.11.3
 
 Description:
     Search agent for the OpenReview API V2 (https://api2.openreview.net), the
@@ -28,6 +28,13 @@ Description:
     guarded so that air-gapped or minimal installations without the client
     library degrade gracefully (self.enabled=False) rather than crashing.
 
+    v5.11.3: All note queries route through _query_notes(), a version-tolerant
+    dispatcher. The V2 OpenReviewClient does not accept the legacy V1 ``term``
+    keyword on get_notes(); full-text search is exposed via search_notes().
+    The helper prefers search_notes, falls back to a content-field get_notes()
+    query, and degrades to a bare get_notes(limit=...) call on TypeError for
+    mixed client versions.
+
 Dependencies:
     - openreview: Official OpenReview API V2 client (openreview-py). Optional.
     - os: Environment variable access for optional credentials.
@@ -37,7 +44,7 @@ Dependencies:
 import os
 import time
 from datetime import datetime, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 # -- Optional dependency guard (Constitution II: air-gapped, local-first) --
 try:
@@ -131,6 +138,47 @@ class OpenReviewSource:
         except Exception:
             return default
 
+    def _query_notes(self, term: str, limit: int,
+                     offset: Optional[int] = None,
+                     sort: Optional[str] = None) -> List[Any]:
+        """Query notes via the OpenReview API V2 with version-tolerant dispatch.
+
+        The V2 client (openreview.api.OpenReviewClient) does not accept the
+        legacy V1 ``term`` keyword on get_notes(); full-text search is exposed
+        through search_notes(). This helper prefers search_notes when the
+        client provides it, falls back to a content-field get_notes() query,
+        and finally degrades to an unfiltered get_notes(limit=...) call for
+        mixed client versions that raise TypeError on unexpected keywords.
+
+        Args:
+            term (str): Free-text search term (usually the configured query).
+            limit (int): Maximum number of notes to return.
+            offset (int, optional): Pagination offset (fetch path only).
+            sort (str, optional): Sort directive, e.g. "cdate:desc".
+
+        Returns:
+            list: Raw Note objects from the OpenReview client.
+
+        Raises:
+            Exception: Non-TypeError client failures propagate to the caller,
+                which applies the standard warning/empty-list policy.
+        """
+        # -- Build the keyword set shared by every dispatch branch. --
+        kwargs: Dict[str, Any] = {"limit": limit}
+        if offset is not None:
+            kwargs["offset"] = offset
+        if sort is not None:
+            kwargs["sort"] = sort
+        try:
+            # -- Preferred V2 path: dedicated full-text search endpoint. --
+            if hasattr(self.client, "search_notes"):
+                return self.client.search_notes(term=term, **kwargs)
+            # -- V2 fallback: content-field query for clients without it. --
+            return self.client.get_notes(content={"title": term}, **kwargs)
+        except TypeError:
+            # -- Mixed client versions: retry with the minimal signature. --
+            return self.client.get_notes(limit=limit)
+
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
         """Fetch recent papers from OpenReview matching the configured query.
 
@@ -151,11 +199,9 @@ class OpenReviewSource:
 
         while len(all_papers) < self.total_max_results:
             try:
-                notes = self.client.get_notes(
-                    term=self.query,
-                    limit=per_page,
-                    offset=offset,
-                    sort="cdate:desc",
+                # -- v5.11.3: V2-tolerant dispatch via _query_notes. --
+                notes = self._query_notes(
+                    self.query, per_page, offset=offset, sort="cdate:desc"
                 )
             except Exception as e:
                 print(f"   WARNING [OpenReview]: Fetch failed: {e}")
@@ -205,7 +251,8 @@ class OpenReviewSource:
         if not self.enabled or self.client is None:
             return []
         try:
-            notes = self.client.get_notes(term=query, limit=limit)
+            # -- v5.11.3: V2-tolerant dispatch via _query_notes. --
+            notes = self._query_notes(query, limit)
             results = []
             for note in notes:
                 paper = self._format_paper(note)

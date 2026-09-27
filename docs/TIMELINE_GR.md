@@ -4,7 +4,7 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-26 (v5.11.2 -- Οδηγός Προετοιμασίας Windows Μηδενικών Κλικ & Διαπλατφορμική Πακετοποίηση)
+> **Τελευταία Ενημέρωση:** 2026-09-26 (v5.11.3 -- Ακεραιότητα Οικοσυστήματος, Εξάλειψη Απαρχαιώσεων & Ευθυγράμμιση Εξαρτήσεων)
 
 ---
 
@@ -555,6 +555,20 @@
 - [x] **Ενίσχυση batch** -- διαφυγή παρενθέσεων με caret εντός μπλοκ κώδικα, καθαρή πειθαρχία στοίβας `call`/`goto :EOF`, αυστηρό CRLF επαληθευμένο σε επίπεδο byte (μηδέν μεμονωμένα LF).
 - [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose.yml + CITATION.cff + 19 κανονικά έγγραφα σε v5.11.2 (2026-09-26).
 - [x] **Πύλες επαλήθευσης** -- compileall, test_system_integrity, test_talos_version, bash -n, έλεγχος ετικετών/άλματων, σάρωση ακεραιότητας UTF-8.
+
+## Φάση 50: Ακεραιότητα Οικοσυστήματος & Ευθυγράμμιση Εξαρτήσεων (v5.11.3)
+
+### Κατάσταση: ΟΛΟΚΛΗΡΩΜΕΝΗ (2026-09-26)
+
+- [x] **Έλεγχος επτά διορθώσεων στον κώδικα (7/7 επαληθευμένες)** -- μη μπλοκάρον SSE μέσω `await asyncio.to_thread(_visualizer_event_queue.get, True, 1.0)` (`main_api.py`)· cached singleton `_get_db()` στα endpoints δειγματοληψίας του οπτικοποιητή· έγχυση `TALOS_HEADLESS=1` στις `_run_scrape_background`/`_run_evaluate_background`· σειριαλοποίηση του monkey-patch του `sys.exit` με `_scrape_task_lock = threading.Lock()`· φράγμα top_k στη `semantic_search` (database_manager.py)· φρουροί payload στη `_record_beam_event`· ανθεκτικότητα `except Exception` στον monitor GWO.
+- [x] **Αποστολή OpenReview V2** -- νέο βοηθητικό `OpenReviewSource._query_notes()`: προτιμώμενη `search_notes(term=)`, υποκατάσταση `get_notes(content={"title": ...})`, απλή επανάληψη `get_notes(limit=)` σε `TypeError`· 4 νέες ερμητικές δοκιμές στο `tests/test_openreview_source.py`.
+- [x] **Διακόπτης κυκλώματος batch Fast-Edge** -- το `AIManager._fast_edge_offline_memo` παρακάμπτει γνωστό offline endpoint θύρας 11435 για το υπόλοιπο του batch με άμεση υποχώρηση σε GPU (11434) και γραμμή καταγραφής `[INFO]`.
+- [x] **Εξάλειψη απαρχαιώσεων** -- ο `lifespan` context manager του FastAPI αντικαθιστά το `@app.on_event("startup")` (μηδέν προειδοποιήσεις `on_event`)· ζεύγος φίλτρων FutureWarning με εμβέλεια module/μηνύματος σιγάζει την ειδοποίηση λήξης υποστήριξης του `google.generativeai`.
+- [x] **Έλεγχος κατάστασης GWO πολλαπλών διαδρομών** -- η `_show_drl_status` ελέγχει τα αντικείμενα foraging/router/legacy GWO με μηνύματα `Present` έναντι `Default Baseline Active`.
+- [x] **Επισκευή επαληθευτή εξαρτήσεων** -- regex κεφαλίδας Ενότητας 7 δύο γλωσσών (Αγγλικά + ελληνικός master) + υποστήριξη φραχτών με ετικέτα γλώσσας (```text) + διεύρυνση whitelist· παλαιές διαδρομές `scripts/` διορθώθηκαν σε `src/utils/`· αποκαταστάθηκε έξοδος `--ci` με 0.
+- [x] **Κωδικοποίηση έκδοσης** -- η σκλήρυνση σταθερότητας πριν από την επίδειξη (πρώην patch ίδιας έκδοσης v5.11.2) σφραγίζεται επίσημα υπό την v5.11.3 μαζί με τις 5 διορθώσεις ακεραιότητας οικοσυστήματος, με πλήρες κανονικό ιστορικό αλλαγών, φάση χρονολογίου και ενότητα λευκώματος δυνατοτήτων.
+- [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose.yml + CITATION.cff + μεταδεδομένα tray/visualizer/evaluation-history + 19 κανονικά έγγραφα σε v5.11.3 (2026-09-26).
+- [x] **Πύλες επαλήθευσης** -- compileall, test_system_integrity (μηδέν προειδοποιήσεις on_event), test_talos_version, test_openreview_source, verify_dependency_map --ci (έξοδος 0), πλήρης παλινδρόμηση multi-tier, bash -n, σάρωση ακεραιότητας UTF-8 (μηδέν glyphs U+FFFD).
 
 
 

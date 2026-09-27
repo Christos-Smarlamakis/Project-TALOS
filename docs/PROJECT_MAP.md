@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.11.2
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.11.3
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-26 (v5.11.2 -- Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging)
+> **Τελευταία Ενημέρωση:** 2026-09-26 (v5.11.3 -- Ακεραιότητα Οικοσυστήματος, Εξάλειψη Απαρχαιώσεων & Ευθυγράμμιση Εξαρτήσεων)
 
 ---
 
@@ -195,8 +195,8 @@ src/ingestion/*.py
 
 | Αρχείο/Φάκελος | Ρόλος |
 |----------------|-------|
-| `docs/` | Μόνιμη τεκμηρίωση (CHANGELOG, ROADMAP, TIMELINE, PROJECT_MAP, SYSTEM_CAPABILITIES, TECH_RADAR) |
-| `docs/internal/` | Ιδιόκτητα έγγραφα (API_HANDOVER, UX_UI_BLUEPRINT, IP_PROTECTION) |
+| `docs/` | Μόνιμη τεκμηρίωση (CHANGELOG, ROADMAP, TIMELINE, PROJECT_MAP, SYSTEM_CAPABILITIES) |
+| `docs/internal/` | Ιδιόκτητα / απόρρητα έγγραφα (API_HANDOVER, UX_UI_BLUEPRINT, IP_PROTECTION, TECH_RADAR EN/GR -- απόρρητος στρατηγικός χάρτης) |
 | `tools/` | Dev & utility scripts |
 | `Dockerfile`, `docker-compose.yml` | Containerization |
 | `README.md`, `CITATION.cff`, `LICENSE` | Metadata |
@@ -220,11 +220,14 @@ src/ingestion/*.py
 14. Τα background tasks (`_run_scrape_background`, `_run_evaluate_background`) θέτουν `TALOS_HEADLESS=1` στην είσοδο -- κάθε νέο background task που καλεί AIManager πρέπει να κάνει το ίδιο, αλλιώς κίνδυνος διαδραστικού prompt σε νήμα χωρίς κονσόλα
 15. Το monkey-patch του `sys.exit` στη `_run_scrape_background` σειριαλοποιείται από το καθολικό `_scrape_task_lock` -- ποτέ patching καθολικών symbols διεργασίας χωρίς αυτό το lock
 16. Η `DatabaseManager.semantic_search` φράσσει το `top_k` στο πλήθος των φορτωμένων embeddings (`min(top_k, len(self._embedding_ids))`) -- το φράγμα πρέπει να διατηρείται σε κάθε τροποποίηση
+17. Ο V2 client του OpenReview απορρίπτει το `get_notes(term=...)` με `TypeError` -- όλα τα queries σημειώσεων δρομολογούνται αποκλειστικά μέσω `OpenReviewSource._query_notes()` (search_notes -> content query -> TypeError fallback)
+18. Το `AIManager._fast_edge_offline_memo` παρακάμπτει γνωστό offline Fast Edge endpoint (11435) για το υπόλοιπο του batch -- επαναφέρεται μόνο με νέο instance του AIManager, ποτέ χειροκίνητα εντός βρόχου
+19. Η εκκίνηση του FastAPI γίνεται μέσω `lifespan` context manager στο `main_api.py` -- ποτέ επαναφορά `@app.on_event` handlers (απαρχαιωμένα, παράγουν DeprecationWarning)
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-09-26 (v5.11.2 -- Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging)
-> **Έκδοση Project:** v5.11.2
+> **Τελευταία Ενημέρωση:** 2026-09-26 (v5.11.3 -- Ακεραιότητα Οικοσυστήματος, Εξάλειψη Απαρχαιώσεων & Ευθυγράμμιση Εξαρτήσεων)
+> **Έκδοση Project:** v5.11.3
 > **Συνολικά .py modules στο src/:** 85 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 19 + api 4 + mcp_server 1)
 
 

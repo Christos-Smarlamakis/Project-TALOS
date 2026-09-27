@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.11.2 (Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging)
+> **Current Version:** v5.11.3 (Ecosystem Integrity, Deprecation Elimination & Dependency Alignment)
 > **Last Updated:** 2026-09-26
 
 ---
@@ -135,6 +135,7 @@ The v5.10.x series transitions Project TALOS from an aggregator to a fully adapt
 | **v5.11.0** | Live Telemetry HUD Console, Win32 Close-to-Tray & Linux Bootstrap | Bottom-right glassmorphism telemetry HUD console, native Win32 close-to-tray hook, full title/authors [EVAL] telemetry with English error sanitization, persistent JSONL evaluation history + TUI viewer, zero-touch Miniconda/talosenv Linux bootstrap. | Complete |
 | **v5.11.1** | TUI Sub-Menu Sanitization & Complete Hierarchy Audit | Questionary choice-list corruption fix in `profile_settings_menu()`, sequential 1-8 renumbering, unified `[ Back / Return to Main Menu ]` labels across all sub-menus. | Complete |
 | **v5.11.2** | Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging | Progress-aware 5-step `:AUTO_PREFLIGHT` setup wizard in `run_talos.bat` with time estimates and `[OK]` ticks, silent Miniconda3 bootstrap via native `curl.exe`, new `:DISCOVER_CONDA` multi-root discovery, and a silent fast-path bypass gate for sub-1-second daily launches. | Complete |
+| **v5.11.3** | Ecosystem Integrity, Deprecation Elimination & Dependency Alignment | OpenReview V2 `search_notes` dispatch ladder (`_query_notes`), Fast-Edge (11435) batch circuit breaker (`_fast_edge_offline_memo`), FastAPI `lifespan` migration, Gemini FutureWarning suppression, multi-path GWO artifact status check, and dependency-map verifier repair (dual-language Section 7, whitelist expansion); also formally seals the 7 pre-demo concurrency hardening fixes. | Complete |
 | **v5.12.0** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline (`src/ai/dspy_prisma_pipeline.py`) leveraging PlanEval architecture (Fast Edge Planner/Evaluator + Heavy Reasoning Executor). | Next |
 | **v5.13.0** | CORTEX & n8n Gateway | Live arXiv RSS & text evaluation Discord Bot (`src/integration/discord_evaluator.py`) and SYNAPSE n8n Workflow Gateway templates (`templates/n8n_workflows/`). | Upcoming |
 
@@ -189,6 +190,7 @@ Project ALEXANDRIA marks the full desktop and distributed release of the platfor
 | **v5.11.0** | Live Telemetry HUD Console, Win32 Close-to-Tray & Linux Bootstrap | HUD telemetry console, close-to-tray hook, full-title/authors telemetry, JSONL evaluation history, zero-touch Linux bootstrap | Complete |
 | **v5.11.1** | TUI Sub-Menu Sanitization & Complete Hierarchy Audit | Questionary choice-list corruption fix, sequential 1-8 renumbering, unified sub-menu back labels | Complete |
 | **v5.11.2** | Zero-Click Windows Pre-Flight Onboarding Wizard | 5-step progress-aware setup wizard, silent Miniconda3 bootstrap, `:DISCOVER_CONDA` discovery, sub-1-second fast-path bypass | Complete |
+| **v5.11.3** | Ecosystem Integrity & Dependency Alignment | OpenReview V2 fix, 11435 batch circuit breaker, FastAPI lifespan, warning suppression, GWO status check, verifier repair; 7 concurrency fixes sealed | Complete |
 | **v5.12.0** | DSPy PRISMA Systematic Review Pipeline | Automated PRISMA 2020 SLR with PlanEval DSPy architecture | Next |
 | **v5.13.0** | CORTEX & n8n Gateway | Discord bot, n8n workflow templates, ecosystem integration | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine | Future |

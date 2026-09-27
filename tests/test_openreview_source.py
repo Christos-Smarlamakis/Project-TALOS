@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_openreview_source.py
-Project: TALOS v5.10.0
+Project: TALOS v5.11.3
 Description:
-    Unit tests for the OpenReview source agent (src/ingestion/openreview.py).
+    Unit tests for the OpenReview source agent (src/ingestion/openreview_source.py).
     Covers configuration-driven initialization (authenticated, guest, and
     disabled), content-field extraction, standardized paper formatting with
-    peer-review metadata enrichment, and graceful degradation when the
-    optional openreview-py client library is absent.
+    peer-review metadata enrichment, graceful degradation when the optional
+    openreview-py client library is absent, and the v5.11.3 version-tolerant
+    V2 note-query dispatch ladder (_query_notes).
 
     Key design decisions:
     - Hermetic: no live OpenReview API calls. The optional client and the
@@ -25,6 +26,8 @@ from types import SimpleNamespace
 import pytest
 from unittest.mock import patch, MagicMock
 
+# -- v5.11.3: module-level import is required for patch.object() targeting. --
+from src.ingestion import openreview_source
 from src.ingestion.openreview_source import OpenReviewSource
 
 
@@ -159,3 +162,55 @@ class TestFetchAndSearch:
         disabled_source.client = MagicMock()
         disabled_source.client.get_notes.side_effect = RuntimeError("boom")
         assert disabled_source.search_papers("query") == []
+
+
+class TestQueryNotesDispatch:
+    """Tests for the v5.11.3 version-tolerant V2 note-query dispatch ladder."""
+
+    def test_search_notes_preferred_when_available(self, disabled_source):
+        """Clients exposing search_notes use the dedicated V2 search endpoint."""
+        disabled_source.enabled = True
+        disabled_source.client = MagicMock()
+        disabled_source.client.search_notes.return_value = [_make_note()]
+        results = disabled_source.search_papers("query")
+        disabled_source.client.search_notes.assert_called_once_with(
+            term="query", limit=5
+        )
+        assert len(results) == 1
+        assert results[0]["title"] == "A Title"
+
+    def test_content_query_when_search_notes_missing(self, disabled_source):
+        """Clients without search_notes fall back to a content-field query."""
+        disabled_source.enabled = True
+        client = MagicMock(spec=["get_notes"])
+        client.get_notes.return_value = [_make_note()]
+        disabled_source.client = client
+        results = disabled_source.search_papers("query")
+        client.get_notes.assert_called_once_with(
+            content={"title": "query"}, limit=5
+        )
+        assert len(results) == 1
+
+    def test_typeerror_falls_back_to_bare_get_notes(self, disabled_source):
+        """A TypeError from mixed client versions retries with limit only."""
+        disabled_source.enabled = True
+        disabled_source.client = MagicMock()
+        disabled_source.client.search_notes.side_effect = TypeError(
+            "unexpected keyword argument 'term'"
+        )
+        disabled_source.client.get_notes.return_value = [
+            _make_note(title="Fallback Paper")
+        ]
+        results = disabled_source.search_papers("query")
+        disabled_source.client.get_notes.assert_called_once_with(limit=5)
+        assert [p["title"] for p in results] == ["Fallback Paper"]
+
+    def test_fetch_uses_dispatch_with_pagination_kwargs(self, disabled_source):
+        """fetch_new_papers passes offset and sort through the dispatcher."""
+        disabled_source.enabled = True
+        disabled_source.client = MagicMock()
+        disabled_source.client.search_notes.return_value = []
+        assert disabled_source.fetch_new_papers() == []
+        disabled_source.client.search_notes.assert_called_once_with(
+            term=disabled_source.query, limit=100, offset=0, sort="cdate:desc"
+        )

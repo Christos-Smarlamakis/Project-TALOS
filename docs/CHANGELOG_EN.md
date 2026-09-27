@@ -2,6 +2,47 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.11.3] - 2026-09-26 -- Ecosystem Integrity, Deprecation Elimination & Dependency Alignment
+
+### Added
+- **Formal release codification of the 7 pre-demo critical defect fixes** (HOU ICBE 2026): the stability hardening previously shipped as a same-version patch under v5.11.2 is now formally sealed under this release with its own version identity, changelog canon, timeline phase, and capabilities whitepaper section. This release gives the concurrency architecture a permanent, citable version anchor.
+- **Ecosystem integrity hardening set** (5 additional fixes): OpenReview V2 `search_notes` dispatch, Fast-Edge (11435) batch circuit breaker, FastAPI lifespan migration with Gemini FutureWarning suppression, multi-path GWO artifact status check, and dependency-map verifier repair with canonical path corrections. Full details in the second Fixed section below.
+
+### Fixed -- Pre-Demo Critical Defect Set (formally codified and re-verified)
+1. **Non-blocking SSE event loop** (`src/api/main_api.py:visualizer_sse_stream`, L1340): `await asyncio.to_thread(_visualizer_event_queue.get, True, 1.0)` offloads the blocking queue read to a worker thread, keeping the single uvicorn event loop responsive while `/api/v1/visualizer/stream` clients are connected (previously all other endpoints were starved to roughly 1 Hz in Live SSE mode).
+2. **Cached DatabaseManager singleton on visualizer polling** (`main_api.py:get_visualizer_demo_data` L1382, `get_visualizer_state` L1551): `_get_db()` replaces per-request `DatabaseManager(db_path=...)` construction, eliminating per-poll DDL re-runs and full embeddings-table unpickling on every 1-1.5 s poll. Both endpoints bind to the profile database active at server start; restart uvicorn after a mid-session profile switch.
+3. **Headless background workers** (`main_api.py:_run_scrape_background` L749, `_run_evaluate_background` L972): `os.environ["TALOS_HEADLESS"] = "1"` is injected at task entry, so local-model connection failures can never reach the interactive `questionary` consent prompt in `AIManager._interactive_cloud_fallback()` from a BackgroundTasks thread.
+4. **Scrape task concurrency lock** (`main_api.py` L185, L759, L790): module-level `_scrape_task_lock = threading.Lock()` brackets the process-global `sys.exit` monkey-patch/restore sequence (release inside `finally`), so concurrent scrape triggers serialize instead of permanently corrupting `sys.exit`.
+5. **Semantic search bounds clamping** (`src/core/database_manager.py:semantic_search` L342-344): `top_k = min(top_k, len(self._embedding_ids))` with an early `return []` for `top_k <= 0`, preventing `ValueError: kth out of bounds` from `np.argpartition` when the model-filtered embedding count is smaller than the requested top_k.
+6. **Visualizer payload guards** (`main_api.py:_record_beam_event` L442-446): the `count` field is cast inside `try/except (TypeError, ValueError)` defaulting to 0; a malformed external POST to `/api/v1/visualizer/events` can no longer trigger an unhandled 500.
+7. **GWO progress monitor resilience** (`main_api.py:_run_gwo_background._poll_progress` L872): the history-file read handler is broadened to `except Exception: pass`; structurally unexpected `gwo_history.json` content (mid-write truncation, dict root causing `KeyError` on `history[-1]`) no longer kills the monitor thread.
+
+### Fixed -- Ecosystem Integrity & Dependency Alignment
+- **OpenReview V2 API dispatch** (`src/ingestion/openreview_source.py`, new `_query_notes()` helper; call sites in `fetch_new_papers` and `search_papers`): the legacy V1-style `client.get_notes(term=...)` call (unsupported by the V2 `OpenReviewClient`, raising `TypeError`) is replaced by a version-tolerant ladder -- `search_notes(term=...)` when the client exposes it, `get_notes(content={"title": ...})` otherwise, and a bare `get_notes(limit=...)` retry on `TypeError` for mixed client versions. Four new hermetic tests in `tests/test_openreview_source.py` pin the dispatch order, the pagination kwargs pass-through, and the fallback behavior.
+- **Fast-Edge batch circuit breaker** (`src/core/ai_manager.py`): new instance memo `AIManager._fast_edge_offline_memo`. Once the CPU edge endpoint (`FAST_EDGE_BASE_URL`, port 11435) fails with a connection error (`ConnectionRefusedError` / `WinError 10061` / `NewConnectionError`, wrapped by `requests.exceptions.ConnectionError`), all subsequent fast-tier calls in the same batch skip the dead endpoint instantly and fall back to local GPU Ollama (port 11434), logging `[INFO] Fast tier (11435) marked offline for current batch. Immediate fallback to local GPU active.` -- no repeated connection timeouts.
+- **FastAPI lifespan migration** (`src/api/main_api.py`): the deprecated `@app.on_event("startup")` handler is replaced by a modern `@asynccontextmanager` `lifespan` coroutine passed to `FastAPI(lifespan=...)`; startup warm-up/logging preserved verbatim, shutdown section is an explicit no-op; the `on_event` DeprecationWarning is fully eliminated.
+- **Gemini FutureWarning suppression** (`src/core/ai_manager.py:_try_import_genai`): paired module-scoped and message-scoped `warnings.filterwarnings("ignore", category=FutureWarning, ...)` filters installed immediately before the lazy `google.generativeai` import, silencing the end-of-support notice without masking unrelated warnings.
+- **GWO status multi-path check** (`talos.py:_show_drl_status`): GWO artifact detection now probes `models/gwo_foraging_hyperparameters.json`, `models/gwo_llm_router_reward_weights.json`, and the legacy `models/gwo_parameters.json`; renders `[bold green]Present[/bold green]` when any exists, else `[yellow]Default Baseline Active[/yellow] [dim](Run Opt 4.6 to tune)[/dim]`; detailed metric rows render only for the foraging artifact and are guarded against mid-write/schema errors.
+- **Dependency map verifier repair** (`src/utils/verify_dependency_map.py`): `parse_section_7` now accepts both the English (`Dependency Graph`) and Greek (`Γράφος Εξαρτήσεων`) Section 7 headers -- the verifier parses the Greek master `docs/PROJECT_MAP.md` -- and tolerates language-tagged code fences (` ```text `); `EXTERNAL_PACKAGES` whitelist expanded (`atexit`, `asyncio`, `queue`, `html`, `ctypes`, `win32com`, `win32com.client`, `PIL`, `Pillow`, `pystray`, `urllib3`); stale generated-report footers corrected to `src/utils/verify_dependency_map.py -- TALOS v5.11.3`. `--ci` returns exit 0 again (previously exit 1 with "Could not extract Section 7" plus 12 false missing entries).
+- **Canonical path corrections** (`.clinerules`, `docs/SYSTEM_CAPABILITIES_MASTER.md`, `docs/SYSTEM_CAPABILITIES_MASTER.html`): stale `scripts/verify_dependency_map.py` and `scripts/db_stats.py` references corrected to `src/utils/verify_dependency_map.py` and `src/utils/db_stats.py`.
+
+### Changed
+- **Version strings synchronized to 5.11.3** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata and lifespan startup log, `talos.py` docstring, `run_talos.bat` title/banner/init header/setup log, `run_talos.sh` header/banner/logs, `tests/test_multi_tier.py` version assertion), plus `docker-compose.yml` (`talos:5.11.3`), `CITATION.cff` (version 5.11.3, date-released 2026-09-26), the user-facing strings in `src/utils/tray_icon.py` (`TRAY_TITLE`), `src/utils/evaluation_history.py`, `templates/live_foraging_visualizer.html`, and all 19 canonical documentation files.
+- **`pytest.ini` warning hygiene**: a `filterwarnings` block suppresses the `google.generativeai` end-of-support `FutureWarning` during test-suite runs (pytest overrides import-time warning filters with `simplefilter("always")`); the in-code filters in `_try_import_genai()` continue to cover normal runtime execution.
+
+### Security & IP Protection
+- **Relocated SOTA Tech Radar (EN & GR) into `docs/internal/`** to safeguard proprietary architectural roadmaps (PAIR-DRL, Colibrì 2.8T MoE streaming, Laya System 1, Tri-Tier routing, Headroom token compression) from public GitHub exposure. Both `docs/TECH_RADAR.md` and `docs/TECH_RADAR_GR.md` were moved to `docs/internal/` and reclassified as Confidential / Internal.
+
+### Verification
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed with zero `on_event` deprecation warnings (lifespan migration verified).
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.11.3).
+- `python -m pytest tests/test_multi_tier.py -q` full multi-tier regression passed.
+- `python -m pytest tests/test_openreview_source.py -q` passed (V2 dispatch ladder tests included).
+- `python src/utils/verify_dependency_map.py --ci` exited 0 (Section 7 parsed from the Greek master; 0 stale, 0 missing).
+- `bash -n run_talos.sh` passed with zero syntax errors.
+- Strict UTF-8 decode scan across all modified files: zero U+FFFD replacement glyphs.
+
 ## [v5.11.2] - 2026-09-26 -- Zero-Click Windows Pre-Flight Onboarding Wizard & Cross-Platform Packaging
 
 ### Added

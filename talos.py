@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.11.2
+Project: TALOS v5.11.3
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,14 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.11.3: Ecosystem Integrity, Deprecation Elimination & Dependency
+    Alignment -- OpenReview V2 search_notes dispatch ladder, Fast-Edge (11435)
+    batch circuit breaker, FastAPI lifespan migration, Gemini FutureWarning
+    suppression, multi-path GWO artifact status check, and dependency-map
+    verifier repair; also formally seals the 7 pre-demo concurrency hardening
+    fixes (non-blocking SSE, cached DB singleton, headless workers, scrape
+    lock, top_k clamp, payload guards, GWO monitor resilience).
 
     v5.11.2: Zero-Click Windows Pre-Flight Onboarding Wizard -- run_talos.bat
     gains a progress-aware 5-step setup engine with silent Miniconda3
@@ -1380,13 +1388,21 @@ def _generate_optica_plots():
 def _show_drl_status(project_root):
     """Display DRL model and GWO hyperparameter status in a Rich panel.
 
-    Reads models/dddqn_trained.pth and models/gwo_foraging_hyperparameters.json.
+    Reads models/dddqn_trained.pth and probes the GWO artifact paths:
+    models/gwo_foraging_hyperparameters.json, models/gwo_llm_router_reward_weights.json,
+    and the legacy models/gwo_parameters.json (v5.11.3 multi-path check).
 
     Args:
         project_root: Absolute path to the project root directory.
     """
     mp = os.path.join(project_root, "models", "dddqn_trained.pth")
-    gp = os.path.join(project_root, "models", "gwo_foraging_hyperparameters.json")
+    # -- v5.11.3: multi-path GWO artifact detection (current + router + legacy) --
+    gwo_candidates = [
+        os.path.join(project_root, "models", "gwo_foraging_hyperparameters.json"),
+        os.path.join(project_root, "models", "gwo_llm_router_reward_weights.json"),
+        os.path.join(project_root, "models", "gwo_parameters.json"),  # legacy path
+    ]
+    gp = next((p for p in gwo_candidates if os.path.exists(p)), None)
     t = Table(show_header=False, box=box.SIMPLE, border_style="cyan")
     t.add_column("Parameter", style="dim cyan")
     t.add_column("Value", style="white")
@@ -1394,17 +1410,23 @@ def _show_drl_status(project_root):
         t.add_row("DRL Model", f"[green]Present ({os.path.getsize(mp)/1024:.0f} KB)")
     else:
         t.add_row("DRL Model", "[red]Not found")
-    if os.path.exists(gp):
-        import json
-        with open(gp) as f:
-            p = json.load(f)
-        t.add_row("Learning Rate", f"[yellow]{p['learning_rate']:.6e}")
-        t.add_row("Gamma", f"[yellow]{p['gamma']:.4f}")
-        t.add_row("Epsilon Decay", f"[yellow]{p['epsilon_decay']:.6f}")
-        t.add_row("Best Fitness", f"[magenta]{p['best_fitness']:.1f}")
-        t.add_row("Best Reward", f"[green]{p['best_avg_reward']:.1f}")
+    if gp:
+        t.add_row("GWO Tuning", "[bold green]Present[/bold green]")
+        # -- Detailed metrics are rendered only for the foraging artifact. --
+        if os.path.basename(gp) == "gwo_foraging_hyperparameters.json":
+            try:
+                import json
+                with open(gp, "r", encoding="utf-8") as f:
+                    p = json.load(f)
+                t.add_row("Learning Rate", f"[yellow]{p['learning_rate']:.6e}")
+                t.add_row("Gamma", f"[yellow]{p['gamma']:.4f}")
+                t.add_row("Epsilon Decay", f"[yellow]{p['epsilon_decay']:.6f}")
+                t.add_row("Best Fitness", f"[magenta]{p['best_fitness']:.1f}")
+                t.add_row("Best Reward", f"[green]{p['best_avg_reward']:.1f}")
+            except (OSError, ValueError, KeyError):
+                pass  # -- artifact mid-write or unexpected schema; status row suffices --
     else:
-        t.add_row("GWO Params", "[red]Not found")
+        t.add_row("GWO Tuning", "[yellow]Default Baseline Active[/yellow] [dim](Run Opt 4.6 to tune)[/dim]")
     console.print(Panel(
         t,
         title="[bold]DRL Agent Status[/bold]",

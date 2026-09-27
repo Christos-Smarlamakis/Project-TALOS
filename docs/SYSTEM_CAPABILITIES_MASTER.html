@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-09-26 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.11.2 -- Zero-Click Windows Pre-Flight Onboarding Wizard &amp; Cross-Platform Packaging
+  <strong>Version:</strong> v5.11.3 -- Ecosystem Integrity, Deprecation Elimination &amp; Dependency Alignment
 </div>
 
 <!-- ===================================================================== -->
@@ -357,7 +357,7 @@
 <table>
   <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
   <tbody>
-    <tr><td>TALOS_VERSION</td><td>"5.11.2"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_VERSION</td><td>"5.11.3"</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
@@ -964,9 +964,9 @@
 </ul>
 
 <!-- ===================================================================== -->
-<h2 id="s13">Section 13: Documentation Canon (15-File Sync)</h2>
+<h2 id="s13">Section 13: Documentation Canon (16-File Sync)</h2>
 
-<h3 id="s13-1">13.1 The 15 Canonical Files</h3>
+<h3 id="s13-1">13.1 The 16 Canonical Files</h3>
 
 <table>
   <thead><tr><th>#</th><th>File</th><th>Language</th><th>Purpose</th></tr></thead>
@@ -985,7 +985,8 @@
     <tr><td>12</td><td><code>docs/internal/IP_PROTECTION_STRATEGY.md</code></td><td>EN</td><td>IP protection strategy</td></tr>
     <tr><td>13</td><td><code>docs/SYSTEM_CAPABILITIES_MASTER.md</code></td><td>EN</td><td>Capabilities reference (Markdown)</td></tr>
     <tr><td>14</td><td><code>docs/SYSTEM_CAPABILITIES_MASTER.html</code></td><td>EN</td><td>Capabilities reference (HTML) -- this file</td></tr>
-    <tr><td>15</td><td><code>docs/TECH_RADAR.md</code></td><td>EN</td><td>Technology radar and stack choices</td></tr>
+    <tr><td>15</td><td><code>docs/internal/TECH_RADAR.md</code></td><td>EN</td><td>Technology radar and stack choices (Confidential / Internal)</td></tr>
+    <tr><td>16</td><td><code>docs/internal/TECH_RADAR_GR.md</code></td><td>GR</td><td>Technology radar Greek master (Confidential / Internal)</td></tr>
   </tbody>
 </table>
 
@@ -1023,8 +1024,8 @@
 <h3 id="s14-2">14.2 Verification Gates</h3>
 <ol>
   <li><code>python -m py_compile <file></code> (syntax)</li>
-  <li><code>python scripts/verify_dependency_map.py</code> (imports)</li>
-  <li><code>python scripts/db_stats.py</code> (database, if schema changed)</li>
+  <li><code>python src/utils/verify_dependency_map.py</code> (imports)</li>
+  <li><code>python src/utils/db_stats.py</code> (database, if schema changed)</li>
   <li><code>python tests/test_system_integrity.py</code> (runtime health)</li>
 </ol>
 
@@ -1184,8 +1185,32 @@
   <li><strong>Batch hardening:</strong> caret-escaped parentheses inside code blocks, clean <code>call</code>/<code>goto :EOF</code> stack discipline, strict CRLF verified byte-level (zero lone LF).</li>
 </ul>
 
+<h3 id="s15-23">15.23 Ecosystem Integrity, Deprecation Elimination &amp; Dependency Alignment (v5.11.3)</h3>
+<p><strong>Part A -- Concurrency Hardening &amp; Asynchronous Resilience (7 pre-demo fixes, formally sealed):</strong></p>
+<ul>
+  <li><strong>Non-blocking SSE event loop:</strong> <code>visualizer_sse_stream</code> (<code>src/api/main_api.py</code> L1340) offloads the blocking <code>_visualizer_event_queue.get</code> to a worker thread via <code>await asyncio.to_thread(_visualizer_event_queue.get, True, 1.0)</code>, so a connected <code>/api/v1/visualizer/stream</code> client no longer monopolizes the single uvicorn event loop.</li>
+  <li><strong>Cached DatabaseManager singleton on visualizer polling:</strong> <code>get_visualizer_demo_data</code> (L1382) and <code>get_visualizer_state</code> (L1551) consume the cached <code>_get_db()</code> singleton instead of per-request <code>DatabaseManager</code> construction, eliminating per-poll DDL re-runs and full embeddings-table unpickling on every 1-1.5 s poll.</li>
+  <li><strong>Headless background workers:</strong> <code>_run_scrape_background</code> (L749) and <code>_run_evaluate_background</code> (L972) inject <code>os.environ["TALOS_HEADLESS"] = "1"</code> at task entry; <code>AIManager._interactive_cloud_fallback()</code> short-circuits the interactive questionary prompt when the flag is set, so no console-less BackgroundTasks thread can block on user input.</li>
+  <li><strong>Scrape task concurrency lock:</strong> module-level <code>_scrape_task_lock = threading.Lock()</code> (L185) serializes the process-global <code>sys.exit</code> monkey-patch/restore sequence (acquire L759, release inside <code>finally</code> L790); concurrent scrape triggers queue deterministically instead of corrupting <code>sys.exit</code>.</li>
+  <li><strong>Semantic search bounds clamping:</strong> <code>DatabaseManager.semantic_search</code> (<code>src/core/database_manager.py</code> L342-344) clamps <code>top_k = min(top_k, len(self._embedding_ids))</code> and returns <code>[]</code> early for <code>top_k &lt;= 0</code>, preventing <code>ValueError: kth out of bounds</code> from <code>np.argpartition</code>.</li>
+  <li><strong>Visualizer payload guards:</strong> <code>_record_beam_event</code> (L442-446) casts the <code>count</code> payload field inside <code>try/except (TypeError, ValueError)</code> defaulting to 0; malformed POSTs to <code>/api/v1/visualizer/events</code> degrade gracefully instead of raising an unhandled HTTP 500.</li>
+  <li><strong>GWO progress monitor resilience:</strong> <code>_run_gwo_background._poll_progress</code> (L872) guards <code>gwo_history.json</code> reads with <code>except Exception: pass</code>, surviving mid-write truncation and structurally unexpected roots without killing the monitor thread.</li>
+</ul>
+
+<p><strong>Part B -- Ecosystem Integrity &amp; Dependency Alignment (5 fixes):</strong></p>
+<ul>
+  <li><strong>OpenReview V2 note-query dispatch:</strong> <code>OpenReviewSource._query_notes()</code> (<code>src/ingestion/openreview_source.py</code>) routes every note query through a version-tolerant ladder -- <code>search_notes(term=...)</code> when exposed by the V2 <code>OpenReviewClient</code>, <code>get_notes(content={"title": ...})</code> otherwise, and a bare <code>get_notes(limit=...)</code> retry on <code>TypeError</code> for mixed client versions; consumed by both <code>fetch_new_papers</code> (paginated) and <code>search_papers</code>. Four hermetic tests pin the dispatch contract.</li>
+  <li><strong>Fast-Edge batch circuit breaker:</strong> <code>AIManager._fast_edge_offline_memo</code> (<code>src/core/ai_manager.py</code>) is set on the first connection failure to the CPU edge endpoint (port 11435) and short-circuits every subsequent fast-tier call in the batch directly to the local GPU Ollama fallback (port 11434), eliminating repeated connection timeouts.</li>
+  <li><strong>FastAPI lifespan lifecycle:</strong> <code>src/api/main_api.py</code> uses an <code>@asynccontextmanager</code> <code>lifespan</code> coroutine (startup warm-up + readiness logs; explicit no-op shutdown) passed via <code>FastAPI(lifespan=...)</code>, fully eliminating the deprecated <code>@app.on_event</code> hooks and their DeprecationWarning.</li>
+  <li><strong>Gemini warning suppression:</strong> <code>_try_import_genai()</code> installs paired module-scoped and message-scoped <code>warnings.filterwarnings</code> entries immediately before the lazy <code>google.generativeai</code> import, silencing the end-of-support FutureWarning without masking unrelated warnings.</li>
+  <li><strong>GWO status multi-path check:</strong> <code>talos.py:_show_drl_status</code> probes <code>models/gwo_foraging_hyperparameters.json</code>, <code>models/gwo_llm_router_reward_weights.json</code>, and the legacy <code>models/gwo_parameters.json</code>, rendering <code>Present</code> when any artifact exists or <code>Default Baseline Active</code> guidance otherwise.</li>
+  <li><strong>Dependency map verifier repair:</strong> <code>src/utils/verify_dependency_map.py</code> <code>parse_section_7</code> accepts both the English and Greek Section 7 headers plus language-tagged code fences; the <code>EXTERNAL_PACKAGES</code> whitelist is expanded; generated-report footers and all canonical docs are corrected from <code>scripts/</code> to <code>src/utils/</code> paths. <code>--ci</code> exits 0.</li>
+</ul>
+
+<p><strong>Verification surface:</strong> all 12 fixes (7 concurrency + 5 ecosystem integrity) audited in source at seal time; release gates: compileall, system integrity (zero <code>on_event</code> warnings), version assertion, full multi-tier regression, <code>tests/test_openreview_source.py</code>, <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, strict UTF-8 scan (zero U+FFFD replacement glyphs).</p>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.11.2</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.11.3</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>
