@@ -2,6 +2,54 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.12.1] - 2026-09-27 -- Research Wizard Query Transparency & CLI Fast-Dispatch Engine
+
+### Added
+
+- **Wizard query-transparency table** (`src/utils/research_setup_wizard.py:_render_query_preview()`): after Step 1 compiles the 16 academic search queries, a rounded Rich Table (`box.ROUNDED`, title "Generated Academic Search Queries") previews the boolean query strings for the top primary sources (arXiv, IEEE Xplore, Scopus (Elsevier), OpenAlex, Semantic Scholar, Springer Link) alongside a summary of the compiled `inclusion_criteria` / `exclusion_criteria`.
+- **User confirmation gate** (`_step1_research_topic()`): a Questionary confirmation ("Proceed with these compiled search parameters?", default `True`, `TALOS_QUESTIONARY_STYLE`) is rendered before the parameters are persisted to `config.json`; declining re-enters the research-scope prompt so the researcher can refine the topic, while cancelling aborts without persisting.
+- **CLI fast-dispatch engine** (`talos.py:_handle_cli_flags()` / `_cli_help_table()`): lightweight `sys.argv` parsing in `if __name__ == "__main__"` adds `--wizard` (launch `research_setup_wizard.py`), `--daily` (launch `daily_search.py`), `--stats` (launch `db_stats.py`), and `--help` / `-h` (render a Rich flag-reference table). Each flag dispatches through the existing `run_script()` helper and exits cleanly with code 0; no flags preserve the interactive `main_menu()` flow.
+
+### Changed
+
+- **Version strings synchronized to 5.12.1** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata and lifespan startup log, `talos.py` docstring, `run_talos.bat` title/banner/init header/setup log, `run_talos.sh` header/banner/logs, `tests/test_multi_tier.py` version assertion), plus `docker-compose.yml` (`talos:5.12.1`), `CITATION.cff` (version 5.12.1, date-released 2026-09-27), the user-facing strings in `src/utils/tray_icon.py` (`TRAY_TITLE`), `src/utils/evaluation_history.py`, `templates/live_foraging_visualizer.html`, `src/utils/research_setup_wizard.py` (docstring/sentinel/header), and all 19 canonical documentation files.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.12.1).
+- `python talos.py --help` printed the CLI flag table cleanly and exited 0.
+- `python src/utils/verify_dependency_map.py --ci` returned exit 0.
+- `bash -n run_talos.sh` passed with zero syntax errors.
+- Strict UTF-8 decode scan across all modified files: zero U+FFFD replacement glyphs.
+
+## [v5.12.0] - 2026-09-27 -- Research Setup Wizard, Local Cognitive Input Validation with Failsafe Heuristic Bypass & ISO/IEC 25010 Usability Milestone
+
+### Added
+
+- **Research Setup Wizard** (`src/utils/research_setup_wizard.py`): a structured 4-step, English-first onboarding guide. Step 1 captures the research topic and performs local cognitive scope validation via the Fast Edge model (Llama-3.1-8B / Neutrino-8B) with a 2-second timeout and a deterministic rule-based heuristic bypass (minimum 3 words, sub-domain suggestions); Step 2 selects the AI execution strategy (`strict_local` or `local_first`) and writes it into `.env`; Step 3 selects the historical search window (Recent / Standard / Retrospective) and stores it in `config.json`; Step 4 optionally triggers a 10-paper test search, auto-bootstraps the FastAPI server, and opens the 3D visualizer.
+- **Local AI runtime auto-spawn** (`_ensure_local_ai_runtime()`): probes ports 11434 (Ollama) and 11435 (Fast Edge) with a 0.8s timeout, silently spawns `ollama serve` when offline, then performs a bounded 2-second wait. When no runtime comes online, the wizard degrades gracefully to pure deterministic heuristics without blocking or crashing.
+- **Query & criteria generation** (`_generate_queries_llm()` / `_generate_queries_heuristic()`): reuses `src.ai.llm.query_translator.flatten_json` to compile 16 English academic search queries plus `inclusion_criteria` / `exclusion_criteria`; offline mode applies deterministic English boolean/plain queries.
+- **First-run sentinel automation** (`data/.talos_onboarded`): the sentinel is written only after successful completion; `talos.py:main_menu()` auto-invokes the wizard exactly once when the sentinel is absent and fast-boots in under 0.3s when present.
+- **TUI integration**: `profile_settings_menu()` gains "2. Run Research Setup Wizard (Interactive Guide)" (subsequent options renumbered 1-10); `_SCRIPT_MAP` registers `research_setup_wizard.py` under `utils`.
+- **Hermetic test suite** (`tests/test_research_setup_wizard.py`): covers sentinel detection/creation, cognitive heuristic validation, and strategy/window persistence.
+
+### Changed
+
+- **Version strings synchronized to 5.12.0** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata and lifespan startup log, `talos.py` docstring, `run_talos.bat` title/banner/init header/setup log, `run_talos.sh` header/banner/logs, `tests/test_multi_tier.py` version assertion), plus `docker-compose.yml` (`talos:5.12.0`), `CITATION.cff` (version 5.12.0, date-released 2026-09-27), the user-facing strings in `src/utils/tray_icon.py` (`TRAY_TITLE`), `src/utils/evaluation_history.py`, `templates/live_foraging_visualizer.html`, and all 19 canonical documentation files.
+- **Roadmap realignment**: v5.12.0 now holds the Research Setup Wizard & Cognitive Onboarding; DSPy PRISMA shifted to v5.13.0, CORTEX & n8n to v5.14.0, Project ALEXANDRIA to v6.0.0+.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.12.0).
+- `python -m pytest tests/test_research_setup_wizard.py -q` passed.
+- `python src/utils/verify_dependency_map.py --ci` returned exit 0.
+- `bash -n run_talos.sh` passed with zero syntax errors.
+- Strict UTF-8 decode scan across all modified files: zero U+FFFD replacement glyphs.
+
 ## [v5.11.3] - 2026-09-26 -- Ecosystem Integrity, Deprecation Elimination & Dependency Alignment
 
 ### Added

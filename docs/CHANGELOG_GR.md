@@ -2,6 +2,54 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.12.1] - 2026-09-27 -- Διαφάνεια Ερωτημάτων Οδηγού Έρευνας & Μηχανή Γρήγορης Αποστολής CLI
+
+### Προστέθηκε
+
+- **Πίνακας διαφάνειας ερωτημάτων του οδηγού** (`src/utils/research_setup_wizard.py:_render_query_preview()`): μετά τη σύνταξη των 16 ακαδημαϊκών ερωτημάτων αναζήτησης στο Βήμα 1, ένας στρογγυλεμένος πίνακας Rich (`box.ROUNDED`, τίτλος «Generated Academic Search Queries») προεπισκοπεί πλέον τα boolean ερωτήματα για τις κύριες πηγές (arXiv, IEEE Xplore, Scopus (Elsevier), OpenAlex, Semantic Scholar, Springer Link) μαζί με σύνοψη των συνταχθέντων `inclusion_criteria` / `exclusion_criteria`.
+- **Πύλη επιβεβαίωσης χρήστη** (`_step1_research_topic()`): μια επιβεβαίωση Questionary («Proceed with these compiled search parameters?», προεπιλογή `True`, `TALOS_QUESTIONARY_STYLE`) αποδίδεται πριν την εγγραφή των παραμέτρων στο `config.json`· η απόρριψη επανεισάγει το πεδίο ερευνητικού πεδίου ώστε ο ερευνητής να βελτιώσει το θέμα, ενώ η ακύρωση τερματίζει χωρίς εγγραφή.
+- **Μηχανή γρήγορης αποστολής CLI** (`talos.py:_handle_cli_flags()` / `_cli_help_table()`): ελαφριά ανάλυση `sys.argv` στο `if __name__ == "__main__"` προσθέτει `--wizard` (εκκίνηση `research_setup_wizard.py`), `--daily` (εκκίνηση `daily_search.py`), `--stats` (εκκίνηση `db_stats.py`) και `--help` / `-h` (απόδοση πίνακα αναφοράς σημαιών Rich). Κάθε σημαία αποστέλλεται μέσω του υπάρχοντος βοηθού `run_script()` και εξέρχεται καθαρά με κωδικό 0· χωρίς σημαίες διατηρείται η διαδραστική ροή `main_menu()`.
+
+### Άλλαξε
+
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.12.1** στα 6 βασικά αρχεία κώδικα (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` μεταδεδομένα FastAPI και καταγραφή εκκίνησης lifespan, `talos.py` docstring, `run_talos.bat` τίτλος/banner/κεφαλίδα init/καταγραφή setup, `run_talos.sh` κεφαλίδα/banner/καταγραφές, `tests/test_multi_tier.py` βεβαίωση έκδοσης), καθώς και `docker-compose.yml` (`talos:5.12.1`), `CITATION.cff` (έκδοση 5.12.1, ημερομηνία κυκλοφορίας 2026-09-27), τις συμβολοσειρές χρήστη σε `src/utils/tray_icon.py` (`TRAY_TITLE`), `src/utils/evaluation_history.py`, `templates/live_foraging_visualizer.html`, `src/utils/research_setup_wizard.py` (docstring/σήμα/κεφαλίδα) και τα 19 κανονικά έγγραφα τεκμηρίωσης.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` πέρασε με μηδέν σφάλματα.
+- `python -m pytest tests/test_system_integrity.py -q` πέρασε.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε (v5.12.1).
+- `python talos.py --help` εκτύπωσε τον πίνακα σημαιών CLI καθαρά και εξήλθε με 0.
+- `python src/utils/verify_dependency_map.py --ci` επέστρεψε έξοδο 0.
+- `bash -n run_talos.sh` πέρασε με μηδέν συντακτικά σφάλματα.
+- Αυστηρή σάρωση αποκωδικοποίησης UTF-8 σε όλα τα τροποποιημένα αρχεία: μηδέν glyphs αντικατάστασης U+FFFD.
+
+## [v5.12.0] - 2026-09-27 -- Οδηγός Ρύθμισης Έρευνας, Τοπική Γνωσιακή Επικύρωση Εισόδου με Failsafe Ευρετική Παράκαμψη & Ορόσημο Ευχρηστίας ISO/IEC 25010
+
+### Προστέθηκε
+
+- **Οδηγός Ρύθμισης Έρευνας** (`src/utils/research_setup_wizard.py`): δομημένος οδηγός ενσωμάτωσης 4 βημάτων με προτεραιότητα στα Αγγλικά. Το Βήμα 1 καταγράφει το ερευνητικό θέμα και εκτελεί τοπική γνωσιακή επικύρωση πεδίου μέσω του μοντέλου Fast Edge (Llama-3.1-8B / Neutrino-8B) με χρονικό όριο 2 δευτερολέπτων και ντετερμινιστική ευρετική παράκαμψη βάσει κανόνων (ελάχιστο 3 λέξεις, προτάσεις υποπεδίων)· το Βήμα 2 επιλέγει τη στρατηγική εκτέλεσης τεχνητής νοημοσύνης (`strict_local` ή `local_first`) και την εγγράφει στο `.env`· το Βήμα 3 επιλέγει το ιστορικό παράθυρο αναζήτησης (Πρόσφατο / Τυπικό / Αναδρομικό) και το αποθηκεύει στο `config.json`· το Βήμα 4 προαιρετικά ενεργοποιεί δοκιμαστική αναζήτηση 10 εργασιών, αυτοεκκινεί τον διακομιστή FastAPI και ανοίγει τον τρισδιάστατο οπτικοποιητή.
+- **Αυτόματη εκκίνηση τοπικού χρόνου εκτέλεσης ΤΝ** (`_ensure_local_ai_runtime()`): ελέγχει τις θύρες 11434 (Ollama) και 11435 (Fast Edge) με χρονικό όριο 0,8s, εκκινεί σιωπηρά το `ollama serve` όταν είναι εκτός σύνδεσης και στη συνέχεια εκτελεί οριοθετημένη αναμονή 2 δευτερολέπτων. Όταν δεν εμφανιστεί κανένας χρόνος εκτέλεσης, ο οδηγός υποβαθμίζεται ομαλά σε καθαρά ντετερμινιστικές ευρετικές χωρίς μπλοκάρισμα ή κατάρρευση.
+- **Παραγωγή ερωτημάτων & κριτηρίων** (`_generate_queries_llm()` / `_generate_queries_heuristic()`): επαναχρησιμοποιεί το `src.ai.llm.query_translator.flatten_json` για τη σύνταξη 16 αγγλικών ακαδημαϊκών ερωτημάτων αναζήτησης συν `inclusion_criteria` / `exclusion_criteria`· η λειτουργία εκτός σύνδεσης εφαρμόζει ντετερμινιστικά αγγλικά boolean/απλά ερωτήματα.
+- **Αυτοματισμός σήματος πρώτης εκτέλεσης** (`data/.talos_onboarded`): το σήμα εγγράφεται μόνο μετά από επιτυχή ολοκλήρωση· το `talos.py:main_menu()` εκκινεί αυτόματα τον οδηγό ακριβώς μία φορά όταν το σήμα απουσιάζει και εκκινεί γρήγορα σε λιγότερο από 0,3s όταν υπάρχει.
+- **Ενσωμάτωση TUI**: το `profile_settings_menu()` αποκτά «2. Run Research Setup Wizard (Interactive Guide)» (οι επόμενες επιλογές αναριθμούνται 1-10)· ο `_SCRIPT_MAP` καταχωρεί το `research_setup_wizard.py` στην ομάδα `utils`.
+- **Ερμητική σουίτα δοκιμών** (`tests/test_research_setup_wizard.py`): καλύπτει ανίχνευση/δημιουργία σήματος, γνωσιακή ευρετική επικύρωση και εμμονή στρατηγικής/παραθύρου.
+
+### Άλλαξε
+
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.12.0** στα 6 βασικά αρχεία κώδικα (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` μεταδεδομένα FastAPI και καταγραφή εκκίνησης lifespan, `talos.py` docstring, `run_talos.bat` τίτλος/banner/κεφαλίδα init/καταγραφή setup, `run_talos.sh` κεφαλίδα/banner/καταγραφές, `tests/test_multi_tier.py` βεβαίωση έκδοσης), καθώς και `docker-compose.yml` (`talos:5.12.0`), `CITATION.cff` (έκδοση 5.12.0, ημερομηνία κυκλοφορίας 2026-09-27), τις συμβολοσειρές χρήστη σε `src/utils/tray_icon.py` (`TRAY_TITLE`), `src/utils/evaluation_history.py`, `templates/live_foraging_visualizer.html` και τα 19 κανονικά έγγραφα τεκμηρίωσης.
+- **Αναδιάταξη χάρτη πορείας**: η v5.12.0 φιλοξενεί πλέον τον Οδηγό Ρύθμισης Έρευνας & Γνωσιακή Ενσωμάτωση· το DSPy PRISMA μετατοπίζεται στην v5.13.0, το CORTEX & n8n στην v5.14.0, το Project ALEXANDRIA στην v6.0.0+.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` πέρασε με μηδέν σφάλματα.
+- `python -m pytest tests/test_system_integrity.py -q` πέρασε.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε (v5.12.0).
+- `python -m pytest tests/test_research_setup_wizard.py -q` πέρασε.
+- `python src/utils/verify_dependency_map.py --ci` επέστρεψε κωδικό εξόδου 0.
+- `bash -n run_talos.sh` πέρασε με μηδέν συντακτικά σφάλματα.
+- Αυστηρή σάρωση αποκωδικοποίησης UTF-8 σε όλα τα τροποποιημένα αρχεία: μηδέν γλύφοι αντικατάστασης U+FFFD.
+
 ## [v5.11.3] - 2026-09-26 -- Ακεραιότητα Οικοσυστήματος, Εξάλειψη Απαρχαιώσεων & Ευθυγράμμιση Εξαρτήσεων
 
 ### Προστέθηκε

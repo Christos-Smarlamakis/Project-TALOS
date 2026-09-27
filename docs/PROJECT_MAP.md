@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.11.3
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.12.1
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-26 (v5.11.3 -- Ακεραιότητα Οικοσυστήματος, Εξάλειψη Απαρχαιώσεων & Ευθυγράμμιση Εξαρτήσεων)
+> **Τελευταία Ενημέρωση:** 2026-09-27 (v5.12.1 -- Διαφάνεια Ερωτημάτων Οδηγού Έρευνας & Μηχανή Γρήγορης Αποστολής CLI)
 
 ---
 
@@ -29,7 +29,7 @@ SRC PACKAGES
   src/analysis/     (10 αρχεία)  citation_analyzer, author_profiler, recommender, knowledge_path, κ.ά.
   src/ingestion/    (23 αρχεία)  16 source agents + 7 pipelines
   src/integration/   (3 αρχεία)  synapse_client, optica_client, visualizer_bridge
-  src/utils/        (19 αρχεία)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, evaluation_history, κ.ά.
+  src/utils/        (20 αρχεία)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, evaluation_history, research_setup_wizard, κ.ά.
   src/api/           (4 αρχεία)  main_api, synapse_routes, red_tester_routes, talos_service_api
   src/mcp_server.py              MCP stdio server (4 tools)
 
@@ -169,6 +169,11 @@ src/ingestion/*.py
   +-- src/core/database_manager.py
   +-- src/integration/synapse_client.py
   +-- src/integration/visualizer_bridge.py
+
+src/utils/research_setup_wizard.py
+  +-- src/utils/ui_theme.py, logger.py
+  +-- src/core/ai_manager.py
+  +-- src/ai/llm/query_translator.py
 ```
 
 ## 8. Περιγραφές Modules (επισημασμένες πρόσφατες προσθήκες)
@@ -190,6 +195,7 @@ src/ingestion/*.py
 | **Ιστορικό Αξιολόγησης (v5.11.0)** | `src/utils/evaluation_history.py` | `record_evaluation()` / `read_evaluation_history()` / `verdict_for_score()` -- JSONL recorder στο `data/history/daemon_evaluations.jsonl`; προβολή πίνακα Rich `_show_evaluation_history(limit=30)` στο `talos.py` |
 | **Κονσόλα Ζωντανής Τηλεμετρίας HUD (v5.11.0)** | `templates/live_foraging_visualizer.html` | ροή glassmorphism κάτω δεξιά (buffer 40 γραμμών, αυτόματη κύλιση, συντομεύσεις `C`/`L`, απόκρυψη κατά το στιγμιότυπο) μέσω `appendConsoleLog()` |
 | **Ελαχιστοποίηση σε Δίσκο Win32 (v5.11.0)** | `src/utils/tray_icon.py` | η `enable_close_to_tray()` υποκλέπτει τη WndProc της κονσόλας (WM_CLOSE / SC_CLOSE σε SW_HIDE) ώστε το κλείσιμο να ελαχιστοποιεί σε δίσκο |
+| **Οδηγός Ρύθμισης Έρευνας (v5.12.0)** | `src/utils/research_setup_wizard.py` | `_ensure_local_ai_runtime()` (έλεγχος/εκκίνηση θυρών 11434+11435 με οριοθετημένη αναμονή 2s), `_analyze_scope_heuristic()` / `_analyze_scope_with_llm()`, `_generate_queries_llm()` / `_generate_queries_heuristic()`, `_apply_execution_strategy()`, `_write_search_window()`, `_create_sentinel()`, `_render_query_preview()` (πίνακας διαφάνειας ερωτημάτων + επιβεβαίωση, v5.12.1) -- ενσωμάτωση 4 βημάτων με προτεραιότητα στα Αγγλικά και failsafe ευρετική παράκαμψη |
 
 ## 9. Βοηθητικά Αρχεία
 
@@ -226,8 +232,8 @@ src/ingestion/*.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-09-26 (v5.11.3 -- Ακεραιότητα Οικοσυστήματος, Εξάλειψη Απαρχαιώσεων & Ευθυγράμμιση Εξαρτήσεων)
-> **Έκδοση Project:** v5.11.3
-> **Συνολικά .py modules στο src/:** 85 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 19 + api 4 + mcp_server 1)
+> **Τελευταία Ενημέρωση:** 2026-09-27 (v5.12.1 -- Διαφάνεια Ερωτημάτων Οδηγού Έρευνας & Μηχανή Γρήγορης Αποστολής CLI)
+> **Έκδοση Project:** v5.12.1
+> **Συνολικά .py modules στο src/:** 86 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 20 + api 4 + mcp_server 1)
 
 

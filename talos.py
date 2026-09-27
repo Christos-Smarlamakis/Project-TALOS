@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.11.3
+Project: TALOS v5.12.1
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,18 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.12.1: Research Wizard Query Transparency & CLI Fast-Dispatch Engine --
+    Step 1 renders a styled Rich query-preview table (top primary sources with
+    their compiled boolean queries) plus inclusion/exclusion criteria and a
+    Questionary confirmation before persisting config.json; talos.py gains
+    lightweight CLI fast-dispatch flags (--wizard, --daily, --stats, --help).
+
+    v5.12.0: Research Setup Wizard, Local Cognitive Input Validation with
+    Failsafe Heuristic Bypass & ISO/IEC 25010 Usability Milestone -- a 4-step
+    English-first onboarding wizard (src/utils/research_setup_wizard.py) with
+    local AI runtime auto-spawn, 2-second scope validation timeout,
+    deterministic heuristic fallback, and first-run sentinel automation.
 
     v5.11.3: Ecosystem Integrity, Deprecation Elimination & Dependency
     Alignment -- OpenReview V2 search_notes dispatch ladder, Fast-Edge (11435)
@@ -370,6 +382,7 @@ _SCRIPT_MAP = {
     "model_provisioner.py":       "utils",
     "daemon_autostart.py":        "utils",
     "academic_export.py":         "utils",
+    "research_setup_wizard.py":   "utils",
     # -- Core (profile manager is imported directly, but can also be run) --
     "profile_manager.py":         "core",
     # -- API --
@@ -817,30 +830,32 @@ def profile_settings_menu(python_exe):
         console.print(Panel("[bold cyan]Configuration & Profiles[/bold cyan]\n[dim]Manage research profiles, API keys, and model parameters[/dim]", style="cyan", border_style="cyan"))
         c = safe_select("Select profile setting:", choices=[
             "1. Manage Profiles",
-            "2. Research Pivot Wizard",
-            "3. Research Goal (Query Translator / PYTHIA)",
-            "4. AI Model Management (2D Matrix)",
-            "5. Model Discovery (Quality Scoring)",
-            "6. Model Provisioning CLI",
-            "7. API Keys Management",
-            "8. API Key Diagnostics",
-            "9. Back / Return to Main Menu"
+            "2. Run Research Setup Wizard (Interactive Guide)",
+            "3. Research Pivot Wizard",
+            "4. Research Goal (Query Translator / PYTHIA)",
+            "5. AI Model Management (2D Matrix)",
+            "6. Model Discovery (Quality Scoring)",
+            "7. Model Provisioning CLI",
+            "8. API Keys Management",
+            "9. API Key Diagnostics",
+            "10. Back / Return to Main Menu"
         ])
         if not c or "Back" in c: return
         if c == "1. Manage Profiles": run_script("profile_manager.py", python_exe)
-        elif c == "2. Research Pivot Wizard": run_script("research_pivot.py", python_exe)
-        elif c == "3. Research Goal (Query Translator / PYTHIA)": run_script("query_translator.py", python_exe)
-        elif c == "4. AI Model Management (2D Matrix)":
+        elif c == "2. Run Research Setup Wizard (Interactive Guide)": run_script("research_setup_wizard.py", python_exe)
+        elif c == "3. Research Pivot Wizard": run_script("research_pivot.py", python_exe)
+        elif c == "4. Research Goal (Query Translator / PYTHIA)": run_script("query_translator.py", python_exe)
+        elif c == "5. AI Model Management (2D Matrix)":
             console.print("\n[bold bright_cyan]Launching AI Model Manager...[/bold bright_cyan]\n")
             try:
                 from src.ai.llm.model_manager import main as mm_main
                 mm_main()
             except Exception as e:
                 console.print(f"[red]Error launching Model Manager: {e}[/red]")
-        elif c == "5. Model Discovery (Quality Scoring)": _run_model_discovery()
-        elif c == "6. Model Provisioning CLI": run_script("model_provisioner.py", python_exe)
-        elif c == "7. API Keys Management": api_keys_menu(python_exe)
-        elif c == "8. API Key Diagnostics": run_script("api_health_check.py", python_exe)
+        elif c == "6. Model Discovery (Quality Scoring)": _run_model_discovery()
+        elif c == "7. Model Provisioning CLI": run_script("model_provisioner.py", python_exe)
+        elif c == "8. API Keys Management": api_keys_menu(python_exe)
+        elif c == "9. API Key Diagnostics": run_script("api_health_check.py", python_exe)
         safe_pause("\nPress Enter...")
 
 # -- v5.9.15: Silent Fast Boot --
@@ -1861,6 +1876,14 @@ def main_menu():
     # automatically generate a 6-10 word title via Fast Edge LLM.
     _maybe_generate_focus_summary()
 
+    # -- v5.12.0: First-run Research Setup Wizard sentinel --
+    # When the onboarding sentinel is absent, auto-invoke the wizard exactly
+    # once before the dashboard renders. When present, this is a single file
+    # existence check (sub-0.3s) so daily launches stay fast.
+    sentinel_path = os.path.join(project_root, "data", ".talos_onboarded")
+    if not os.path.exists(sentinel_path):
+        run_script("research_setup_wizard.py", python_exe)
+
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
 
@@ -1962,10 +1985,65 @@ def main_menu():
     # -- Exit sequence --
     console.print("\n[dim]TALOS Command Center Closing...[/dim]\n")
 
+
+# ---------------------------------------------------------------------------
+# -- v5.12.1: CLI Fast-Dispatch Engine --
+# ---------------------------------------------------------------------------
+
+def _cli_help_table():
+    """Render a Rich Table documenting the available CLI fast-dispatch flags.
+
+    Returns:
+        A rich.table.Table ready for console.print().
+    """
+    table = Table(
+        title="TALOS CLI Fast-Dispatch Flags",
+        box=box.ROUNDED,
+        border_style="bright_cyan",
+        show_lines=True,
+        header_style="bold bright_cyan",
+    )
+    table.add_column("Flag", style="bold cyan", no_wrap=True)
+    table.add_column("Description", style="white")
+    table.add_row("--wizard", "Launch the 4-step Research Setup Wizard (src/utils/research_setup_wizard.py).")
+    table.add_row("--daily", "Trigger the Daily Search ingestion pipeline (src/ingestion/daily_search.py).")
+    table.add_row("--stats", "Run the Database Statistics health report (src/utils/db_stats.py).")
+    table.add_row("--help, -h", "Display this CLI flag reference.")
+    return table
+
+
+def _handle_cli_flags(argv):
+    """Dispatch CLI fast-path flags and return True when one was handled.
+
+    Args:
+        argv (list[str]): Command-line arguments following the script name.
+
+    Returns:
+        bool: True when a recognized flag was dispatched (the caller exits 0),
+        False when the interactive main menu should launch instead.
+    """
+    python_exe = sys.executable or "python"
+    if "--help" in argv or "-h" in argv:
+        console.print(_cli_help_table())
+        return True
+    if "--wizard" in argv:
+        run_script("research_setup_wizard.py", python_exe)
+        return True
+    if "--daily" in argv:
+        run_script("daily_search.py", python_exe)
+        return True
+    if "--stats" in argv:
+        run_script("db_stats.py", python_exe)
+        return True
+    return False
+
+
 if __name__ == "__main__":
-    # Top-level guard: any stray Ctrl+C exits cleanly with code 0
-    # (no traceback dumped to the user).
+    # -- v5.12.1: CLI fast-dispatch flags (--wizard/--daily/--stats/--help) --
+    # -- run headless and exit cleanly; no flags -> interactive main menu. --
     try:
+        if _handle_cli_flags(sys.argv[1:]):
+            sys.exit(0)
         main_menu()
     except KeyboardInterrupt:
         console.print("\n\n[dim]TALOS Closing...[/dim]\n")

@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.11.3
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.12.1
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-09-26
-> **Version:** v5.11.3 -- Ecosystem Integrity, Deprecation Elimination & Dependency Alignment
+> **Last Updated:** 2026-09-27
+> **Version:** v5.12.1 -- Research Wizard Query Transparency & CLI Fast-Dispatch Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.11.3" | `config/settings.py` |
+| TALOS_VERSION | "5.12.1" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -915,6 +915,31 @@ For each evaluated paper, the AI generates:
 - **Dependency map verifier repair:** `src/utils/verify_dependency_map.py` `parse_section_7` accepts both the English and Greek Section 7 headers (`Dependency Graph` / `Γράφος Εξαρτήσεων`) plus language-tagged code fences; the `EXTERNAL_PACKAGES` whitelist is expanded (`atexit`, `asyncio`, `queue`, `html`, `ctypes`, `win32com`, `win32com.client`, `PIL`, `Pillow`, `pystray`, `urllib3`); generated-report footers and all canonical docs are corrected from `scripts/` to `src/utils/` paths. `--ci` exits 0.
 
 **Verification surface:** all 12 fixes (7 concurrency + 5 ecosystem integrity) audited in source at seal time; release gates: `python -m compileall src config tests talos.py`, `pytest tests/test_system_integrity.py` (zero `on_event` warnings), `pytest tests/test_multi_tier.py -k test_talos_version`, full multi-tier regression, `pytest tests/test_openreview_source.py`, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, strict UTF-8 scan (zero U+FFFD replacement glyphs).
+
+### 15.24 Research Setup Wizard, Local Cognitive Input Validation & Failsafe Onboarding (v5.12.0)
+
+**Overview:** `src/utils/research_setup_wizard.py` implements a 4-step, English-first onboarding wizard that configures a fresh TALOS deployment while remaining fully air-gapped-safe.
+
+- **Visual header & welcome panel:** a Rich `Panel` introduces the 4-step flow (Research Topic, AI Execution Strategy, Historical Search Window, First Flight Test) in professional academic English.
+- **Runtime probing & auto-spawn** (`_ensure_local_ai_runtime()`): probes the Fast Edge endpoint (port 11435) and standard Ollama (port 11434) with a 0.8s socket timeout; on failure it silently spawns `ollama serve` (CREATE_NO_WINDOW on Windows) and performs a bounded 2-second poll. Returns `True` for Active LLM mode and `False` for Heuristic Bypass mode, logging `[INFO] Local AI servers offline. Engaging rule-based heuristic validation.` on fallback.
+- **Step 1 -- Cognitive scope validation:** in Active LLM mode the Fast Edge model (Llama-3.1-8B / Neutrino-8B) analyses the topic with a hard 2-second timeout (`_analyze_scope_with_llm` via `ThreadPoolExecutor`), suggesting 2-3 sub-domains when the input is under 4 words; in Heuristic Bypass mode `_analyze_scope_heuristic` enforces a minimum 3-word threshold and `_suggest_subdomains_heuristic` returns deterministic examples. Query generation reuses `src.ai.llm.query_translator.flatten_json` (`_generate_queries_llm`) with a deterministic English fallback (`_generate_queries_heuristic`) producing 16 source queries plus `inclusion_criteria` / `exclusion_criteria`.
+- **Step 2 -- Execution strategy:** `_apply_execution_strategy` writes `TALOS_NETWORK_STRATEGY` (`strict_local` / `local_first`) and `TALOS_ALLOW_CLOUD_FALLBACK` into `.env` via `dotenv.set_key(quote_mode="never")`.
+- **Step 3 -- Search window:** `_write_search_window` persists `research_search_window`, `search_window_label`, `search_window_start_year` / `end_year`, and `days_to_search_historic` into `config.json` (Recent 730d / Standard 1825d / Retrospective 4015d).
+- **Step 4 -- First flight:** `_run_first_flight` auto-bootstraps the FastAPI server (`_ensure_api_server`), triggers a 10-paper test search via `POST /api/v1/scrape/trigger`, and opens the 3D visualizer (`http://127.0.0.1:8001/api/v1/visualizer/live`).
+- **First-run sentinel:** `_create_sentinel` writes `data/.talos_onboarded` only after successful completion; `talos.py:main_menu()` auto-invokes the wizard once when the sentinel is absent and fast-boots (<0.3s) when present. `profile_settings_menu()` exposes "2. Run Research Setup Wizard (Interactive Guide)".
+- **ISO/IEC 25010 usability compliance:** deterministic degradation, no blocking prompts on console-less workers, bounded wait times, and English-first academic output meet the operability, fault tolerance, and accessibility sub-characteristics.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.12.0), `pytest tests/test_research_setup_wizard.py`, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+### 15.25 Research Wizard Query Transparency & CLI Fast-Dispatch Engine (v5.12.1)
+
+**Overview:** v5.12.1 adds two human-in-the-loop and operations conveniences: a query-transparency preview in the Research Setup Wizard, and a CLI fast-dispatch engine in `talos.py`.
+
+- **Wizard query-transparency table** (`_render_query_preview()` in `src/utils/research_setup_wizard.py`): after Step 1 compiles the 16 academic queries, a rounded Rich Table (`box.ROUNDED`, title "Generated Academic Search Queries") previews the boolean query strings for the top primary sources (arXiv, IEEE Xplore, Scopus (Elsevier), OpenAlex, Semantic Scholar, Springer Link), followed by a Rich `Panel` summarizing the compiled `inclusion_criteria` / `exclusion_criteria`.
+- **User confirmation gate** (`_step1_research_topic()`): a Questionary confirm ("Proceed with these compiled search parameters?", default `True`, `TALOS_QUESTIONARY_STYLE`) gates persistence to `config.json`; declining re-enters the research-scope prompt, while cancelling (Ctrl+C / None) aborts without writing anything.
+- **CLI fast-dispatch engine** (`talos.py:_handle_cli_flags()` / `_cli_help_table()`): lightweight `sys.argv` parsing in `if __name__ == "__main__"` supports `--wizard` (launch `research_setup_wizard.py`), `--daily` (launch `daily_search.py`), `--stats` (launch `db_stats.py`), and `--help` / `-h` (render a Rich flag-reference table). Each flag dispatches through the existing `run_script()` helper and exits cleanly with code 0; no flags preserve the interactive `main_menu()` flow.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.12.1), `python talos.py --help` (exit 0), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 
 ---

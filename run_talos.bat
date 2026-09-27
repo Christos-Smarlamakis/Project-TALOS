@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableDelayedExpansion
-title Project TALOS v5.11.3 -- Research Intelligence Dashboard
+title Project TALOS v5.12.1 -- Research Intelligence Dashboard
 
 mode con: cols=105 lines=32
 chcp 65001 >nul 2>&1
@@ -20,7 +20,7 @@ set "C_CYAN=!ESC![38;2;23;162;184m"
 set "C_WHITE=!ESC![38;2;255;255;255m"
 
 REM ---------------------------------------------------------------------------
-REM [ INIT ] Conda Discovery + Silent Fast Pre-Flight Bypass Gate (v5.11.3)
+REM [ INIT ] Conda Discovery + Silent Fast Pre-Flight Bypass Gate (v5.12.1)
 REM ---------------------------------------------------------------------------
 set "CONDA_ACTIVATE_PATH="
 set "CONDA_BAT="
@@ -226,7 +226,7 @@ echo %C_IEEE_LIGHT%             ██    ███████ ██      █�
 echo %C_IEEE_LIGHT%             ██    ██   ██ ██      ██    ██     ██  %C_RESET%
 echo %C_IEEE_LIGHT%             ██    ██   ██ ███████  ██████  ██████  %C_RESET%
 echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
-echo  %C_CYAN%Project TALOS v5.11.3 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)%C_RESET%
+echo  %C_CYAN%Project TALOS v5.12.1 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)%C_RESET%
 echo %C_IEEE_DARK%=====================================================================================================%C_RESET%
 echo  [ SYSTEM TELEMETRY ]  API (8001): !API_STATUS! ^| BUS (8000): !SYNAPSE_STATUS! ^| OLLAMA (11434): !OLLAMA_STATUS! ^| OPTICA (8002): !OPTICA_STATUS!
 echo %C_IEEE_DARK%-----------------------------------------------------------------------------------------------------%C_RESET%
@@ -355,7 +355,7 @@ call :LOG_INFO "Resolving and installing Python dependencies..."
 pip install -r requirements.txt
 python src/utils/frontend_provisioner.py
 python src/utils/model_provisioner.py
-call :LOG_SUCCESS "TALOS v5.11.3 deployment finalized."
+call :LOG_SUCCESS "TALOS v5.12.1 deployment finalized."
 pause
 goto MAIN_MENU
 

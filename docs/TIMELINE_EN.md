@@ -4,7 +4,7 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-26 (v5.11.3 -- Ecosystem Integrity, Deprecation Elimination & Dependency Alignment)
+> **Last Updated:** 2026-09-27 (v5.12.1 -- Research Wizard Query Transparency & CLI Fast-Dispatch Engine)
 
 ---
 
@@ -585,6 +585,33 @@
 - [x] **Release codification** -- the pre-demo stability hardening (formerly a same-version v5.11.2 patch) is formally sealed under v5.11.3 together with the 5 ecosystem-integrity fixes, with full changelog canon, timeline phase, and capabilities whitepaper section.
 - [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/evaluation-history metadata + 19 canonical docs to v5.11.3 (2026-09-26).
 - [x] **Verification gates passed** -- compileall, test_system_integrity (zero on_event warnings), test_talos_version, test_openreview_source, verify_dependency_map --ci (exit 0), full multi-tier regression, bash -n, UTF-8 integrity scan (zero U+FFFD glyphs).
+
+---
+
+## Phase 51: Research Setup Wizard & Failsafe Onboarding (v5.12.0)
+
+### Status: COMPLETED (2026-09-27)
+
+- [x] **Research Setup Wizard** -- `src/utils/research_setup_wizard.py` delivers a 4-step, English-first onboarding flow (topic + cognitive validation, execution strategy, search window, first-flight visualizer).
+- [x] **Local AI auto-spawn with heuristic bypass** -- probes ports 11434/11435 (0.8s), silent `ollama serve` spawn, bounded 2s wait, deterministic rule-based fallback when offline.
+- [x] **2-second scope validation timeout** -- Fast Edge (Llama-3.1-8B / Neutrino-8B) cognitive validation with a hard timeout and sub-domain suggestion fallback.
+- [x] **First-run sentinel automation** -- `data/.talos_onboarded` written on completion; `talos.py:main_menu()` auto-invokes the wizard once and fast-boots (<0.3s) thereafter.
+- [x] **TUI integration** -- `profile_settings_menu()` option 2 routes to the wizard; `_SCRIPT_MAP` registers it under `utils`.
+- [x] **Hermetic tests** -- `tests/test_research_setup_wizard.py` covers sentinel, heuristic validation, and strategy/window persistence.
+- [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/evaluation-history metadata + 19 canonical docs to v5.12.0 (2026-09-27).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, test_research_setup_wizard, verify_dependency_map --ci (exit 0), bash -n, UTF-8 integrity scan (zero U+FFFD glyphs).
+
+---
+
+## Phase 52: Research Wizard Query Transparency & CLI Fast-Dispatch (v5.12.1)
+
+### Status: COMPLETED (2026-09-27)
+
+- [x] **Wizard query-transparency table** -- `_render_query_preview()` renders a rounded Rich Table (title "Generated Academic Search Queries") previewing the compiled boolean queries for the top primary sources (arXiv, IEEE Xplore, Scopus (Elsevier), OpenAlex, Semantic Scholar, Springer Link) plus the inclusion/exclusion criteria.
+- [x] **User confirmation gate** -- a Questionary confirm ("Proceed with these compiled search parameters?", default True) precedes config.json persistence; declining re-enters the scope prompt, cancelling aborts cleanly.
+- [x] **CLI fast-dispatch flags** -- `talos.py` gains `--wizard`, `--daily`, `--stats`, and `--help`/`-h` via `_handle_cli_flags()` / `_cli_help_table()`, each dispatching through `run_script()` and exiting 0.
+- [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/evaluation-history/wizard metadata + 19 canonical docs to v5.12.1 (2026-09-27).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, `talos.py --help` (exit 0), verify_dependency_map --ci (exit 0), bash -n, UTF-8 integrity scan (zero U+FFFD glyphs).
 
 
 
