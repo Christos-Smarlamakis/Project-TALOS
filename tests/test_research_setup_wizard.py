@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_research_setup_wizard.py
-Project: TALOS v5.12.2
+Project: TALOS v5.12.3
 Description:
     Hermetic unit tests for the Research Setup Wizard. Verifies three contract
     areas without any live Ollama, Fast Edge, or FastAPI dependency:

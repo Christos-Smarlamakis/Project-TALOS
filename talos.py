@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.12.2
+Project: TALOS v5.12.3
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,14 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.12.3: Research Pivot Modernization & Setup Wizard TUI Integration --
+    the Research Setup Wizard is promoted to the first entry of the
+    Configuration & Profiles menu ("Full Onboarding & Reconfiguration"),
+    the Research Pivot Wizard gains canonical REPO_ROOT-anchored subprocess
+    paths with strict returncode verification, and the lingering mythological
+    codenames (PYTHIA, CHIRON) are eliminated from the TUI in favour of
+    ISO/IEC 25010 functional terminology.
 
     v5.12.2: Self-Healing AI Manager & Heuristic Search Optimizer -- the core
     AIManager gains a fast pre-flight Ollama probe with detached background
@@ -858,13 +866,13 @@ def profile_settings_menu(python_exe):
         os.system('cls' if os.name == 'nt' else 'clear')
         sys.stdout.flush()
         console.print(Panel("[bold cyan]Configuration & Profiles[/bold cyan]\n[dim]Manage research profiles, API keys, and model parameters[/dim]", style="cyan", border_style="cyan"))
-        strategy_entry = f"2. AI Execution Strategy Switcher (Current: {_current_strategy_key()})"
+        strategy_entry = f"3. AI Execution Strategy Switcher (Current: {_current_strategy_key()})"
         c = safe_select("Select profile setting:", choices=[
-            "1. Manage Profiles",
+            "1. Research Setup Wizard (Full Onboarding & Reconfiguration)",
+            "2. Manage Profiles",
             strategy_entry,
-            "3. Run Research Setup Wizard (Interactive Guide)",
             "4. Research Pivot Wizard",
-            "5. Research Goal (Query Translator / PYTHIA)",
+            "5. Research Goal (Query Translator / Cognitive Query Compiler)",
             "6. AI Model Management (2D Matrix)",
             "7. Model Discovery (Quality Scoring)",
             "8. Model Provisioning CLI",
@@ -873,11 +881,11 @@ def profile_settings_menu(python_exe):
             "11. Back / Return to Main Menu"
         ])
         if not c or "Back" in c: return
-        if c == "1. Manage Profiles": run_script("profile_manager.py", python_exe)
+        if c == "1. Research Setup Wizard (Full Onboarding & Reconfiguration)": run_script("research_setup_wizard.py", python_exe)
+        elif c == "2. Manage Profiles": run_script("profile_manager.py", python_exe)
         elif "AI Execution Strategy Switcher" in c: _launch_strategy_selector()
-        elif c == "3. Run Research Setup Wizard (Interactive Guide)": run_script("research_setup_wizard.py", python_exe)
         elif c == "4. Research Pivot Wizard": run_script("research_pivot.py", python_exe)
-        elif c == "5. Research Goal (Query Translator / PYTHIA)": run_script("query_translator.py", python_exe)
+        elif c == "5. Research Goal (Query Translator / Cognitive Query Compiler)": run_script("query_translator.py", python_exe)
         elif c == "6. AI Model Management (2D Matrix)":
             console.print("\n[bold bright_cyan]Launching AI Model Manager...[/bold bright_cyan]\n")
             try:
@@ -1100,13 +1108,13 @@ def _view_and_pivot_research_focus(python_exe, project_root):
             with open("config.json", "r", encoding="utf-8") as _f:
                 _cfg = _json.load(_f)
             _cfg["user_research_goal"] = new_goal.strip()
-            # Clear old queries so PYTHIA regenerates them fresh
+            # Clear old queries so the Cognitive Query Compiler regenerates them fresh
             for k in list(_cfg.keys()):
                 if k.endswith("_query"):
                     _cfg[k] = ""
             with open("config.json", "w", encoding="utf-8") as _f:
                 _json.dump(_cfg, _f, indent=2, ensure_ascii=False)
-            console.print("\n[green][SUCCESS][/green] Research goal updated. Launching PYTHIA Query Translator...\n")
+            console.print("\n[green][SUCCESS][/green] Research goal updated. Launching Cognitive Query Compiler...\n")
         except Exception as e:
             console.print(f"\n[red]Error updating config.json: {e}[/red]")
             safe_pause()
@@ -1115,7 +1123,7 @@ def _view_and_pivot_research_focus(python_exe, project_root):
         # -- Run Query Translator in-process (same as run_script but with
         #    confirmation first) --
         info = _build_info_panel(
-            "PYTHIA -- Query Translator",
+            "Cognitive Query Compiler -- Query Translator",
             "Translates your natural-language research goal into optimized\n"
             "boolean search queries for all 16 academic APIs.\n"
             "[dim]Uses the AI Manager with Research Architect persona.[/dim]",
@@ -1755,8 +1763,8 @@ def analysis_visualization_menu(python_exe):
         "2. Graphify AST Knowledge Graph",
         "3. Dynamic D3 Architecture Graph",
         "4. OPTICA Scientific Visualizations",
-        "5. Knowledge Path Generator (CHIRON)",
-        "6. Citation Network Analyzer (ORPHEUS)",
+        "5. Knowledge Path Generator",
+        "6. Citation Network Analyzer",
         "7. Strategic Reading Recommender",
         "8. Author Profiler & ORCID Trajectory",
         "9. Scientometrics & Trend Analyzer",

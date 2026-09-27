@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.12.2
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.12.3
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-27 (v5.12.2 -- Αυτο-Θεραπευόμενος Διαχειριστής ΤΝ, Πίνακας Στρατηγικών 5 Επιπέδων & Μηχανή Ακεραιότητας Οδηγού Έρευνας)
+> **Τελευταία Ενημέρωση:** 2026-09-27 (v5.12.3 -- Εκσυγχρονισμός Αναπροσανατολισμού Έρευνας & Ενσωμάτωση Οδηγού Ρύθμισης στο TUI)
 
 ---
 
@@ -196,6 +196,7 @@ src/utils/research_setup_wizard.py
 | **Κονσόλα Ζωντανής Τηλεμετρίας HUD (v5.11.0)** | `templates/live_foraging_visualizer.html` | ροή glassmorphism κάτω δεξιά (buffer 40 γραμμών, αυτόματη κύλιση, συντομεύσεις `C`/`L`, απόκρυψη κατά το στιγμιότυπο) μέσω `appendConsoleLog()` |
 | **Ελαχιστοποίηση σε Δίσκο Win32 (v5.11.0)** | `src/utils/tray_icon.py` | η `enable_close_to_tray()` υποκλέπτει τη WndProc της κονσόλας (WM_CLOSE / SC_CLOSE σε SW_HIDE) ώστε το κλείσιμο να ελαχιστοποιεί σε δίσκο |
 | **Οδηγός Ρύθμισης Έρευνας (v5.12.0)** | `src/utils/research_setup_wizard.py` | `_ensure_local_ai_runtime()` (έλεγχος/εκκίνηση θυρών 11434+11435 με οριοθετημένη αναμονή 2s), `_analyze_scope_heuristic()` / `_analyze_scope_with_llm()`, `_generate_queries_llm()` / `_generate_queries_heuristic()`, `_apply_execution_strategy()`, `_write_search_window()`, `_create_sentinel()`, `_render_query_preview()` (πίνακας διαφάνειας ερωτημάτων + επιβεβαίωση, v5.12.1), `_extract_salient_terms()` (ευρετικό φίλτρο stopwords, v5.12.2), `_prompt_custom_days()` / `_step3_search_window()` (παράθυρο βάσει ημερών), `_render_cancelled()` (ακεραιότητα ακύρωσης), `LANGUAGE_AND_SYNTAX_MANDATE` (εντολή αγγλικής πρώτης γλώσσας), 5-tier `EXECUTION_STRATEGIES` + `ai_strategy_selector.py` (διακόπτης στρατηγικής) -- ενσωμάτωση 4 βημάτων με προτεραιότητα στα Αγγλικά και failsafe ευρετική παράκαμψη |
+| **Οδηγός Αναπροσανατολισμού Έρευνας (v5.12.3)** | `src/ai/llm/research_pivot.py` | `_resolve_script_path()` / `run_script()` -- επίλυση κανονικών διαδρομών αγκυρωμένων στο `REPO_ROOT` μέσω `_SCRIPT_MAP` (Γνωσιακός Μεταγλωττιστής Ερωτημάτων, επαναξιολόγηση βάσης, εκπαιδευτής DRL) με εκτέλεση `sys.executable`· αυστηρή επαλήθευση `proc.returncode` (YES μόνο για κωδικό 0, αλλιώς `FAILED (Code X)`)· εξάλειψη κωδικών ονομάτων PYTHIA/CHIRON κατά Κανόνα 9 |
 
 ## 9. Βοηθητικά Αρχεία
 
@@ -232,8 +233,8 @@ src/utils/research_setup_wizard.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-09-27 (v5.12.2 -- Αυτο-Θεραπευόμενος Διαχειριστής ΤΝ, Πίνακας Στρατηγικών 5 Επιπέδων & Μηχανή Ακεραιότητας Οδηγού Έρευνας)
-> **Έκδοση Project:** v5.12.2
+> **Τελευταία Ενημέρωση:** 2026-09-27 (v5.12.3 -- Εκσυγχρονισμός Αναπροσανατολισμού Έρευνας & Ενσωμάτωση Οδηγού Ρύθμισης στο TUI)
+> **Έκδοση Project:** v5.12.3
 > **Συνολικά .py modules στο src/:** 86 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 20 + api 4 + mcp_server 1)
 
 

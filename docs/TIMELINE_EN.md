@@ -4,7 +4,7 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-27 (v5.12.2 -- Self-Healing AI Manager, 5-Tier Strategy Matrix & Research Wizard Integrity Engine)
+> **Last Updated:** 2026-09-27 (v5.12.3 -- Research Pivot Modernization & Setup Wizard TUI Integration)
 
 ---
 
@@ -631,6 +631,17 @@
 - [x] **English-first cognitive mandate** -- `LANGUAGE_AND_SYNTAX_MANDATE` enforces academic English and disallows `topic:` prefixes.
 - [x] **Local GPU baseline** -- `LOCAL_GPU_MODEL` defaults to verified `llama3.1:8b`.
 - [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/evaluation-history/wizard metadata + 19 canonical docs to v5.12.2 (2026-09-27).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, test_research_setup_wizard (28 tests), verify_dependency_map --ci (exit 0), bash -n, UTF-8 integrity scan (zero U+FFFD glyphs).
+
+## Phase 54: Research Pivot Modernization & Wizard Menu Integration (v5.12.3)
+
+### Status: COMPLETED (2026-09-27)
+
+- [x] **Research Pivot canonical path resolution** -- `research_pivot.py` drops the broken `scripts/` subfolder and the stale `src/ai/scripts/query_translator.py` path; a REPO_ROOT-anchored `_SCRIPT_MAP` resolves the Cognitive Query Compiler (`src/ai/llm/query_translator.py`), the re-evaluation script (`src/utils/reevaluate_database.py` / `recalculate_scores.py`), and the DRL trainer (`src/ai/drl/train_agent.py`), all launched with `sys.executable`.
+- [x] **Strict subprocess returncode verification** -- the wizard captures `proc.returncode` and reports `YES` only for returncode 0; non-zero codes surface as `FAILED (Code X)` with trailing output, eliminating the previous `YES` on exit code 2.
+- [x] **Rule 9 codename elimination** -- lingering `PYTHIA` / `CHIRON` replaced with ISO/IEC 25010 functional terminology (Cognitive Query Compiler / Citation Graph Analyzer) across the Research Pivot Wizard and the Configuration & Profiles TUI menu.
+- [x] **Research Setup Wizard TUI promotion** -- `profile_settings_menu()` promotes the wizard to option 1 ("Full Onboarding & Reconfiguration") and renumbers the remaining entries, enabling re-running at any time to re-tune scope, 16 queries, criteria, search window, and AI execution strategy.
+- [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/evaluation-history/wizard metadata + 19 canonical docs to v5.12.3 (2026-09-27).
 - [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, test_research_setup_wizard (28 tests), verify_dependency_map --ci (exit 0), bash -n, UTF-8 integrity scan (zero U+FFFD glyphs).
 
 

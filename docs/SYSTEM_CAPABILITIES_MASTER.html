@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.12.2</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.12.3</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.12.2</h1>
+<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.12.3</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-09-27 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.12.2 -- Self-Healing AI Manager, 5-Tier Strategy Matrix &amp; Research Wizard Integrity Engine
+  <strong>Version:</strong> v5.12.3 -- Research Pivot Modernization &amp; Setup Wizard TUI Integration
 </div>
 
 <!-- ===================================================================== -->
@@ -357,7 +357,7 @@
 <table>
   <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
   <tbody>
-    <tr><td>TALOS_VERSION</td><td>"5.12.2"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_VERSION</td><td>"5.12.3"</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
@@ -1248,9 +1248,20 @@
   <li><strong>Local GPU baseline</strong> (<code>LOCAL_GPU_MODEL</code>): defaults to verified <code>llama3.1:8b</code>.</li>
 </ul>
 <p><strong>Verification surface:</strong> compileall, system integrity, version assertion (v5.12.2), research-setup-wizard suite (28 tests), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, strict UTF-8 scan (zero U+FFFD glyphs).</p>
+<h3 id="s15-27">15.27 Research Pivot Modernization &amp; Setup Wizard TUI Integration (v5.12.3)</h3>
+<p><strong>Overview:</strong> v5.12.3 repairs the Research Pivot Wizard's broken subprocess paths and silent-failure reporting, eliminates the lingering mythological codenames, and promotes the Research Setup Wizard to the head of the Configuration &amp; Profiles TUI menu.</p>
+<ul>
+  <li><strong>Canonical subprocess path resolution</strong> (<code>research_pivot.py:_resolve_script_path()</code> / <code>run_script()</code>): the broken <code>scripts/</code> subfolder and stale <code>src/ai/scripts/query_translator.py</code> path are replaced by a REPO_ROOT-anchored <code>_SCRIPT_MAP</code> resolving the Cognitive Query Compiler (<code>src/ai/llm/query_translator.py</code>), the database re-evaluation script (<code>src/utils/reevaluate_database.py</code> / <code>recalculate_scores.py</code>), and the DRL trainer (<code>src/ai/drl/train_agent.py</code>); every subprocess is launched with <code>sys.executable</code> (the active Conda interpreter).</li>
+  <li><strong>Strict subprocess returncode verification</strong>: the wizard captures <code>proc.returncode</code> and reports <code>YES</code> in the Pivot Summary only for returncode 0; any non-zero code surfaces as <code>FAILED (Code X)</code> with trailing output, eliminating the previous <code>YES</code> on exit code 2.</li>
+  <li><strong>Rule 9 codename elimination</strong>: lingering <code>PYTHIA</code> and <code>CHIRON</code> replaced with ISO/IEC 25010 functional terminology -- Cognitive Query Compiler and Citation Graph Analyzer -- across the Research Pivot Wizard and the Configuration &amp; Profiles TUI menu.</li>
+  <li><strong>Research Setup Wizard TUI promotion</strong> (<code>talos.py:profile_settings_menu()</code>): the wizard is promoted to option 1 ("Research Setup Wizard (Full Onboarding &amp; Reconfiguration)"), enabling re-running at any time to re-tune research scope, 16 search queries, criteria, search window, and AI execution strategy; remaining menu entries renumbered.</li>
+</ul>
+<p><strong>Verification surface:</strong> compileall, system integrity, version assertion (v5.12.3), research-setup-wizard suite (28 tests), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, strict UTF-8 scan (zero U+FFFD glyphs).</p>
+
+
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.12.2</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.12.3</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

@@ -1,21 +1,29 @@
 # -*- coding: utf-8 -*-
 """
-Module: research_pivot.py (v1.0)
-Project: TALOS v5.10.0
+Module: research_pivot.py
+Project: TALOS v5.12.3
 Description:
-    Interactive Research Pivot Wizard for TALOS.  Guides the user through
+    Interactive Research Pivot Wizard for TALOS. Guides the user through
     recalibrating the system when their research interests have shifted.
 
     The wizard does the following (each step is optional after the first):
       Step 1: Collect the NEW research direction from the user.
-      Step 2: Run PYTHIA to regenerate search queries and evaluation prompts.
+      Step 2: Run the Cognitive Query Compiler (canonical query_translator.py)
+              to regenerate search queries and evaluation prompts.
       Step 3: Optionally re-evaluate the entire database with the new criteria.
       Step 4: Optionally retrain the DRL agent with the updated scores.
       Step 5: Save everything back into the active profile.
 
+    v5.12.3: All subprocess invocations now resolve to canonical scripts under
+    src/ via REPO_ROOT-anchored absolute paths and are executed with
+    sys.executable. Return codes are captured and strictly verified so the
+    summary reports YES only for returncode 0 and FAILED (Code X) otherwise.
+    Mythological codenames (PYTHIA, CHIRON) were eliminated per Rule 9 in
+    favour of ISO/IEC 25010 functional terminology.
+
     Usage:
-        python scripts/research_pivot.py
-        python scripts/research_pivot.py --auto  (non-interactive, skips confirmation)
+        python src/ai/llm/research_pivot.py
+        python src/ai/llm/research_pivot.py --auto  (non-interactive, skips confirmation)
 """
 import os
 import sys
@@ -37,10 +45,18 @@ from rich.panel import Panel
 logger = get_logger(__name__)
 console = Console()
 
-# ── Add project root to Python's import path ────────────────────────────────
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-PROFILES_DIR = os.path.join(PROJECT_ROOT, '_profiles')
+# ── Resolve the repository root (the directory containing talos.py). ────────
+REPO_ROOT = _P if _P else os.path.abspath(os.getcwd())
+PROFILES_DIR = os.path.join(REPO_ROOT, '_profiles')
 ACTIVE_PROFILE_FILE = os.path.join(PROFILES_DIR, 'active_profile.txt')
+
+# -- Canonical script map: filename -> path under src/, anchored to REPO_ROOT. --
+_SCRIPT_MAP = {
+    'query_translator.py': os.path.join('src', 'ai', 'llm', 'query_translator.py'),
+    'reevaluate_database.py': os.path.join('src', 'utils', 'reevaluate_database.py'),
+    'recalculate_scores.py': os.path.join('src', 'utils', 'recalculate_scores.py'),
+    'train_agent.py': os.path.join('src', 'ai', 'drl', 'train_agent.py'),
+}
 
 
 def get_active_profile_name():
@@ -62,14 +78,35 @@ def save_state_to_profile(profile_name):
     os.makedirs(profile_path, exist_ok=True)
 
     for fname in ['config.json', 'talos_research.db']:
-        src = os.path.join(PROJECT_ROOT, fname)
+        src = os.path.join(REPO_ROOT, fname)
         if os.path.exists(src):
             shutil.copy2(src, os.path.join(profile_path, fname))
 
 
+def _resolve_script_path(script_name):
+    """Resolve a script filename to its canonical absolute path under REPO_ROOT.
+
+    Args:
+        script_name (str): The script filename (e.g., 'query_translator.py').
+
+    Returns:
+        str: Absolute path to the script under src/.
+
+    Raises:
+        FileNotFoundError: If the script is not present in _SCRIPT_MAP.
+    """
+    if script_name in _SCRIPT_MAP:
+        return os.path.join(REPO_ROOT, _SCRIPT_MAP[script_name])
+    raise FileNotFoundError(f"Unknown script '{script_name}' -- not in _SCRIPT_MAP.")
+
+
 def run_script(script_name, stdin_text="", args=None):
     """
-    Execute a TALOS script as a subprocess and return (returncode, output).
+    Execute a canonical TALOS script as a subprocess and return (returncode, output).
+
+    The script path is resolved from _SCRIPT_MAP and anchored to REPO_ROOT, and
+    the subprocess is launched with sys.executable so the active interpreter
+    (Conda environment) is used rather than an ambiguous system Python.
 
     Args:
         script_name (str): Script filename (e.g., 'query_translator.py').
@@ -80,7 +117,7 @@ def run_script(script_name, stdin_text="", args=None):
         tuple: (returncode, stdout + stderr text)
     """
     python_exe = sys.executable
-    script_path = os.path.join(PROJECT_ROOT, 'scripts', script_name)
+    script_path = _resolve_script_path(script_name)
     cmd = [python_exe, script_path] + (args or [])
     env = os.environ.copy()
     env["PYTHONIOENCODING"] = "utf-8"
@@ -139,34 +176,38 @@ def main():
             logger.warning("Pivot cancelled -- no research direction provided.")
             return
 
-    # -- STEP 2: Run PYTHIA to regenerate queries and prompts --
-    run_pythia = True
+    # -- STEP 2: Run the Cognitive Query Compiler to regenerate queries/prompts --
+    run_compiler = True
+    compiler_status = "skipped"
     if not auto_mode:
-        run_pythia = questionary.confirm(
-            "Step 2/4: Run PYTHIA to regenerate search queries and prompts?",
+        run_compiler = questionary.confirm(
+            "Step 2/4: Run the Cognitive Query Compiler to regenerate search queries and prompts?",
             default=True,
             style=TALOS_QUESTIONARY_STYLE,
         ).ask()
 
-    if run_pythia:
-        logger.info("Running PYTHIA with the new research direction...")
+    if run_compiler:
+        logger.info("Running the Cognitive Query Compiler with the new research direction...")
         rc, out = run_script("query_translator.py", stdin_text=new_direction + "\n")
         if rc == 0:
-            logger.info("PYTHIA completed -- queries and prompts regenerated.")
+            compiler_status = "ok"
+            logger.info("Cognitive Query Compiler completed -- queries and prompts regenerated.")
             # Save immediately to the profile
             save_state_to_profile(profile)
             logger.info("Profile '%s' saved with new configuration.", profile)
         else:
-            logger.warning("PYTHIA completed with code %s. Check output.", rc)
+            compiler_status = f"failed:{rc}"
+            logger.warning("Cognitive Query Compiler FAILED (Code %s). Check output.", rc)
             if out.strip():
                 # Show last 10 lines of output
                 for line in out.strip().split("\n")[-10:]:
                     logger.info("    %s", line)
     else:
-        logger.info("Skipped PYTHIA.")
+        logger.info("Skipped the Cognitive Query Compiler.")
 
     # -- STEP 3: Optionally re-evaluate the database --
     run_reeval = False
+    reeval_status = "skipped"
     if not auto_mode:
         run_reeval = questionary.confirm(
             "Step 3/4: Re-evaluate the database with the new criteria?\n"
@@ -180,14 +221,20 @@ def main():
         logger.info("(This may take a while depending on database size.)")
         rc, out = run_script("reevaluate_database.py", stdin_text="y\n")
         if rc == 0:
+            reeval_status = "ok"
             logger.info("Database re-evaluation complete.")
         else:
-            logger.warning("Re-evaluation completed with code %s.", rc)
+            reeval_status = f"failed:{rc}"
+            logger.warning("Re-evaluation FAILED (Code %s). Check output.", rc)
+            if out.strip():
+                for line in out.strip().split("\n")[-10:]:
+                    logger.info("    %s", line)
     else:
         logger.info("Skipped database re-evaluation.")
 
     # -- STEP 4: Optionally retrain the DRL agent --
     run_retrain = False
+    retrain_status = "skipped"
     if not auto_mode:
         run_retrain = questionary.confirm(
             "Step 4/4: Retrain the DRL agent with updated scores?\n"
@@ -211,6 +258,7 @@ def main():
         logger.info("Training DRL agent for %s episodes...", episodes)
         rc, out = run_script("train_agent.py", args=[f"--episodes={episodes}"])
         if rc == 0:
+            retrain_status = "ok"
             logger.info("Agent retraining complete.")
 
             # Show summary from output
@@ -218,7 +266,8 @@ def main():
                 if any(kw in line for kw in ["Best episode", "Average reward", "Model saved"]):
                     logger.info("    %s", line.strip())
         else:
-            logger.warning("Training completed with code %s.", rc)
+            retrain_status = f"failed:{rc}"
+            logger.warning("Training FAILED (Code %s). Check output.", rc)
     else:
         logger.info("Skipped agent retraining.")
 
@@ -227,16 +276,25 @@ def main():
     logger.info("Profile '%s' saved.", profile)
 
     # -- Summary panel (emoji-free academic styling) --
+    def _status_text(status):
+        """Render a status token as a Rich-formatted pass/skip/fail label."""
+        if status == "ok":
+            return "[green]YES[/green]"
+        if status == "skipped":
+            return "[yellow]SKIPPED[/yellow]"
+        code = status.split(":", 1)[1] if ":" in status else "?"
+        return f"[red]FAILED (Code {code})[/red]"
+
     summary = Panel(
         "[bold bright_cyan]Research Pivot Complete[/bold bright_cyan]\n"
         f"[dim]Profile:[/dim] {profile}\n"
-        f"[dim]PYTHIA regenerated:[/dim] {'[green]YES[/green]' if run_pythia else '[yellow]SKIPPED[/yellow]'}\n"
-        f"[dim]Database re-evaluated:[/dim] {'[green]YES[/green]' if run_reeval else '[yellow]SKIPPED[/yellow]'}\n"
-        f"[dim]Agent retrained:[/dim] {'[green]YES[/green]' if run_retrain else '[yellow]SKIPPED[/yellow]'}\n\n"
+        f"[dim]Cognitive Query Compiler:[/dim] {_status_text(compiler_status)}\n"
+        f"[dim]Database re-evaluated:[/dim] {_status_text(reeval_status)}\n"
+        f"[dim]Agent retrained:[/dim] {_status_text(retrain_status)}\n\n"
         "[dim]Next steps:[/dim]\n"
         "  - Run a Daily Search to find new papers with your new queries.\n"
         "  - Start the Autonomous Research Service (daemon) for 24/7 monitoring.\n"
-        "  - Use CHIRON to generate a new knowledge path.",
+        "  - Use the Citation Graph Analyzer to generate a new knowledge path.",
         title="[bold]PIVOT SUMMARY[/bold]",
         border_style="green",
     )

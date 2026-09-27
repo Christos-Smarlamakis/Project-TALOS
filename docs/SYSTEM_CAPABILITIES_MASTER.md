@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.12.2
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.12.3
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-09-27
-> **Version:** v5.12.2 -- Self-Healing AI Manager, 5-Tier Strategy Matrix & Research Wizard Integrity Engine
+> **Version:** v5.12.3 -- Research Pivot Modernization & Setup Wizard TUI Integration
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.12.2" | `config/settings.py` |
+| TALOS_VERSION | "5.12.3" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -958,6 +958,18 @@ For each evaluated paper, the AI generates:
 - **Local GPU baseline** (`LOCAL_GPU_MODEL`): defaults to verified `llama3.1:8b`.
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.12.2), `pytest tests/test_research_setup_wizard.py` (28 tests), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+
+### 15.27 Research Pivot Modernization & Setup Wizard TUI Integration (v5.12.3)
+
+**Overview:** v5.12.3 repairs the Research Pivot Wizard's broken subprocess paths and silent-failure reporting, eliminates the lingering mythological codenames, and promotes the Research Setup Wizard to the head of the Configuration & Profiles TUI menu.
+
+- **Canonical subprocess path resolution** (`src/ai/llm/research_pivot.py:_resolve_script_path()` / `run_script()`): the broken `scripts/` subfolder and stale `src/ai/scripts/query_translator.py` path are replaced by a REPO_ROOT-anchored `_SCRIPT_MAP` resolving the Cognitive Query Compiler (`src/ai/llm/query_translator.py`), the database re-evaluation script (`src/utils/reevaluate_database.py` / `recalculate_scores.py`), and the DRL trainer (`src/ai/drl/train_agent.py`); every subprocess is launched with `sys.executable` (the active Conda interpreter).
+- **Strict subprocess returncode verification**: the wizard captures `proc.returncode` and reports `YES` in the Pivot Summary only for returncode 0; any non-zero code surfaces as `FAILED (Code X)` with trailing output, eliminating the previous `YES` on exit code 2.
+- **Rule 9 codename elimination**: lingering `PYTHIA` and `CHIRON` replaced with ISO/IEC 25010 functional terminology -- Cognitive Query Compiler and Citation Graph Analyzer -- across the Research Pivot Wizard and the Configuration & Profiles TUI menu.
+- **Research Setup Wizard TUI promotion** (`talos.py:profile_settings_menu()`): the wizard is promoted to option 1 ("Research Setup Wizard (Full Onboarding & Reconfiguration)"), enabling re-running at any time to re-tune research scope, 16 search queries, criteria, search window, and AI execution strategy; remaining menu entries renumbered.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.12.3), `pytest tests/test_research_setup_wizard.py` (28 tests), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 
 ---

@@ -2,6 +2,35 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.12.3] - 2026-09-27 -- Research Pivot Modernization & Setup Wizard TUI Integration
+
+### Changed
+
+- **Research Pivot canonical path resolution** (`src/ai/llm/research_pivot.py`): the broken `scripts/` subfolder resolution and the stale `src/ai/scripts/query_translator.py` path were removed. The wizard now anchors every subprocess invocation to `REPO_ROOT` (the directory containing `talos.py`) and resolves canonical scripts through a dedicated `_SCRIPT_MAP`: the Cognitive Query Compiler (`src/ai/llm/query_translator.py`), the database re-evaluation script (`src/utils/reevaluate_database.py` / `src/utils/recalculate_scores.py`), and the DRL training script (`src/ai/drl/train_agent.py`). Every subprocess is executed with `sys.executable` so the active Conda interpreter is used rather than an ambiguous system Python.
+
+- **Strict subprocess returncode verification** (`research_pivot.py`): the wizard now captures `proc.returncode` for every child process and reports `YES` in the Pivot Summary only when the return code is exactly 0; any non-zero code is reported as `FAILED (Code X)` with the trailing output lines surfaced to the operator. Silent-failure reporting (including the previous `YES` on exit code 2) is eliminated.
+
+- **Rule 9 codename elimination**: the lingering mythological codenames `PYTHIA` and `CHIRON` were removed from the Research Pivot Wizard and the Configuration & Profiles TUI menu and replaced with ISO/IEC 25010 functional terminology -- `PYTHIA` becomes the Cognitive Query Compiler and `CHIRON` becomes the Citation Graph Analyzer.
+
+- **Research Setup Wizard TUI promotion** (`talos.py:profile_settings_menu()`): the wizard is promoted to option 1 as "Research Setup Wizard (Full Onboarding & Reconfiguration)", making it re-runnable at any time to re-tune the research scope, the 16 search queries, the inclusion/exclusion criteria, the historical search window, and the AI execution strategy. The Configuration & Profiles menu was renumbered accordingly (Manage Profiles, AI Execution Strategy Switcher, Research Pivot Wizard, Research Goal, AI Model Management, Model Discovery, Model Provisioning CLI, API Keys Management, API Key Diagnostics).
+
+### Summary -- Research Setup Wizard Enhancements
+
+- **5-tier AI execution strategy matrix**: `strict_local`, `local_first`, `cloud_first`, `strict_cloud`, and `auto_dynamic` persisted to `config.json` (`ai_execution_strategy`) and `.env` (`TALOS_NETWORK_STRATEGY`).
+- **Day-based historical search window**: measured in days from today with presets and a custom positive-integer prompt (`days_to_search_historic`).
+- **Cancellation flow integrity**: cancelling any step aborts the flow before any `config.json` write and guards the onboarding sentinel.
+- **Thinking model parser**: local and cloud response parsers unwrap `reasoning_content` / `thinking` / `<think>` tags so thinking models never return empty strings.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.12.3).
+- `python -m pytest tests/test_research_setup_wizard.py -q` passed (28 tests).
+- `python src/utils/verify_dependency_map.py --ci` returned exit 0.
+- `bash -n run_talos.sh` passed with zero syntax errors.
+- Strict UTF-8 decode scan across all modified files: zero U+FFFD replacement glyphs.
+
 ## [v5.12.2] - 2026-09-27 -- Self-Healing AI Manager, 5-Tier Strategy Matrix & Research Wizard Integrity Engine
 
 ### Added
