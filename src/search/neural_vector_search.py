@@ -399,6 +399,124 @@ class NeuralVectorSearchEngine:
             )
         Console().print(table)
 
+    @staticmethod
+    def _md_escape(text):
+        """Escape Markdown table-breaking characters in a cell value.
+
+        Args:
+            text (str): Raw cell text (title, authors, abstract, etc.).
+
+        Returns:
+            str: A single-line, pipe-escaped Markdown-safe string.
+        """
+        if text is None:
+            return ""
+        text = str(text).replace("|", "\\|").replace("\r", " ").replace("\n", " ")
+        return text.strip()
+
+    @staticmethod
+    def _format_link(doi, url):
+        """Build a Markdown clickable link from a DOI or URL.
+
+        Args:
+            doi (str): DOI identifier (e.g. ``10.1109/...``).
+            url (str): Direct URL.
+
+        Returns:
+            str: Markdown link, or an empty string when neither is present.
+        """
+        doi = str(doi or "").strip()
+        url = str(url or "").strip()
+        if doi:
+            href = doi if doi.startswith(("http://", "https://")) else f"https://doi.org/{doi}"
+            return f"[{NeuralVectorSearchEngine._md_escape(doi)}]({href})"
+        if url:
+            return f"[{NeuralVectorSearchEngine._md_escape(url)}]({url})"
+        return ""
+
+    def export_search_report(self, query, results, output_dir="data/reports/vector_search", corpus_size=None):
+        """Generate a structured Markdown report of a semantic search.
+
+        Writes a timestamped Markdown report under ``output_dir`` (resolved
+        relative to the project root) containing the query header, a ranked
+        results table, and the full abstracts of the top-5 matches with
+        clickable DOI/URL links.
+
+        Args:
+            query (str): Natural-language research query.
+            results (list): Ranked candidate records with ``similarity`` set.
+            output_dir (str): Directory in which to write the report. Defaults
+                to ``data/reports/vector_search`` relative to the project root.
+            corpus_size (int, optional): Total number of papers searched. When
+                omitted, falls back to ``len(results)``.
+
+        Returns:
+            str: Absolute path to the generated Markdown report.
+        """
+        import datetime
+
+        project_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", ".."))
+        report_dir = output_dir
+        if not os.path.isabs(report_dir):
+            report_dir = os.path.join(project_root, report_dir)
+        os.makedirs(report_dir, exist_ok=True)
+
+        now = datetime.datetime.now()
+        report_path = os.path.join(
+            report_dir, f"vector_search_{now.strftime('%Y%m%d_%H%M%S')}.md")
+
+        total_corpus = corpus_size if corpus_size is not None else len(results)
+
+        # -- Build the Markdown document. --
+        lines = []
+        lines.append("# Neural Vector Semantic Search Report")
+        lines.append("")
+        lines.append("| Field | Value |")
+        lines.append("|-------|-------|")
+        lines.append(f"| **Query** | {self._md_escape(query)} |")
+        lines.append(f"| **Timestamp** | {now.strftime('%Y-%m-%d %H:%M:%S')} |")
+        lines.append(f"| **Model** | `{self.model}` |")
+        lines.append(f"| **Total Corpus Size** | {total_corpus} |")
+        lines.append("")
+        lines.append("## Ranked Results")
+        lines.append("")
+        lines.append("| Rank | Similarity (%) | Title | Authors | Year | Source | DOI / URL | Abstract Match Snippet |")
+        lines.append("|------|----------------|-------|---------|------|--------|-----------|------------------------|")
+        for rank, item in enumerate(results, start=1):
+            similarity = round(float(item.get("similarity", 0.0)) * 100, 1)
+            title = self._md_escape(item.get("title"))
+            authors = self._md_escape(item.get("authors"))
+            year = item.get("publication_year") or item.get("year") or ""
+            source = self._md_escape(item.get("source"))
+            link = self._format_link(item.get("doi"), item.get("url"))
+            snippet = self._md_escape(self._snippet(item.get("abstract"), query))
+            lines.append(
+                f"| {rank} | {similarity:.1f}% | {title} | {authors} | {year} | {source} | {link} | {snippet} |"
+            )
+        lines.append("")
+        lines.append("## Full Abstracts (Top 5)")
+        lines.append("")
+        for rank, item in enumerate(results[:5], start=1):
+            title = str(item.get("title") or "").strip() or "(Untitled)"
+            link = self._format_link(item.get("doi"), item.get("url"))
+            lines.append(f"### {rank}. {self._md_escape(title)}")
+            if link:
+                lines.append(f"**Link:** {link}")
+            lines.append("")
+            abstract = str(item.get("abstract") or "").strip()
+            lines.append(abstract if abstract else "_(No abstract available.)_")
+            lines.append("")
+
+        with open(report_path, "w", encoding="utf-8") as handle:
+            handle.write("\n".join(lines) + "\n")
+
+        if RICH_AVAILABLE:
+            Console().print(f"[dim]Search report saved to: {report_path}[/dim]")
+        else:
+            print(f"Search report saved to: {report_path}")
+        return str(report_path)
+
     def search(self, query: str, candidates, top_k: int = 10):
         """Rank candidates and return the top-k most relevant.
 
@@ -418,7 +536,8 @@ class NeuralVectorSearchEngine:
 
         Loads candidate papers and the persistent vector cache, incrementally
         indexes any uncached abstracts with a live Rich progress bar, then ranks
-        via vectorized matrix cosine similarity and renders a styled Rich Table.
+        via vectorized matrix cosine similarity, renders a styled Rich Table,
+        and auto-exports a timestamped Markdown report.
 
         Args:
             query (str): Natural-language research query.
@@ -443,24 +562,28 @@ class NeuralVectorSearchEngine:
 
         # -- Step C: vectorized matrix cosine similarity. --
         ranked = self._matrix_rank(query, candidates, cached)
+        top_results = ranked[:max(0, top_k)]
 
         # -- Step D: Rich Table presentation. --
         if render:
-            self.render_results(ranked[:max(0, top_k)], query)
+            self.render_results(top_results, query)
 
-        return ranked[:max(0, top_k)]
+        # -- Step E: auto-export the Markdown search report. --
+        self.export_search_report(query, top_results, corpus_size=len(candidates))
+
+        return top_results
 
     def _load_candidates(self):
         """Load candidate papers from the active profile database.
 
         Returns:
-            list: Paper records with id/title/abstract/doi/url/year/source.
+            list: Paper records with id/title/abstract/doi/url/year/source/authors.
         """
         try:
             from src.core.database_manager import DatabaseManager
             db = DatabaseManager()
             rows = db.execute_query(
-                "SELECT id, title, abstract, doi, url, publication_year, source "
+                "SELECT id, title, abstract, doi, url, publication_year, source, authors "
                 "FROM papers WHERE abstract IS NOT NULL AND abstract != ''",
                 fetch_all=True,
             )
@@ -473,6 +596,7 @@ class NeuralVectorSearchEngine:
                     "url": row[4],
                     "publication_year": row[5],
                     "source": row[6],
+                    "authors": row[7],
                 }
                 for row in (rows or [])
             ]
