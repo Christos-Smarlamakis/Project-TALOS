@@ -4,7 +4,7 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-28 (v5.13.0 -- Full-Stack Concurrent Multi-Threaded Engine & High-Throughput Harvester)
+> **Last Updated:** 2026-09-28 (v5.13.1 -- System Diagnostics Analyzer & Operational Integrity Engine)
 
 ---
 
@@ -656,6 +656,16 @@
 - [x] **Environment Setup Guides** -- `docs/ENVIRONMENT_SETUP_GUIDE.md` / `_GR.md` documented as the official setup references.
 - [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/evaluation-history/wizard metadata + 19 canonical docs to v5.12.4 (2026-09-28).
 - [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, test_research_setup_wizard (39 tests), verify_dependency_map --ci (exit 0), bash -n, UTF-8 integrity scan (zero U+FFFD glyphs).
+
+## Phase 57: System Diagnostics Analyzer & Operational Integrity Engine (v5.13.1)
+
+### Status: COMPLETED (2026-09-28)
+
+- [x] **System Diagnostics Analyzer** -- `src/utils/system_diagnostics.py` ships `SystemDiagnosticsEngine` (ISO/IEC 25010 Diagnosability) with an 8-point pre-flight health check (Python env, SQLite integrity/WAL, local AI runtime, port availability, filesystem permissions, .env structure, daemon status, optional network endpoints) and a `box.ROUNDED` Rich health report with one-line remediation guidance.
+- [x] **CLI fast-dispatch** -- `--diagnostics` (canonical) and `--doctor`/`-d` (alias) run the analyzer headless and exit 0.
+- [x] **TUI Group 6 integration** -- `system_health_menu()` gains Option 1 "System Health & Diagnostic Analyzer"; options renumbered 1-8 to 2-9.
+- [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/evaluation-history/wizard metadata + 19 canonical docs to v5.13.1 (2026-09-28).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, --diagnostics/--doctor CLI runs, verify_dependency_map --ci (exit 0), bash -n, UTF-8 integrity scan (zero U+FFFD glyphs).
 
 ## Phase 56: Full-Stack Concurrent Multi-Threaded Engine & High-Throughput Harvester (v5.13.0)
 

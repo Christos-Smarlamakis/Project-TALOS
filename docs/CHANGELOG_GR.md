@@ -2,6 +2,30 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.13.1] - 2026-09-28 -- Αναλυτής Διαγνωστικών Συστήματος & Μηχανή Λειτουργικής Ακεραιότητας
+
+### Προστέθηκε
+
+- **Αναλυτής Διαγνωστικών Συστήματος** (`src/utils/system_diagnostics.py`): νέα κλάση `SystemDiagnosticsEngine` σύμφωνη με το ISO/IEC 25010 (Διαγνωσιμότητα και Ανοχή Σφαλμάτων). Εκτελεί προκαταρκτικό έλεγχο υγείας 8 σημείων με αυστηρά τοπική-πρώτα σειρά: `check_python_environment()` (Python 3.11.x + περιβάλλον conda `talosenv`), `check_database_integrity()` (`PRAGMA integrity_check` + λειτουργία WAL στη βάση ενεργού προφίλ), `check_local_ai_runtime()` (HTTP GET 0.8s στο Ollama `/api/tags` επαληθεύοντας το `LOCAL_GPU_MODEL`), `check_port_availability()` (έλεγχος σύγκρουσης θυρών 8001/8000/11434/11435), `check_filesystem_permissions()` (δοκιμές ανάγνωσης/εγγραφής σε `data/`, `_profiles/`, `logs/`), `check_environment_credentials()` (επικύρωση δομής `.env` με απόκρυψη μυστικών), `check_daemon_status()` (ανίχνευση διεργασίας `talos_service.py`) και `check_network_endpoints()` (προαιρετική συνδεσιμότητα arXiv/OpenAlex, φυλασσόμενη για λειτουργία εκτός δικτύου).
+- **Απόδοση αναφοράς υγείας Rich** (`render_report()`): πίνακας Rich `box.ROUNDED` με τίτλο "TALOS System Diagnostic Health Report" και στήλες Component / Target-Metric / Status (PASS πράσινο / WARN κίτρινο / FAIL κόκκινο) / Remediation Guidance, με γραμμή αντιμετώπισης μιας γραμμής για κάθε αποτυχία.
+- **Σημαίες CLI ταχείας αποστολής** (`talos.py`): `--diagnostics` (κανονική σημαία ISO) και `--doctor` / `-d` (ψευδώνυμο DevOps) εκτελούν `SystemDiagnosticsEngine().run_and_render()` και τερματίζουν ομαλά.
+- **Ενσωμάτωση TUI (Ομάδα 6)**: το `system_health_menu()` αποκτά Επιλογή 1 "System Health & Diagnostic Analyzer", με τις υπόλοιπες επιλογές να αναριθμούνται 1-8 σε 2-9.
+
+### Άλλαξε
+
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.13.1** στα 6 βασικά αρχεία κώδικα (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` μεταδεδομένα/καταγραφή lifespan/περιγραφή FastAPI, `talos.py` docstring και σημείωση έκδοσης, `run_talos.bat` τίτλος/banner/καταγραφές, `run_talos.sh` κεφαλίδα/banner/καταγραφές, `tests/test_multi_tier.py` βεβαίωση έκδοσης), καθώς και `docker-compose.yml` (`talos:5.13.1`), `CITATION.cff` (έκδοση 5.13.1, ημερομηνία κυκλοφορίας 2026-09-28), και τις συμβολοσειρές χρήστη σε `src/utils/tray_icon.py`, `src/utils/evaluation_history.py`, `src/utils/research_setup_wizard.py`, `src/utils/ai_strategy_selector.py` και `templates/live_foraging_visualizer.html`.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` πέρασε με μηδέν σφάλματα.
+- `python -m pytest tests/test_system_integrity.py -q` πέρασε.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε (v5.13.1).
+- `python talos.py --diagnostics` απέδωσε τον πίνακα υγείας Rich και τερμάτισε με κωδικό 0.
+- `python talos.py --doctor` εκτελέστηκε πανομοιότυπα (κωδικός εξόδου 0).
+- `python src/utils/verify_dependency_map.py --ci` επέστρεψε κωδικό εξόδου 0.
+- `bash -n run_talos.sh` πέρασε με μηδέν συντακτικά σφάλματα.
+- Αυστηρή σάρωση αποκωδικοποίησης UTF-8 σε όλα τα τροποποιημένα αρχεία: μηδέν γλύφοι αντικατάστασης U+FFFD.
+
 ## [v5.13.0] - 2026-09-28 -- Μηχανή Ταυτόχρονης Πολυνηματικής Εκτέλεσης Πλήρους Στοίβας & Συλλέκτης Υψηλής Διαμεταγωγής
 
 ### Προστέθηκε

@@ -2,6 +2,30 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.13.1] - 2026-09-28 -- System Diagnostics Analyzer & Operational Integrity Engine
+
+### Added
+
+- **System Diagnostics Analyzer** (`src/utils/system_diagnostics.py`): new `SystemDiagnosticsEngine` conforming to ISO/IEC 25010 Diagnosability and Fault Tolerance. Executes an 8-point pre-flight health check in strict local-first order: `check_python_environment()` (Python 3.11.x + `talosenv` conda env), `check_database_integrity()` (`PRAGMA integrity_check` + WAL journal mode on the active profile DB), `check_local_ai_runtime()` (0.8s HTTP GET to Ollama `/api/tags` verifying `LOCAL_GPU_MODEL`), `check_port_availability()` (ports 8001/8000/11434/11435 conflict probe), `check_filesystem_permissions()` (read/write probes on `data/`, `_profiles/`, `logs/`), `check_environment_credentials()` (`.env` structure validation with secret redaction), `check_daemon_status()` (`talos_service.py` process detection), and `check_network_endpoints()` (optional arXiv/OpenAlex connectivity, guarded for air-gapped operation).
+- **Rich health report rendering** (`render_report()`): a `box.ROUNDED` Rich table titled "TALOS System Diagnostic Health Report" with Component / Target-Metric / Status (PASS green / WARN yellow / FAIL red) / Remediation Guidance columns, each failure carrying a one-line copy-paste remediation.
+- **CLI fast-dispatch flags** (`talos.py`): `--diagnostics` (canonical ISO flag) and `--doctor` / `-d` (DevOps alias) run `SystemDiagnosticsEngine().run_and_render()` and exit cleanly.
+- **TUI integration (Group 6)**: `system_health_menu()` gains Option 1 "System Health & Diagnostic Analyzer", with the remaining options renumbered 1-8 to 2-9.
+
+### Changed
+
+- **Version strings synchronized to 5.13.1** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan log/description, `talos.py` docstring and release note, `run_talos.bat` title/banner/logs, `run_talos.sh` header/banner/logs, `tests/test_multi_tier.py` version assertion), plus `docker-compose.yml` (`talos:5.13.1`), `CITATION.cff` (version 5.13.1, date-released 2026-09-28), and the user-facing strings in `src/utils/tray_icon.py`, `src/utils/evaluation_history.py`, `src/utils/research_setup_wizard.py`, `src/utils/ai_strategy_selector.py`, and `templates/live_foraging_visualizer.html`.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.13.1).
+- `python talos.py --diagnostics` rendered the Rich health table and exited 0.
+- `python talos.py --doctor` executed identically (exit 0).
+- `python src/utils/verify_dependency_map.py --ci` returned exit 0.
+- `bash -n run_talos.sh` passed with zero syntax errors.
+- Strict UTF-8 decode scan across all modified files: zero U+FFFD replacement glyphs.
+
 ## [v5.13.0] - 2026-09-28 -- Full-Stack Concurrent Multi-Threaded Engine & High-Throughput Harvester
 
 ### Added

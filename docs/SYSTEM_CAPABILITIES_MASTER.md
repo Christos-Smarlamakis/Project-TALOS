@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.13.0
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.13.1
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-09-28
-> **Version:** v5.13.0 -- Full-Stack Concurrent Multi-Threaded Engine & High-Throughput Harvester
+> **Version:** v5.13.1 -- System Diagnostics Analyzer & Operational Integrity Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.13.0" | `config/settings.py` |
+| TALOS_VERSION | "5.13.1" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -997,6 +997,17 @@ For each evaluated paper, the AI generates:
 - **Concurrent database re-evaluation** (`src/utils/reevaluate_database.py:_apply_evaluation_batch()`): the sequential loop now drives `batch_evaluate_papers()` and persists results with batched SQLite WAL commits (grouped UPDATE statements on a single WAL connection).
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py daily_search.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.13.0), `pytest tests/test_research_setup_wizard.py`, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+### 15.30 System Diagnostics Analyzer & Operational Integrity Engine (v5.13.1)
+
+**Overview:** v5.13.1 adds an ISO/IEC 25010 Diagnosability and Fault Tolerance layer: a self-contained System Diagnostics Analyzer that performs an 8-point pre-flight health check over the local, air-gapped runtime and renders a structured Rich health report with one-line remediation guidance for every failure.
+
+- **System Diagnostics Analyzer** (`src/utils/system_diagnostics.py: SystemDiagnosticsEngine`): `run_diagnostics()` executes eight isolated, non-fatal probes in strict local-first order -- `check_python_environment()` (Python 3.11.x + `talosenv` conda environment), `check_database_integrity()` (`PRAGMA integrity_check` + WAL journal mode on the active profile database), `check_local_ai_runtime()` (0.8s HTTP GET to Ollama `/api/tags` verifying `LOCAL_GPU_MODEL`), `check_port_availability()` (conflict probe for ports 8001/8000/11434/11435), `check_filesystem_permissions()` (read/write probes on `data/`, `_profiles/`, `logs/`), `check_environment_credentials()` (`.env` structure validation with secret redaction), `check_daemon_status()` (`talos_service.py` process detection), and `check_network_endpoints()` (optional arXiv/OpenAlex connectivity, guarded for air-gapped operation).
+- **Rich health report** (`render_report()`): a `box.ROUNDED` Rich table titled "TALOS System Diagnostic Health Report" with Component / Target-Metric / Status (PASS green / WARN yellow / FAIL red) / Remediation Guidance columns; every failure carries a one-line copy-paste remediation.
+- **CLI fast-dispatch** (`talos.py`): `--diagnostics` (canonical ISO flag) and `--doctor` / `-d` (DevOps alias) run `SystemDiagnosticsEngine().run_and_render()` headless and exit cleanly.
+- **TUI Group 6 integration**: `system_health_menu()` gains Option 1 "System Health & Diagnostic Analyzer", with the remaining options renumbered 1-8 to 2-9.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.13.1), `python talos.py --diagnostics` / `--doctor` (exit 0), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 ---
 

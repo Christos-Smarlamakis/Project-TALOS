@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.13.0
+Project: TALOS v5.13.1
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,14 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.13.1: System Diagnostics Analyzer & Operational Integrity Engine --
+    src/utils/system_diagnostics.py adds an 8-point pre-flight health check
+    (Python environment, SQLite integrity, local AI runtime, port
+    availability, filesystem permissions, environment credentials, daemon
+    status, and network endpoints) rendered as a Rich health report with
+    one-line remediation guidance, exposed via the --diagnostics / --doctor
+    CLI flags and the Group 6 System Health TUI menu.
 
     v5.13.0: Full-Stack Concurrent Multi-Threaded Engine & High-Throughput
     Harvester -- historic_search.py joins daily_search.py in the 16-source
@@ -715,17 +723,24 @@ def system_health_menu(python_exe):
     console.print(Panel("[bold cyan]System Health, Diagnostics & CI/CD[/bold cyan]\n[dim]Stress testing, dependency verification, and test suites[/dim]", style="cyan", border_style="cyan"))
     project_root = os.path.dirname(os.path.abspath(__file__))
     choice = safe_select("Select health/CI operation:", choices=[
-        "1. Code Integrity Check",
-        "2. API Backend Health Check",
-        "3. Dependency Map & Import Audit",
-        "4. DRL Agent Status",
-        "5. Autonomous Red Tester (Chaos Engineering)",
-        "6. 18-Language Documentation Builder",
-        "7. System Capabilities Master Viewer",
-        "8. Back / Return to Main Menu"
+        "1. System Health & Diagnostic Analyzer",
+        "2. Code Integrity Check",
+        "3. API Backend Health Check",
+        "4. Dependency Map & Import Audit",
+        "5. DRL Agent Status",
+        "6. Autonomous Red Tester (Chaos Engineering)",
+        "7. 18-Language Documentation Builder",
+        "8. System Capabilities Master Viewer",
+        "9. Back / Return to Main Menu"
     ])
     if not choice or "Back" in choice: return
     if choice.startswith("1."):
+        try:
+            from src.utils.system_diagnostics import SystemDiagnosticsEngine
+            SystemDiagnosticsEngine().run_and_render()
+        except Exception as e:
+            console.print(f"[red]Error running System Diagnostics Analyzer: {e}[/red]")
+    elif choice.startswith("2."):
         tp = os.path.join(project_root, 'tests', 'test_system_integrity.py')
         if not os.path.exists(tp):
             tp = os.path.join(project_root, 'test_system_integrity.py')  # legacy fallback
@@ -737,18 +752,18 @@ def system_health_menu(python_exe):
                 logger.warning("System Integrity verification exited with code %s.", r.returncode)
         else:
             logger.warning("System Integrity verification not found at tests/test_system_integrity.py")
-    elif choice.startswith("2."):
-        _probe_api_backend()
     elif choice.startswith("3."):
+        _probe_api_backend()
+    elif choice.startswith("4."):
         mode = safe_select("Dependency audit mode:", choices=[
             "--ci (CI exit-code-only)", "--all (full report)", "Back"
         ])
         if mode is not None and "Back" not in mode:
             flag = "--ci" if "--ci" in mode else "--all"
             run_script("verify_dependency_map.py", python_exe, args=[flag])
-    elif choice.startswith("4."):
-        _show_drl_status(project_root)
     elif choice.startswith("5."):
+        _show_drl_status(project_root)
+    elif choice.startswith("6."):
         console.print(_build_info_panel(
             "Autonomous Red Tester (RL-Driven Chaos Engineering)",
             "Stress-tests TALOS system components using a Non-Stationary\n"
@@ -769,7 +784,7 @@ def system_health_menu(python_exe):
             run_red_tester(cycles=cycles)
         except Exception as e:
             console.print(f"[red]Error running Autonomous Red Tester: {e}[/red]")
-    elif choice.startswith("6."):
+    elif choice.startswith("7."):
         console.print(_build_info_panel(
             "Codebase Documentation Generator (18 Languages)",
             "Uses LOCAL Ollama -- zero cloud cost, full privacy.\n"
@@ -779,7 +794,7 @@ def system_health_menu(python_exe):
         ))
         if questionary.confirm("Launch documentation generator?", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask():
             run_script("generate_docs.py", python_exe)
-    elif choice.startswith("7."):
+    elif choice.startswith("8."):
         _open_capabilities_viewer()
     console.print(); safe_pause("Press Enter...")
 
@@ -2063,6 +2078,8 @@ def _cli_help_table():
     table.add_row("--wizard", "Launch the 4-step Research Setup Wizard (src/utils/research_setup_wizard.py).")
     table.add_row("--daily", "Trigger the Daily Search ingestion pipeline (src/ingestion/daily_search.py).")
     table.add_row("--stats", "Run the Database Statistics health report (src/utils/db_stats.py).")
+    table.add_row("--diagnostics", "Run the 8-point System Diagnostics Analyzer health report (src/utils/system_diagnostics.py).")
+    table.add_row("--doctor, -d", "DevOps alias for --diagnostics (same 8-point health report).")
     table.add_row("--strategy [mode]", "Switch the AI execution strategy (strict_local, local_first, cloud_first, strict_cloud, auto_dynamic). Omit [mode] for the interactive switcher.")
     table.add_row("--help, -h", "Display this CLI flag reference.")
     return table
@@ -2108,6 +2125,11 @@ def _handle_cli_flags(argv):
         return True
     if "--stats" in argv:
         run_script("db_stats.py", python_exe)
+        return True
+    # -- v5.13.1: System Diagnostics Analyzer (--diagnostics / --doctor / -d). --
+    if any(flag in argv for flag in ("--diagnostics", "--doctor", "-d")):
+        from src.utils.system_diagnostics import SystemDiagnosticsEngine
+        SystemDiagnosticsEngine().run_and_render()
         return True
     # -- v5.12.2: AI execution strategy switcher (--strategy / --mode). --
     flag_present, strategy_target = _parse_strategy_flag(argv)
