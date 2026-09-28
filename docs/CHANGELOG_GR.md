@@ -2,6 +2,25 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.14.2] - 2026-09-28 -- Επιστημονικός Εξαγωγέας BibTeX, Κατάποση Αεροδιαστημικής 18 Πηγών & Πάγωμα Χαρακτηριστικών
+
+### Προστέθηκε
+
+- **Επιστημονικός Εξαγωγέας BibTeX** (`src/utils/bibtex_exporter.py`): νέα κλάση `BibTeXExporter` που εξάγει επιμελημένες εργασίες από την ενεργή βάση SQLite προφίλ σε βιβλιοθήκη `.bib` συμβατή με το πρότυπο (προεπιλογή `data/exports/talos_library.bib`). Παράγει κλειδιά παραπομπής `AuthorYearTitleKeyword` (π.χ. `Smarlamakis2026Cooperative`), απολυμαίνει όλους τους δεσμευμένους χαρακτήρες LaTeX, εκδίδει εγγραφές `@article`/`@inproceedings` με τίτλο, συγγραφέα, journal/booktitle, έτος, doi, url, περίληψη, λέξεις-κλειδιά και `note` που φέρει τη βαθμολογία αξιολόγησης TALOS, και αποδίδει πίνακα επιβεβαίωσης Rich μέσω `render_export_summary()`. Η `export_library()` δέχεται `min_score`, `only_prisma_included` και `active_profile`· περιλαμβάνονται αυτόνομο `__main__` και `export_and_render()`.
+- **Θεριστής NASA NTRS** (`src/ingestion/nasa_ntrs_source.py`): `NasaNtrsSource` που ερωτά το επίσημο REST άκρο `https://ntrs.nasa.gov/api/citations/search` (αμιγές JSON, χωρίς κλειδί API) για αεροδιαστημικές τεχνικές αναφορές (NASA TM/TP/CR), έλεγχο πτήσης, αεροηλεκτρονική και έρευνα αυτόνομων σμηνών, με URL σελίδας προορισμού και εξαγωγή DOI.
+- **Θεριστής HAL/Inria** (`src/ingestion/hal_inria_source.py`): `HalInriaSource` που ερωτά το `https://api.archives-ouvertes.fr/search/` (JSON τύπου Solr, χωρίς κλειδί API) για ρομποτική CNRS/Inria/ONERA, πολυπρακτορική ενισχυτική μάθηση και γαλλικές/ευρωπαϊκές διδακτορικές διατριβές.
+- **Ακαδημαϊκός φάκελος Κανόνα 10 03** (`docs/internal/academic/03_GREY_LITERATURE_AEROSPACE_EXPANSION.md`): εμπιστευτικός ακαδημαϊκός φάκελος 7 ενοτήτων (gitignored) που εφαρμόζει το πρότυπο ιχνηλασιμότητας διπλού επιπέδου.
+
+### Άλλαξε
+
+- **Πλέγμα κατάποσης 18 πηγών:** το `SOURCE_REGISTRY` στα `daily_search.py` και `historic_search.py` καταχωρεί πλέον τα `nasa_ntrs` και `hal_inria` (16 -> 18 πηγές)· το `max_workers` αυξήθηκε σε 18· τα `ALL_ACADEMIC_SOURCES` (TUI πλαισίων επιλογής) και `_ALL_VISUALIZER_SOURCES` (χάρτης υγείας API) επεκτάθηκαν· τα `OPEN_ACADEMIC_ENDPOINTS` στο `system_diagnostics.py` ανιχνεύουν και τα δύο νέα άκρα.
+- **Επίμονη απόφαση PRISMA:** προστέθηκε αδρανώς αποδεκτή στήλη `papers.prisma_decision` στην `database_manager.create_table()` ώστε ο εξαγωγέας να φιλτράρει μελέτες INCLUDE.
+- **Συγχρονισμός αλφαριθμητικών έκδοσης σε 5.14.2** στα 6 βασικά αρχεία κώδικα, `docker-compose.yml`, `CITATION.cff`, μεταδεδομένα tray/visualizer/wizard, docstrings `src/prisma/` και στα 19 κανονικά αρχεία τεκμηρίωσης.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.14.2)· `python talos.py --export-bib` (κωδικός εξόδου 0)· δοκιμές mock εργοστασίου πηγών (18 πηγές)· ο φάκελος συμμορφώνεται με το πρότυπο 7 ενοτήτων με 0 U+FFFD· `verify_dependency_map.py --ci` (κωδικός εξόδου 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8.
+
 ## [v5.14.1] - 2026-09-28 -- Σμήνος Ομότιμης Αναθεώρησης Πολλαπλών Πρακτόρων & Μηχανή Συναίνεσης
 
 ### Προστέθηκε

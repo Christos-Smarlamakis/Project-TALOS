@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: system_diagnostics.py
-Project: TALOS v5.14.1
+Project: TALOS v5.14.2
 Description:
     System Diagnostics Analyzer for TALOS. Executes an 8-point pre-flight
     health check over the local, air-gapped runtime (Python environment,
@@ -91,11 +91,11 @@ def _status(ok):
 
 
 # ----------------------------------------------------------------------
-# -- Canonical zero-key open academic repositories (v5.14.1) --
+# -- Canonical zero-key open academic repositories (v5.14.2) --
 # ----------------------------------------------------------------------
 
 # User-Agent used for all outbound diagnostic HTTP probes.
-USER_AGENT = "TALOS-Research-Diagnostics/5.14.1"
+USER_AGENT = "TALOS-Research-Diagnostics/5.14.2"
 
 # Zero-key (open access) academic repository endpoints probed concurrently.
 # Each entry is a GET endpoint returning a small JSON/XML payload when the
@@ -109,6 +109,8 @@ OPEN_ACADEMIC_ENDPOINTS = {
     "PubMed (NCBI)": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=drone&retmode=json&retmax=1",
     "OSTI (DOE)": "https://www.osti.gov/api/v1/records?term=drone&rows=1",
     "PLOS": "https://api.plos.org/search?q=drone&rows=1",
+    "NASA NTRS": "https://ntrs.nasa.gov/api/citations/search?q=drone&page.size=1",
+    "HAL": "https://api.archives-ouvertes.fr/search/?q=drone&wt=json&rows=1",
 }
 
 

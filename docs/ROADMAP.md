@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.14.1 (Multi-Agent Peer-Review Swarm & Consensus Engine)
+> **Current Version:** v5.14.2 (BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze)
 > **Last Updated:** 2026-09-28
 
 ---
@@ -145,6 +145,7 @@ The v5.10.x series transitions Project TALOS from an aggregator to a fully adapt
 | **v5.13.1** | System Diagnostics Analyzer & Operational Integrity Engine | 8-point pre-flight health check (Python env, SQLite integrity/WAL, local AI runtime, port availability, filesystem permissions, .env structure, daemon status, optional network endpoints) with a Rich health report + one-line remediation; CLI --diagnostics/--doctor and TUI Group 6 option. | Complete |
 | **v5.14.0** | Stanford DSPy PRISMA-ScR Pipeline & Declarative Synthesis Engine | Typed declarative PRISMA-ScR signatures (`src/prisma/dspy_signatures.py`), PlanEval modules (Planner/Evaluator/EligibilityJudge/Executor), PRISMA 2020 Mermaid flowchart generator, scoping review synthesizer, and Rule 10 academic dossier. | Complete |
 | **v5.14.1** | Multi-Agent Peer-Review Swarm & Consensus Engine | 3-agent specialized review swarm (`src/prisma/swarm_evaluators.py`), automated Cohen's Kappa inter-rater reliability, Chain-of-Thought consensus arbiter, PRISMA pipeline swarm screening mode, and Rule 10 academic dossier. | Complete |
+| **v5.14.2** | BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze | `BibTeXExporter` (`src/utils/bibtex_exporter.py`) with `AuthorYearTitleKeyword` cite keys and LaTeX sanitization; NASA NTRS (`nasa_ntrs_source.py`) and HAL/Inria (`hal_inria_source.py`) keyless REST harvesters raising ingestion to 18 sources; persisted `prisma_decision` column; Rule 10 dossier 03. Final Feature Freeze. | Complete |
 | **v5.15.0** | CORTEX & n8n Gateway | Live arXiv RSS & text evaluation Discord Bot (`src/integration/discord_evaluator.py`) and SYNAPSE n8n Workflow Gateway templates (`templates/n8n_workflows/`). | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine. | Future |
 
@@ -209,6 +210,7 @@ Project ALEXANDRIA marks the full desktop and distributed release of the platfor
 | **v5.13.1** | System Diagnostics Analyzer & Operational Integrity Engine | 8-point pre-flight health check + Rich health report + one-line remediation; CLI --diagnostics/--doctor; TUI Group 6 option | Complete |
 | **v5.14.0** | Stanford DSPy PRISMA-ScR Pipeline & Declarative Synthesis Engine | Typed signatures, PlanEval modules, Mermaid 2020 flowchart, scoping review synthesizer, Rule 10 dossier | Complete |
 | **v5.14.1** | Multi-Agent Peer-Review Swarm & Consensus Engine | 3-agent review swarm, Cohen's Kappa, CoT consensus arbiter, swarm screening mode, Rule 10 dossier | Complete |
+| **v5.14.2** | BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze | BibTeX exporter, NASA NTRS + HAL/Inria (18 sources), prisma_decision, Rule 10 dossier 03 | Complete |
 | **v5.15.0** | CORTEX & n8n Gateway | Discord bot, n8n workflow templates, ecosystem integration | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine | Future |
 

@@ -4,9 +4,18 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-28 (v5.14.1 -- Multi-Agent Peer-Review Swarm & Consensus Engine)
+> **Last Updated:** 2026-09-28 (v5.14.2 -- BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze)
 
 ---
+
+## Phase 60: BibTeX Exporter, 18-Source Aerospace Ingestion & Feature Freeze (v5.14.2)
+
+- [x] **BibTeX Scientific Exporter** -- `src/utils/bibtex_exporter.py` ships `BibTeXExporter` (cite keys `AuthorYearTitleKeyword`, LaTeX sanitization, `export_library`/`render_export_summary`, `--export-bib` CLI flag and Group 5 menu option).
+- [x] **18-source ingestion** -- `nasa_ntrs_source.py` and `hal_inria_source.py` registered in `SOURCE_REGISTRY` (daily + historic), `max_workers=18`, checkbox TUI and API health map expanded to 18, diagnostics probes added.
+- [x] **Persisted PRISMA decision** -- `papers.prisma_decision` column added for the exporter's INCLUDE filter.
+- [x] **Rule 10 dossier 03** -- `docs/internal/academic/03_GREY_LITERATURE_AEROSPACE_EXPANSION.md` (7-section, gitignored).
+- [x] **Version synced** -- 6 core files + docker-compose.yml + CITATION.cff + tray/visualizer/wizard metadata + src/prisma/ docstrings + 19 canonical docs to v5.14.2 (2026-09-28).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.14.2), --export-bib (exit 0), source-factory mocks, verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 59: Multi-Agent Peer-Review Swarm & Consensus Engine (v5.14.1)
 

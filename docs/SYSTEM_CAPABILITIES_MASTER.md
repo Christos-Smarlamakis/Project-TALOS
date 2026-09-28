@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.14.1
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.14.2
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-09-28
-> **Version:** v5.14.1 -- Multi-Agent Peer-Review Swarm & Consensus Engine
+> **Version:** v5.14.2 -- BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -1034,6 +1034,20 @@ For each evaluated paper, the AI generates:
 - **Rule 10 dossier**: `docs/internal/academic/02_MULTI_AGENT_CONSENSUS_SWARM.md`.
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.14.1), `python talos.py --help` (lists `--prisma [--swarm]`), the swarm evaluator unit exercise (3-agent review + Cohen's Kappa, exit 0), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+### 15.33 BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze (v5.14.2)
+
+**Overview:** v5.14.2 introduces a local BibTeX/LaTeX scientific library exporter and expands the academic ingestion mesh from 16 to 18 sources by integrating two keyless grey literature repositories -- the NASA Technical Reports Server and the HAL open science repository (CNRS / Inria / ONERA) -- while persisting the PRISMA screening decision for reproducible systematic review, fully air-gapped and local-first.
+
+- **BibTeX Scientific Exporter** (`src/utils/bibtex_exporter.py`): `BibTeXExporter` with `export_library(output_path, min_score, only_prisma_included, active_profile)`, `render_export_summary`, and `export_and_render`; generates standard-compliant `@article`/`@inproceedings` entries with `AuthorYearTitleKeyword` cite keys (e.g. `Smarlamakis2026Cooperative`), sanitizes all LaTeX reserved characters (&, %, $, #, _, {, }), and emits title, author, journal/booktitle, year, doi, url, abstract, keywords, and a `note` carrying the TALOS evaluation score; defaults to `data/exports/talos_library.bib`.
+- **NASA NTRS Harvester** (`src/ingestion/nasa_ntrs_source.py`): `NasaNtrsSource.fetch_new_papers()` / `search_papers()` / `_format_paper()` over `https://ntrs.nasa.gov/api/citations/search` (pure JSON, no API key) for aerospace technical reports (NASA TM/TP/CR), flight control, avionics, and autonomous swarm research.
+- **HAL/Inria Harvester** (`src/ingestion/hal_inria_source.py`): `HalInriaSource.fetch_new_papers()` / `search_papers()` / `_format_paper()` over `https://api.archives-ouvertes.fr/search/` (Solr-style JSON, no API key) for CNRS/Inria/ONERA robotics, multi-agent reinforcement learning, and French/EU PhD theses.
+- **18-source registry**: `SOURCE_REGISTRY` in `daily_search.py` and `historic_search.py` gains `nasa_ntrs` and `hal_inria`; `max_workers=18`; `ALL_ACADEMIC_SOURCES` (checkbox TUI) and `_ALL_VISUALIZER_SOURCES` (API health map) expanded; `OPEN_ACADEMIC_ENDPOINTS` probes both endpoints.
+- **Persisted PRISMA decision**: `papers.prisma_decision` nullable column (idempotent `ALTER TABLE` in `database_manager.create_table()`) enables the exporter's INCLUDE-only filter.
+- **CLI/TUI surface**: `talos.py --export-bib [min_score]` fast-dispatch flag and the Group 5 Database Maintenance option 12.
+- **Rule 10 dossier**: `docs/internal/academic/03_GREY_LITERATURE_AEROSPACE_EXPANSION.md`.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.14.2), `python talos.py --export-bib` (exit 0), source-factory mock tests (18 sources), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 ---
 

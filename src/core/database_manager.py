@@ -149,7 +149,8 @@ class DatabaseManager:
                 processed_at DATE, last_evaluated_at DATETIME,
                 oa_pdf_url TEXT, openalex_id TEXT, pmid TEXT, pmcid TEXT,
                 oa_status TEXT, journal_issn TEXT, publisher TEXT,
-                enrichment_status INTEGER DEFAULT 0
+                enrichment_status INTEGER DEFAULT 0,
+                prisma_decision TEXT DEFAULT NULL
             )
         '''
         self.execute_query(table_query, commit=True)
@@ -157,6 +158,10 @@ class DatabaseManager:
         cols = self.execute_query("PRAGMA table_info(papers);", fetch_all=True)
         if cols and not any(col[1] == 'operational_score' for col in cols):
             self.execute_query("ALTER TABLE papers ADD COLUMN operational_score INTEGER DEFAULT 0;", commit=True)
+        # -- v5.14.2: persist the PRISMA-ScR screening decision so the BibTeX
+        # exporter can filter INCLUDE studies without re-running the pipeline. --
+        if cols and not any(col[1] == 'prisma_decision' for col in cols):
+            self.execute_query("ALTER TABLE papers ADD COLUMN prisma_decision TEXT DEFAULT NULL;", commit=True)
 
     # --- Paper CRUD ---
     def paper_exists_by_doi(self, doi):

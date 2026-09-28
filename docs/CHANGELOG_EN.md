@@ -2,6 +2,25 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.14.2] - 2026-09-28 -- BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze
+
+### Added
+
+- **BibTeX Scientific Exporter** (`src/utils/bibtex_exporter.py`): new `BibTeXExporter` class exporting curated papers from the active-profile SQLite database to a standard-compliant `.bib` library (default `data/exports/talos_library.bib`). Generates `AuthorYearTitleKeyword` cite keys (for example `Smarlamakis2026Cooperative`), sanitizes all LaTeX reserved characters, emits `@article`/`@inproceedings` entries with title, author, journal/booktitle, year, doi, url, abstract, keywords, and a `note` carrying the TALOS evaluation score, and renders a Rich confirmation panel via `render_export_summary()`. `export_library()` accepts `min_score`, `only_prisma_included`, and `active_profile`; a standalone `__main__` and `export_and_render()` are included.
+- **NASA NTRS Harvester** (`src/ingestion/nasa_ntrs_source.py`): `NasaNtrsSource` querying the official `https://ntrs.nasa.gov/api/citations/search` REST endpoint (pure JSON, no API key) for aerospace technical reports (NASA TM/TP/CR), flight control, avionics, and autonomous swarm research, with landing-page URLs and DOI extraction.
+- **HAL/Inria Harvester** (`src/ingestion/hal_inria_source.py`): `HalInriaSource` querying `https://api.archives-ouvertes.fr/search/` (Solr-style JSON, no API key) for CNRS/Inria/ONERA robotics, multi-agent reinforcement learning, and French/EU PhD theses.
+- **Rule 10 dossier 03** (`docs/internal/academic/03_GREY_LITERATURE_AEROSPACE_EXPANSION.md`): 7-section confidential academic dossier (gitignored) implementing the dual-layer traceability standard.
+
+### Changed
+
+- **18-source ingestion mesh:** `SOURCE_REGISTRY` in `daily_search.py` and `historic_search.py` now registers `nasa_ntrs` and `hal_inria` (16 -> 18 sources); `max_workers` raised to 18; `ALL_ACADEMIC_SOURCES` (checkbox TUI) and `_ALL_VISUALIZER_SOURCES` (API health map) expanded; `OPEN_ACADEMIC_ENDPOINTS` in `system_diagnostics.py` probes both new endpoints.
+- **Persisted PRISMA decision:** `papers.prisma_decision` nullable column added idempotently in `database_manager.create_table()` so the exporter can filter INCLUDE studies.
+- **Version strings synchronized to 5.14.2** across the 6 core code files, `docker-compose.yml`, `CITATION.cff`, tray/visualizer/wizard metadata, `src/prisma/` docstrings, and all 19 canonical documentation files.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.14.2); `python talos.py --export-bib` (exit 0); source-factory mock tests (18 sources); dossier conforms to 7-section standard with 0 U+FFFD; `verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan.
+
 ## [v5.14.1] - 2026-09-28 -- Multi-Agent Peer-Review Swarm & Consensus Engine
 
 ### Added

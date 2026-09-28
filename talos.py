@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.14.1
+Project: TALOS v5.14.2
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,13 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.14.2: BibTeX Scientific Exporter & 18-Source Aerospace Ingestion (Feature
+    Freeze) -- src/utils/bibtex_exporter.py exports curated papers to a
+    standard-compliant .bib library, and the official NASA NTRS and HAL/Inria
+    REST harvesters (src/ingestion/nasa_ntrs_source.py, hal_inria_source.py)
+    expand the academic ingestion mesh from 16 to 18 sources, exposed via the
+    --export-bib CLI flag and the Group 5 Database Maintenance menu.
 
     v5.14.1: Multi-Agent Peer-Review Swarm & Consensus Engine --
     src/prisma/swarm_evaluators.py adds a 3-agent specialized review swarm
@@ -479,11 +486,11 @@ NAV_CHECK   = "(Space to toggle, Enter to confirm, Ctrl+C to return)"
 NAV_TEXT    = "(Enter to confirm, Ctrl+C to cancel)"
 NAV_CONFIRM = "(y/n, Enter to confirm)"
 
-# -- v5.10.2: Canonical 16-source list for the interactive checkbox TUI --
+# -- v5.14.2: Canonical 18-source list for the interactive checkbox TUI --
 ALL_ACADEMIC_SOURCES = [
     "arxiv", "ieee", "semantic_scholar", "springer", "openalex", "dblp",
     "elsevier", "core", "crossref", "openarchives", "pubmed", "scigov",
-    "osti", "plos", "openreview", "openaire",
+    "osti", "plos", "openreview", "openaire", "nasa_ntrs", "hal_inria",
 ]
 
 
@@ -715,7 +722,8 @@ def database_data_menu(python_exe):
         "9. Unpaywall Data Enricher",
         "10. Zotero Cloud Connector",
         "11. View Recent Evaluation History",
-        "12. Back / Return to Main Menu"
+        "12. Export Curated Papers to BibTeX / LaTeX (.bib)",
+        "13. Back / Return to Main Menu"
     ])
     if not choice or "Back" in choice: return
     if choice.startswith("1."): run_script("db_stats.py", python_exe, args=["--optimize"])
@@ -729,6 +737,9 @@ def database_data_menu(python_exe):
     elif choice.startswith("9."): run_script("data_enricher.py", python_exe)
     elif choice.startswith("10."): run_script("zotero_connector.py", python_exe)
     elif choice.startswith("11."): _show_evaluation_history()
+    elif choice.startswith("12."):
+        from src.utils.bibtex_exporter import BibTeXExporter
+        BibTeXExporter().export_and_render()
 
 def system_health_menu(python_exe):
     """System health, diagnostics, chaos engineering and CI/CD sub-menu."""
@@ -1168,7 +1179,7 @@ def _view_and_pivot_research_focus(python_exe, project_root):
         info = _build_info_panel(
             "Cognitive Query Compiler -- Query Translator",
             "Translates your natural-language research goal into optimized\n"
-            "boolean search queries for all 16 academic APIs.\n"
+            "boolean search queries for all 18 academic APIs.\n"
             "[dim]Uses the AI Manager with Research Architect persona.[/dim]",
             border_style="bright_magenta",
         )
@@ -1758,7 +1769,7 @@ def search_ingestion_menu(python_exe):
     sys.stdout.flush()
     console.print(Panel("[bold cyan]Research Search & Ingestion[/bold cyan]\n[dim]Query academic APIs, deep archives, and literature sources[/dim]", style="cyan", border_style="cyan"))
     choice = safe_select("Select search operation:", choices=[
-        "1. Daily Search Pipeline (16 APIs)",
+        "1. Daily Search Pipeline (18 APIs)",
         "2. Historical Search (Deep Archive)",
         "3. Grey Literature Miner",
         "4. Zotero Cloud Sync",
@@ -2120,6 +2131,7 @@ def _cli_help_table():
     table.add_row("--doctor, -d", "DevOps alias for --diagnostics (same 8-point health report).")
     table.add_row("--strategy [mode]", "Switch the AI execution strategy (strict_local, local_first, cloud_first, strict_cloud, auto_dynamic). Omit [mode] for the interactive switcher.")
     table.add_row("--prisma [--swarm]", "Run the PRISMA-ScR Declarative Synthesis Pipeline interactively. Add --swarm for the rigorous 3-agent Multi-Agent Review Swarm (Cohen's Kappa consensus).")
+    table.add_row("--export-bib [min_score]", "Export curated papers to a BibTeX / LaTeX (.bib) library (src/utils/bibtex_exporter.py). Optional score threshold (default 7.0).")
     table.add_row("--help, -h", "Display this CLI flag reference.")
     return table
 
@@ -2175,6 +2187,19 @@ def _handle_cli_flags(argv):
         from src.prisma.dspy_modules import PrismaExecutor
         mode = "swarm" if "--swarm" in argv else "single"
         PrismaExecutor(evaluation_mode=mode).run_interactive()
+        return True
+    # -- v5.14.2: BibTeX Scientific Exporter (--export-bib [min_score]). --
+    if "--export-bib" in argv:
+        from src.utils.bibtex_exporter import BibTeXExporter
+        threshold = 7.0
+        for i, arg in enumerate(argv):
+            if arg == "--export-bib" and i + 1 < len(argv) and not argv[i + 1].startswith("--"):
+                try:
+                    threshold = float(argv[i + 1])
+                except ValueError:
+                    threshold = 7.0
+                break
+        BibTeXExporter().export_and_render(min_score=threshold)
         return True
     # -- v5.12.2: AI execution strategy switcher (--strategy / --mode). --
     flag_present, strategy_target = _parse_strategy_flag(argv)

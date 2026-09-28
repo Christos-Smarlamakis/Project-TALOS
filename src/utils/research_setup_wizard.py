@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: research_setup_wizard.py
-Project: TALOS v5.14.1
+Project: TALOS v5.14.2
 Description:
     Structured, step-by-step research onboarding wizard for TALOS. Guides the
     researcher through four plain-English steps: (1) research topic capture
@@ -22,7 +22,7 @@ Description:
     Key design decisions:
     - English-First Scientific Standard: every prompt, panel, and generated
       boolean query is produced in professional academic English so the output
-      is 100% compatible with the 16 academic ingestion APIs.
+      is 100% compatible with the 18 academic ingestion APIs.
     - Air-gapped failsafe: the wizard probes the local Ollama (port 11434) and
       Fast Edge (port 11435) runtimes, silently attempts to auto-spawn them,
       then performs a bounded 2-second wait. If no runtime is reachable, every
@@ -894,7 +894,7 @@ def _create_sentinel(project_root=None):
     path = _sentinel_path(project_root)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        f.write("TALOS onboarding complete (v5.14.1)\n")
+        f.write("TALOS onboarding complete (v5.14.2)\n")
     logger.info("Onboarding sentinel created: %s", path)
 
 # ---------------------------------------------------------------------------
@@ -1078,7 +1078,7 @@ def _render_header(target_profile=None):
     body.append(
         "This guide configures your research parameters in 4 simple steps. "
         "All menus, queries, and reports operate in professional academic "
-        "English for full compatibility with the 16 academic APIs.\n",
+        "English for full compatibility with the 18 academic APIs.\n",
         style="white",
     )
     body.append(
@@ -1094,7 +1094,7 @@ def _render_header(target_profile=None):
         body.append(f"[{target_profile}]", style="bold green")
     console.print(Panel(
         Align.center(body),
-        title="[bold]TALOS v5.14.1[/bold]",
+        title="[bold]TALOS v5.14.2[/bold]",
         border_style="#006699",
         padding=(1, 2),
     ))
@@ -1190,7 +1190,7 @@ def _step1_research_topic(active_llm, config, config_path):
                     console.print("  [cyan]-[/cyan] " + suggestion)
             console.print("[dim]Please re-enter a more detailed focus.[/dim]\n")
 
-        # -- Compile the 16 academic queries plus inclusion/exclusion criteria --
+        # -- Compile the 18 academic queries plus inclusion/exclusion criteria --
         console.print("[bold bright_cyan]Generating search queries and criteria...[/bold bright_cyan]")
         generated = False
         if active_llm:

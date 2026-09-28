@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.14.1
+Project: TALOS v5.14.2
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -113,7 +113,7 @@ async def lifespan(app: FastAPI):
         None: Control returns to the server for the duration of its lifetime.
     """
     # -- Startup --
-    logger.info("TALOS FastAPI v5.14.1 starting up (Multi-Agent Peer-Review Swarm & Consensus Engine, port 8001)...")
+    logger.info("TALOS FastAPI v5.14.2 starting up (BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")
@@ -126,8 +126,8 @@ async def lifespan(app: FastAPI):
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-    description="Facade REST API for the TALOS autonomous research platform (v5.14.1 -- Multi-Agent Peer-Review Swarm & Consensus Engine)",
-    version="5.14.1",
+    description="Facade REST API for the TALOS autonomous research platform (v5.14.2 -- BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze)",
+    version="5.14.2",
     lifespan=lifespan,
 )
 app.add_middleware(
@@ -293,11 +293,12 @@ _AUTH_SOURCE_KEYS = {
     "openaire": ["OPENAIRE_TOKEN", "OPENAIRE_API_KEY"],
 }
 
-# Canonical 16-source order (mirrors SOURCE_NAMES in the visualizer frontend).
+# Canonical 18-source order (mirrors SOURCE_NAMES in the visualizer frontend).
 _ALL_VISUALIZER_SOURCES = [
     "arxiv", "openalex", "semantic_scholar", "crossref", "dblp",
     "pubmed", "plos", "core", "osti", "scigov",
     "openarchives", "ieee", "elsevier", "springer", "openreview", "openaire",
+    "nasa_ntrs", "hal_inria",
 ]
 
 # Runtime per-source health recorded from ``source_status`` telemetry events.
@@ -569,7 +570,7 @@ class ScrapeRequest(BaseModel):
     """Optional source filter for scraping."""
     source_filter: Optional[List[str]] = Field(
         default=None,
-        description="Specific sources to query (e.g. ['arxiv','ieee']). None = all 16 sources.",
+        description="Specific sources to query (e.g. ['arxiv','ieee']). None = all 18 sources.",
     )
 
 
@@ -767,7 +768,7 @@ def _run_scrape_background(task_id: str, source_filter: Optional[List[str]]):
     try:
         _update_task(task_id, progress="Loading configuration...")
 
-        # Import daily_search lazily (its main() instantiates 16 source agents)
+        # Import daily_search lazily (its main() instantiates 18 source agents)
         from src.ingestion.daily_search import main as daily_search_main
 
         # -- Monkey-patch sys.exit to prevent process death --
@@ -786,7 +787,7 @@ def _run_scrape_background(task_id: str, source_filter: Optional[List[str]]):
         sys.exit = _safe_exit
 
         try:
-            _update_task(task_id, progress="Fetching from 16 academic sources...")
+            _update_task(task_id, progress="Fetching from 18 academic sources...")
             daily_search_main(source_filter)
             _update_task(
                 task_id,
@@ -821,7 +822,7 @@ def _run_scrape_background(task_id: str, source_filter: Optional[List[str]]):
 def trigger_scrape(background_tasks: BackgroundTasks, request: ScrapeRequest = ScrapeRequest()):
     """Trigger a full daily search pipeline in the background.
 
-    The pipeline fetches new papers from all 16 configured academic sources,
+    The pipeline fetches new papers from all 18 configured academic sources,
     deduplicates, runs two-stage AI evaluation (Flash pre-screening + Pro deep
     analysis), and generates a Markdown briefing report.
 
@@ -1586,7 +1587,7 @@ def get_visualizer_state():
         except Exception as exc:
             logger.error("Visualizer state: count query failed: %s", exc)
 
-    # -- Build the 16-source health map (green/red/amber/cyan) --
+    # -- Build the 18-source health map (green/red/amber/cyan) --
     sources = {}
     for slug in _ALL_VISUALIZER_SOURCES:
         has_key = _source_has_key(slug)

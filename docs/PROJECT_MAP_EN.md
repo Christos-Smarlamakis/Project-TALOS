@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.14.1
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.14.2
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-09-28 (v5.14.1 -- Multi-Agent Peer-Review Swarm & Consensus Engine)
+> **Last Updated:** 2026-09-28 (v5.14.2 -- BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze)
 
 ---
 
@@ -27,7 +27,7 @@ SRC PACKAGES
   src/ai/llm/        (4 files)  model_manager, query_translator, research_pivot, model_discovery
   src/ai/testing/    (1 file)   red_tester
   src/analysis/     (10 files)  citation_analyzer, author_profiler, recommender, knowledge_path, etc.
-  src/ingestion/    (23 files)  16 source agents + 7 pipelines
+  src/ingestion/    (25 files)  18 source agents + 7 pipelines
   src/integration/   (3 files)  synapse_client, optica_client, visualizer_bridge
   src/utils/        (20 files)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, evaluation_history, research_setup_wizard, etc.
   src/api/           (4 files)  main_api, synapse_routes, red_tester_routes, talos_service_api
@@ -103,13 +103,13 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 | `src/ai/embeddings/` | 2 | `embedding_generator.py`, `db_embedding_upgrade.py` |
 | `src/ai/llm/` | 4 | `model_manager.py`, `query_translator.py`, `research_pivot.py`, `model_discovery.py` |
 | `src/analysis/` | 10 | `citation_analyzer.py`, `author_profiler.py`, `recommender.py`, `knowledge_path_generator.py`, `trend_analyzer.py`, `graphify_adapter.py`, `generate_baseline_report.py`, etc. |
-| `src/ingestion/` | 23 | 16 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `pdf_downloader.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
+| `src/ingestion/` | 25 | 18 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `pdf_downloader.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
 | `src/utils/` | 17 | `db_stats.py`, `logger.py`, `tray_icon.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, `http_client.py`, `snapshot_manager.py`, `academic_export.py`, etc. |
 | `src/prisma/` | 6 | `dspy_signatures.py` (typed declarative Pydantic-v2 signatures), `dspy_modules.py` (PlanEval: Planner/Evaluator/EligibilityJudge/Executor), `swarm_evaluators.py` (3-agent peer-review swarm + Cohen's Kappa + consensus arbiter), `mermaid_generator.py`, `scoping_review_synthesizer.py` |
 
-## 5. Sources (16 APIs)
+## 5. Sources (18 APIs)
 
-arxiv, ieee, semantic_scholar, springer, openalex, dblp, elsevier, core, crossref, openarchives, pubmed, scigov, osti, plos, openreview, openaire
+arxiv, ieee, semantic_scholar, springer, openalex, dblp, elsevier, core, crossref, openarchives, pubmed, scigov, osti, plos, openreview, openaire, nasa_ntrs, hal_inria
 
 Standardized output: `{doi, url, title, authors_str, publication_year, abstract, source}`
 
@@ -212,12 +212,13 @@ src/prisma/swarm_evaluators.py
 | **Win32 Close-to-Tray Hook (v5.11.0)** | `src/utils/tray_icon.py` | `enable_close_to_tray()` subclasses the console WndProc (WM_CLOSE / SC_CLOSE to SW_HIDE) so closing minimizes to tray |
 | **Research Setup Wizard (v5.12.0)** | `src/utils/research_setup_wizard.py` | `_ensure_local_ai_runtime()` (probe/spawn ports 11434+11435 with 2s bounded wait), `_analyze_scope_heuristic()` / `_analyze_scope_with_llm()`, `_generate_queries_llm()` / `_generate_queries_heuristic()`, `_apply_execution_strategy()`, `_write_search_window()`, `_create_sentinel()`, `_render_query_preview()` (query-transparency table + confirmation gate, v5.12.1), `_extract_salient_terms()` (heuristic stopword cleaner, v5.12.2), `_prompt_custom_days()` / `_step3_search_window()` (day-based window), `_render_cancelled()` (cancellation integrity), `LANGUAGE_AND_SYNTAX_MANDATE` (English-first mandate), 5-tier `EXECUTION_STRATEGIES` + `ai_strategy_selector.py` (strategy switcher) -- Step 0 profile gate (_step0_profile_selection + _list_profiles/_get_active_profile/_set_active_profile/_seed_profile_config/_persist_active_config, v5.12.4) + 4-step English-first onboarding with failsafe heuristic bypass |
 | **Research Pivot Wizard (v5.12.3)** | `src/ai/llm/research_pivot.py` | `_resolve_script_path()` / `run_script()` -- REPO_ROOT-anchored canonical path resolution via `_SCRIPT_MAP` (Cognitive Query Compiler, database re-evaluation, DRL trainer) executed with `sys.executable`; strict `proc.returncode` verification (YES only for code 0, otherwise `FAILED (Code X)`); Rule 9 codename elimination (PYTHIA/CHIRON) |
-| **Concurrent Ingestion Mesh (v5.12.4)** | `src/ingestion/daily_search.py` | `_harvest_single_source()` (per-thread source isolation with stdout capture + full exception guard), `_deduplicate_papers()` (DOI + SHA-1 normalized-title hash), `_normalize_title()` / `_title_hash()`, `ThreadPoolExecutor(max_workers=min(16, len(enabled_scrapers)))` with `as_completed()` + Rich Live telemetry table (WAITING/HARVESTING/COMPLETED/FAILED) and ingestion summary panel (~35-45s to ~3-4s) |
+| **Concurrent Ingestion Mesh (v5.12.4)** | `src/ingestion/daily_search.py` | `_harvest_single_source()` (per-thread source isolation with stdout capture + full exception guard), `_deduplicate_papers()` (DOI + SHA-1 normalized-title hash), `_normalize_title()` / `_title_hash()`, `ThreadPoolExecutor(max_workers=min(18, len(enabled_scrapers)))` with `as_completed()` + Rich Live telemetry table (WAITING/HARVESTING/COMPLETED/FAILED) and ingestion summary panel (~35-45s to ~3-4s) |
 
-| **Full-Stack Concurrent Multi-Threaded Engine (v5.13.0)** | `src/core/ai_manager.py`, `src/ingestion/historic_search.py`, `src/utils/reevaluate_database.py` | `batch_evaluate_papers()` / `_resolve_eval_concurrency()` (8 cloud / 2 local workers + `threading.Semaphore(2)` VRAM guard), `historic_search.py` `ThreadPoolExecutor(max_workers=min(16, len(enabled_sources)))` mesh + `_harvest_single_source()` + Rich Live telemetry, `reevaluate_database.py:_apply_evaluation_batch()` (batched SQLite WAL commits) |
+| **Full-Stack Concurrent Multi-Threaded Engine (v5.13.0)** | `src/core/ai_manager.py`, `src/ingestion/historic_search.py`, `src/utils/reevaluate_database.py` | `batch_evaluate_papers()` / `_resolve_eval_concurrency()` (8 cloud / 2 local workers + `threading.Semaphore(2)` VRAM guard), `historic_search.py` `ThreadPoolExecutor(max_workers=min(18, len(enabled_sources)))` mesh + `_harvest_single_source()` + Rich Live telemetry, `reevaluate_database.py:_apply_evaluation_batch()` (batched SQLite WAL commits) |
 | **System Diagnostics Analyzer (v5.13.1)** | `src/utils/system_diagnostics.py` | `SystemDiagnosticsEngine` -- 8-point pre-flight health check (Python environment, SQLite integrity, local AI runtime, port availability, filesystem permissions, environment credentials, daemon status, network endpoints) with `run_diagnostics()` / `render_report()` (Rich health table + one-line remediation); CLI `--diagnostics`/`--doctor`/`-d` and TUI Group 6 option 1 |
 | **Stanford DSPy PRISMA-ScR Pipeline (v5.14.0)** | `src/prisma/dspy_signatures.py`, `dspy_modules.py`, `mermaid_generator.py`, `scoping_review_synthesizer.py` | Declarative Pydantic-v2 signatures (`PrismaPlanSignature`, `PrismaScreeningSignature`, `PrismaEligibilitySignature`, `PrismaSynthesisSignature`) + `extract_json_payload()`; `PrismaPlanner.plan()` (protocol synthesis), `PrismaEvaluator.screen()` (Chain-of-Thought screening), `PrismaEligibilityJudge.assess()`, `PrismaExecutor.run()` (4-phase flow + live counters); `generate_prisma_mermaid()` (PRISMA 2020), `synthesize_scoping_review()` / `synthesize_scoping_review_latex()`; CLI `--prisma` + TUI Group 3 |
 | **Multi-Agent Peer-Review Swarm & Consensus Engine (v5.14.1)** | `src/prisma/swarm_evaluators.py`, `dspy_modules.py`, `dspy_signatures.py` | `AlgorithmicReviewer` / `EmpiricalReviewer` / `OperationalReviewer` (specialized personas) + `ReviewerVerdict` / `ConsensusVerdict`; `calculate_cohens_kappa()` (Fleiss generalization of Cohen's Kappa) + `cohens_kappa_pairwise()`; `SwarmConsensusArbiter.adjudicate()` (unanimous short-circuit + Chain-of-Thought adjudication); `PrismaEvaluator.evaluation_mode='swarm'` with VRAM `threading.Semaphore(2)`; CLI `--prisma --swarm` + TUI Group 3 screening-mode prompt |
+| **BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze (v5.14.2)** | `src/utils/bibtex_exporter.py`, `src/ingestion/nasa_ntrs_source.py`, `src/ingestion/hal_inria_source.py` | `BibTeXExporter.export_library()` / `render_export_summary()` (`AuthorYearTitleKeyword` cite keys, LaTeX sanitization, `--export-bib`); `NasaNtrsSource` (keyless NASA NTRS REST JSON); `HalInriaSource` (keyless HAL/Inria REST JSON); `papers.prisma_decision` column in `database_manager.create_table()`; CLI `--export-bib` + TUI Group 5 option 12 |
 
 ## 9. Auxiliary Files
 
@@ -256,8 +257,8 @@ src/prisma/swarm_evaluators.py
 
 ---
 
-> **Last Updated:** 2026-09-28 (v5.14.1 -- Multi-Agent Peer-Review Swarm & Consensus Engine)
-> **Project Version:** v5.14.1
-> **Total .py modules under src/:** 93 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 21 + api 4 + prisma 6 + mcp_server 1)
+> **Last Updated:** 2026-09-28 (v5.14.2 -- BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze)
+> **Project Version:** v5.14.2
+> **Total .py modules under src/:** 96 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 25 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
 
 

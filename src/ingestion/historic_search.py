@@ -14,7 +14,7 @@ Module: historic_search.py (v5.13.0 - Concurrent Multi-Threaded Historical Harve
 Project: TALOS v5.13.0
 
 Description:
-    The deep archive search orchestrator. Fetches papers from all 16 configured
+    The deep archive search orchestrator. Fetches papers from all 18 configured
     source agents spanning a multi-year window (configurable via
     ``days_to_search_historic``, default ~6 years), deduplicates by DOI/URL,
     and evaluates all new papers with the Flash model using Quad-Layer scoring.
@@ -57,6 +57,8 @@ from src.ingestion.plos_source import PLOSSource
 from src.ingestion.core_source import CORESource
 from src.ingestion.openreview_source import OpenReviewSource
 from src.ingestion.openaire_source import OpenAIRESource
+from src.ingestion.nasa_ntrs_source import NasaNtrsSource
+from src.ingestion.hal_inria_source import HalInriaSource
 
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
@@ -73,7 +75,7 @@ from rich.table import Table
 logger = logging.getLogger(__name__)
 
 
-# -- v5.10.2: Canonical 16-source registry for the checkbox TUI and --sources --
+# -- v5.14.2: Canonical 18-source registry for the checkbox TUI and --sources --
 SOURCE_REGISTRY = [
     ("arxiv", ArxivSource),
     ("ieee", IEEEXploreSource),
@@ -91,6 +93,8 @@ SOURCE_REGISTRY = [
     ("plos", PLOSSource),
     ("openreview", OpenReviewSource),
     ("openaire", OpenAIRESource),
+    ("nasa_ntrs", NasaNtrsSource),
+    ("hal_inria", HalInriaSource),
 ]
 ALL_SOURCE_NAMES = [name for name, _ in SOURCE_REGISTRY]
 
@@ -274,7 +278,7 @@ def build_sources(config, selected=None):
     Args:
         config (dict): Configuration dictionary passed to each source agent.
         selected (list of str | None): Optional source names to run. When None,
-            all 16 registered sources are returned.
+            all 18 registered sources are returned.
 
     Returns:
         list: Instantiated source agents in canonical order.
@@ -318,7 +322,7 @@ def main(sources=None):
 
     Args:
         sources (list of str | None): Optional source names to run. When None,
-            all 16 registered sources are executed.
+            all 18 registered sources are executed.
     """
     print("--- HISTORICAL SEARCH STARTED (v5.5 - Quad-Layer) ---")
 
@@ -387,7 +391,7 @@ def main(sources=None):
     harvest_started = time.time()
 
     if enabled_sources:
-        max_workers = min(16, len(enabled_sources))
+        max_workers = min(18, len(enabled_sources))
         with Live(_build_live_table(), console=console, refresh_per_second=8) as live:
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 future_to_key = {}
@@ -484,6 +488,6 @@ def main(sources=None):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TALOS Historical Search")
     parser.add_argument("--sources", nargs="+", default=None,
-                        help="Space-separated source names to run (default: all 16).")
+                        help="Space-separated source names to run (default: all 18).")
     args = parser.parse_args()
     main(sources=args.sources)
