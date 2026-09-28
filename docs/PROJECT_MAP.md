@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.14.2
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.15.0
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.14.2 -- Επιστημονικός Εξαγωγέας BibTeX, Κατάποση Αεροδιαστημικής 18 Πηγών & Πάγωμα Χαρακτηριστικών)
+> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.15.0 -- Καθολικός Κόμβος Επιστημονικής Αναζήτησης & Μηχανή Ανακάλυψης Νευρικών Γράφων)
 
 ---
 
@@ -172,6 +172,21 @@ src/ingestion/*.py
   +-- src/integration/synapse_client.py
   +-- src/integration/visualizer_bridge.py
 
+src/ingestion/sources/*.py
+  +-- src/utils/http_client.py
+
+src/search/citation_snowballing.py
+  +-- src/prisma/dspy_modules.py
+  +-- src/core/ai_manager.py
+  +-- src/core/database_manager.py
+
+src/search/neural_vector_search.py
+  +-- config/settings.py
+  +-- src/core/database_manager.py
+
+src/search/code_first_search.py
+  +-- src/core/database_manager.py
+
 src/utils/research_setup_wizard.py
   +-- src/utils/ui_theme.py, logger.py
   +-- src/core/ai_manager.py
@@ -219,6 +234,7 @@ src/prisma/swarm_evaluators.py
 | **Αγωγός PRISMA-ScR του Stanford DSPy (v5.14.0)** | `src/prisma/dspy_signatures.py`, `dspy_modules.py`, `mermaid_generator.py`, `scoping_review_synthesizer.py` | Δηλωτικές υπογραφές Pydantic v2 (`PrismaPlanSignature`, `PrismaScreeningSignature`, `PrismaEligibilitySignature`, `PrismaSynthesisSignature`) + `extract_json_payload()`· `PrismaPlanner.plan()` (σύνθεση πρωτοκόλλου), `PrismaEvaluator.screen()` (διαλογή με Αλυσίδα Σκέψης), `PrismaEligibilityJudge.assess()`, `PrismaExecutor.run()` (ροή 4 φάσεων + ζωντανοί μετρητές)· `generate_prisma_mermaid()` (PRISMA 2020), `synthesize_scoping_review()` / `synthesize_scoping_review_latex()`· CLI `--prisma` + TUI Ομάδα 3 |
 | **Σμήνος Ομότιμης Αναθεώρησης Πολλαπλών Πρακτόρων & Μηχανή Συναίνεσης (v5.14.1)** | `src/prisma/swarm_evaluators.py`, `dspy_modules.py`, `dspy_signatures.py` | `AlgorithmicReviewer` / `EmpiricalReviewer` / `OperationalReviewer` (εξειδικευμένες προσωπικότητες) + `ReviewerVerdict` / `ConsensusVerdict`· `calculate_cohens_kappa()` (Fleiss γενίκευση του Kappa του Cohen) + `cohens_kappa_pairwise()`· `SwarmConsensusArbiter.adjudicate()` (ομόφωνη βραχυκύκλωση + διαιτησία Αλυσίδας Σκέψης)· `PrismaEvaluator.evaluation_mode='swarm'` με VRAM `threading.Semaphore(2)`· CLI `--prisma --swarm` + προτροπή λειτουργίας διαλογής TUI Ομάδας 3 |
 | **Εξαγωγέας BibTeX, Κατάποση Αεροδιαστημικής 18 Πηγών & Πάγωμα Χαρακτηριστικών (v5.14.2)** | `src/utils/bibtex_exporter.py`, `src/ingestion/nasa_ntrs_source.py`, `src/ingestion/hal_inria_source.py` | `BibTeXExporter.export_library()` / `render_export_summary()` (κλειδιά `AuthorYearTitleKeyword`, απολύμανση LaTeX, `--export-bib`)· `NasaNtrsSource` (REST NASA NTRS, JSON χωρίς κλειδί)· `HalInriaSource` (REST HAL/Inria, JSON χωρίς κλειδί)· στήλη `papers.prisma_decision` στο `database_manager.create_table()`· CLI `--export-bib` + TUI Ομάδα 5 επιλογή 12 |
+| **Καθολικός Κόμβος Επιστημονικής Αναζήτησης & Μηχανή Ανακάλυψης Νευρικών Γράφων (v5.15.0)** | `src/ingestion/sources/`, `src/search/citation_snowballing.py`, `src/search/neural_vector_search.py`, `src/search/code_first_search.py` | Ενιαίο `SOURCE_REGISTRY` (18 προσαρμογείς)· `CitationSnowballEngine` (διάσχιση γράφου προς τα πίσω/εμπρός, φίλτρο PRISMA, γράφος γενεαλογίας)· `NeuralVectorSearchEngine` (τοπικό `nomic-embed-text`, ομοιότητα συνημιτόνου)· `CodeFirstSearchEngine` (σήματα αναπαραγωγιμότητας)· CLI `--snowball`/`--vector-search`/`--code-search` + TUI Ομάδα 2 |
 
 ## 9. Βοηθητικά Αρχεία
 
@@ -257,8 +273,8 @@ src/prisma/swarm_evaluators.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.14.2 -- Επιστημονικός Εξαγωγέας BibTeX, Κατάποση Αεροδιαστημικής 18 Πηγών & Πάγωμα Χαρακτηριστικών)
-> **Έκδοση Project:** v5.14.2
-> **Συνολικά .py modules στο src/:** 96 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 25 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
+> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.15.0 -- Καθολικός Κόμβος Επιστημονικής Αναζήτησης & Μηχανή Ανακάλυψης Νευρικών Γράφων)
+> **Έκδοση Project:** v5.15.0
+> **Συνολικά .py modules στο src/:** 99 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
 
 

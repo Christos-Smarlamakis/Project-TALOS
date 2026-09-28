@@ -36,12 +36,12 @@ def import_source_class(source_name):
     Returns:
         class or None: The source class, or None if import fails.
     """
-    suffixed_name = f"src.ingestion.{source_name}_source"
+    suffixed_name = f"src.ingestion.sources.{source_name}_source"
     try:
         module = __import__(suffixed_name, fromlist=["*"])
     except ModuleNotFoundError:
-        # -- Fallback: v5.10.0 sources (openaire, openreview) have no suffix --
-        fallback_name = f"src.ingestion.{source_name}"
+        # -- Fallback: legacy unsuffixed module path (kept for safety). --
+        fallback_name = f"src.ingestion.sources.{source_name}"
         try:
             module = __import__(fallback_name, fromlist=["*"])
         except ImportError as e:

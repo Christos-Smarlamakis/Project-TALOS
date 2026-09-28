@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.14.2
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.15.0
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-09-28 (v5.14.2 -- BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze)
+> **Last Updated:** 2026-09-28 (v5.15.0 -- Universal Scientific Search Hub & Neural Graph Discovery Engine)
 
 ---
 
@@ -172,6 +172,21 @@ src/ingestion/*.py
   +-- src/integration/synapse_client.py
   +-- src/integration/visualizer_bridge.py
 
+src/ingestion/sources/*.py
+  +-- src/utils/http_client.py
+
+src/search/citation_snowballing.py
+  +-- src/prisma/dspy_modules.py
+  +-- src/core/ai_manager.py
+  +-- src/core/database_manager.py
+
+src/search/neural_vector_search.py
+  +-- config/settings.py
+  +-- src/core/database_manager.py
+
+src/search/code_first_search.py
+  +-- src/core/database_manager.py
+
 src/utils/research_setup_wizard.py
   +-- src/utils/ui_theme.py, logger.py
   +-- src/core/ai_manager.py
@@ -219,6 +234,7 @@ src/prisma/swarm_evaluators.py
 | **Stanford DSPy PRISMA-ScR Pipeline (v5.14.0)** | `src/prisma/dspy_signatures.py`, `dspy_modules.py`, `mermaid_generator.py`, `scoping_review_synthesizer.py` | Declarative Pydantic-v2 signatures (`PrismaPlanSignature`, `PrismaScreeningSignature`, `PrismaEligibilitySignature`, `PrismaSynthesisSignature`) + `extract_json_payload()`; `PrismaPlanner.plan()` (protocol synthesis), `PrismaEvaluator.screen()` (Chain-of-Thought screening), `PrismaEligibilityJudge.assess()`, `PrismaExecutor.run()` (4-phase flow + live counters); `generate_prisma_mermaid()` (PRISMA 2020), `synthesize_scoping_review()` / `synthesize_scoping_review_latex()`; CLI `--prisma` + TUI Group 3 |
 | **Multi-Agent Peer-Review Swarm & Consensus Engine (v5.14.1)** | `src/prisma/swarm_evaluators.py`, `dspy_modules.py`, `dspy_signatures.py` | `AlgorithmicReviewer` / `EmpiricalReviewer` / `OperationalReviewer` (specialized personas) + `ReviewerVerdict` / `ConsensusVerdict`; `calculate_cohens_kappa()` (Fleiss generalization of Cohen's Kappa) + `cohens_kappa_pairwise()`; `SwarmConsensusArbiter.adjudicate()` (unanimous short-circuit + Chain-of-Thought adjudication); `PrismaEvaluator.evaluation_mode='swarm'` with VRAM `threading.Semaphore(2)`; CLI `--prisma --swarm` + TUI Group 3 screening-mode prompt |
 | **BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze (v5.14.2)** | `src/utils/bibtex_exporter.py`, `src/ingestion/nasa_ntrs_source.py`, `src/ingestion/hal_inria_source.py` | `BibTeXExporter.export_library()` / `render_export_summary()` (`AuthorYearTitleKeyword` cite keys, LaTeX sanitization, `--export-bib`); `NasaNtrsSource` (keyless NASA NTRS REST JSON); `HalInriaSource` (keyless HAL/Inria REST JSON); `papers.prisma_decision` column in `database_manager.create_table()`; CLI `--export-bib` + TUI Group 5 option 12 |
+| **Universal Scientific Search Hub & Neural Graph Discovery Engine (v5.15.0)** | `src/ingestion/sources/`, `src/search/citation_snowballing.py`, `src/search/neural_vector_search.py`, `src/search/code_first_search.py` | Unified `SOURCE_REGISTRY` (18 adapters); `CitationSnowballEngine` (backward/forward graph traversal, PRISMA filter, genealogy graph); `NeuralVectorSearchEngine` (local `nomic-embed-text`, cosine similarity); `CodeFirstSearchEngine` (reproducibility signals); CLI `--snowball`/`--vector-search`/`--code-search` + TUI Group 2 |
 
 ## 9. Auxiliary Files
 
@@ -257,8 +273,8 @@ src/prisma/swarm_evaluators.py
 
 ---
 
-> **Last Updated:** 2026-09-28 (v5.14.2 -- BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze)
-> **Project Version:** v5.14.2
-> **Total .py modules under src/:** 96 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 25 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
+> **Last Updated:** 2026-09-28 (v5.15.0 -- Universal Scientific Search Hub & Neural Graph Discovery Engine)
+> **Project Version:** v5.15.0
+> **Total .py modules under src/:** 99 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
 
 

@@ -27,8 +27,8 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 # -- v5.11.3: module-level import is required for patch.object() targeting. --
-from src.ingestion import openreview_source
-from src.ingestion.openreview_source import OpenReviewSource
+from src.ingestion.sources import openreview_source
+from src.ingestion.sources.openreview_source import OpenReviewSource
 
 
 class FakeField:

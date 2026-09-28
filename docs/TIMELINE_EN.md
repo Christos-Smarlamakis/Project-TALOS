@@ -4,9 +4,20 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-28 (v5.14.2 -- BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze)
+> **Last Updated:** 2026-09-28 (v5.15.0 -- Universal Scientific Search Hub & Neural Graph Discovery Engine)
 
 ---
+
+## Phase 61: Universal Scientific Search Hub & Neural Graph Discovery (v5.15.0)
+
+- [x] **Modular ingestion refactor** -- `src/ingestion/sources/` subpackage hosts all 18 adapters behind a unified `SOURCE_REGISTRY`; `daily_search.py` and `historic_search.py` import from it.
+- [x] **Citation Snowballing Engine** -- `src/search/citation_snowballing.py` (backward/forward graph traversal, PRISMA relevance filter, genealogy graph, DB import).
+- [x] **Neural Vector Search** -- `src/search/neural_vector_search.py` (local `nomic-embed-text`, cosine-similarity ranking, lexical fallback).
+- [x] **Code-First Search** -- `src/search/code_first_search.py` (GitHub / PapersWithCode / benchmark reproducibility signals).
+- [x] **CLI & TUI integration** -- `--snowball` / `--vector-search` / `--code-search` flags + Group 2 "Universal Search Hub" menu.
+- [x] **Rule 10 dossier 04** -- `docs/internal/academic/04_NEURAL_GRAPH_SEARCH_PARADIGMS.md` (7-section, gitignored).
+- [x] **Version synced** -- 6 core files + docker-compose.yml + CITATION.cff + tray/visualizer/wizard/diagnostics metadata + src/prisma/ docstrings + 19 canonical docs to v5.15.0 (2026-09-28).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.15.0), test_neural_vector_search (mock embeddings), verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 60: BibTeX Exporter, 18-Source Aerospace Ingestion & Feature Freeze (v5.14.2)
 

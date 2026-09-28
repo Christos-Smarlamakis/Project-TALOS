@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.14.2
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.15.0
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-09-28
-> **Version:** v5.14.2 -- BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze
+> **Version:** v5.15.0 -- Universal Scientific Search Hub & Neural Graph Discovery Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.14.1" | `config/settings.py` |
+| TALOS_VERSION | "5.15.0" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1048,6 +1048,19 @@ For each evaluated paper, the AI generates:
 - **Rule 10 dossier**: `docs/internal/academic/03_GREY_LITERATURE_AEROSPACE_EXPANSION.md`.
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.14.2), `python talos.py --export-bib` (exit 0), source-factory mock tests (18 sources), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+### 15.34 Universal Scientific Search Hub & Neural Graph Discovery Engine (v5.15.0)
+
+**Overview:** v5.15.0 modularizes the 18-source ingestion mesh into a dedicated `src/ingestion/sources/` subpackage behind a unified `SOURCE_REGISTRY`, and introduces the `src/search/` package with three graph-and-embedding discovery engines -- Citation Snowballing, Neural Vector Search, and Code-First Search -- fully local-first and air-gapped, exposed through new CLI flags and the Group 2 Universal Search Hub TUI menu.
+
+- **Modular ingestion subpackage** (`src/ingestion/sources/`): `SOURCE_REGISTRY` mapping all 18 keys to their adapter classes, plus `ALL_SOURCE_NAMES`; `daily_search.py` / `historic_search.py` import the canonical registry from the subpackage.
+- **Citation Snowballing Engine** (`src/search/citation_snowballing.py`): `CitationSnowballEngine.resolve_seed()` (DOI / DB ID / title), `backward_snowball()` / `forward_snowball()` (OpenAlex/Crossref/Semantic Scholar graph traversal, 2024-2026 forward window), `_filter_relevant()` (PrismaEvaluator / deterministic fallback), `_import_papers()`, and `generate_genealogy()`.
+- **Neural Vector Search** (`src/search/neural_vector_search.py`): `NeuralVectorSearchEngine.embed()` / `cosine_similarity()` / `rank()` over the local `nomic-embed-text` model (port 11434), with a lexical fallback offline.
+- **Code-First Search** (`src/search/code_first_search.py`): `CodeFirstSearchEngine._search_github_repos()` / `_search_paperswithcode()` / `_is_reproducible()` for GitHub / PapersWithCode / ROS2 / Gazebo / AirSim / Isaac Gym reproducibility signals.
+- **CLI/TUI surface**: `--snowball [seed]`, `--vector-search [query]`, `--code-search [query]` fast-dispatch flags and a restructured Group 2 "Universal Search Hub" menu.
+- **Rule 10 dossier**: `docs/internal/academic/04_NEURAL_GRAPH_SEARCH_PARADIGMS.md`.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.0), `pytest tests/test_neural_vector_search.py -q` (mock `nomic-embed-text` embeddings, exit 0), ingestion modularization smoke test, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 ---
 

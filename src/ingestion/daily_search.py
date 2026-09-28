@@ -43,24 +43,7 @@ import logging
 from contextlib import redirect_stdout
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from src.ingestion.arxiv_source import ArxivSource
-from src.ingestion.elsevier_source import ElsevierSource
-from src.ingestion.semantic_scholar_source import SemanticScholarSource
-from src.ingestion.ieee_source import IEEEXploreSource
-from src.ingestion.springer_source import SpringerNatureSource
-from src.ingestion.openalex_source import OpenAlexSource
-from src.ingestion.dblp_source import DBLPSource
-from src.ingestion.core_source import CORESource
-from src.ingestion.crossref_source import CrossrefSource
-from src.ingestion.openarchives_source import OpenArchivesSource
-from src.ingestion.pubmed_source import PubMedSource
-from src.ingestion.scigov_source import ScienceGovSource
-from src.ingestion.osti_source import OSTISource
-from src.ingestion.plos_source import PLOSSource
-from src.ingestion.openreview_source import OpenReviewSource
-from src.ingestion.openaire_source import OpenAIRESource
-from src.ingestion.nasa_ntrs_source import NasaNtrsSource
-from src.ingestion.hal_inria_source import HalInriaSource
+from src.ingestion.sources import SOURCE_REGISTRY, ALL_SOURCE_NAMES
 
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
@@ -76,28 +59,8 @@ from rich.table import Table
 logger = logging.getLogger(__name__)
 
 
-# -- v5.14.2: Canonical 18-source registry for the checkbox TUI and --sources --
-SOURCE_REGISTRY = [
-    ("arxiv", ArxivSource),
-    ("ieee", IEEEXploreSource),
-    ("semantic_scholar", SemanticScholarSource),
-    ("springer", SpringerNatureSource),
-    ("openalex", OpenAlexSource),
-    ("dblp", DBLPSource),
-    ("elsevier", ElsevierSource),
-    ("core", CORESource),
-    ("crossref", CrossrefSource),
-    ("openarchives", OpenArchivesSource),
-    ("pubmed", PubMedSource),
-    ("scigov", ScienceGovSource),
-    ("osti", OSTISource),
-    ("plos", PLOSSource),
-    ("openreview", OpenReviewSource),
-    ("openaire", OpenAIRESource),
-    ("nasa_ntrs", NasaNtrsSource),
-    ("hal_inria", HalInriaSource),
-]
-ALL_SOURCE_NAMES = [name for name, _ in SOURCE_REGISTRY]
+# -- v5.15.0: Canonical 18-source registry is unified in
+# src/ingestion/sources/__init__.py and imported above. --
 
 
 # -- v5.10.11: Live visualizer telemetry helpers (non-blocking HTTP POST) --

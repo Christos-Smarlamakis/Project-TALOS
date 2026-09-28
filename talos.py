@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.14.2
+Project: TALOS v5.15.0
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,15 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.15.0: Universal Scientific Search Hub & Neural Graph Discovery Engine --
+    src/search/ adds the CitationSnowballEngine (backward/forward citation graph
+    traversal), NeuralVectorSearchEngine (local nomic-embed-text dense retrieval
+    with cosine similarity), and CodeFirstSearchEngine (reproducible GitHub /
+    PapersWithCode / benchmark discovery); src/ingestion/sources/ modularizes the
+    18 source adapters behind a unified SOURCE_REGISTRY, exposed via the
+    --snowball / --vector-search / --code-search CLI flags and the Group 2
+    Universal Search Hub TUI menu.
 
     v5.14.2: BibTeX Scientific Exporter & 18-Source Aerospace Ingestion (Feature
     Freeze) -- src/utils/bibtex_exporter.py exports curated papers to a
@@ -1764,17 +1773,23 @@ def _launch_gwo_dashboard(python_exe):
 
 
 def search_ingestion_menu(python_exe):
-    """Research search and ingestion sub-menu."""
+    """Research search and ingestion sub-menu (Universal Search Hub)."""
     os.system('cls' if os.name == 'nt' else 'clear')
     sys.stdout.flush()
-    console.print(Panel("[bold cyan]Research Search & Ingestion[/bold cyan]\n[dim]Query academic APIs, deep archives, and literature sources[/dim]", style="cyan", border_style="cyan"))
+    console.print(Panel("[bold cyan]Universal Search Hub[/bold cyan]\n[dim]Daily harvesting, deep archives, citation graphs, dense retrieval, and reproducible code[/dim]", style="cyan", border_style="cyan"))
     choice = safe_select("Select search operation:", choices=[
-        "1. Daily Search Pipeline (18 APIs)",
-        "2. Historical Search (Deep Archive)",
-        "3. Grey Literature Miner",
-        "4. Zotero Cloud Sync",
-        "5. Interactive Dashboard (Flask)",
-        "6. Back / Return to Main Menu"
+        "1. Daily Concurrent Harvester (18 APIs in Parallel)",
+        "2. Historical Deep Window Search (Days Window)",
+        "3. Autonomous Citation Snowballing Search (Graph Traversal)",
+        "4. Neural Vector Semantic Search (Local nomic-embed-text)",
+        "5. Reproducible Code-First Search (GitHub / Benchmark Linked)",
+        "6. PRISMA-ScR Swarm Declarative Pipeline (Stanford DSPy)",
+        questionary.Separator(),
+        "7. Grey Literature Miner",
+        "8. Zotero Cloud Sync",
+        "9. Interactive Dashboard (Flask)",
+        questionary.Separator(),
+        "10. Back / Return to Main Menu"
     ])
     if not choice or "Back" in choice: return
     if choice.startswith("1."):
@@ -1795,10 +1810,52 @@ def search_ingestion_menu(python_exe):
             else:
                 run_script("historic_search.py", python_exe, args=["--sources"] + selected)
     elif choice.startswith("3."):
-        run_script("grey_literature_miner.py", python_exe)
+        seed = questionary.text("Seed paper (DOI, database ID, or title):", style=TALOS_QUESTIONARY_STYLE).ask()
+        if seed and seed.strip():
+            try:
+                from src.search.citation_snowballing import CitationSnowballEngine
+                _render_search_result(CitationSnowballEngine().run(seed.strip()))
+            except Exception as e:
+                console.print(f"[red]Citation snowballing error: {e}[/red]")
+        safe_pause()
     elif choice.startswith("4."):
-        run_script("zotero_connector.py", python_exe)
+        query = questionary.text("Research query (semantic):", style=TALOS_QUESTIONARY_STYLE).ask()
+        if query and query.strip():
+            try:
+                from src.search.neural_vector_search import NeuralVectorSearchEngine
+                _render_search_result(NeuralVectorSearchEngine().run(query.strip()))
+            except Exception as e:
+                console.print(f"[red]Neural vector search error: {e}[/red]")
+        safe_pause()
     elif choice.startswith("5."):
+        query = questionary.text("Research query (code-first):", style=TALOS_QUESTIONARY_STYLE).ask()
+        if query and query.strip():
+            try:
+                from src.search.code_first_search import CodeFirstSearchEngine
+                _render_search_result(CodeFirstSearchEngine().run(query.strip()))
+            except Exception as e:
+                console.print(f"[red]Code-first search error: {e}[/red]")
+        safe_pause()
+    elif choice.startswith("6."):
+        mode_choice = safe_select("Select Screening Mode:", choices=[
+            "1. Fast Single Screener",
+            "2. Rigorous Multi-Agent Review Swarm (3-Agent Consensus & Cohen's Kappa)",
+            "3. Cancel / Back"
+        ])
+        if not mode_choice or "Cancel" in mode_choice or "Back" in mode_choice:
+            return
+        evaluation_mode = "swarm" if mode_choice.startswith("2.") else "single"
+        try:
+            from src.prisma.dspy_modules import PrismaExecutor
+            PrismaExecutor(evaluation_mode=evaluation_mode).run_interactive()
+        except Exception as e:
+            console.print(f"[red]PRISMA pipeline error: {e}[/red]")
+        safe_pause()
+    elif choice.startswith("7."):
+        run_script("grey_literature_miner.py", python_exe)
+    elif choice.startswith("8."):
+        run_script("zotero_connector.py", python_exe)
+    elif choice.startswith("9."):
         run_script("interactive_dashboard.py", python_exe)
 
 
@@ -2132,6 +2189,9 @@ def _cli_help_table():
     table.add_row("--strategy [mode]", "Switch the AI execution strategy (strict_local, local_first, cloud_first, strict_cloud, auto_dynamic). Omit [mode] for the interactive switcher.")
     table.add_row("--prisma [--swarm]", "Run the PRISMA-ScR Declarative Synthesis Pipeline interactively. Add --swarm for the rigorous 3-agent Multi-Agent Review Swarm (Cohen's Kappa consensus).")
     table.add_row("--export-bib [min_score]", "Export curated papers to a BibTeX / LaTeX (.bib) library (src/utils/bibtex_exporter.py). Optional score threshold (default 7.0).")
+    table.add_row("--snowball [seed]", "Autonomous citation snowballing search (src/search/citation_snowballing.py). Seed = DOI, database ID, or title.")
+    table.add_row("--vector-search [query]", "Neural vector semantic search over the local nomic-embed-text model (src/search/neural_vector_search.py).")
+    table.add_row("--code-search [query]", "Reproducible code-first search (GitHub / PapersWithCode / benchmarks) (src/search/code_first_search.py).")
     table.add_row("--help, -h", "Display this CLI flag reference.")
     return table
 
@@ -2152,6 +2212,32 @@ def _parse_strategy_flag(argv):
                 target = argv[i + 1]
             return True, target
     return False, None
+
+
+def _flag_value(argv, flag):
+    """Return the argument following a flag, or None when absent.
+
+    Args:
+        argv (list[str]): Command-line arguments following the script name.
+        flag (str): The flag whose following argument is requested.
+
+    Returns:
+        str or None: The value after the flag, or None.
+    """
+    for i, arg in enumerate(argv):
+        if arg == flag and i + 1 < len(argv) and not argv[i + 1].startswith("--"):
+            return argv[i + 1]
+    return None
+
+
+def _render_search_result(data):
+    """Render a search engine result as indented JSON to the console.
+
+    Args:
+        data: Any JSON-serializable search result.
+    """
+    import json
+    console.print(json.dumps(data, indent=2, ensure_ascii=False, default=str))
 
 
 def _handle_cli_flags(argv):
@@ -2200,6 +2286,28 @@ def _handle_cli_flags(argv):
                     threshold = 7.0
                 break
         BibTeXExporter().export_and_render(min_score=threshold)
+        return True
+    # -- v5.15.0: Universal Search Hub fast-dispatch flags. --
+    if "--snowball" in argv:
+        seed = _flag_value(argv, "--snowball")
+        if not seed:
+            console.print("[yellow]Usage: python talos.py --snowball <seed_doi|title|db_id>[/yellow]")
+            return True
+        from src.search.citation_snowballing import CitationSnowballEngine
+        _render_search_result(CitationSnowballEngine().run(seed.strip()))
+        return True
+    if "--vector-search" in argv:
+        query = _flag_value(argv, "--vector-search")
+        if not query:
+            console.print("[yellow]Usage: python talos.py --vector-search <query>[/yellow]")
+            return True
+        from src.search.neural_vector_search import NeuralVectorSearchEngine
+        _render_search_result(NeuralVectorSearchEngine().run(query.strip()))
+        return True
+    if "--code-search" in argv:
+        query = _flag_value(argv, "--code-search") or "reinforcement learning robotics"
+        from src.search.code_first_search import CodeFirstSearchEngine
+        _render_search_result(CodeFirstSearchEngine().run(query.strip()))
         return True
     # -- v5.12.2: AI execution strategy switcher (--strategy / --mode). --
     flag_present, strategy_target = _parse_strategy_flag(argv)

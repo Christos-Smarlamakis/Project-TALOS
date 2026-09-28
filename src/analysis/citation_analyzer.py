@@ -37,7 +37,7 @@ from typing import Union, List, Dict, Any, Tuple # <-- Συμβατότητα μ
 # Προσθέτουμε το root του project στο path για να βρει τα core modules
 from src.core.ai_manager import AIManager
 from src.core.database_manager import DatabaseManager
-from src.ingestion.semantic_scholar_source import SemanticScholarSource
+from src.ingestion.sources.semantic_scholar_source import SemanticScholarSource
 
 # --- ΒΟΗΘΗΤΙΚΕΣ ΣΥΝΑΡΤΗΣΕΙΣ ---
 

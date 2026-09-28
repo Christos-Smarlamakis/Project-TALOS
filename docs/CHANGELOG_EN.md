@@ -2,6 +2,25 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.15.0] - 2026-09-28 -- Universal Scientific Search Hub & Neural Graph Discovery Engine
+
+### Added
+
+- **Modular ingestion subpackage** (`src/ingestion/sources/`): all 18 source adapters (`arxiv`, `ieee`, `semantic_scholar`, `springer`, `openalex`, `dblp`, `elsevier`, `core`, `crossref`, `openarchives`, `pubmed`, `scigov`, `osti`, `plos`, `openreview`, `openaire`, `nasa_ntrs`, `hal_inria`) relocated under a unified `SOURCE_REGISTRY` exposed by `src/ingestion/sources/__init__.py`; `daily_search.py` and `historic_search.py` import the canonical registry from the new subpackage.
+- **Citation Snowballing Engine** (`src/search/citation_snowballing.py`): `CitationSnowballEngine` traverses the citation graph backward (referenced works via OpenAlex/Crossref/Semantic Scholar) and forward (citing works 2024-2026), filters nodes via `PrismaEvaluator`/local `llama3.1:8b`, generates a structured genealogy graph, and imports relevant papers into the active-profile DB.
+- **Neural Vector Search** (`src/search/neural_vector_search.py`): `NeuralVectorSearchEngine` encodes queries and abstracts with the local `nomic-embed-text` Ollama model (port 11434) and ranks by cosine similarity `S_C(u,v) = (u . v) / (||u|| ||v||)`, with a deterministic lexical fallback offline.
+- **Code-First Search** (`src/search/code_first_search.py`): `CodeFirstSearchEngine` discovers reproducible, code-linked papers (GitHub / PapersWithCode / PyTorch / ROS2 / Gazebo / AirSim / Isaac Gym benchmarks) and cross-references the active-profile DB.
+- **CLI & TUI integration** (`talos.py`): `--snowball [seed]`, `--vector-search [query]`, and `--code-search [query]` fast-dispatch flags plus a restructured Group 2 "Universal Search Hub" menu (6 core options + preserved grey literature / Zotero / dashboard tools).
+- **Rule 10 dossier 04** (`docs/internal/academic/04_NEURAL_GRAPH_SEARCH_PARADIGMS.md`): 7-section confidential academic dossier (Jalali & Wohlin 2012, Nomic Embed 2024, DPR) with a full code traceability matrix.
+
+### Changed
+
+- **Version strings synchronized to 5.15.0** across the 6 core code files, `docker-compose.yml`, `CITATION.cff`, tray/visualizer/wizard/diagnostics metadata, `src/prisma/` docstrings, and all 19 canonical documentation files.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.0); `pytest tests/test_neural_vector_search.py -q` (mock `nomic-embed-text` embeddings, exit 0); ingestion modularization smoke test; dossier conforms to the 7-section standard with 0 U+FFFD; `verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan.
+
 ## [v5.14.2] - 2026-09-28 -- BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze
 
 ### Added

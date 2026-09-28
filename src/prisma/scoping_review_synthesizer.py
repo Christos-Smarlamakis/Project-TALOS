@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: scoping_review_synthesizer.py
-Project: TALOS v5.14.2
+Project: TALOS v5.15.0
 Description:
     Produces a publication-grade Scoping Review draft structured strictly per
     the PRISMA-ScR reporting guidelines (Tricco et al., 2018) and the PRISMA
@@ -112,7 +112,7 @@ def synthesize_scoping_review(
     lines: List[str] = []
     lines.append(f"# Scoping Review: {topic}")
     lines.append("")
-    lines.append("> Prepared by TALOS v5.14.2 -- Stanford DSPy PRISMA-ScR "
+    lines.append("> Prepared by TALOS v5.15.0 -- Stanford DSPy PRISMA-ScR "
                  "Declarative Synthesis Pipeline. This draft follows the "
                  "PRISMA-ScR reporting guidelines (Tricco et al., 2018) and the "
                  "PRISMA 2020 statement (Page et al., 2021).")
@@ -227,7 +227,7 @@ def synthesize_scoping_review_latex(
 
     return f"""\\documentclass[11pt]{{article}}
 \\title{{Scoping Review: {topic}}}
-\\author{{Prepared by Project TALOS v5.14.2}}
+\\author{{Prepared by Project TALOS v5.15.0}}
 \\date{{2026-09-28}}
 
 \\begin{{document}}

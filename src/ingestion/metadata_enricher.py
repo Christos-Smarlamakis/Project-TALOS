@@ -40,10 +40,10 @@ from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 
 # Προσθέτουμε το root του project στο path για να βρει τα modules
 from src.core.database_manager import DatabaseManager
-from src.ingestion.openalex_source import OpenAlexSource
-from src.ingestion.crossref_source import CrossrefSource
-from src.ingestion.dblp_source import DBLPSource
-from src.ingestion.semantic_scholar_source import SemanticScholarSource
+from src.ingestion.sources.openalex_source import OpenAlexSource
+from src.ingestion.sources.crossref_source import CrossrefSource
+from src.ingestion.sources.dblp_source import DBLPSource
+from src.ingestion.sources.semantic_scholar_source import SemanticScholarSource
 
 class MetadataEnricher:
     """

@@ -1,250 +1,399 @@
-﻿# Project TALOS (v5.14.2)
+# Project TALOS (v5.15.0)
 
-### **Tactical Agentic Literature Orchestration System**
+### Tactical Agentic Literature Orchestration System
 
-> **An Autonomous Research Intelligence Platform -- Multi-Tier LLM Routing (CPU/GPU/Cloud), Headless FastAPI Backend with 23 REST Endpoints, SYNAPSE Event-Driven Protocol, RL-Driven Autonomous Red Tester with LLM-as-a-Judge Diagnostics, Academic Print Mode for AST Knowledge Graphs, React 18 + Tailwind CSS + Shadcn UI Frontend.**
+> **An autonomous research intelligence platform: declarative Stanford DSPy PRISMA-ScR synthesis, a 3-agent peer-review swarm with automated Cohen's and Fleiss' Kappa, an 18-source concurrent ingestion mesh, a Universal Scientific Search Hub with neural vector discovery, and a 5-tier AI execution matrix -- fully air-gapped and local-first.**
 
 [![IEEE Computer Society](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 [![Conference Paper](https://img.shields.io/badge/Conference_Paper-HOU_ICBE_2026-002B49?style=flat-square)](https://icbe-hou.eap.gr/)
 [![System Integrity](https://img.shields.io/badge/System_Integrity-ISO%2FIEC_25010_Verified-005A9C?style=flat-square)](docs/SYSTEM_CAPABILITIES_MASTER.md)
-[![Architecture](https://img.shields.io/badge/Architecture-100%25_Air--Gapped_%26_Local--First-111827?style=flat-square)](config/settings.py)
-[![RL Environment](https://img.shields.io/badge/RL_Env-Gymnasium_23D%20%2F%2017A-3B82F6?style=flat-square)](src/ai/drl/talos_env.py)
-[![PyTorch](https://img.shields.io/badge/PyTorch-CUDA_Accelerated-EE4C2C?style=flat-square&logo=pytorch&logoColor=white)](src/ai/drl/drl_agent.py)
-[![FastAPI](https://img.shields.io/badge/FastAPI-23_REST_Endpoints-009688?style=flat-square&logo=fastapi&logoColor=white)](src/api/main_api.py)
-![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square)
 [![License](https://img.shields.io/badge/License-AGPLv3-red?style=flat-square)](LICENSE)
 [![DOI](https://zenodo.org/badge/1191928488.svg)](https://doi.org/10.5281/zenodo.19224912)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker)](docs/DOCKER.md)
+![Version](https://img.shields.io/badge/Version-v5.15.0-006699?style=flat-square)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square)
+[![FastAPI](https://img.shields.io/badge/FastAPI-23_REST_Endpoints-009688?style=flat-square&logo=fastapi&logoColor=white)](src/api/main_api.py)
+[![Architecture](https://img.shields.io/badge/Architecture-100%25_Air--Gapped_%26_Local--First-111827?style=flat-square)](config/settings.py)
 [![System Capabilities](https://img.shields.io/badge/System_Capabilities-006699?style=flat-square&logo=html5&logoColor=white)](https://christos-smarlamakis.github.io/Project-TALOS/)
 
 ---
 
-## 1. Introduction: The Vision
+## 1. Executive Overview & Scientific Scope
 
-In Greek mythology, **Talos** was a giant bronze automaton built to serve as the tireless guardian of Crete. **Project TALOS** embodies this spirit for the 21st century. It is not a mere literature aggregator but a **Research Intelligence Platform** that utilizes **AI Agents** to discover, evaluate, synthesize, and visualize scientific knowledge, significantly accelerating the **Systematic Literature Review (SLR)** process.
+Project TALOS is a universal, domain-agnostic Autonomous Research Intelligence
+Platform. It accelerates Systematic Literature Reviews (SLR) and PRISMA-ScR
+scoping reviews across any scientific discipline -- from Robotics and Applied
+AI to Biomedicine and Quantum Systems -- by discovering, evaluating,
+synthesizing, and visualizing scientific knowledge through an agentic,
+human-in-the-loop workflow.
+
+### A Universal Platform
+
+TALOS is not bound to any single research topic. It operates entirely
+air-gapped and local-first: a local Ollama runtime (`llama3.1:8b`,
+`nomic-embed-text`) supplies inference and embeddings with zero cloud
+dependency, zero telemetry, and full offline PRISMA execution. The platform is
+equally at home reviewing the literature of autonomous systems, complex
+cyber-physical networks, clinical research, or fundamental physics.
+
+### Illustrative Benchmark Case Study
+
+Autonomous systems and complex cyber-physical networks -- for example,
+cooperative mission planning and task allocation for autonomous Unmanned
+Aerial Vehicle (UAV) swarms, formalised through Heterogeneous Multi-Agent Deep
+Reinforcement Learning (HMADRL), Spatio-Temporal Graph Neural Networks
+(ST-GNNs), and Decentralized Partially Observable Markov Decision Processes
+(Dec-POMDPs) -- serve as an illustrative benchmark workload that demonstrates
+the platform's throughput, relevance filtering, and reproducibility guarantees.
+The platform itself remains fully domain-agnostic.
 
 ### The Problem
-The exponential growth of scientific publications, especially in fields like *Drone Swarm Intelligence* and *AI*, makes manual monitoring impossible.
+
+The exponential growth of scientific publication makes manual monitoring of
+interdisciplinary fields -- such as autonomous systems -- practically
+impossible, and keyword-only retrieval misses semantically related work.
 
 ### The Solution
-TALOS acts as an autonomous "Research Architect," filtering noise and highlighting strategic knowledge through a "Human-in-the-loop" agentic workflow.
+
+TALOS acts as an autonomous "Research Architect": it filters noise, surfaces
+strategic knowledge, and produces reproducible, publication-grade artifacts.
 
 ---
 
-## 2. Technical Architecture & Ecosystem
+## 2. Core Architectural Pillars
 
-### A. Core Intelligence Layer (DRL-Powered)
-- **DRL Agent (The Autonomous Orchestrator):** A **Double Dueling DQN with 3-layer LSTM** that learns to select the optimal academic API source in real-time. Trained on 3,849 real paper scores from the database with **RTX 4070 CUDA 12.1** acceleration. Features include:
-  - **Gymnasium RL environment** (`src/ai/drl/talos_env.py`) -- Dynamic N-source Observation Space, Action Space (N + 1)
-  - **Grey Wolf Optimizer** (`src/ai/optimizers/gwo_rl_optimizer.py`) for hyperparameter tuning
-  - **24/7 Autonomous Service** (`src/ai/drl/talos_service.py`) -- background research agent with Telegram/Discord/Email notifications
-- **Flask API server** (`src/api/talos_service_api.py`) -- real-time service status at `localhost:5002/api/status`
-- **FastAPI REST API** (`src/api/main_api.py`) -- full REST facade with 23 endpoints at `localhost:8001`
-  - Semantic search, paginated papers, scrape/GWO triggers with BackgroundTasks
-  - Single-paper AI evaluation, natural-language to boolean query translation
-  - GWO history for Recharts, architecture graph HTML, top authors for BarChart
-  - Bulk score recalculation, DB health stats, System Capabilities Master Reference
-  - **Autonomous Red Tester** (`GET /api/v1/tester/status`, `GET /api/v1/tester/reports`) -- Q-table status and crash report listing
-  - **SYNAPSE webhook receiver** (`POST /api/v1/synapse/webhook`) and **SYNAPSE status endpoint** (`GET /api/v1/synapse/status`) for ALEXANDRIA ecosystem interoperability
-  - **Port 8001** (port 8000 reserved for SYNAPSE event bus)
-  - Auto-generated interactive docs at `http://localhost:8001/docs`
-  - Models saved at `models/dddqn_trained.pth` and `models/talos_drl.pth`
-- **3D Knowledge Constellation Visualizer** (`templates/live_foraging_visualizer.html`) -- vendored Three.js r128 (zero CDN) with 60 FPS animated laser beams, traveling photon pulses, interactive click-to-fire nodes, PNG snapshot, fullscreen and help overlays, and a 1000ms pure-AJAX state poller (`GET /api/v1/visualizer/state`) resolving the active profile database, plus a bottom-right **Live Telemetry HUD Console** (glassmorphism auto-scroll stream with [ACT]/[ROUTER]/[DATA]/[EVAL]/[ERROR] event coloring and C/L hotkey toggles).
-- **Test Suite** -- `python -m pytest tests/test_system_integrity.py -q` for system health; `python -m pytest tests/test_multi_tier.py -k test_talos_version` for the version assertion.
-- **Autonomous Red Tester (RL-Driven Chaos Engineering)** (`src/ai/testing/red_tester.py`)
-- **Daemon OS Autostart Orchestrator** (`src/utils/daemon_autostart.py`) -- Windows Startup hook + boot batch generator for the 24/7 daemon (v5.10.6)
-- **Desktop Control Hub System Tray** (`src/utils/tray_icon.py`) -- a seven-item tray menu (Open 3D Visualizer, Open Reports Folder, Open System Log, Open API Docs (Swagger), Trigger Instant Search Cycle, Show / Hide Console Window, Terminate Daemon) with self-healing API auto-bootstrap (`_is_api_alive` / `_ensure_api_server`) that spawns the FastAPI backend on demand (v5.10.13)
-- **Win32 Close-to-Tray Hook** (`src/utils/tray_icon.py`) -- native console window-procedure interception (WM_CLOSE / SC_CLOSE to SW_HIDE) so closing the daemon console minimizes to the system tray instead of terminating the background process (v5.11.0)
-- **Full-Title & Authors Telemetry** -- [EVAL] telemetry now renders the complete paper title (no 55-character truncation) plus a normalized author list over a two-line Rich structure, with 100% English socket-error sanitization (v5.11.0)
-- **Persistent Evaluation History** (`src/utils/evaluation_history.py`) -- every evaluated paper is appended to `data/history/daemon_evaluations.jsonl`; a Rich table viewer (View Recent Evaluation History) is available in the TUI (v5.11.0)
-- **Autonomous Linux Bootstrap** (`run_talos.sh`) -- zero-touch Miniconda detection/installation (`detect_or_install_conda()`) and `talosenv` provisioning (`ensure_talosenv()`) for Ubuntu, Debian, and Linux Mint (v5.11.0)
+### Pillar A -- Declarative Stanford DSPy PRISMA-ScR Pipeline (`src/prisma/`)
 
-- **OPTICA Bridge Integration** (`src/integration/optica_client.py`) -- API client to Project OPTICA (port 8002) for heavy cnsplots/PyVis graphics; TUI "Data Visualizations (via OPTICA)" menu (v5.10.7)
-  - **Non-Stationary Multi-Armed Bandit** with Epsilon-Greedy (epsilon=0.2, alpha=0.1) stress-tests system components via subprocess
-  - **LLM-as-a-Judge Diagnostics**: Crash stderr sent to Fast Edge LLM (Neutrino-8B) for two-sentence human-readable diagnosis
-  - **Rich TUI Visualization**: Spinners, red crash Panels, yellow AI Diagnosis Panels, green PASS confirmations, color-coded Q-Table (Component Fragility)
-  - **Crash Reports**: Timestamped Markdown files in `data/reports/red_tester/`
-  - **Synapse Event Emission**: `agent_episode_end` events on each test cycle
-  - **Q-Table Persistence**: `data/red_tester_q_table.json` for continuity across runs
-  - Integrated into `talos.py` menu (Option 7), `run_talos.bat` (Option 8), and `run_talos.sh` (Option 8)
-- **Graphify AST Knowledge Graph** (`src/analysis/graphify_adapter.py`) -- NEW in v5.9.10
-  - Vendored Graphify engine invoked as subprocess for pure-local AST extraction
-  - Generates interactive HTML knowledge graph with D3.js visualization
-  - Auto-executes cluster-only command for `GRAPH_REPORT.md` and community labels
-  - **Academic Print Mode (Light/Dark Toggle)** injected automatically into `graph.html` -- NEW in v5.9.15
-  - All operations 100% air-gapped (no LLM calls required)
-- **SYNAPSE Event-Driven Protocol** (`src/integration/synapse_client.py`, `src/api/synapse_routes.py`)
-  - Thread-safe EventEmitter pushes JSON events (paper_discovered, paper_evaluated, etc.) to the SYNAPSE bus
-  - APIRouter receives inbound commands (trigger_search, trigger_evaluation, get_status, shutdown) via webhook
-  - Designed for distributed ALEXANDRIA ecosystem microservice interoperability
-- **Database Manager (The Knowledge Hub):** A SQLite3-powered hub using **B-Tree indexing**. It serves as a bridge between ecosystems by storing multiple identifiers (`DOI`, `OpenAlex ID`, `PMID`, `PMCID`).
-- **AI Manager (The Cognitive Engine):** A model-agnostic engine (Gemini, DeepSeek, Ollama) using the **Adapter Design Pattern**. It features **Circuit Breakers** for resilience and **Surgical JSON Extraction** via regex to ensure data integrity.
-- **Quad-Layer Evaluation Framework:** A proprietary scoring methodology that evaluates papers across four dimensions:
-  1. **Strategic:** Theoretical framework and high-level decision making.
-  2. **Operational:** Resource allocation, auctions, and consensus mechanisms.
-  3. **Tactical:** Algorithmic implementation and DRL/Neural policies.
-  4. **Playground:** Simulation environments, datasets, and benchmarks.
+A four-phase, PRISMA 2020-compliant scoping-review synthesis engine built on
+typed declarative signatures that mirror the Stanford DSPy `dspy.Signature`
+paradigm, without any hard `dspy-ai` dependency:
 
-### B. Data Acquisition & Enrichment Layer
-- **Operation "Genesis" (Native Agents):** Orchestrates simultaneous searches across 14+ sources (ArXiv, Scopus, IEEE, PubMed, etc.) using custom-built Python agents with **Exponential Backoff** logic.
-- **Project "HERMES" (Data Enricher):** Automatically retrieves legal **Open Access (OA)** PDF links via the Unpaywall API and augments metadata (ISSN, Publisher) to create a cohesive knowledge web.
+- **Typed signatures** (`dspy_signatures.py`): `PrismaPlanSignature`,
+  `PrismaScreeningSignature`, `PrismaEligibilitySignature`, and
+  `PrismaSynthesisSignature`, each with a robust `extract_json_payload()`
+  recovery helper.
+- **Chain-of-Thought PlanEval screening** (`dspy_modules.py`): `PrismaPlanner`,
+  `PrismaEvaluator` (structured Chain-of-Thought title/abstract screening),
+  `PrismaEligibilityJudge`, and `PrismaExecutor` (end-to-end four-phase
+  orchestration with live record counters).
+- **Dynamic PRISMA 2020 Mermaid flowchart** (`mermaid_generator.py`):
+  `generate_prisma_mermaid()` emits a standard-compliant flowchart.
+- **LaTeX scoping-review synthesizer** (`scoping_review_synthesizer.py`):
+  `synthesize_scoping_review()` and `synthesize_scoping_review_latex()`.
 
-### C. 18-Language Codebase Documentation Builder
-- **`src/utils/generate_docs.py` v2.0:** A fully interactive tool that documents the **entire TALOS codebase (93+ files)** in any of **18 languages** (Greek, English, Chinese, Hindi, Spanish, Arabic, French, Bengali, Russian, Portuguese, Urdu, Indonesian, German, Japanese, Italian, Korean, Turkish, Persian).
-- **100% LOCAL:** Uses your local Ollama instance exclusively -- **zero cloud cost, full privacy**. Never touches Gemini, DeepSeek, or any cloud API.
-- **Interactive:** No CLI arguments needed -- select language and folders via `questionary` prompts, see token estimates before starting, track progress with `tqdm`.
-- **Output:** Professional Markdown documentation in `docs/{lang_code}/` -- ready for thesis methodology chapters, PhD defense preparation, and developer onboarding.
-- **Accessible from TUI (talos.py)** under System Diagnostics.
+### Pillar B -- Multi-Agent Peer-Review Swarm & Consensus Engine
+
+A specialised 3-agent review swarm (`src/prisma/swarm_evaluators.py`) that
+replaces the single-screener decision with three personas:
+
+- **Algorithmic Reviewer** -- scrutinises method correctness.
+- **Empirical Rigor Reviewer** -- audits experimental validity.
+- **Operational / NATO Reviewer** -- assesses real-world deployability under
+  mission constraints.
+
+The swarm computes automated inter-rater agreement via both Cohen's Kappa and
+its Fleiss multi-rater generalisation ($\kappa$), and a Chain-of-Thought
+`SwarmConsensusArbiter` adjudicates split verdicts into a single consensus
+decision.
+
+### Pillar C -- Full-Stack Concurrent Ingestion & Evaluation Mesh
+
+A `ThreadPoolExecutor(max_workers=18)` harvests all 18 official academic APIs
+simultaneously, reducing end-to-end literature-harvest latency from
+approximately 45 seconds to approximately 3 seconds. A dynamic, VRAM-safe batch
+evaluation pool (8 cloud workers / 2 VRAM-guarded local workers behind a bounded
+semaphore) scores the corpus without exceeding the 80% training / 2GB inference
+headroom mandate.
+
+### Pillar D -- Universal Scientific Search Hub
+
+The Group 2 TUI and the CLI expose six coordinated discovery modes under a
+single Universal Search Hub:
+
+1. **Daily Concurrent Ingestion** -- 18 APIs harvested in parallel.
+2. **Historical Deep Window Search** -- configurable days-window archive crawl.
+3. **Autonomous Citation Snowballing** -- backward/forward citation-graph
+   traversal (`src/search/citation_snowballing.py`).
+4. **Neural Vector Semantic Search** -- local `nomic-embed-text` dense
+   retrieval with cosine-similarity ranking (`src/search/neural_vector_search.py`).
+5. **Reproducible Code-First Search** -- GitHub / PapersWithCode / benchmark
+   linked discovery (`src/search/code_first_search.py`).
+6. **PRISMA-ScR Declarative Synthesis** -- the four-phase scoping-review pipeline.
+
+### Pillar E -- 18-Source Academic Data Acquisition Layer
+
+The modular `src/ingestion/sources/` subpackage hosts a unified
+`SOURCE_REGISTRY` across eighteen official academic APIs:
+
+arXiv, IEEE Xplore, Elsevier Scopus, OpenAlex, Semantic Scholar, Springer Link,
+DBLP, CORE, Crossref, OpenArchives (EADD), PubMed, Science.gov, OSTI, PLOS,
+OpenReview, OpenAIRE, NASA NTRS, and HAL/Inria.
+
+Each adapter emits the canonical `{doi, url, title, authors_str,
+publication_year, abstract, source}` record, degrades gracefully when offline,
+and honours exponential backoff on rate-limited endpoints.
+
+### Pillar F -- Research Setup Wizard & 5-Tier AI Execution Matrix
+
+The Research Setup Wizard (`src/utils/research_setup_wizard.py`) provides a
+Step 0 multi-profile isolation gate that partitions every research topic into
+its own `_profiles/<name>/` workspace, and synthesizes strict academic-English
+inclusion and exclusion criteria. The 5-tier AI execution matrix
+(`strict_local`, `local_first`, `cloud_first`, `strict_cloud` with VRAM
+preservation, and `auto_dynamic`) routes inference across the CPU edge tier
+(`Neutrino-8B`), the GPU heavy tier (`qwen2.5:14b`), and the optional Universal
+Cloud Mesh.
+
+### Pillar G -- ISO/IEC 25010 System Diagnostics Analyzer
+
+An 8-point automated pre-flight healthcheck (`src/utils/system_diagnostics.py`)
+-- Python environment, SQLite integrity and WAL state, local AI runtime, port
+availability, filesystem permissions, environment credentials, daemon status,
+and optional network endpoints -- rendered as a Rich health report with one-line
+copy-paste remediation, exposed via `--diagnostics` / `--doctor`.
+
+### Pillar H -- Automated BibTeX / LaTeX Scientific Exporter
+
+A one-click exporter (`--export-bib`) writes the curated elite literature set to
+`data/exports/talos_library.bib` with `AuthorYearTitleKeyword` cite keys, full
+LaTeX reserved-character sanitization, and a Rich summary panel.
+
+### Pillar I -- 3D WebGL Constellation Visualizer & Desktop Hub
+
+A vendored Three.js knowledge-constellation visualizer renders the evaluated
+corpus as a live 3D starfield, paired with a native Win32 close-to-tray desktop
+hub and a glassmorphism telemetry HUD console (`src/utils/tray_icon.py`).
 
 ---
 
 ## 3. Installation & Zero-Friction Usage
 
-Project TALOS is designed to run seamlessly across all operating systems. Choose your preferred method:
+### Method A -- Docker Compose
 
-### Method A: Docker (Recommended)
-Run TALOS in a completely isolated environment without installing Python or dependencies.
-1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Docker Compose v2 on Linux).
-2. Create your `.env` file from `example.env` (see **[docs/ENVIRONMENT_SETUP_GUIDE.md](docs/ENVIRONMENT_SETUP_GUIDE.md)**).
-3. Start the headless FastAPI server (port 8001):
-   ```bash
-   docker compose up -d --build
-   ```
-4. Verify it is healthy:
-   ```bash
-   curl http://localhost:8001/api/v1/health
-   ```
-5. To run the interactive TALOS menu (search, analysis, DRL, autonomous research) inside the container:
-   ```bash
-   docker compose run --rm talos python talos.py
-   ```
+1. Install Docker Desktop.
+2. Create `.env` from the fully annotated `example.env` template.
+3. Start the headless FastAPI server (port 8001): `docker compose up -d --build`
+4. Confirm health: `curl http://localhost:8001/api/v1/health`
 
-For the full Docker reference (host Ollama connectivity, GPU notes, volumes, environment variables, and troubleshooting), see **[docs/DOCKER.md](docs/DOCKER.md)**.
+### Method B -- Windows 1-Click Launcher
 
-### Method B: 1-Click Launcher (Windows)
-For users without Docker.
-1. Set up your `.env` file (copy from `example.env` -- a fully commented, six-section environment canon). For a complete walkthrough of every key, credential source, and network strategy, see **[docs/ENVIRONMENT_SETUP_GUIDE.md](docs/ENVIRONMENT_SETUP_GUIDE.md)** (Greek: `docs/ENVIRONMENT_SETUP_GUIDE_GR.md`).
-2. Double-click **`run_talos.bat`**. The script provides a 10-option menu: Full Setup (Conda env + pip install), Start FastAPI Server (port 8001), MCP Server, Interim UI, TALOS CLI, Research Daemon, Live DRL Agent, Autonomous Red Tester, Run Test Suite, or Exit. The 24/7 daemon also exposes a **Desktop Control Hub** system tray icon with self-healing backend auto-bootstrap.
+1. Configure `.env`.
+2. Double-click `run_talos.bat`. The 24/7 daemon also exposes a Desktop Control
+   Hub in the system tray.
 
-### Method C: Traditional Python Environment (Linux/Mac)
-```bash
-git clone https://github.com/Christos-Smarlamakis/Project-TALOS.git
-python -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python talos.py
-```
+### Method C -- Linux Zero-Touch Launcher
 
-### Documentation Builder
-To generate professional Markdown documentation for the entire codebase in any of 18 languages:
-```bash
-python src/utils/generate_docs.py
-```
-Requires **Ollama** for running locally the `gemma4` model.
+1. Configure `.env`.
+2. Run `./run_talos.sh` for the POSIX dashboard with IEEE WEIGD telemetry.
+
+### Method D -- CLI Fast-Dispatch Cheat Sheet
+
+| Flag | Purpose |
+|------|---------|
+| `--wizard` | Launch the 4-step Research Setup Wizard. |
+| `--daily` | Trigger the concurrent daily ingestion pipeline. |
+| `--prisma [--swarm]` | Run the PRISMA-ScR pipeline (add `--swarm` for 3-agent consensus). |
+| `--doctor` / `--diagnostics` | Run the 8-point ISO/IEC 25010 healthcheck. |
+| `--export-bib [min_score]` | Export the curated library to BibTeX / LaTeX. |
+| `--strategy [mode]` | Switch the AI execution strategy. |
+| `--snowball [seed]` | Autonomous citation snowballing from a seed DOI / title / DB ID. |
+| `--vector-search [query]` | Neural vector semantic search over `nomic-embed-text`. |
+| `--code-search [query]` | Reproducible code-first search. |
 
 ---
 
-## 4. Citation & Academic Use
+## 4. Academic Citation
 
-This software is part of ongoing research. If you use **TALOS** in your work, please cite it as follows:
+### IEEE Citation
 
-**IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.12, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature
+Orchestration System," version 5.15.0, 2026. [Online]. Available:
+https://github.com/Christos-Smarlamakis/Project-TALOS, doi: 10.5281/zenodo.19224912.
 
-**BibTeX:**
+### BibTeX
+
 ```bibtex
-@software{smarlamakis_talos_2026,
-  author = {Smarlamakis, Christos and Georgopoulos, Efstratios},
-  title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
-  url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
-  doi = {10.5281/zenodo.19224912},
-  version = {v5.10.12},
-  year = {2026}
+@software{talos2026,
+  author       = {Smarlamakis, Christos and Georgopoulos, Efstratios},
+  title        = {Project TALOS: Tactical Agentic Literature Orchestration System},
+  version      = {5.15.0},
+  year         = {2026},
+  doi          = {10.5281/zenodo.19224912},
+  url          = {https://github.com/Christos-Smarlamakis/Project-TALOS},
+  license      = {AGPL-3.0},
+  note         = {IEEE Computer Society WEIGD Student Support Fund (2026) recipient}
 }
 ```
 
-**A formal paper presenting the methodology and agentic framework of TALOS is currently in preparation.**
+---
+
+## 5. License & Acknowledgements
+
+Project TALOS is distributed under the **GNU Affero General Public License v3.0
+(AGPLv3)**.
+
+- **Academic / Research Use:** Free, provided derivative works remain open under
+  AGPLv3.
+- **Commercial Use:** A separate commercial license is required.
+
+The Lead Architect and Author, **Christos Smarlamakis**, is an officially
+selected recipient of the **IEEE Computer Society WEIGD Student Support Fund
+(2026)**. The project gratefully acknowledges the IEEE Computer Society and the
+enduring legacy of Dr. Grace C. N. Wei in supporting open-source,
+democratised research tools for the global scientific community.
 
 ---
 
-## 5. License & Commercial Use
+## Οδηγός Ελληνικής Έκδοσης
 
-This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**.
-- **Academic/Research Use:** Free to use and modify, provided changes are open-sourced under AGPLv3.
-- **Commercial/Proprietary Use:** Requires a **Commercial License**.
-- **Contact:** [christossmarlamakis@gmail.com](mailto:christossmarlamakis@gmail.com)
+### Εισαγωγή & Όραμα TALOS
+
+Το Project TALOS είναι μια καθολική, ανεξάρτητη από γνωστικό πεδίο, Αυτόνομη
+Πλατφόρμα Ερευνητικής Νοημοσύνης. Επιταχύνει τις Συστηματικές Ανασκοπήσεις
+Βιβλιογραφίας (SLR) και τις σκοπικές ανασκοπήσεις PRISMA-ScR σε κάθε
+επιστημονικό πεδίο -- από τη Ρομποτική και την Εφαρμοσμένη Τεχνητή Νοημοσύνη
+έως τη Βιοϊατρική και τα Κβαντικά Συστήματα -- ανακαλύπτοντας, αξιολογώντας,
+συνθέτοντας και οπτικοποιώντας την επιστημονική γνώση μέσω μιας πρακτορικής,
+ανθρωποκεντρικής ροής εργασίας.
+
+### Μια Καθολική Πλατφόρμα
+
+Το TALOS δεν δεσμεύεται σε κανένα συγκεκριμένο ερευνητικό θέμα. Λειτουργεί
+πλήρως απομονωμένο και τοπικά: το τοπικό περιβάλλον εκτέλεσης Ollama
+(`llama3.1:8b`, `nomic-embed-text`) παρέχει συμπερασμό και ενσωματώσεις με
+μηδενική εξάρτηση από νέφος, μηδενική τηλεμετρία και πλήρη εκτός σύνδεσης
+εκτέλεση PRISMA. Η πλατφόρμα εξυπηρετεί εξίσου τη βιβλιογραφία αυτόνομων
+συστημάτων, πολύπλοκων κυβερνοφυσικών δικτύων, κλινικής έρευνας ή θεμελιώδους
+φυσικής.
+
+### Ενδεικτική Μελέτη Περίπτωσης Αναφοράς
+
+Τα αυτόνομα συστήματα και τα πολύπλοκα κυβερνοφυσικά δίκτυα -- για παράδειγμα,
+ο συνεργατικός σχεδιασμός αποστολών και η κατανομή καθηκόντων σε αυτόνομα
+σμήνη Μη Επανδρωμένων Αεροχημάτων (UAV), μέσω Ετερογενούς Πολυπρακτορικής
+Βαθιάς Ενισχυτικής Μάθησης (HMADRL), Χωροχρονικών Νευρωνικών Δικτύων Γράφων
+(ST-GNN) και Αποκεντρωμένων Μερικώς Παρατηρήσιμων Μαρκοβιανών Μοντέλων
+Απόφασης (Dec-POMDP) -- χρησιμεύουν ως ενδεικτικός φόρτος εργασίας αναφοράς που
+καταδεικνύει την απόδοση, το φιλτράρισμα συνάφειας και τις εγγυήσεις
+αναπαραγωγιμότητας της πλατφόρμας. Η ίδια η πλατφόρμα παραμένει πλήρως
+ανεξάρτητη από γνωστικό πεδίο.
+
+### Οι 9 Αρχιτεκτονικοί Πυλώνες
+
+**Πυλώνας Α -- Δηλωτικός Αγωγός PRISMA-ScR του Stanford DSPy (`src/prisma/`).**
+Ένας αγωγός σύνθεσης σκοπικής ανασκόπησης τεσσάρων φάσεων, συμβατός με το
+πρότυπο PRISMA 2020, που βασίζεται σε τυποποιημένες δηλωτικές υπογραφές
+(`PrismaPlanSignature`, `PrismaScreeningSignature`, `PrismaEligibilitySignature`,
+`PrismaSynthesisSignature`), διαλογή PlanEval με Αλυσίδα Σκέψης
+(`PrismaEvaluator`), δυναμική γεννήτρια διαγράμματος ροής PRISMA 2020 Mermaid και
+συνθέτη σκοπικής ανασκόπησης LaTeX.
+
+**Πυλώνας Β -- Σμήνος Ομότιμης Αναθεώρησης Πολλαπλών Πρακτόρων & Μηχανή
+Συναίνεσης.** Ένα εξειδικευμένο σμήνος τριών κριτών (Αλγοριθμικός, Εμπειρική
+Αυστηρότητα, Επιχειρησιακός/NATO) με αυτοματοποιημένο υπολογισμό συμφωνίας
+μεταξύ κριτών κατά Cohen's Kappa και τη γενίκευση Fleiss, και Διαιτητή
+Συναίνεσης με Αλυσίδα Σκέψης.
+
+**Πυλώνας Γ -- Πλήρης Πολυνηματική Συλλογή & Αξιολόγηση.** Ένα
+`ThreadPoolExecutor(max_workers=18)` συλλέγει ταυτόχρονα και από τα 18 επίσημα
+ακαδημαϊκά API, μειώνοντας την καθυστέρηση από περίπου 45 δευτερόλεπτα σε
+περίπου 3 δευτερόλεπτα, με δυναμική αξιολόγηση παρτίδας ασφαλή ως προς τη VRAM.
+
+**Πυλώνας Δ -- Καθολικός Κόμβος Επιστημονικής Αναζήτησης.** Έξι συντονισμένες
+λειτουργίες ανακάλυψης: (1) Ημερήσια Ταυτόχρονη Κατάποση, (2) Ιστορική
+Αναζήτηση Παραθύρου Ημερών, (3) Αυτόνομη Χιονοστιβάδα Παραπομπών, (4) Νευρική
+Διανυσματική Σημασιολογική Αναζήτηση (`nomic-embed-text`), (5) Αναπαραγώγιμη
+Αναζήτηση με Προτεραιότητα στον Κώδικα, και (6) Δηλωτική Σύνθεση PRISMA-ScR.
+
+**Πυλώνας Ε -- Επίπεδο Απόκτησης 18 Ακαδημαϊκών Πηγών.** Το αρθρωτό υποπακέτο
+`src/ingestion/sources/` φιλοξενεί ένα ενιαίο `SOURCE_REGISTRY` για: arXiv,
+IEEE Xplore, Elsevier Scopus, OpenAlex, Semantic Scholar, Springer Link, DBLP,
+CORE, Crossref, OpenArchives (EADD), PubMed, Science.gov, OSTI, PLOS, OpenReview,
+OpenAIRE, NASA NTRS και HAL/Inria.
+
+**Πυλώνας ΣΤ -- Οδηγός Ερευνητικής Ρύθμισης & Μήτρα Εκτέλεσης AI 5 Επιπέδων.**
+Ο Οδηγός Ερευνητικής Ρύθμισης παρέχει πύλη απομόνωσης πολλαπλών προφίλ (Βήμα 0)
+και σύνθεση αυστηρών ακαδημαϊκών κριτηρίων ένταξης/αποκλεισμού στα αγγλικά. Η
+μήτρα 5 επιπέδων (`strict_local`, `local_first`, `cloud_first`, `strict_cloud`
+με διατήρηση VRAM, `auto_dynamic`) δρομολογεί τον συμπερασμό μεταξύ CPU edge,
+GPU heavy και προαιρετικού Universal Cloud Mesh.
+
+**Πυλώνας Ζ -- Διαγνωστικός Αναλυτής ISO/IEC 25010.** Ένας αυτοματοποιημένος
+προληπτικός έλεγχος υγείας οκτώ σημείων (περιβάλλον Python, ακεραιότητα SQLite,
+τοπικό περιβάλλον εκτέλεσης AI, διαθεσιμότητα θυρών, δικαιώματα συστήματος
+αρχείων, διαπιστευτήρια περιβάλλοντος, κατάσταση δαίμονα, προαιρετικά άκρα
+δικτύου) με οδηγίες αποκατάστασης μίας γραμμής, μέσω `--diagnostics` / `--doctor`.
+
+**Πυλώνας Η -- Αυτοματοποιημένος Εξαγωγέας BibTeX/LaTeX.** Εξαγωγή με ένα κλικ
+(`--export-bib`) της επιμελημένης βιβλιοθήκης στο `data/exports/talos_library.bib`
+με κλειδιά παραπομπής `AuthorYearTitleKeyword` και πλήρη απολύμανση δεσμευμένων
+χαρακτήρων LaTeX.
+
+**Πυλώνας Θ -- Οπτικοποιητής Αστερισμού Γνώσης 3D WebGL & Κεντρικός Κόμβος
+Επιφάνειας Εργασίας.** Ένας ενσωματωμένος οπτικοποιητής Three.js αποδίδει το
+αξιολογημένο σώμα εργασιών ως ζωντανό τρισδιάστατο αστερισμό, σε συνδυασμό με
+εγγενή κεντρικό κόμβο επιφάνειας εργασίας Win32 (κλείσιμο στο δίσκο συστήματος)
+και κονσόλα τηλεμετρίας glassmorphism.
 
 ---
 
-## 6. Acknowledgements & Support
+### Οδηγίες Εγκατάστασης & Χρήσης
 
-The Lead Architect and Author, **Christos Smarlamakis**, is an officially selected recipient of the **IEEE Computer Society WEIGD Student Support Fund (2026)**. We gratefully acknowledge the support and resources provided by the IEEE Computer Society and the enduring legacy of Dr. Grace C. N. Wei in empowering open-source, democratized research tools for the global scientific community.
-
-*Designed & AI-Augmented Developed by Christos Smarlamakis.*
-
----
-
-## ------------------------------------------------------------
-
-# Οδηγός Ελληνικής Έκδοσης (Greek Reference)
-
-## 1. Εισαγωγή: Το Όραμα
-
-Στην ελληνική μυθολογία, ο **Τάλως** ήταν ένας γιγάντιος χάλκινος αυτόματος που κατασκευάστηκε για να υπηρετεί ως ο ακούραστος φύλακας της Κρήτης. Το **Project TALOS** ενσαρκώνει αυτό το πνεύμα για τον 21ο αιώνα. Δεν είναι ένας απλός συλλέκτης βιβλιογραφίας, αλλά μια **Πλατφόρμα Ερευνητικής Νοημοσύνης (Research Intelligence Platform)** που χρησιμοποιεί **πράκτορες τεχνητής νοημοσύνης** για να ανακαλύπτει, να αξιολογεί, να συνθέτει και να οπτικοποιεί επιστημονική γνώση, επιταχύνοντας σημαντικά τη διαδικασία της **Συστηματικής Βιβλιογραφικής Ανασκόπησης (SLR)**.
-
-### Το Πρόβλημα
-Η εκθετική αύξηση των επιστημονικών δημοσιεύσεων, ιδίως σε πεδία όπως η *Νοημοσύνη Σμηνών Μη Επανδρωμένων Αεροσκαφών* και η *Τεχνητή Νοημοσύνη*, καθιστά αδύνατη τη χειροκίνητη παρακολούθηση.
-
-### Η Λύση
-Το TALOS δρα ως ένας αυτόνομος «Ερευνητικός Αρχιτέκτονας», φιλτράροντας τον θόρυβο και αναδεικνύοντας τη στρατηγική γνώση μέσα από μια ροή εργασίας «Human-in-the-loop».
-
-## 2. Τεχνική Αρχιτεκτονική & Οικοσύστημα
-
-### Α. Επίπεδο Πυρήνα Νοημοσύνης (Με Ενισχυτική Μάθηση)
-- **Πράκτορας DRL (Ο Αυτόνομος Ενορχηστρωτής):** Ένα **Double Dueling DQN με 3-επίπεδο LSTM** που μαθαίνει να επιλέγει τη βέλτιστη ακαδημαϊκή πηγή API σε πραγματικό χρόνο. Εκπαιδεύτηκε σε 3.849 πραγματικές βαθμολογίες εργασιών με επιτάχυνση **RTX 4070 CUDA 12.1**.
-  - **Περιβάλλον Gymnasium RL** (`src/ai/drl/talos_env.py`) -- Δυναμικός χώρος παρατήρησης Ν-πηγών και χώρος δράσης (Ν + 1)
-  - **Grey Wolf Optimizer** (`src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py`) για τη βελτιστοποίηση υπερπαραμέτρων
-  - **24/7 Αυτόνομη Υπηρεσία** (`src/ai/drl/talos_service.py`) -- ερευνητικός πράκτορας παρασκηνίου με ειδοποιήσεις Telegram/Discord/Email
-- **FastAPI REST API** (`src/api/main_api.py`) -- πλήρες REST facade με 23 endpoints στη διεύθυνση `localhost:8001`
-  - Σημασιολογική αναζήτηση, σελιδοποιημένα έγγραφα, ενεργοποιητές scrape/GWO με BackgroundTasks
-  - Αξιολόγηση μεμονωμένου εγγράφου με τεχνητή νοημοσύνη, μετάφραση φυσικής γλώσσας σε ερώτημα boolean
-  - **Αυτόνομος Κόκκινος Ελεγκτής (Red Tester)** (`GET /api/v1/tester/status`, `GET /api/v1/tester/reports`)
-  - **Δέκτης webhook SYNAPSE** (`POST /api/v1/synapse/webhook`) για διαλειτουργικότητα του οικοσυστήματος ALEXANDRIA
-  - **Θύρα 8001** (η θύρα 8000 διατηρείται για τον δίαυλο συμβάντων SYNAPSE)
-  - Αυτόματη διαδραστική τεκμηρίωση docs στη διεύθυνση `http://localhost:8001/docs`
-- **Τρισδιάστατος Οπτικοποιητής Αστερισμού Γνώσης** (`templates/live_foraging_visualizer.html`) -- vendored Three.js r128 με 60 FPS ακτίνες λέιζερ και δειγματολήπτη κατάστασης 1000ms
-- **Κεντρικός Κόμβος Ελέγχου Επιφάνειας Εργασίας** (`src/utils/tray_icon.py`) -- μενού επτά στοιχείων με αυτοθεραπευόμενη αυτόματη εκκίνηση του backend
-
-### Β. Επίπεδο Απόκτησης & Εμπλουτισμού Δεδομένων
-- **Επιχείρηση «Genesis» (Native Agents):** Ενορχηστρώνει ταυτόχρονες αναζητήσεις σε 16 ακαδημαϊκές πηγές με λογική **Exponential Backoff**.
-- **Έργο «HERMES» (Data Enricher):** Ανακτά αυτόματα νόμιμους συνδέσμους **Open Access (OA)** PDF μέσω του Unpaywall API.
-
-### Γ. Ενσωματωμένο Σύστημα Τεκμηρίωσης Κώδικα 18 Γλωσσών
-- **`src/utils/generate_docs.py`:** Τεκμηριώνει ολόκληρη τη βάση κώδικα TALOS σε 18 γλώσσες, 100% τοπικά μέσω Ollama χωρίς κόστος cloud.
-
-## 3. Εγκατάσταση & Χρήση
-
-### Μέθοδος Α: Docker (Συνιστάται)
+**Μέθοδος Α -- Docker Compose.**
 1. Εγκαταστήστε το Docker Desktop.
-2. Δημιουργήστε το αρχείο `.env` από το `example.env` (ένας πλήρως σχολιασμένος κανόνας έξι ενοτήτων).
+2. Δημιουργήστε το `.env` από το πλήρως σχολιασμένο `example.env`.
 3. Εκκινήστε τον headless FastAPI server (θύρα 8001): `docker compose up -d --build`
 4. Επιβεβαιώστε την υγεία: `curl http://localhost:8001/api/v1/health`
 
-### Μέθοδος Β: Εκκινητής 1-Κλικ (Windows)
-1. Ρυθμίστε το αρχείο `.env`.
-2. Κάντε διπλό κλικ στο **`run_talos.bat`**. Ο δαίμονας 24/7 εκθέτει επίσης έναν **Κεντρικό Κόμβο Ελέγχου Επιφάνειας Εργασίας** στο δίσκο συστήματος.
+**Μέθοδος Β -- Εκκινητής 1-Κλικ (Windows).**
+1. Ρυθμίστε το `.env`.
+2. Κάντε διπλό κλικ στο `run_talos.bat`.
 
-### Μέθοδος Γ: Παραδοσιακό Περιβάλλον Python (Linux/Mac)
-Ακολουθήστε τις οδηγίες της αγγλικής ενότητας.
+**Μέθοδος Γ -- Εκκινητής Linux.**
+1. Ρυθμίστε το `.env`.
+2. Εκτελέστε το `./run_talos.sh`.
 
-## 4. Άδεια Χρήσης & Εμπορική Χρήση
+**Μέθοδος Δ -- Σημαίες CLI Fast-Dispatch.** `--wizard`, `--daily`,
+`--prisma [--swarm]`, `--doctor`, `--diagnostics`, `--export-bib`, `--strategy`,
+`--snowball`, `--vector-search`, `--code-search`.
+
+---
+
+### Ακαδημαϊκή Παραπομπή
+
+C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature
+Orchestration System," version 5.15.0, 2026. [Online]. Available:
+https://github.com/Christos-Smarlamakis/Project-TALOS, doi: 10.5281/zenodo.19224912.
+
+```bibtex
+@software{talos2026,
+  author       = {Smarlamakis, Christos and Georgopoulos, Efstratios},
+  title        = {Project TALOS: Tactical Agentic Literature Orchestration System},
+  version      = {5.15.0},
+  year         = {2026},
+  doi          = {10.5281/zenodo.19224912},
+  url          = {https://github.com/Christos-Smarlamakis/Project-TALOS},
+  license      = {AGPL-3.0},
+  note         = {IEEE Computer Society WEIGD Student Support Fund (2026) recipient}
+}
+```
+
+---
+
+### Άδεια Χρήσης & Ευχαριστίες
 
 Το έργο διανέμεται υπό την **GNU Affero General Public License v3.0 (AGPLv3)**.
-- **Ακαδημαϊκή/Ερευνητική Χρήση:** Δωρεάν, με την προϋπόθεση ανοιχτής διάθεσης των αλλαγών υπό AGPLv3.
-- **Εμπορική Χρήση:** Απαιτείται εμπορική άδεια.
+Η ακαδημαϊκή και ερευνητική χρήση είναι δωρεάν, με την προϋπόθεση ανοιχτής
+διάθεσης των τροποποιήσεων υπό AGPLv3. Η εμπορική χρήση απαιτεί ξεχωριστή άδεια.
 
-## 5. Ευχαριστίες & Υποστήριξη
+Ο Επικεφαλής Αρχιτέκτονας και Συγγραφέας, **Χρήστος Σμαρλαμάκης**, είναι
+επίσημα επιλεγμένος αποδέκτης του **IEEE Computer Society WEIGD Student Support
+Fund (2026)**. Ευχαριστούμε θερμά την IEEE Computer Society και τη διαχρονική
+κληρονομιά της Dr. Grace C. N. Wei για την υποστήριξη ανοιχτού κώδικα και
+εκδημοκρατισμένων ερευνητικών εργαλείων για την παγκόσμια επιστημονική κοινότητα.
 
-Ο Επικεφαλής Αρχιτέκτονας και Συγγραφέας, **Χρήστος Σμαρλαμάκης**, είναι επίσημα επιλεγμένος αποδέκτης του **IEEE Computer Society WEIGD Student Support Fund (2026)**. Ευχαριστούμε θερμά την IEEE Computer Society και τη διαχρονική κληρονομιά της Dr. Grace C. N. Wei για την υποστήριξη ανοιχτού κώδικα και εκδημοκρατισμένων ερευνητικών εργαλείων για την παγκόσμια επιστημονική κοινότητα.
+*Σχεδιάστηκε και αναπτύχθηκε με υποβοήθηση τεχνητής νοημοσύνης από τον Χρήστο
+Σμαρλαμάκη.*
 
-*Σχεδιάστηκε & αναπτύχθηκε με υποβοήθηση τεχνητής νοημοσύνης από τον Χρήστο Σμαρλαμάκη.*
+
+

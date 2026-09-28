@@ -2,6 +2,25 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.15.0] - 2026-09-28 -- Καθολικός Κόμβος Επιστημονικής Αναζήτησης & Μηχανή Ανακάλυψης Νευρικών Γράφων
+
+### Προστέθηκε
+
+- **Αρθρωτό υποπακέτο κατάποσης** (`src/ingestion/sources/`): και οι 18 προσαρμογείς πηγών (`arxiv`, `ieee`, `semantic_scholar`, `springer`, `openalex`, `dblp`, `elsevier`, `core`, `crossref`, `openarchives`, `pubmed`, `scigov`, `osti`, `plos`, `openreview`, `openaire`, `nasa_ntrs`, `hal_inria`) μεταφέρθηκαν κάτω από ένα ενιαίο `SOURCE_REGISTRY` που εκτίθεται από το `src/ingestion/sources/__init__.py`· τα `daily_search.py` και `historic_search.py` εισάγουν το κανονικό μητρώο από το νέο υποπακέτο.
+- **Μηχανή Χιονοστιβάδας Παραπομπών** (`src/search/citation_snowballing.py`): η `CitationSnowballEngine` διασχίζει τον γράφο παραπομπών προς τα πίσω (εργασίες που παρατίθενται μέσω OpenAlex/Crossref/Semantic Scholar) και προς τα εμπρός (εργασίες που παραπέμπουν, 2024-2026), φιλτράρει κόμβους μέσω `PrismaEvaluator`/τοπικού `llama3.1:8b`, παράγει δομημένο γράφο γενεαλογίας και εισάγει σχετικές εργασίες στη βάση ενεργού προφίλ.
+- **Νευρική Διανυσματική Αναζήτηση** (`src/search/neural_vector_search.py`): η `NeuralVectorSearchEngine` κωδικοποιεί ερωτήματα και περιλήψεις με το τοπικό μοντέλο `nomic-embed-text` του Ollama (θύρα 11434) και κατατάσσει κατά ομοιότητα συνημιτόνου `S_C(u,v) = (u . v) / (||u|| ||v||)`, με ντετερμινιστική λεκτική υποχώρηση εκτός σύνδεσης.
+- **Αναζήτηση με Προτεραιότητα στον Κώδικα** (`src/search/code_first_search.py`): η `CodeFirstSearchEngine` ανακαλύπτει αναπαραγώγιμες εργασίες συνδεδεμένες με κώδικα (GitHub / PapersWithCode / PyTorch / ROS2 / Gazebo / AirSim / σημεία αναφοράς Isaac Gym) και διασταυρώνει τη βάση ενεργού προφίλ.
+- **Ενσωμάτωση CLI & TUI** (`talos.py`): σημαίες ταχείας αποστολής `--snowball [seed]`, `--vector-search [query]` και `--code-search [query]` συν αναδιαρθρωμένο μενού Ομάδας 2 «Καθολικός Κόμβος Αναζήτησης» (6 βασικές επιλογές + διατηρημένα εργαλεία γκρίζας βιβλιογραφίας / Zotero / πίνακα ελέγχου).
+- **Ακαδημαϊκός φάκελος Κανόνα 10 04** (`docs/internal/academic/04_NEURAL_GRAPH_SEARCH_PARADIGMS.md`): εμπιστευτικός ακαδημαϊκός φάκελος 7 ενοτήτων (Jalali & Wohlin 2012, Nomic Embed 2024, DPR) με πλήρη πίνακα ιχνηλασιμότητας κώδικα.
+
+### Άλλαξε
+
+- **Συγχρονισμός αλφαριθμητικών έκδοσης σε 5.15.0** στα 6 βασικά αρχεία κώδικα, `docker-compose.yml`, `CITATION.cff`, μεταδεδομένα tray/visualizer/wizard/diagnostics, docstrings `src/prisma/` και στα 19 κανονικά αρχεία τεκμηρίωσης.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.0)· `pytest tests/test_neural_vector_search.py -q` (mock ενσωματώσεις `nomic-embed-text`, κωδικός εξόδου 0)· δοκιμή αρθρωτής κατάποσης· ο φάκελος συμμορφώνεται με το πρότυπο 7 ενοτήτων με 0 U+FFFD· `verify_dependency_map.py --ci` (κωδικός εξόδου 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8.
+
 ## [v5.14.2] - 2026-09-28 -- Επιστημονικός Εξαγωγέας BibTeX, Κατάποση Αεροδιαστημικής 18 Πηγών & Πάγωμα Χαρακτηριστικών
 
 ### Προστέθηκε

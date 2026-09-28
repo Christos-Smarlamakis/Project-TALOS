@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: system_diagnostics.py
-Project: TALOS v5.14.2
+Project: TALOS v5.15.0
 Description:
     System Diagnostics Analyzer for TALOS. Executes an 8-point pre-flight
     health check over the local, air-gapped runtime (Python environment,
@@ -95,7 +95,7 @@ def _status(ok):
 # ----------------------------------------------------------------------
 
 # User-Agent used for all outbound diagnostic HTTP probes.
-USER_AGENT = "TALOS-Research-Diagnostics/5.14.2"
+USER_AGENT = "TALOS-Research-Diagnostics/5.15.0"
 
 # Zero-key (open access) academic repository endpoints probed concurrently.
 # Each entry is a GET endpoint returning a small JSON/XML payload when the
