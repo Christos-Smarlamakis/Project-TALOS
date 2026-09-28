@@ -4,9 +4,36 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-28 (v5.13.1 -- System Diagnostics Analyzer & Operational Integrity Engine)
+> **Last Updated:** 2026-09-28 (v5.14.1 -- Multi-Agent Peer-Review Swarm & Consensus Engine)
 
 ---
+
+## Phase 59: Multi-Agent Peer-Review Swarm & Consensus Engine (v5.14.1)
+
+### Status: COMPLETED (2026-09-28)
+
+- [x] **Multi-agent peer-review swarm** -- `src/prisma/swarm_evaluators.py` (AlgorithmicReviewer / EmpiricalReviewer / OperationalReviewer specialized personas).
+- [x] **Automated inter-rater reliability** -- `calculate_cohens_kappa()` (Fleiss' multi-rater generalization of Cohen's Kappa) + `cohens_kappa_pairwise()`.
+- [x] **Chain-of-Thought consensus arbiter** -- `SwarmConsensusArbiter` (unanimous short-circuit, split adjudication, `ConsensusVerdict`).
+- [x] **PRISMA pipeline integration** -- `PrismaEvaluator.evaluation_mode` (`'single'` / `'swarm'`) with VRAM-bounded `ThreadPoolExecutor` and `PrismaExecutor` consensus logging.
+- [x] **CLI & TUI integration** -- `--prisma --swarm` flag + Group 3 screening-mode prompt.
+- [x] **Rule 10 academic dossier** -- `docs/internal/academic/02_MULTI_AGENT_CONSENSUS_SWARM.md`.
+- [x] **Version synced** -- 6 code files + Docker image + CITATION.cff + 19 documentation files to v5.14.1.
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.14.1), verify_dependency_map, bash -n, UTF-8 scan.
+
+## Phase 58: Stanford DSPy PRISMA-ScR Pipeline (v5.14.0)
+
+### Status: COMPLETED (2026-09-28)
+
+- [x] **Declarative PRISMA-ScR signatures** -- `src/prisma/dspy_signatures.py` (Pydantic-v2 typed schema models mirroring the Stanford DSPy `dspy.Signature` paradigm).
+- [x] **PlanEval pipeline modules** -- `src/prisma/dspy_modules.py` (PrismaPlanner / PrismaEvaluator / PrismaEligibilityJudge / PrismaExecutor with 4-phase linear flow and live record counters).
+- [x] **PRISMA 2020 Mermaid flowchart generator** -- `src/prisma/mermaid_generator.py` (`generate_prisma_mermaid()` with exact counts).
+- [x] **Scoping review synthesizer** -- `src/prisma/scoping_review_synthesizer.py` (Markdown + LaTeX drafts per PRISMA-ScR).
+- [x] **CLI & TUI integration** -- `--prisma` fast-dispatch flag + Group 3 Advanced Analysis menu option.
+- [x] **Rule 10 academic dossier** -- `docs/internal/academic/01_STANFORD_DSPY_PRISMA_PIPELINE.md` (7-section confidential dossier).
+- [x] **Version synced** -- 6 code files + Docker image + CITATION.cff + 19 documentation files to v5.14.0.
+- [x] **Roadmap re-aligned** -- CORTEX & n8n -> v5.15.0.
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.14.0), verify_dependency_map, bash -n, UTF-8 scan.
 
 ## Phase 45: Universal TUI Feature Restoration & 100% Codebase Coverage (v5.10.15)
 

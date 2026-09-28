@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.13.1
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.14.1
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-09-28
-> **Version:** v5.13.1 -- System Diagnostics Analyzer & Operational Integrity Engine
+> **Version:** v5.14.1 -- Multi-Agent Peer-Review Swarm & Consensus Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.13.1" | `config/settings.py` |
+| TALOS_VERSION | "5.14.1" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1008,6 +1008,32 @@ For each evaluated paper, the AI generates:
 - **TUI Group 6 integration**: `system_health_menu()` gains Option 1 "System Health & Diagnostic Analyzer", with the remaining options renumbered 1-8 to 2-9.
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.13.1), `python talos.py --diagnostics` / `--doctor` (exit 0), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+### 15.31 Stanford DSPy PRISMA-ScR Pipeline & Declarative Synthesis Engine (v5.14.0)
+
+**Overview:** v5.14.0 integrates the Stanford DSPy declarative programming paradigm into the PRISMA-ScR scoping review workflow, replacing brittle string prompts with typed declarative signatures and a four-phase linear pipeline, fully air-gapped and local-first.
+
+- **Typed declarative signatures** (`src/prisma/dspy_signatures.py`): Pydantic-v2 schema models -- `PrismaPlanSignature` (topic/scope -> search facets, boolean strategy, methodological inclusion/exclusion criteria), `PrismaScreeningSignature` (title/abstract -> INCLUDE/EXCLUDE/UNCERTAIN decision + bounded relevance score + chain-of-thought), `PrismaEligibilitySignature` (deep assessment -> ELIGIBLE/INELIGIBLE + swarm algorithm type / learning paradigm / network architecture), `PrismaSynthesisSignature` (included-studies summary -> thematic taxonomy, methodological distribution, gaps, narrative), plus `extract_json_payload()` recovery.
+- **PlanEval modules** (`src/prisma/dspy_modules.py`): `PrismaPlanner.plan()` (multi-database search protocol), `PrismaEvaluator.screen()` (Chain-of-Thought screening over `AIManager.analyze_generic_text`), `PrismaEligibilityJudge.assess()`, and `PrismaExecutor.run()` (4-phase flow with live counters N_identified / N_dedup / N_screened / N_excluded / N_eligible / N_included); deterministic keyword fallback for air-gapped hosts.
+- **PRISMA 2020 Mermaid flowchart generator** (`src/prisma/mermaid_generator.py`): `generate_prisma_mermaid(counts)` emits an exact-count `flowchart TD`, with `mermaid_to_markdown()` / `mermaid_to_html()` export wrappers.
+- **Scoping review synthesizer** (`src/prisma/scoping_review_synthesizer.py`): `synthesize_scoping_review()` (7-section Markdown) and `synthesize_scoping_review_latex()` (LaTeX article draft).
+- **CLI/TUI surface**: `talos.py --prisma` fast-dispatch flag and the Group 3 Advanced Analysis menu option.
+- **Rule 10 dossier**: `docs/internal/academic/01_STANFORD_DSPY_PRISMA_PIPELINE.md`.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.14.0), `python talos.py --help` (lists `--prisma`), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+### 15.32 Multi-Agent Peer-Review Swarm & Consensus Engine (v5.14.1)
+
+**Overview:** v5.14.1 augments the PRISMA-ScR screening stage with a multi-agent peer-review swarm and an automated inter-rater reliability engine, replacing the single-screener decision with three specialized reviewer personas and a statistically grounded Chain-of-Thought consensus arbiter, fully air-gapped and local-first.
+
+- **Multi-agent review swarm** (`src/prisma/swarm_evaluators.py`): `AlgorithmicReviewer` (mathematical formulation, HMADRL / Dec-POMDPs / QMIX DRL, ST-GNNs / ST-GAT), `EmpiricalReviewer` (Gazebo / AirSim / Isaac Gym, ablations, benchmarks, metrics), and `OperationalReviewer` (scalability, communication topology and latency, collision avoidance, NATO / CJCSI) -- each emitting a typed `ReviewerVerdict` (vote, 0.0-10.0 score, 0.0-1.0 confidence, critiques).
+- **Inter-rater reliability** (`calculate_cohens_kappa` / `cohens_kappa_pairwise`): Fleiss' multi-rater generalization of Cohen's Kappa `kappa = (p_o - p_e)/(1 - p_e)` over the three votes, plus a classical pairwise two-rater kappa for auditing.
+- **Consensus arbiter** (`SwarmConsensusArbiter.adjudicate`): unanimous (3-0 / 0-3) short-circuits to an instant high-confidence decision; split (2-1 / 1-2 / 1-1-1) invokes Chain-of-Thought adjudication, falling back to a 2-1 majority (or UNCERTAIN on a tie); returns a `ConsensusVerdict` (final decision, confidence-weighted consensus score, Cohen's Kappa, multi-perspective synthesis narrative).
+- **PRISMA pipeline integration** (`src/prisma/dspy_modules.py` + `dspy_signatures.py`): `PrismaEvaluator.evaluation_mode` (`'single'` / `'swarm'`); the swarm path dispatches the three personas via `ThreadPoolExecutor` bounded by `threading.Semaphore(2)` (2 local / 3 cloud workers) and records `consensus_mode`, `swarm_kappa`, and `agent_verdicts` on the screening signature; `PrismaExecutor.run()` logs mean Cohen's Kappa during Screening.
+- **CLI/TUI surface**: `talos.py --prisma --swarm` fast-dispatch flag and the Group 3 "Select Screening Mode" prompt.
+- **Rule 10 dossier**: `docs/internal/academic/02_MULTI_AGENT_CONSENSUS_SWARM.md`.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.14.1), `python talos.py --help` (lists `--prisma [--swarm]`), the swarm evaluator unit exercise (3-agent review + Cohen's Kappa, exit 0), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 ---
 

@@ -2,6 +2,57 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.14.1] - 2026-09-28 -- Multi-Agent Peer-Review Swarm & Consensus Engine
+
+### Added
+
+- **Multi-agent peer-review swarm** (`src/prisma/swarm_evaluators.py`): three specialized reviewer personas -- `AlgorithmicReviewer` (mathematical formulation, HMADRL / Dec-POMDPs / QMIX DRL algorithms, ST-GNNs / ST-GAT graph neural networks, theoretical soundness), `EmpiricalReviewer` (Gazebo / AirSim / Isaac Gym simulation environments, ablation studies, benchmark rigor, real flight tests, quantitative metrics), and `OperationalReviewer` (swarm scalability, communication topology and latency, physical collision avoidance, NATO / CJCSI operational constraints). Each persona emits a typed `ReviewerVerdict` (agent name, INCLUDE / EXCLUDE / UNCERTAIN vote, 0.0-10.0 score, 0.0-1.0 confidence, and key critiques).
+- **Automated inter-rater reliability** (`calculate_cohens_kappa` / `cohens_kappa_pairwise`): Fleiss' multi-rater generalization of Cohen's Kappa `kappa = (p_o - p_e) / (1 - p_e)` over the three votes, plus a classical pairwise two-rater kappa for auditing the agreement matrix.
+- **Chain-of-Thought consensus arbiter** (`SwarmConsensusArbiter.adjudicate`): unanimous verdicts (3-0 or 0-3) short-circuit to an instant high-confidence decision; split verdicts (2-1 / 1-2 / 1-1-1) invoke a Chain-of-Thought adjudication over the dissenting critiques, falling back to a 2-1 majority (or UNCERTAIN on a 1-1-1 tie) when the LLM is unreachable. Returns a `ConsensusVerdict` carrying the final decision, a confidence-weighted consensus score, the Cohen's Kappa, and a multi-perspective synthesis narrative.
+- **PRISMA pipeline integration** (`src/prisma/dspy_modules.py` + `dspy_signatures.py`): `PrismaEvaluator` gains an `evaluation_mode` parameter (`'single'` fast baseline vs `'swarm'` rigorous 3-agent consensus); the swarm path dispatches the three personas concurrently via `ThreadPoolExecutor` bounded by the `threading.Semaphore(2)` VRAM guard (2 workers local, 3 workers cloud mesh) and records Cohen's Kappa and per-agent critiques in `PrismaScreeningSignature` (`consensus_mode`, `swarm_kappa`, `agent_verdicts`). `PrismaExecutor.run()` logs consensus statistics (mean Cohen's Kappa) during the Screening phase.
+- **CLI & TUI integration** (`talos.py`): `--prisma --swarm` fast-dispatch flag and a Group 3 "Select Screening Mode" prompt (1. Fast Single Screener | 2. Rigorous Multi-Agent Review Swarm).
+- **Rule 10 academic dossier** (`docs/internal/academic/02_MULTI_AGENT_CONSENSUS_SWARM.md`): 7-section confidential dossier implementing the dual-layer traceability standard.
+
+### Changed
+
+- **Version strings synchronized to 5.14.1** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan log/description, `talos.py` docstring and release note, `run_talos.bat` title/banner/logs, `run_talos.sh` header/banner/logs, `tests/test_multi_tier.py` version assertion), plus `docker-compose.yml` (`talos:5.14.1`), `CITATION.cff` (version 5.14.1, date-released 2026-09-28), the user-facing strings in `src/utils/tray_icon.py`, `src/utils/evaluation_history.py`, `src/utils/research_setup_wizard.py`, `src/utils/ai_strategy_selector.py`, `src/utils/system_diagnostics.py`, and `templates/live_foraging_visualizer.html`, the `src/prisma/` module docstrings, and all 19 canonical documentation files.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.14.1).
+- `python talos.py --help` lists `--prisma [--swarm]`.
+- Swarm evaluator unit exercise (3-agent review + Cohen's Kappa) completed with exit 0.
+- `python src/utils/verify_dependency_map.py --ci` returned exit 0.
+- `bash -n run_talos.sh` passed with zero syntax errors.
+- Strict UTF-8 decode scan across all modified files: zero U+FFFD replacement glyphs.
+
+## [v5.14.0] - 2026-09-28 -- Stanford DSPy PRISMA-ScR Pipeline & Declarative Synthesis Engine
+
+### Added
+
+- **Declarative PRISMA-ScR signatures** (`src/prisma/dspy_signatures.py`): typed, Pydantic-v2 schema models mirroring the Stanford DSPy `dspy.Signature` paradigm -- `PrismaPlanSignature` (topic/scope -> search facets, boolean strategy, methodological inclusion and exclusion criteria), `PrismaScreeningSignature` (title/abstract + criteria -> INCLUDE/EXCLUDE/UNCERTAIN decision, bounded relevance score, exclusion reason, methodology tags, chain-of-thought), `PrismaEligibilitySignature` (deep assessment -> ELIGIBLE/INELIGIBLE decision + swarm algorithm type / learning paradigm / network architecture), and `PrismaSynthesisSignature` (included-studies summary -> thematic taxonomy, methodological distribution, gaps, narrative). A robust `extract_json_payload()` recovery helper parses fenced or prose-prefixed local-model JSON.
+- **PlanEval pipeline modules** (`src/prisma/dspy_modules.py`): `PrismaPlanner` (multi-database search protocol synthesis), `PrismaEvaluator` (structured Chain-of-Thought screening over the multi-tier `AIManager`), `PrismaEligibilityJudge` (full-record methodological suitability), and `PrismaExecutor` (end-to-end 4-phase orchestrator with live record counters N_identified / N_dedup / N_screened / N_excluded / N_eligible / N_included). Every LLM-backed step degrades gracefully to deterministic keyword rules for air-gapped operation.
+- **PRISMA 2020 Mermaid flowchart generator** (`src/prisma/mermaid_generator.py`): `generate_prisma_mermaid(counts)` emits a standard-compliant `flowchart TD` with exact `(n = ...)` labels across Identification/Screening/Eligibility/Included, plus `mermaid_to_markdown()` and `mermaid_to_html()` export wrappers.
+- **Scoping review synthesizer** (`src/prisma/scoping_review_synthesizer.py`): `synthesize_scoping_review()` and `synthesize_scoping_review_latex()` produce seven-section publication-grade drafts per PRISMA-ScR guidelines.
+- **CLI & TUI integration** (`talos.py`): `--prisma` fast-dispatch flag and Group 3 option "PRISMA-ScR Declarative Synthesis Pipeline (Stanford DSPy Engine)".
+- **Rule 10 academic dossier** (`docs/internal/academic/01_STANFORD_DSPY_PRISMA_PIPELINE.md`): 7-section confidential dossier implementing the dual-layer traceability standard.
+
+### Changed
+
+- **Version strings synchronized to 5.14.0** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan log/description, `talos.py` docstring and release note, `run_talos.bat` title/banner/logs, `run_talos.sh` header/banner/logs, `tests/test_multi_tier.py` version assertion), plus `docker-compose.yml` (`talos:5.14.0`), `CITATION.cff` (version 5.14.0, date-released 2026-09-28), and the user-facing strings in `src/utils/tray_icon.py`, `src/utils/evaluation_history.py`, `src/utils/research_setup_wizard.py`, `src/utils/ai_strategy_selector.py`, `src/utils/system_diagnostics.py`, and `templates/live_foraging_visualizer.html`, and all 19 canonical documentation files.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.14.0).
+- `python talos.py --help` lists `--prisma`.
+- `python src/utils/verify_dependency_map.py --ci` returned exit 0.
+- `bash -n run_talos.sh` passed with zero syntax errors.
+- Strict UTF-8 decode scan across all modified files: zero U+FFFD replacement glyphs.
+
 ## [v5.13.1] - 2026-09-28 -- System Diagnostics Analyzer & Operational Integrity Engine
 
 ### Added

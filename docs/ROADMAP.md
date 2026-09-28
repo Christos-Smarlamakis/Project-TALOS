@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.13.1 (System Diagnostics Analyzer & Operational Integrity Engine)
+> **Current Version:** v5.14.1 (Multi-Agent Peer-Review Swarm & Consensus Engine)
 > **Last Updated:** 2026-09-28
 
 ---
@@ -143,7 +143,8 @@ The v5.10.x series transitions Project TALOS from an aggregator to a fully adapt
 | **v5.12.4** | Concurrent Ingestion Mesh & Multi-Profile Research Onboarding | Step 0 profile target gate (`_step0_profile_selection()`: reconfigure active / switch existing / create fresh isolated profile) and `ThreadPoolExecutor(max_workers=16)` concurrent 16-source harvest with Rich Live telemetry and DOI + normalized-title-hash deduplication (~35-45s to ~3-4s). | Complete |
 | **v5.13.0** | Full-Stack Concurrent Multi-Threaded Engine & High-Throughput Harvester | ThreadPoolExecutor 16-source ingestion mesh (daily + historic), concurrent cognitive evaluation pool (8 cloud / 2 VRAM-guarded local workers), batched SQLite WAL re-evaluation, and Rich Live concurrency telemetry. | Complete |
 | **v5.13.1** | System Diagnostics Analyzer & Operational Integrity Engine | 8-point pre-flight health check (Python env, SQLite integrity/WAL, local AI runtime, port availability, filesystem permissions, .env structure, daemon status, optional network endpoints) with a Rich health report + one-line remediation; CLI --diagnostics/--doctor and TUI Group 6 option. | Complete |
-| **v5.14.0** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline (`src/ai/dspy_prisma_pipeline.py`) leveraging PlanEval architecture (Fast Edge Planner/Evaluator + Heavy Reasoning Executor). | Next (Target: Christmas 2026 / Early 2027) |
+| **v5.14.0** | Stanford DSPy PRISMA-ScR Pipeline & Declarative Synthesis Engine | Typed declarative PRISMA-ScR signatures (`src/prisma/dspy_signatures.py`), PlanEval modules (Planner/Evaluator/EligibilityJudge/Executor), PRISMA 2020 Mermaid flowchart generator, scoping review synthesizer, and Rule 10 academic dossier. | Complete |
+| **v5.14.1** | Multi-Agent Peer-Review Swarm & Consensus Engine | 3-agent specialized review swarm (`src/prisma/swarm_evaluators.py`), automated Cohen's Kappa inter-rater reliability, Chain-of-Thought consensus arbiter, PRISMA pipeline swarm screening mode, and Rule 10 academic dossier. | Complete |
 | **v5.15.0** | CORTEX & n8n Gateway | Live arXiv RSS & text evaluation Discord Bot (`src/integration/discord_evaluator.py`) and SYNAPSE n8n Workflow Gateway templates (`templates/n8n_workflows/`). | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine. | Future |
 
@@ -206,7 +207,8 @@ Project ALEXANDRIA marks the full desktop and distributed release of the platfor
 | **v5.12.4** | Concurrent Ingestion Mesh & Multi-Profile Research Onboarding | Step 0 profile target gate + ThreadPoolExecutor(16) concurrent harvest, Rich Live telemetry, DOI + title-hash dedup (~35-45s to ~3-4s) | Complete |
 | **v5.13.0** | Full-Stack Concurrent Multi-Threaded Engine & High-Throughput Harvester | ThreadPoolExecutor 16-source mesh, concurrent eval pool (8/2), WAL re-evaluation, Rich Live telemetry | Complete |
 | **v5.13.1** | System Diagnostics Analyzer & Operational Integrity Engine | 8-point pre-flight health check + Rich health report + one-line remediation; CLI --diagnostics/--doctor; TUI Group 6 option | Complete |
-| **v5.14.0** | DSPy PRISMA Systematic Review Pipeline | Automated PRISMA 2020 SLR with PlanEval DSPy architecture | Next (Target: Christmas 2026 / Early 2027) |
+| **v5.14.0** | Stanford DSPy PRISMA-ScR Pipeline & Declarative Synthesis Engine | Typed signatures, PlanEval modules, Mermaid 2020 flowchart, scoping review synthesizer, Rule 10 dossier | Complete |
+| **v5.14.1** | Multi-Agent Peer-Review Swarm & Consensus Engine | 3-agent review swarm, Cohen's Kappa, CoT consensus arbiter, swarm screening mode, Rule 10 dossier | Complete |
 | **v5.15.0** | CORTEX & n8n Gateway | Discord bot, n8n workflow templates, ecosystem integration | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine | Future |
 

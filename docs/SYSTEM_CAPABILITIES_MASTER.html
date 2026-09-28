@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.13.1</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.14.1</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.13.1</h1>
+<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.14.1</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-09-28 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.13.1 -- System Diagnostics Analyzer &amp; Operational Integrity Engine
+  <strong>Version:</strong> v5.14.1 -- Multi-Agent Peer-Review Swarm &amp; Consensus Engine
 </div>
 
 <!-- ===================================================================== -->
@@ -357,7 +357,7 @@
 <table>
   <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
   <tbody>
-    <tr><td>TALOS_VERSION</td><td>"5.13.1"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_VERSION</td><td>"5.14.1"</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
@@ -1289,8 +1289,32 @@
 </ul>
 <p><strong>Verification surface:</strong> release gates include <code>compileall</code>, system integrity, version assertion (v5.13.1), <code>--diagnostics</code>/<code>--doctor</code> CLI runs (exit 0), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
 
+<h3 id="s15-31">15.31 Stanford DSPy PRISMA-ScR Pipeline &amp; Declarative Synthesis Engine (v5.14.0)</h3>
+<p><strong>Overview:</strong> v5.14.0 integrates the Stanford DSPy declarative programming paradigm into the PRISMA-ScR scoping review workflow, replacing brittle string prompts with typed declarative signatures and a four-phase linear pipeline, fully air-gapped and local-first.</p>
+<ul>
+  <li><strong>Typed declarative signatures</strong> (<code>src/prisma/dspy_signatures.py</code>): Pydantic-v2 schema models -- <code>PrismaPlanSignature</code>, <code>PrismaScreeningSignature</code> (bounded relevance score + chain-of-thought), <code>PrismaEligibilitySignature</code>, <code>PrismaSynthesisSignature</code>, plus <code>extract_json_payload()</code> recovery.</li>
+  <li><strong>PlanEval modules</strong> (<code>src/prisma/dspy_modules.py</code>): <code>PrismaPlanner.plan()</code>, <code>PrismaEvaluator.screen()</code> (Chain-of-Thought), <code>PrismaEligibilityJudge.assess()</code>, <code>PrismaExecutor.run()</code> (4-phase flow with live counters); deterministic keyword fallback for air-gapped hosts.</li>
+  <li><strong>PRISMA 2020 Mermaid flowchart generator</strong> (<code>src/prisma/mermaid_generator.py</code>): <code>generate_prisma_mermaid()</code> + <code>mermaid_to_markdown()</code> / <code>mermaid_to_html()</code>.</li>
+  <li><strong>Scoping review synthesizer</strong> (<code>src/prisma/scoping_review_synthesizer.py</code>): <code>synthesize_scoping_review()</code> (7-section Markdown) and <code>synthesize_scoping_review_latex()</code>.</li>
+  <li><strong>CLI/TUI surface</strong>: <code>talos.py --prisma</code> fast-dispatch flag and the Group 3 Advanced Analysis menu option.</li>
+  <li><strong>Rule 10 dossier</strong>: <code>docs/internal/academic/01_STANFORD_DSPY_PRISMA_PIPELINE.md</code>.</li>
+</ul>
+<p><strong>Verification surface:</strong> release gates include <code>compileall</code>, system integrity, version assertion (v5.14.0), <code>--prisma</code> help listing, <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
+
+<h3 id="s15-32">15.32 Multi-Agent Peer-Review Swarm &amp; Consensus Engine (v5.14.1)</h3>
+<p><strong>Overview:</strong> v5.14.1 augments the PRISMA-ScR screening stage with a multi-agent peer-review swarm and an automated inter-rater reliability engine, replacing the single-screener decision with three specialized reviewer personas and a statistically grounded Chain-of-Thought consensus arbiter, fully air-gapped and local-first.</p>
+<ul>
+  <li><strong>Multi-agent review swarm</strong> (<code>src/prisma/swarm_evaluators.py</code>): <code>AlgorithmicReviewer</code> (mathematical formulation, HMADRL / Dec-POMDPs / QMIX DRL, ST-GNNs / ST-GAT), <code>EmpiricalReviewer</code> (Gazebo / AirSim / Isaac Gym, ablations, benchmarks, metrics), and <code>OperationalReviewer</code> (scalability, communication topology/latency, collision avoidance, NATO / CJCSI) -- each emitting a typed <code>ReviewerVerdict</code> (vote, 0.0-10.0 score, 0.0-1.0 confidence, critiques).</li>
+  <li><strong>Inter-rater reliability</strong>: <code>calculate_cohens_kappa()</code> (Fleiss generalization of Cohen's Kappa) + <code>cohens_kappa_pairwise()</code>.</li>
+  <li><strong>Consensus arbiter</strong>: <code>SwarmConsensusArbiter.adjudicate()</code> (unanimous short-circuit + Chain-of-Thought split adjudication), returning a <code>ConsensusVerdict</code> (final decision, confidence-weighted consensus score, Cohen's Kappa, synthesis).</li>
+  <li><strong>PRISMA pipeline integration</strong>: <code>PrismaEvaluator.evaluation_mode</code> (<code>'single'</code> / <code>'swarm'</code>) with VRAM-bounded <code>ThreadPoolExecutor</code>; <code>PrismaExecutor.run()</code> logs mean Cohen's Kappa during Screening.</li>
+  <li><strong>CLI/TUI surface</strong>: <code>--prisma --swarm</code> flag + Group 3 screening-mode prompt.</li>
+  <li><strong>Rule 10 dossier</strong>: <code>docs/internal/academic/02_MULTI_AGENT_CONSENSUS_SWARM.md</code>.</li>
+</ul>
+<p><strong>Verification surface:</strong> release gates include <code>compileall</code>, system integrity, version assertion (v5.14.1), <code>--prisma [--swarm]</code> help listing, the swarm evaluator unit exercise (exit 0), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.13.1</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.14.1</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

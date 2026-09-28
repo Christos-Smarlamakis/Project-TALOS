@@ -4,9 +4,36 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.13.1 -- Αναλυτής Διαγνωστικών Συστήματος & Μηχανή Λειτουργικής Ακεραιότητας)
+> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.14.1 -- Σμήνος Ομότιμης Αναθεώρησης Πολλαπλών Πρακτόρων & Μηχανή Συναίνεσης)
 
 ---
+
+## Φάση 59: Σμήνος Ομότιμης Αναθεώρησης Πολλαπλών Πρακτόρων & Μηχανή Συναίνεσης (v5.14.1)
+
+### Κατάσταση: ΟΛΟΚΛΗΡΩΘΗΚΕ (2026-09-28)
+
+- [x] **Σμήνος ομότιμης αναθεώρησης πολλαπλών πρακτόρων** -- `src/prisma/swarm_evaluators.py` (εξειδικευμένες προσωπικότητες AlgorithmicReviewer / EmpiricalReviewer / OperationalReviewer).
+- [x] **Αυτοματοποιημένη αξιοπιστία μεταξύ αξιολογητών** -- `calculate_cohens_kappa()` (γενίκευση πολλαπλών αξιολογητών του Kappa του Cohen κατά Fleiss) + `cohens_kappa_pairwise()`.
+- [x] **Διαιτητής συναίνεσης με αλυσίδα σκέψης** -- `SwarmConsensusArbiter` (ομόφωνη βραχυκύκλωση, διαιτησία διχασμού, `ConsensusVerdict`).
+- [x] **Ενσωμάτωση στον αγωγό PRISMA** -- `PrismaEvaluator.evaluation_mode` (`'single'` / `'swarm'`) με `ThreadPoolExecutor` οριοθετημένο από VRAM και καταγραφή συναίνεσης από τον `PrismaExecutor`.
+- [x] **Ενσωμάτωση CLI & TUI** -- σημαία `--prisma --swarm` + προτροπή λειτουργίας διαλογής Ομάδας 3.
+- [x] **Ακαδημαϊκός φάκελος Κανόνα 10** -- `docs/internal/academic/02_MULTI_AGENT_CONSENSUS_SWARM.md`.
+- [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + εικόνα Docker + CITATION.cff + 19 έγγραφα τεκμηρίωσης σε v5.14.1.
+- [x] **Πύλες επαλήθευσης** -- compileall, test_system_integrity, test_talos_version (5.14.1), verify_dependency_map, bash -n, σάρωση UTF-8.
+
+## Φάση 58: Αγωγός PRISMA-ScR του Stanford DSPy (v5.14.0)
+
+### Κατάσταση: ΟΛΟΚΛΗΡΩΘΗΚΕ (2026-09-28)
+
+- [x] **Δηλωτικές υπογραφές PRISMA-ScR** -- `src/prisma/dspy_signatures.py` (τυποποιημένα μοντέλα σχήματος Pydantic v2 που καθρεφτίζουν το παράδειγμα `dspy.Signature` του Stanford DSPy).
+- [x] **Ενότητες αγωγού PlanEval** -- `src/prisma/dspy_modules.py` (PrismaPlanner / PrismaEvaluator / PrismaEligibilityJudge / PrismaExecutor με γραμμική ροή 4 φάσεων και ζωντανούς μετρητές εγγραφών).
+- [x] **Γεννήτρια διαγράμματος ροής PRISMA 2020 Mermaid** -- `src/prisma/mermaid_generator.py` (`generate_prisma_mermaid()` με ακριβείς μετρήσεις).
+- [x] **Συνθέτης ανασκόπησης πεδίου** -- `src/prisma/scoping_review_synthesizer.py` (προσχέδια Markdown + LaTeX σύμφωνα με το PRISMA-ScR).
+- [x] **Ενσωμάτωση CLI & TUI** -- σημαία ταχείας αποστολής `--prisma` + επιλογή μενού Ομάδας 3 Προηγμένη Ανάλυση.
+- [x] **Ακαδημαϊκός φάκελος Κανόνα 10** -- `docs/internal/academic/01_STANFORD_DSPY_PRISMA_PIPELINE.md` (εμπιστευτικός φάκελος 7 ενοτήτων).
+- [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + εικόνα Docker + CITATION.cff + 19 έγγραφα τεκμηρίωσης σε v5.14.0.
+- [x] **Επαναπροσδιορισμός οδικού χάρτη** -- CORTEX & n8n -> v5.15.0.
+- [x] **Πύλες επαλήθευσης** -- compileall, test_system_integrity, test_talos_version (5.14.0), verify_dependency_map, bash -n, σάρωση UTF-8.
 
 ## Φάση 45: Καθολική Αποκατάσταση Χαρακτηριστικών TUI & 100% Κάλυψη Κώδικα (v5.10.15)
 

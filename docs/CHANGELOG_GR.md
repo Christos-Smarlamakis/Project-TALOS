@@ -2,6 +2,57 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.14.1] - 2026-09-28 -- Σμήνος Ομότιμης Αναθεώρησης Πολλαπλών Πρακτόρων & Μηχανή Συναίνεσης
+
+### Προστέθηκε
+
+- **Σμήνος ομότιμης αναθεώρησης πολλαπλών πρακτόρων** (`src/prisma/swarm_evaluators.py`): τρεις εξειδικευμένες προσωπικότητες αναθεωρητών -- `AlgorithmicReviewer` (μαθηματική διατύπωση, αλγόριθμοι DRL HMADRL / Dec-POMDPs / QMIX, γραφικά νευρωνικά δίκτυα ST-GNNs / ST-GAT, θεωρητική ορθότητα), `EmpiricalReviewer` (περιβάλλοντα προσομοίωσης Gazebo / AirSim / Isaac Gym, μελέτες κατάλυσης, αυστηρότητα σημείων αναφοράς, πραγματικές πτητικές δοκιμές, ποσοτικές μετρικές) και `OperationalReviewer` (κλιμάκωση σμήνους, τοπολογία επικοινωνίας και καθυστέρηση, φυσική αποφυγή συγκρούσεων, επιχειρησιακοί περιορισμοί NATO / CJCSI). Κάθε προσωπικότητα εκδίδει ένα δακτυλογραφημένο `ReviewerVerdict` (όνομα πράκτορα, ψήφος INCLUDE / EXCLUDE / UNCERTAIN, βαθμολογία 0.0-10.0, εμπιστοσύνη 0.0-1.0 και βασικές κριτικές).
+- **Αυτοματοποιημένη αξιοπιστία μεταξύ αξιολογητών** (`calculate_cohens_kappa` / `cohens_kappa_pairwise`): γενίκευση πολλαπλών αξιολογητών του Kappa του Cohen κατά Fleiss `κ = (p_o - p_e) / (1 - p_e)` επί των τριών ψήφων, συν ένα κλασικό κατά ζεύγη Kappa δύο αξιολογητών για έλεγχο.
+- **Διαιτητής συναίνεσης με αλυσίδα σκέψης** (`SwarmConsensusArbiter.adjudicate`): ομόφωνες ψήφοι (3-0 ή 0-3) βραχυκυκλώνουν σε άμεση απόφαση υψηλής εμπιστοσύνης· διχασμένες ψήφοι (2-1 / 1-2 / 1-1-1) ενεργοποιούν διαιτησία με αλυσίδα σκέψης επί των αντικρουόμενων κριτικών, με εναλλακτική πλειοψηφία 2-1 (ή UNCERTAIN σε ισοπαλία 1-1-1) όταν το LLM δεν είναι διαθέσιμο. Επιστρέφει `ConsensusVerdict` με τελική απόφαση, σταθμισμένη βαθμολογία συναίνεσης, Kappa του Cohen και αφήγηση σύνθεσης πολλαπλών οπτικών.
+- **Ενσωμάτωση στον αγωγό PRISMA** (`src/prisma/dspy_modules.py` + `dspy_signatures.py`): ο `PrismaEvaluator` αποκτά παράμετρο `evaluation_mode` (`'single'` ταχεία βάση αναφοράς έναντι `'swarm'` αυστηρή συναίνεση 3 πρακτόρων)· η διαδρομή swarm αποστέλλει τις τρεις προσωπικότητες ταυτόχρονα μέσω `ThreadPoolExecutor` οριοθετημένου από τον φύλακα VRAM `threading.Semaphore(2)` (2 εργάτες τοπικά, 3 εργάτες στο cloud mesh) και καταγράφει το Kappa του Cohen και τις κριτικές ανά πράκτορα στο `PrismaScreeningSignature` (`consensus_mode`, `swarm_kappa`, `agent_verdicts`). Ο `PrismaExecutor.run()` καταγράφει στατιστικά συναίνεσης (μέσο Kappa του Cohen) κατά τη φάση Διαλογής.
+- **Ενσωμάτωση CLI & TUI** (`talos.py`): σημαία ταχείας αποστολής `--prisma --swarm` και προτροπή Ομάδας 3 «Select Screening Mode» (1. Fast Single Screener | 2. Rigorous Multi-Agent Review Swarm).
+- **Ακαδημαϊκός φάκελος Κανόνα 10** (`docs/internal/academic/02_MULTI_AGENT_CONSENSUS_SWARM.md`): εμπιστευτικός φάκελος 7 ενοτήτων που εφαρμόζει το πρότυπο ιχνηλασιμότητας διπλού επιπέδου.
+
+### Άλλαξε
+
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.14.1** στα 6 βασικά αρχεία κώδικα (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` μεταδεδομένα/καταγραφή lifespan/περιγραφή FastAPI, `talos.py` docstring και σημείωση έκδοσης, `run_talos.bat` τίτλος/banner/καταγραφές, `run_talos.sh` κεφαλίδα/banner/καταγραφές, `tests/test_multi_tier.py` βεβαίωση έκδοσης), καθώς και `docker-compose.yml` (`talos:5.14.1`), `CITATION.cff` (έκδοση 5.14.1, ημερομηνία κυκλοφορίας 2026-09-28), τις συμβολοσειρές χρήστη σε `src/utils/tray_icon.py`, `src/utils/evaluation_history.py`, `src/utils/research_setup_wizard.py`, `src/utils/ai_strategy_selector.py`, `src/utils/system_diagnostics.py` και `templates/live_foraging_visualizer.html`, τα docstrings του `src/prisma/` και τα 19 κανονικά έγγραφα τεκμηρίωσης.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` πέρασε με μηδέν σφάλματα.
+- `python -m pytest tests/test_system_integrity.py -q` πέρασε.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε (v5.14.1).
+- `python talos.py --help` εμφανίζει το `--prisma [--swarm]`.
+- Η δοκιμαστική άσκηση του αξιολογητή σμήνους (αναθεώρηση 3 πρακτόρων + Kappa του Cohen) ολοκληρώθηκε με κωδικό εξόδου 0.
+- `python src/utils/verify_dependency_map.py --ci` επέστρεψε κωδικό εξόδου 0.
+- `bash -n run_talos.sh` πέρασε με μηδέν συντακτικά σφάλματα.
+- Αυστηρή σάρωση αποκωδικοποίησης UTF-8 σε όλα τα τροποποιημένα αρχεία: μηδέν γλύφοι αντικατάστασης U+FFFD.
+
+## [v5.14.0] - 2026-09-28 -- Αγωγός PRISMA-ScR του Stanford DSPy & Μηχανή Δηλωτικής Σύνθεσης
+
+### Προστέθηκε
+
+- **Δηλωτικές υπογραφές PRISMA-ScR** (`src/prisma/dspy_signatures.py`): τυποποιημένα μοντέλα σχήματος Pydantic v2 που καθρεφτίζουν το παράδειγμα `dspy.Signature` του Stanford DSPy -- `PrismaPlanSignature` (θέμα/πεδίο -> όψεις αναζήτησης, στρατηγική boolean, κριτήρια μεθοδολογικής ένταξης και αποκλεισμού), `PrismaScreeningSignature` (τίτλος/περίληψη + κριτήρια -> απόφαση INCLUDE/EXCLUDE/UNCERTAIN, οριοθετημένη βαθμολογία συνάφειας, λόγος αποκλεισμού, ετικέτες μεθοδολογίας, αλυσίδα σκέψης), `PrismaEligibilitySignature` (εμπεριστατωμένη αξιολόγηση -> απόφαση ELIGIBLE/INELIGIBLE + τύπος αλγορίθμου σμήνους / παράδειγμα μάθησης / αρχιτεκτονική δικτύου) και `PrismaSynthesisSignature` (σύνοψη μελετών -> θεματική ταξινομία, μεθοδολογική κατανομή, κενά, αφήγηση). Ένας εύρωστος βοηθός ανάκτησης `extract_json_payload()` αναλύει JSON τοπικού μοντέλου με περιφράξεις ή πρόλογο πεζού κειμένου.
+- **Ενότητες αγωγού PlanEval** (`src/prisma/dspy_modules.py`): `PrismaPlanner` (σύνθεση πρωτοκόλλου αναζήτησης πολλαπλών βάσεων), `PrismaEvaluator` (δομημένη διαλογή με Αλυσίδα Σκέψης μέσω του πολυεπίπεδου `AIManager`), `PrismaEligibilityJudge` (μεθοδολογική καταλληλότητα πλήρους εγγραφής) και `PrismaExecutor` (ενορχηστρωτής 4 φάσεων από άκρο σε άκρο με ζωντανούς μετρητές εγγραφών N_identified / N_dedup / N_screened / N_excluded / N_eligible / N_included). Κάθε βήμα που βασίζεται σε LLM υποβαθμίζεται ομαλά σε ντετερμινιστικούς κανόνες λέξεων-κλειδιών για λειτουργία χωρίς δίκτυο.
+- **Γεννήτρια διαγράμματος ροής PRISMA 2020 Mermaid** (`src/prisma/mermaid_generator.py`): η `generate_prisma_mermaid(counts)` παράγει ένα συμβατό `flowchart TD` με ακριβείς ετικέτες `(n = ...)` σε Αναγνώριση/Διαλογή/Επιλεξιμότητα/Ένταξη, καθώς και περιτυλίγματα εξαγωγής `mermaid_to_markdown()` και `mermaid_to_html()`.
+- **Συνθέτης ανασκόπησης πεδίου** (`src/prisma/scoping_review_synthesizer.py`): οι `synthesize_scoping_review()` και `synthesize_scoping_review_latex()` παράγουν επταμερή προσχέδια επιπέδου δημοσίευσης σύμφωνα με τις οδηγίες PRISMA-ScR.
+- **Ενσωμάτωση CLI & TUI** (`talos.py`): σημαία ταχείας αποστολής `--prisma` και επιλογή Ομάδας 3 «PRISMA-ScR Declarative Synthesis Pipeline (Stanford DSPy Engine)».
+- **Ακαδημαϊκός φάκελος Κανόνα 10** (`docs/internal/academic/01_STANFORD_DSPY_PRISMA_PIPELINE.md`): εμπιστευτικός φάκελος 7 ενοτήτων που εφαρμόζει το πρότυπο ιχνηλασιμότητας διπλού επιπέδου.
+
+### Άλλαξε
+
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.14.0** στα 6 βασικά αρχεία κώδικα (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` μεταδεδομένα/καταγραφή lifespan/περιγραφή FastAPI, `talos.py` docstring και σημείωση έκδοσης, `run_talos.bat` τίτλος/banner/καταγραφές, `run_talos.sh` κεφαλίδα/banner/καταγραφές, `tests/test_multi_tier.py` βεβαίωση έκδοσης), καθώς και `docker-compose.yml` (`talos:5.14.0`), `CITATION.cff` (έκδοση 5.14.0, ημερομηνία κυκλοφορίας 2026-09-28), τις συμβολοσειρές χρήστη σε `src/utils/tray_icon.py`, `src/utils/evaluation_history.py`, `src/utils/research_setup_wizard.py`, `src/utils/ai_strategy_selector.py`, `src/utils/system_diagnostics.py` και `templates/live_foraging_visualizer.html`, και τα 19 κανονικά έγγραφα τεκμηρίωσης.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` πέρασε με μηδέν σφάλματα.
+- `python -m pytest tests/test_system_integrity.py -q` πέρασε.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` πέρασε (v5.14.0).
+- `python talos.py --help` εμφανίζει το `--prisma`.
+- `python src/utils/verify_dependency_map.py --ci` επέστρεψε κωδικό εξόδου 0.
+- `bash -n run_talos.sh` πέρασε με μηδέν συντακτικά σφάλματα.
+- Αυστηρή σάρωση αποκωδικοποίησης UTF-8: μηδέν γλυφά αντικατάστασης U+FFFD.
+
 ## [v5.13.1] - 2026-09-28 -- Αναλυτής Διαγνωστικών Συστήματος & Μηχανή Λειτουργικής Ακεραιότητας
 
 ### Προστέθηκε

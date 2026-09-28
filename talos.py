@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.13.1
+Project: TALOS v5.14.1
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,20 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.14.1: Multi-Agent Peer-Review Swarm & Consensus Engine --
+    src/prisma/swarm_evaluators.py adds a 3-agent specialized review swarm
+    (Algorithmic / Empirical Rigor / Swarm Operational NATO reviewers) with
+    automated Cohen's Kappa inter-rater reliability and a Chain-of-Thought
+    consensus arbiter, exposed via the --prisma --swarm CLI flag and the
+    Group 3 Advanced Analysis & Visualizations menu screening-mode prompt.
+
+    v5.14.0: Stanford DSPy PRISMA-ScR Pipeline & Declarative Synthesis Engine --
+    src/prisma/ adds typed declarative PRISMA-ScR signatures, a PlanEval
+    pipeline (PrismaPlanner / PrismaEvaluator / PrismaEligibilityJudge /
+    PrismaExecutor), a PRISMA 2020 Mermaid flowchart generator, and a scoping
+    review synthesizer, exposed via the --prisma CLI flag and the Group 3
+    Advanced Analysis & Visualizations menu.
 
     v5.13.1: System Diagnostics Analyzer & Operational Integrity Engine --
     src/utils/system_diagnostics.py adds an 8-point pre-flight health check
@@ -1801,7 +1815,8 @@ def analysis_visualization_menu(python_exe):
         "11. Baseline Report (Standard)",
         "12. Baseline Report (Academic -- 600 DPI)",
         "13. Academic Export (BibTeX & LaTeX Tables)",
-        "14. Back / Return to Main Menu"
+        "14. PRISMA-ScR Declarative Synthesis Pipeline (Stanford DSPy Engine)",
+        "15. Back / Return to Main Menu"
     ])
     if not choice or "Back" in choice: return
     if choice.startswith("1."): _launch_visualizer()
@@ -1842,6 +1857,29 @@ def analysis_visualization_menu(python_exe):
             border_style="green",
         ))
         run_script("academic_export.py", python_exe, args=["--elite", "--bib", "--tex"])
+    elif choice.startswith("14."):
+        console.print(_build_info_panel(
+            "PRISMA-ScR Declarative Synthesis Pipeline (Stanford DSPy Engine)",
+            "Runs the 4-phase PRISMA 2020 scoping review pipeline (Identification,\n"
+            "Screening, Eligibility, Included) with Chain-of-Thought screening,\n"
+            "live record counters, a PRISMA 2020 Mermaid flowchart, and\n"
+            "publication-grade Markdown/LaTeX scoping review drafts.",
+            border_style="magenta",
+        ))
+        mode_choice = safe_select("Select Screening Mode:", choices=[
+            "1. Fast Single Screener",
+            "2. Rigorous Multi-Agent Review Swarm (3-Agent Consensus & Cohen's Kappa)",
+            "3. Cancel / Back"
+        ])
+        if not mode_choice or "Cancel" in mode_choice or "Back" in mode_choice:
+            return
+        evaluation_mode = "swarm" if mode_choice.startswith("2.") else "single"
+        try:
+            from src.prisma.dspy_modules import PrismaExecutor
+            PrismaExecutor(evaluation_mode=evaluation_mode).run_interactive()
+        except Exception as e:
+            console.print(f"[red]PRISMA pipeline error: {e}[/red]")
+        safe_pause()
 
 
 def drl_gwo_menu(python_exe):
@@ -2081,6 +2119,7 @@ def _cli_help_table():
     table.add_row("--diagnostics", "Run the 8-point System Diagnostics Analyzer health report (src/utils/system_diagnostics.py).")
     table.add_row("--doctor, -d", "DevOps alias for --diagnostics (same 8-point health report).")
     table.add_row("--strategy [mode]", "Switch the AI execution strategy (strict_local, local_first, cloud_first, strict_cloud, auto_dynamic). Omit [mode] for the interactive switcher.")
+    table.add_row("--prisma [--swarm]", "Run the PRISMA-ScR Declarative Synthesis Pipeline interactively. Add --swarm for the rigorous 3-agent Multi-Agent Review Swarm (Cohen's Kappa consensus).")
     table.add_row("--help, -h", "Display this CLI flag reference.")
     return table
 
@@ -2130,6 +2169,12 @@ def _handle_cli_flags(argv):
     if any(flag in argv for flag in ("--diagnostics", "--doctor", "-d")):
         from src.utils.system_diagnostics import SystemDiagnosticsEngine
         SystemDiagnosticsEngine().run_and_render()
+        return True
+    # -- v5.14.1: PRISMA-ScR Declarative Synthesis Pipeline (--prisma [--swarm]). --
+    if "--prisma" in argv:
+        from src.prisma.dspy_modules import PrismaExecutor
+        mode = "swarm" if "--swarm" in argv else "single"
+        PrismaExecutor(evaluation_mode=mode).run_interactive()
         return True
     # -- v5.12.2: AI execution strategy switcher (--strategy / --mode). --
     flag_present, strategy_target = _parse_strategy_flag(argv)

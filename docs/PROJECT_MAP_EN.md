@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.13.1
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.14.1
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-09-28 (v5.13.1 -- System Diagnostics Analyzer & Operational Integrity Engine)
+> **Last Updated:** 2026-09-28 (v5.14.1 -- Multi-Agent Peer-Review Swarm & Consensus Engine)
 
 ---
 
@@ -31,6 +31,7 @@ SRC PACKAGES
   src/integration/   (3 files)  synapse_client, optica_client, visualizer_bridge
   src/utils/        (20 files)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, evaluation_history, research_setup_wizard, etc.
   src/api/           (4 files)  main_api, synapse_routes, red_tester_routes, talos_service_api
+  src/prisma/        (6 files)  dspy_signatures, dspy_modules, swarm_evaluators, mermaid_generator, scoping_review_synthesizer
   src/mcp_server.py             MCP stdio server (4 tools)
 
         | import
@@ -104,6 +105,7 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 | `src/analysis/` | 10 | `citation_analyzer.py`, `author_profiler.py`, `recommender.py`, `knowledge_path_generator.py`, `trend_analyzer.py`, `graphify_adapter.py`, `generate_baseline_report.py`, etc. |
 | `src/ingestion/` | 23 | 16 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `pdf_downloader.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
 | `src/utils/` | 17 | `db_stats.py`, `logger.py`, `tray_icon.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, `http_client.py`, `snapshot_manager.py`, `academic_export.py`, etc. |
+| `src/prisma/` | 6 | `dspy_signatures.py` (typed declarative Pydantic-v2 signatures), `dspy_modules.py` (PlanEval: Planner/Evaluator/EligibilityJudge/Executor), `swarm_evaluators.py` (3-agent peer-review swarm + Cohen's Kappa + consensus arbiter), `mermaid_generator.py`, `scoping_review_synthesizer.py` |
 
 ## 5. Sources (16 APIs)
 
@@ -178,6 +180,15 @@ src/utils/research_setup_wizard.py
 src/utils/system_diagnostics.py
   +-- src/core/database_manager.py
   +-- config/settings.py
+
+src/prisma/dspy_modules.py
+  +-- src/prisma/dspy_signatures.py
+  +-- src/prisma/swarm_evaluators.py
+  +-- src/prisma/mermaid_generator.py
+  +-- src/prisma/scoping_review_synthesizer.py
+
+src/prisma/swarm_evaluators.py
+  +-- src/prisma/dspy_signatures.py
 ```
 
 ## 8. Module Descriptions (recent additions highlighted)
@@ -205,6 +216,8 @@ src/utils/system_diagnostics.py
 
 | **Full-Stack Concurrent Multi-Threaded Engine (v5.13.0)** | `src/core/ai_manager.py`, `src/ingestion/historic_search.py`, `src/utils/reevaluate_database.py` | `batch_evaluate_papers()` / `_resolve_eval_concurrency()` (8 cloud / 2 local workers + `threading.Semaphore(2)` VRAM guard), `historic_search.py` `ThreadPoolExecutor(max_workers=min(16, len(enabled_sources)))` mesh + `_harvest_single_source()` + Rich Live telemetry, `reevaluate_database.py:_apply_evaluation_batch()` (batched SQLite WAL commits) |
 | **System Diagnostics Analyzer (v5.13.1)** | `src/utils/system_diagnostics.py` | `SystemDiagnosticsEngine` -- 8-point pre-flight health check (Python environment, SQLite integrity, local AI runtime, port availability, filesystem permissions, environment credentials, daemon status, network endpoints) with `run_diagnostics()` / `render_report()` (Rich health table + one-line remediation); CLI `--diagnostics`/`--doctor`/`-d` and TUI Group 6 option 1 |
+| **Stanford DSPy PRISMA-ScR Pipeline (v5.14.0)** | `src/prisma/dspy_signatures.py`, `dspy_modules.py`, `mermaid_generator.py`, `scoping_review_synthesizer.py` | Declarative Pydantic-v2 signatures (`PrismaPlanSignature`, `PrismaScreeningSignature`, `PrismaEligibilitySignature`, `PrismaSynthesisSignature`) + `extract_json_payload()`; `PrismaPlanner.plan()` (protocol synthesis), `PrismaEvaluator.screen()` (Chain-of-Thought screening), `PrismaEligibilityJudge.assess()`, `PrismaExecutor.run()` (4-phase flow + live counters); `generate_prisma_mermaid()` (PRISMA 2020), `synthesize_scoping_review()` / `synthesize_scoping_review_latex()`; CLI `--prisma` + TUI Group 3 |
+| **Multi-Agent Peer-Review Swarm & Consensus Engine (v5.14.1)** | `src/prisma/swarm_evaluators.py`, `dspy_modules.py`, `dspy_signatures.py` | `AlgorithmicReviewer` / `EmpiricalReviewer` / `OperationalReviewer` (specialized personas) + `ReviewerVerdict` / `ConsensusVerdict`; `calculate_cohens_kappa()` (Fleiss generalization of Cohen's Kappa) + `cohens_kappa_pairwise()`; `SwarmConsensusArbiter.adjudicate()` (unanimous short-circuit + Chain-of-Thought adjudication); `PrismaEvaluator.evaluation_mode='swarm'` with VRAM `threading.Semaphore(2)`; CLI `--prisma --swarm` + TUI Group 3 screening-mode prompt |
 
 ## 9. Auxiliary Files
 
@@ -243,8 +256,8 @@ src/utils/system_diagnostics.py
 
 ---
 
-> **Last Updated:** 2026-09-28 (v5.13.1 -- System Diagnostics Analyzer & Operational Integrity Engine)
-> **Project Version:** v5.13.1
-> **Total .py modules under src/:** 87 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 21 + api 4 + mcp_server 1)
+> **Last Updated:** 2026-09-28 (v5.14.1 -- Multi-Agent Peer-Review Swarm & Consensus Engine)
+> **Project Version:** v5.14.1
+> **Total .py modules under src/:** 93 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 21 + api 4 + prisma 6 + mcp_server 1)
 
 

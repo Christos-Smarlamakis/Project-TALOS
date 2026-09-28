@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.13.1
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.14.1
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.13.1 -- Αναλυτής Διαγνωστικών Συστήματος & Μηχανή Λειτουργικής Ακεραιότητας)
+> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.14.1 -- Σμήνος Ομότιμης Αναθεώρησης Πολλαπλών Πρακτόρων & Μηχανή Συναίνεσης)
 
 ---
 
@@ -31,6 +31,7 @@ SRC PACKAGES
   src/integration/   (3 αρχεία)  synapse_client, optica_client, visualizer_bridge
   src/utils/        (20 αρχεία)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, evaluation_history, research_setup_wizard, κ.ά.
   src/api/           (4 αρχεία)  main_api, synapse_routes, red_tester_routes, talos_service_api
+  src/prisma/        (6 αρχεία)  dspy_signatures, dspy_modules, swarm_evaluators, mermaid_generator, scoping_review_synthesizer
   src/mcp_server.py              MCP stdio server (4 tools)
 
         | import
@@ -104,6 +105,7 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 | `src/analysis/` | 10 | `citation_analyzer.py`, `author_profiler.py`, `recommender.py`, `knowledge_path_generator.py`, `trend_analyzer.py`, `graphify_adapter.py`, `generate_baseline_report.py`, κ.ά. |
 | `src/ingestion/` | 23 | 16 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `pdf_downloader.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
 | `src/utils/` | 17 | `db_stats.py`, `logger.py`, `tray_icon.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, `http_client.py`, `snapshot_manager.py`, `academic_export.py`, κ.ά. |
+| `src/prisma/` | 6 | `dspy_signatures.py` (τυπικές δηλωτικές υπογραφές Pydantic v2), `dspy_modules.py` (PlanEval: Planner/Evaluator/EligibilityJudge/Executor), `swarm_evaluators.py` (σμήνος ομότιμης αναθεώρησης 3 πρακτόρων + Kappa του Cohen + διαιτητής συναίνεσης), `mermaid_generator.py`, `scoping_review_synthesizer.py` |
 
 ## 5. Πηγές (16 APIs)
 
@@ -178,6 +180,15 @@ src/utils/research_setup_wizard.py
 src/utils/system_diagnostics.py
   +-- src/core/database_manager.py
   +-- config/settings.py
+
+src/prisma/dspy_modules.py
+  +-- src/prisma/dspy_signatures.py
+  +-- src/prisma/swarm_evaluators.py
+  +-- src/prisma/mermaid_generator.py
+  +-- src/prisma/scoping_review_synthesizer.py
+
+src/prisma/swarm_evaluators.py
+  +-- src/prisma/dspy_signatures.py
 ```
 
 ## 8. Περιγραφές Modules (επισημασμένες πρόσφατες προσθήκες)
@@ -205,6 +216,8 @@ src/utils/system_diagnostics.py
 
 | **Μηχανή Ταυτόχρονης Πολυνηματικής Εκτέλεσης Πλήρους Στοίβας (v5.13.0)** | `src/core/ai_manager.py`, `src/ingestion/historic_search.py`, `src/utils/reevaluate_database.py` | `batch_evaluate_papers()` / `_resolve_eval_concurrency()` (8 cloud / 2 τοπικοί εργάτες + φύλακας VRAM `threading.Semaphore(2)`), `historic_search.py` πλέγμα `ThreadPoolExecutor(max_workers=min(16, len(enabled_sources)))` + `_harvest_single_source()` + Rich Live τηλεμετρία, `reevaluate_database.py:_apply_evaluation_batch()` (ομαδικές καταγραφές SQLite WAL) |
 | **Αναλυτής Διαγνωστικών Συστήματος (v5.13.1)** | `src/utils/system_diagnostics.py` | `SystemDiagnosticsEngine` -- προκαταρκτικός έλεγχος υγείας 8 σημείων (περιβάλλον Python, ακεραιότητα SQLite, τοπικός χρόνος εκτέλεσης AI, διαθεσιμότητα θυρών, δικαιώματα συστήματος αρχείων, διαπιστευτήρια περιβάλλοντος, κατάσταση δαίμονα, σημεία δικτύου) με `run_diagnostics()` / `render_report()` (πίνακας υγείας Rich + αντιμετώπιση μιας γραμμής); CLI `--diagnostics`/`--doctor`/`-d` και TUI Ομάδα 6 επιλογή 1 |
+| **Αγωγός PRISMA-ScR του Stanford DSPy (v5.14.0)** | `src/prisma/dspy_signatures.py`, `dspy_modules.py`, `mermaid_generator.py`, `scoping_review_synthesizer.py` | Δηλωτικές υπογραφές Pydantic v2 (`PrismaPlanSignature`, `PrismaScreeningSignature`, `PrismaEligibilitySignature`, `PrismaSynthesisSignature`) + `extract_json_payload()`· `PrismaPlanner.plan()` (σύνθεση πρωτοκόλλου), `PrismaEvaluator.screen()` (διαλογή με Αλυσίδα Σκέψης), `PrismaEligibilityJudge.assess()`, `PrismaExecutor.run()` (ροή 4 φάσεων + ζωντανοί μετρητές)· `generate_prisma_mermaid()` (PRISMA 2020), `synthesize_scoping_review()` / `synthesize_scoping_review_latex()`· CLI `--prisma` + TUI Ομάδα 3 |
+| **Σμήνος Ομότιμης Αναθεώρησης Πολλαπλών Πρακτόρων & Μηχανή Συναίνεσης (v5.14.1)** | `src/prisma/swarm_evaluators.py`, `dspy_modules.py`, `dspy_signatures.py` | `AlgorithmicReviewer` / `EmpiricalReviewer` / `OperationalReviewer` (εξειδικευμένες προσωπικότητες) + `ReviewerVerdict` / `ConsensusVerdict`· `calculate_cohens_kappa()` (Fleiss γενίκευση του Kappa του Cohen) + `cohens_kappa_pairwise()`· `SwarmConsensusArbiter.adjudicate()` (ομόφωνη βραχυκύκλωση + διαιτησία Αλυσίδας Σκέψης)· `PrismaEvaluator.evaluation_mode='swarm'` με VRAM `threading.Semaphore(2)`· CLI `--prisma --swarm` + προτροπή λειτουργίας διαλογής TUI Ομάδας 3 |
 
 ## 9. Βοηθητικά Αρχεία
 
@@ -243,8 +256,8 @@ src/utils/system_diagnostics.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.13.1 -- Αναλυτής Διαγνωστικών Συστήματος & Μηχανή Λειτουργικής Ακεραιότητας)
-> **Έκδοση Project:** v5.13.1
-> **Συνολικά .py modules στο src/:** 87 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 21 + api 4 + mcp_server 1)
+> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.14.1 -- Σμήνος Ομότιμης Αναθεώρησης Πολλαπλών Πρακτόρων & Μηχανή Συναίνεσης)
+> **Έκδοση Project:** v5.14.1
+> **Συνολικά .py modules στο src/:** 93 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 21 + api 4 + prisma 6 + mcp_server 1)
 
 
