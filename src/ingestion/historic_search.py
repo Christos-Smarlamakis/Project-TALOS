@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: historic_search.py (v5.5 - Final Quad-Layer & Rate Limit)
-Project: TALOS v5.10.4
+Module: historic_search.py (v5.13.0 - Concurrent Multi-Threaded Historical Harvester)
+Project: TALOS v5.13.0
 
 Description:
     The deep archive search orchestrator. Fetches papers from all 16 configured
@@ -34,6 +34,12 @@ import requests
 import threading
 from dotenv import load_dotenv
 import argparse
+import re
+import io
+import hashlib
+import logging
+from contextlib import redirect_stdout
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from src.ingestion.arxiv_source import ArxivSource
 from src.ingestion.elsevier_source import ElsevierSource
@@ -56,6 +62,15 @@ from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
 from src.ai.drl.llm_router_subagent import estimate_prompt_tokens
 from src.integration.visualizer_bridge import push_visualizer_event
+from rich.console import Console
+from rich.panel import Panel
+from rich import box
+from rich.live import Live
+from rich.table import Table
+
+
+# -- Module-level logger (v5.13.0) used by the concurrent harvest workers. --
+logger = logging.getLogger(__name__)
 
 
 # -- v5.10.2: Canonical 16-source registry for the checkbox TUI and --sources --
@@ -120,6 +135,115 @@ def _emit_visualizer_event(event_type: str, payload: dict) -> None:
         threading.Thread(target=_post, daemon=True).start()
     except Exception:
         pass
+
+
+def _normalize_title(title):
+    """Normalize a paper title into a canonical, punctuation-free string.
+
+    Lowercases, collapses whitespace, and removes non-alphanumeric characters
+    so equivalent titles from different providers hash identically.
+
+    Args:
+        title (str): The raw paper title.
+
+    Returns:
+        str: The normalized title (empty string for a missing title).
+    """
+    if not title:
+        return ""
+    text = " ".join(str(title).lower().split())
+    return re.sub(r"[^a-z0-9 ]", "", text)
+
+
+def _title_hash(title):
+    """Return a stable SHA-1 hex digest for a normalized paper title.
+
+    Args:
+        title (str): The raw paper title.
+
+    Returns:
+        str: Hexadecimal digest used as the deduplication fallback key.
+    """
+    return hashlib.sha1(_normalize_title(title).encode("utf-8")).hexdigest()
+
+
+def _deduplicate_papers(papers):
+    """Deduplicate raw papers by DOI, falling back to a normalized title hash.
+
+    Papers with a DOI are keyed by DOI; DOI-less papers are keyed by their
+    normalized title hash so cross-source duplicates with no DOI still collapse
+    to a single record. First-seen order is preserved.
+
+    Args:
+        papers (list of dict): Raw standardized paper dictionaries.
+
+    Returns:
+        list of dict: Unique papers preserving first-seen order.
+    """
+    unique = {}
+    seen_titles = set()
+    for paper in papers:
+        doi = (paper.get("doi") or "").strip()
+        if doi:
+            if doi not in unique:
+                unique[doi] = paper
+            continue
+        title = paper.get("title") or ""
+        digest = _title_hash(title)
+        if digest not in seen_titles:
+            seen_titles.add(digest)
+            unique["title:" + digest] = paper
+    return list(unique.values())
+
+
+def _harvest_single_source(source, source_key, query, criteria, date_limit):
+    """Harvest one source agent in a dedicated worker thread.
+
+    Captures the agent's stdout in-process so interleaved prints do not corrupt
+    the Rich Live telemetry table, and wraps the fetch in a full exception
+    guard so a timeout or HTTP error in any single provider can never abort the
+    overall ingestion run.
+
+    Args:
+        source (object): Instantiated source agent exposing fetch_new_papers().
+        source_key (str): Canonical lowercase slug for the source.
+        query (str): Human-readable query string (telemetry only).
+        criteria (str): Inclusion criteria from config (telemetry only).
+        date_limit (int): Historical search window in days (telemetry only).
+
+    Returns:
+        dict: {'source', 'status', 'papers', 'error', 'elapsed'}.
+    """
+    started = time.time()
+    _emit_visualizer_event("source_searching", {"source": source_key, "query": query})
+    try:
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            papers = source.fetch_new_papers() or []
+        elapsed = time.time() - started
+        if papers:
+            _emit_visualizer_event("source_status", {
+                "source": source_key, "status": "healthy", "count": len(papers),
+            })
+        else:
+            logger.info("No new papers from %s", type(source).__name__)
+        return {
+            "source": source_key, "status": "COMPLETED",
+            "papers": papers, "error": None, "elapsed": elapsed,
+        }
+    except Exception as exc:  # noqa: BLE001 - per-source isolation
+        elapsed = time.time() - started
+        logger.error("Error fetching from %s: %s. Skipping source.", type(source).__name__, exc)
+        message = str(exc)
+        if "403" in message or "forbidden" in message.lower():
+            message = "403 Forbidden / Rate Limited"
+        _emit_visualizer_event("source_status", {
+            "source": source_key, "status": "error", "message": message,
+        })
+        return {
+            "source": source_key, "status": "FAILED",
+            "papers": [], "error": message, "elapsed": elapsed,
+        }
 
 
 # -- v5.10.3: LLM Router Sub-Agent (two-stage provider selection) --
@@ -213,47 +337,92 @@ def main(sources=None):
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
     logger = logging.getLogger(__name__)
     
-    all_historic_papers = []
-    for source in sources_to_search:
+    console = Console()
+
+    # -- v5.13.0: Concurrent Multi-Threaded Historical Harvester. Each source
+    # -- harvests in its own worker thread with per-thread stdout redirection so
+    # -- a timeout or HTTP error in one provider never aborts the full run. --
+    disabled_sources = [s for s in sources_to_search if not getattr(s, "enabled", True)]
+    for source in disabled_sources:
         source_key = _source_key(source)
-        if not getattr(source, "enabled", True):
-            logger.warning("Skipping %s — disabled (no valid API key)", type(source).__name__)
-            _emit_visualizer_event("source_status", {
-                "source": source_key, "status": "error", "message": "disabled (no valid API key)",
-            })
-            continue
-        _emit_visualizer_event("source_searching", {
-            "source": source_key, "query": _source_query(source),
+        logger.warning("Skipping %s -- disabled (no valid API key)", type(source).__name__)
+        _emit_visualizer_event("source_status", {
+            "source": source_key, "status": "error", "message": "disabled (no valid API key)",
         })
-        try:
-            fetched = source.fetch_new_papers()
-            if fetched:
-                all_historic_papers.extend(fetched)
-                _emit_visualizer_event("source_status", {
-                    "source": source_key, "status": "healthy", "count": len(fetched),
-                })
-            else:
-                logger.info("No new papers from %s", type(source).__name__)
-        except Exception as e:
-            logger.error("Error fetching from %s: %s. Skipping source.", type(source).__name__, e)
-            message = str(e)
-            if "403" in message or "forbidden" in message.lower():
-                message = "403 Forbidden / Rate Limited"
-            _emit_visualizer_event("source_status", {
-                "source": source_key, "status": "error", "message": message,
-            })
-            continue
 
-    print(f"\nSUCCESS: Found {len(all_historic_papers)} potential papers across all sources.\n")
+    enabled_sources = [s for s in sources_to_search if getattr(s, "enabled", True)]
+    status = {}
+    for source in enabled_sources:
+        status[_source_key(source)] = {"status": "WAITING", "papers": 0, "elapsed": None}
 
-    unique_papers_dict = {}
-    for p in all_historic_papers:
-        key = p.get('doi') if p.get('doi') else p.get('url')
-        if key:
-            unique_papers_dict[key] = p
+    def _build_live_table():
+        """Render the real-time Rich telemetry table for the historic harvest."""
+        table = Table(
+            title="Concurrent Historical Ingestion Mesh",
+            box=box.ROUNDED,
+            border_style="bright_cyan",
+            header_style="bold bright_cyan",
+        )
+        table.add_column("Source Name", style="bold cyan")
+        table.add_column("Status", style="bold")
+        table.add_column("Papers Found", justify="right")
+        table.add_column("Elapsed Time", justify="right")
+        style_map = {
+            "WAITING": "dim",
+            "HARVESTING": "yellow",
+            "COMPLETED": "green",
+            "FAILED": "red",
+        }
+        for name, row in status.items():
+            cell_style = style_map.get(row["status"], "white")
+            elapsed = f"{row['elapsed']:.2f}s" if row["elapsed"] is not None else "--"
+            table.add_row(
+                name, f"[{cell_style}]{row['status']}[/{cell_style}]",
+                str(row["papers"]), elapsed,
+            )
+        return table
+
+    criteria = config.get("inclusion_criteria", "")
+    all_historic_papers = []
+    harvest_started = time.time()
+
+    if enabled_sources:
+        max_workers = min(16, len(enabled_sources))
+        with Live(_build_live_table(), console=console, refresh_per_second=8) as live:
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                future_to_key = {}
+                for source in enabled_sources:
+                    source_key = _source_key(source)
+                    status[source_key]["status"] = "HARVESTING"
+                    future_to_key[executor.submit(
+                        _harvest_single_source, source, source_key,
+                        _source_query(source), criteria, days_historic,
+                    )] = source_key
+                for future in as_completed(future_to_key):
+                    source_key = future_to_key[future]
+                    result = future.result()
+                    status[source_key]["status"] = result["status"]
+                    status[source_key]["papers"] = len(result.get("papers") or [])
+                    status[source_key]["elapsed"] = result.get("elapsed")
+                    if result["status"] == "COMPLETED":
+                        all_historic_papers.extend(result.get("papers") or [])
+                    live.update(_build_live_table())
+    harvest_elapsed = time.time() - harvest_started
+
+    # -- v5.13.0: deduplicate by DOI + normalized title hash on the main thread.
+    unique_papers = _deduplicate_papers(all_historic_papers)
+    console.print(Panel(
+        f"Total harvest time: [cyan]{harvest_elapsed:.2f}s[/cyan]\n"
+        f"Raw papers collected: [cyan]{len(all_historic_papers)}[/cyan]\n"
+        f"Unique deduplicated papers: [cyan]{len(unique_papers)}[/cyan]",
+        title="[bold]Historical Ingestion Summary[/bold]",
+        border_style="green",
+    ))
+
+    print(f"\nSUCCESS: Found {len(unique_papers)} potential unique papers across all sources.\n")
 
     papers_to_process = []
-    for p in unique_papers_dict.values():
+    for p in unique_papers:
         if p.get('doi'):
             if not db_manager.paper_exists_by_doi(p['doi']):
                 papers_to_process.append(p)

@@ -1,6 +1,6 @@
 # Environment & Credentials Setup Guide
 
-**Project TALOS v5.12.4 -- Canonical English Reference**
+**Project TALOS v5.13.0 -- Canonical English Reference**
 
 > **Scope:** This document is the authoritative, single reference for configuring
 > the TALOS environment surface. It covers the strict decoupling between

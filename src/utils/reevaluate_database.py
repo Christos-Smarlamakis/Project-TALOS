@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: reevaluate_database.py (v5.0 - Quad-Layer Update)
-Project: TALOS v5.10.0
+Module: reevaluate_database.py (v5.13.0 - Concurrent Cognitive Re-Evaluation Pool)
+Project: TALOS v5.13.0
 
 Description:
 Η πλήρως αναβαθμισμένη έκδοση του script επανα-αξιολόγησης για την v4.0.
@@ -29,7 +29,7 @@ while _P and not os.path.exists(os.path.join(_P, 'talos.py')):
 if _P: sys.path.insert(0, _P)
 import json
 import time
-from datetime import timedelta
+from datetime import timedelta, datetime
 import questionary
 from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
 
@@ -50,8 +50,43 @@ def load_configuration():
         print(f"FATAL: Δεν ήταν δυνατή η φόρτωση του config.json. Σφάλμα: {e}")
         sys.exit(1)
 
+def _apply_evaluation_batch(db_manager, updates):
+    """Persist a batch of re-evaluations on a single WAL connection.
+
+    Opens one connection (WAL is enabled by the DatabaseManager connection
+    factory) and applies every UPDATE in the batch before issuing a single
+    commit. This keeps the LLM-heavy re-evaluation pipeline from blocking on
+    per-row transaction commits and reduces SQLite write contention.
+
+    Args:
+        db_manager (DatabaseManager): Active database manager.
+        updates (list of tuple): List of (paper_id, evaluation_data) pairs.
+    """
+    sql = """UPDATE papers SET strategic_score=?,operational_score=?,tactical_score=?,
+        playground_score=?,overall_score=?,evaluation_reasoning=?,
+        evaluation_contribution=?,evaluation_utilization=?,
+        suggested_tags=?,suggested_folder=?,suggested_discord_channel=?,
+        last_evaluated_at=? WHERE id=?"""
+    conn = db_manager._connect()
+    try:
+        cursor = conn.cursor()
+        for paper_id, evaluation_data in updates:
+            scores = evaluation_data.get('scores', {})
+            tags_str = ','.join(evaluation_data.get('tags', []))
+            overall_score = evaluation_data.get('overall_score') or db_manager._calculate_overall_score(scores)
+            params = (scores.get('strategic', 0), scores.get('operational', 0),
+                      scores.get('tactical', 0), scores.get('playground', 0), overall_score,
+                      evaluation_data.get('reasoning', ''), evaluation_data.get('contribution', ''),
+                      evaluation_data.get('utilization', ''), tags_str,
+                      evaluation_data.get('folder', ''), evaluation_data.get('discord_channel', ''),
+                      datetime.now(), paper_id)
+            cursor.execute(sql, params)
+        conn.commit()
+    finally:
+        conn.close()
+
 def main():
-    print("--- ΕΝΑΡΞΗ ΕΞΥΠΝΗΣ ΕΠΑΝΑ-ΑΞΙΟΛΟΓΗΣΗΣ (v5.0 - Quad-Layer) ---")
+    print("--- ΕΝΑΡΞΗ ΕΞΥΠΝΗΣ ΕΠΑΝΑ-ΑΞΙΟΛΟΓΗΣΗΣ (v5.13.0 - Concurrent Pool) ---")
     
     config = load_configuration()
     ai_manager = AIManager(config)
@@ -79,25 +114,24 @@ def main():
         return
 
     snapshot_database()
+
+    # -- v5.13.0: concurrent cognitive re-evaluation pool + batched WAL commits.
+    papers_for_eval = [
+        {"_id": paper[0], "title": paper[1], "abstract": paper[2]}
+        for paper in papers_to_update
+    ]
+
+    BATCH_SIZE = 25
     updated_count = 0
-    for i, paper in enumerate(papers_to_update):
-        # Το paper είναι tuple: (id, title, abstract, overall_score)
-        paper_id = paper[0]
-        title = paper[1]
-        abstract = paper[2]
-        old_score = paper[3] if paper[3] is not None else 0.0
+    evaluated = ai_manager.batch_evaluate_papers(papers_for_eval, max_workers=None)
 
-        print(f"-> Επεξεργασία {i+1}/{total_to_recalibrate}: '{title[:60]}...' (Παλιό score: {old_score:.2f})")
-
-        content_for_ai = f"Title: {title}\nAbstract: {abstract}"
-        
-        # Χρησιμοποιούμε το 'flash' model με το ΝΕΟ prompt (που έχει 4 scores)
-        evaluation_data = ai_manager.evaluate_paper_json(content_for_ai, model_type='flash')
-        
+    pending = []
+    for paper, evaluation_data in evaluated:
+        paper_id = paper["_id"]
         if evaluation_data:
-            db_manager.update_paper_evaluation(paper_id, evaluation_data)
+            pending.append((paper_id, evaluation_data))
             updated_count += 1
-            
+
             # Logging για τα 4 scores
             scores = evaluation_data.get('scores', {})
             s = scores.get('strategic', 0)
@@ -105,12 +139,15 @@ def main():
             t = scores.get('tactical', 0)
             p = scores.get('playground', 0)
             new_overall = evaluation_data.get('overall_score', 0)
-            
+
             print(f"   SUCCESS: Νέα Scores [Str:{s} | Opr:{o} | Tac:{t} | Sim:{p}] -> Overall: {new_overall:.2f}")
         else:
             print(f"   WARNING: Η ανάλυση απέτυχε. Παράλειψη.")
-        
-        time.sleep(REQUEST_DELAY)
+        if len(pending) >= BATCH_SIZE:
+            _apply_evaluation_batch(db_manager, pending)
+            pending = []
+    if pending:
+        _apply_evaluation_batch(db_manager, pending)
 
     print("\n" + "="*50)
     print("  Η ΣΥΝΕΔΡΙΑ ΕΠΑΝΑ-ΑΞΙΟΛΟΓΗΣΗΣ ΟΛΟΚΛΗΡΩΘΗΚΕ")

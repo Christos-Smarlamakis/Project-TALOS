@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.12.4
+Project: TALOS v5.13.0
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,13 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.13.0: Full-Stack Concurrent Multi-Threaded Engine & High-Throughput
+    Harvester -- historic_search.py joins daily_search.py in the 16-source
+    ThreadPoolExecutor ingestion mesh, and the AIManager gains a concurrent
+    batch cognitive evaluation pool (8 cloud workers / 2 VRAM-guarded local
+    workers behind a bounded semaphore) with batched SQLite WAL commits in
+    database re-evaluation.
 
     v5.12.4: Concurrent Ingestion Mesh & Multi-Profile Research Onboarding --
     the Research Setup Wizard gains a Step 0 profile target gate (reconfigure

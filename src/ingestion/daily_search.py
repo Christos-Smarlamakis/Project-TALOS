@@ -11,7 +11,7 @@
 
 """
 Module: daily_search.py (Quad-Layer & Rate Limit Safe)
-Project: TALOS v5.10.4
+Project: TALOS v5.13.0
 
 Description:
     The daily search orchestrator. Fetches new papers from all 16 configured

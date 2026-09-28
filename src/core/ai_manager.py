@@ -6,7 +6,7 @@
 #
 """
 Module: ai_manager.py (v4.1 - Self-Healing AI Manager, Universal Cloud Mesh & Auto-Dynamic Privacy Guardrails)
-Project: TALOS v5.12.3
+Project: TALOS v5.13.0
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture
@@ -55,12 +55,21 @@ Description:
     trimming (STANDBY_NO_KEY / STANDBY_NO_SDK lifecycle states), secure
     on-demand .env key injection (_prompt_cloud_key / _persist_env_key), and a
     clean migration to the google.genai GA SDK for Gemini text generation.
+
+    v5.13.0: Full-Stack Concurrent Multi-Threaded Engine -- adds the concurrent
+    batch cognitive evaluation pool (`batch_evaluate_papers()` /
+    `_resolve_eval_concurrency()`), which scores a batch of papers through
+    `evaluate_paper_json()` with dynamic worker throttling: 8 Cloud Mesh workers
+    versus 2 local GPU workers behind a bounded `threading.Semaphore(2)` to
+    eliminate CUDA Out-Of-Memory risks.
 """
 
 import os, json, re, requests, sys, functools, subprocess, time
 from dotenv import load_dotenv
 from typing import Union, List, Dict, Any, Tuple, Optional
 import numpy as np
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 try:
     from src.utils.http_client import build_session
@@ -817,6 +826,92 @@ class AIManager:
             prompt = prompt + "\n\n" + abstract
 
         return self._execute_request(prompt, model_type, response_format='json')
+
+    # --- Concurrent Batch Evaluation Pool (v5.13.0) ---
+
+    def _resolve_eval_concurrency(self) -> Tuple[int, Optional[threading.Semaphore]]:
+        """Resolve worker count and VRAM guard for the batch evaluation pool.
+
+        Cloud Mesh providers (DeepSeek, Gemini, Groq, and the other
+        OpenAI-compatible providers) tolerate high concurrency because they do
+        not consume local GPU memory, so the pool is allowed 8 workers. Local
+        Ollama inference shares a single GPU VRAM budget, so the pool is capped
+        at 2 workers behind a bounded ``threading.Semaphore(2)`` to eliminate
+        CUDA Out-Of-Memory risks.
+
+        The decision keys off the effective network strategy resolved by
+        ``_resolve_strategies()``:
+
+            - ``strict_local`` / ``local_first``  -> local GPU -> 2 workers
+            - ``cloud_first`` / ``strict_cloud``  -> cloud mesh -> 8 workers
+
+        Returns:
+            Tuple[int, Optional[threading.Semaphore]]: (max_workers, semaphore).
+        """
+        network, _hardware = self._resolve_strategies("flash")
+        if network in ("cloud_first", "strict_cloud"):
+            return 8, None
+        return 2, threading.Semaphore(2)
+
+    def batch_evaluate_papers(self, papers: List[Dict[str, Any]],
+                              criteria: Optional[str] = None,
+                              max_workers: Optional[int] = None,
+                              model_type: str = "flash") -> List[Tuple[Dict[str, Any], Optional[Dict[str, Any]]]]:
+        """Evaluate a batch of papers concurrently through the evaluation pool.
+
+        Each paper is scored via ``evaluate_paper_json`` in a dedicated worker
+        thread. Worker concurrency is resolved dynamically from the execution
+        matrix: the Cloud Mesh runs 8 workers while local GPU runs 2 workers
+        behind a bounded semaphore so VRAM is never exhausted. The structured
+        JSON evaluation schema produced by ``evaluate_paper_json`` is preserved
+        verbatim for every paper.
+
+        Args:
+            papers (List[Dict[str, Any]]): Standardized paper dictionaries. Each
+                must expose at least ``title`` and optionally ``abstract``.
+            criteria (Optional[str]): Optional inclusion criteria prepended to
+                the evaluation prompt. Defaults to None (no override).
+            max_workers (Optional[int]): Explicit worker-count override. When
+                None, the count is resolved via ``_resolve_eval_concurrency``.
+            model_type (str): Evaluation tier (``'flash'`` or ``'pro'``).
+
+        Returns:
+            List[Tuple[Dict[str, Any], Optional[Dict[str, Any]]]]: Ordered list
+                of ``(paper, evaluation_dict_or_None)`` pairs preserving the
+                input order.
+        """
+        if not papers:
+            return []
+
+        resolved_workers, semaphore = self._resolve_eval_concurrency()
+        workers = max_workers if max_workers is not None else resolved_workers
+        workers = max(1, min(workers, len(papers)))
+
+        def _evaluate_one(paper):
+            content = f"Title: {paper.get('title', '')}\nAbstract: {paper.get('abstract', '')}"
+            if criteria:
+                content = f"{criteria}\n\n{content}"
+            if semaphore is not None:
+                with semaphore:
+                    evaluation = self.evaluate_paper_json(content, model_type=model_type)
+            else:
+                evaluation = self.evaluate_paper_json(content, model_type=model_type)
+            return paper, evaluation
+
+        results: List[Optional[Tuple]] = [None] * len(papers)
+        with ThreadPoolExecutor(max_workers=workers) as executor:
+            future_to_index = {
+                executor.submit(_evaluate_one, paper): idx
+                for idx, paper in enumerate(papers)
+            }
+            for future in as_completed(future_to_index):
+                idx = future_to_index[future]
+                try:
+                    results[idx] = future.result()
+                except Exception:
+                    # A provider exception in one worker must not abort the batch.
+                    results[idx] = (papers[idx], None)
+        return results
 
     def analyze_generic_text(self, full_prompt: str) -> Union[str, None]:
         """Run an arbitrary text prompt through the multi-provider chain.

@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.12.4
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.13.0
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-09-28
-> **Version:** v5.12.4 -- Concurrent Ingestion Mesh & Multi-Profile Research Onboarding
+> **Version:** v5.13.0 -- Full-Stack Concurrent Multi-Threaded Engine & High-Throughput Harvester
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.12.4" | `config/settings.py` |
+| TALOS_VERSION | "5.13.0" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -983,6 +983,20 @@ For each evaluated paper, the AI generates:
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py daily_search.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.12.4), `pytest tests/test_research_setup_wizard.py` (39 tests), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
+
+### 15.29 Full-Stack Concurrent Multi-Threaded Engine & High-Throughput Harvester (v5.13.0)
+
+**Overview:** v5.13.0 completes the end-to-end concurrency overhaul: it extends the concurrent ingestion mesh to historical harvesting and introduces a concurrent cognitive evaluation pool with dynamic VRAM-aware worker throttling, alongside batched SQLite WAL re-evaluation.
+
+- **Concurrent Cognitive Evaluation Pool** (`src/core/ai_manager.py:batch_evaluate_papers()` / `_resolve_eval_concurrency()`): a multi-threaded batch evaluator scores an arbitrary list of papers through the structured JSON schema of `evaluate_paper_json()`. Worker concurrency is resolved from the 2D Execution Matrix via `_resolve_strategies()`: the Cloud Mesh (`cloud_first` / `strict_cloud`; DeepSeek, Gemini, Groq, and the OpenAI-compatible registry) runs `max_workers=8`, while local GPU (`strict_local` / `local_first`; Ollama) runs `max_workers=2` behind a bounded `threading.Semaphore(2)` to eliminate CUDA Out-Of-Memory risks. Results preserve input order as `(paper, evaluation_dict_or_None)` pairs.
+
+- **Concurrent Historical Ingestion Mesh** (`src/ingestion/historic_search.py`): the sequential multi-year fetch loop is replaced with `ThreadPoolExecutor(max_workers=min(16, len(enabled_sources)))`; each source runs in `_harvest_single_source()` with per-thread `contextlib.redirect_stdout` capture and full exception guards, aggregated via `as_completed()` on the main thread and deduplicated by DOI + SHA-1 normalized-title hash.
+
+- **Real-time Rich Live telemetry for historical harvesting**: a Rich Live table renders WAITING / HARVESTING / COMPLETED / FAILED per source with Papers Found and Elapsed Time columns, closing with a Historical Ingestion Summary panel.
+
+- **Concurrent database re-evaluation** (`src/utils/reevaluate_database.py:_apply_evaluation_batch()`): the sequential loop now drives `batch_evaluate_papers()` and persists results with batched SQLite WAL commits (grouped UPDATE statements on a single WAL connection).
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py daily_search.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.13.0), `pytest tests/test_research_setup_wizard.py`, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 ---
 

@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.12.4
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.13.0
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-09-28 (v5.12.4 -- Concurrent Ingestion Mesh & Multi-Profile Research Onboarding)
+> **Last Updated:** 2026-09-28 (v5.13.0 -- Full-Stack Concurrent Multi-Threaded Engine & High-Throughput Harvester)
 
 ---
 
@@ -199,6 +199,8 @@ src/utils/research_setup_wizard.py
 | **Research Pivot Wizard (v5.12.3)** | `src/ai/llm/research_pivot.py` | `_resolve_script_path()` / `run_script()` -- REPO_ROOT-anchored canonical path resolution via `_SCRIPT_MAP` (Cognitive Query Compiler, database re-evaluation, DRL trainer) executed with `sys.executable`; strict `proc.returncode` verification (YES only for code 0, otherwise `FAILED (Code X)`); Rule 9 codename elimination (PYTHIA/CHIRON) |
 | **Concurrent Ingestion Mesh (v5.12.4)** | `src/ingestion/daily_search.py` | `_harvest_single_source()` (per-thread source isolation with stdout capture + full exception guard), `_deduplicate_papers()` (DOI + SHA-1 normalized-title hash), `_normalize_title()` / `_title_hash()`, `ThreadPoolExecutor(max_workers=min(16, len(enabled_scrapers)))` with `as_completed()` + Rich Live telemetry table (WAITING/HARVESTING/COMPLETED/FAILED) and ingestion summary panel (~35-45s to ~3-4s) |
 
+| **Full-Stack Concurrent Multi-Threaded Engine (v5.13.0)** | `src/core/ai_manager.py`, `src/ingestion/historic_search.py`, `src/utils/reevaluate_database.py` | `batch_evaluate_papers()` / `_resolve_eval_concurrency()` (8 cloud / 2 local workers + `threading.Semaphore(2)` VRAM guard), `historic_search.py` `ThreadPoolExecutor(max_workers=min(16, len(enabled_sources)))` mesh + `_harvest_single_source()` + Rich Live telemetry, `reevaluate_database.py:_apply_evaluation_batch()` (batched SQLite WAL commits) |
+
 ## 9. Auxiliary Files
 
 | File/Dir | Role |
@@ -236,8 +238,8 @@ src/utils/research_setup_wizard.py
 
 ---
 
-> **Last Updated:** 2026-09-28 (v5.12.4 -- Concurrent Ingestion Mesh & Multi-Profile Research Onboarding)
-> **Project Version:** v5.12.4
+> **Last Updated:** 2026-09-28 (v5.13.0 -- Full-Stack Concurrent Multi-Threaded Engine & High-Throughput Harvester)
+> **Project Version:** v5.13.0
 > **Total .py modules under src/:** 86 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 20 + api 4 + mcp_server 1)
 
 

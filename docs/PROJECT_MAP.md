@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.12.4
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.13.0
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.12.4 -- Πλέγμα Ταυτόχρονης Κατάποσης & Ενσωμάτωση Έρευνας Πολλαπλών Προφίλ)
+> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.13.0 -- Μηχανή Ταυτόχρονης Πολυνηματικής Εκτέλεσης Πλήρους Στοίβας & Συλλέκτης Υψηλής Διαμεταγωγής)
 
 ---
 
@@ -199,6 +199,8 @@ src/utils/research_setup_wizard.py
 | **Οδηγός Αναπροσανατολισμού Έρευνας (v5.12.3)** | `src/ai/llm/research_pivot.py` | `_resolve_script_path()` / `run_script()` -- επίλυση κανονικών διαδρομών αγκυρωμένων στο `REPO_ROOT` μέσω `_SCRIPT_MAP` (Γνωσιακός Μεταγλωττιστής Ερωτημάτων, επαναξιολόγηση βάσης, εκπαιδευτής DRL) με εκτέλεση `sys.executable`· αυστηρή επαλήθευση `proc.returncode` (YES μόνο για κωδικό 0, αλλιώς `FAILED (Code X)`)· εξάλειψη κωδικών ονομάτων PYTHIA/CHIRON κατά Κανόνα 9 |
 | **Πλέγμα Ταυτόχρονης Κατάποσης (v5.12.4)** | `src/ingestion/daily_search.py` | `_harvest_single_source()` (απομόνωση πηγής ανά νήμα με σύλληψη stdout + πλήρη φύλαξη εξαιρέσεων), `_deduplicate_papers()` (DOI + SHA-1 κατακερματισμός κανονικοποιημένου τίτλου), `_normalize_title()` / `_title_hash()`, `ThreadPoolExecutor(max_workers=min(16, len(enabled_scrapers)))` με `as_completed()` + πίνακα τηλεμετρίας Rich Live (WAITING/HARVESTING/COMPLETED/FAILED) και πίνακα σύνοψης κατάποσης (~35-45s σε ~3-4s) |
 
+| **Μηχανή Ταυτόχρονης Πολυνηματικής Εκτέλεσης Πλήρους Στοίβας (v5.13.0)** | `src/core/ai_manager.py`, `src/ingestion/historic_search.py`, `src/utils/reevaluate_database.py` | `batch_evaluate_papers()` / `_resolve_eval_concurrency()` (8 cloud / 2 τοπικοί εργάτες + φύλακας VRAM `threading.Semaphore(2)`), `historic_search.py` πλέγμα `ThreadPoolExecutor(max_workers=min(16, len(enabled_sources)))` + `_harvest_single_source()` + Rich Live τηλεμετρία, `reevaluate_database.py:_apply_evaluation_batch()` (ομαδικές καταγραφές SQLite WAL) |
+
 ## 9. Βοηθητικά Αρχεία
 
 | Αρχείο/Φάκελος | Ρόλος |
@@ -236,8 +238,8 @@ src/utils/research_setup_wizard.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.12.4 -- Πλέγμα Ταυτόχρονης Κατάποσης & Ενσωμάτωση Έρευνας Πολλαπλών Προφίλ)
-> **Έκδοση Project:** v5.12.4
+> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.13.0 -- Μηχανή Ταυτόχρονης Πολυνηματικής Εκτέλεσης Πλήρους Στοίβας & Συλλέκτης Υψηλής Διαμεταγωγής)
+> **Έκδοση Project:** v5.13.0
 > **Συνολικά .py modules στο src/:** 86 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 20 + api 4 + mcp_server 1)
 
 
