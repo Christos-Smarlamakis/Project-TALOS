@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.15.0 (Universal Scientific Search Hub & Neural Graph Discovery Engine)
+> **Current Version:** v5.15.1 (Persistent Vector Cache & Accelerated Neural Embedding Engine)
 > **Last Updated:** 2026-09-28
 
 ---

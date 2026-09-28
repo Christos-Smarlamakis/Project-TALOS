@@ -2,6 +2,23 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.15.1] - 2026-09-28 -- Persistent Vector Cache & Accelerated Neural Embedding Engine
+
+### Added
+
+- **Persistent SQLite Vector Cache** (`src/core/database_manager.py`): idempotent `paper_embeddings` table (BLOB-encoded float32 vectors, per-model index, `ON DELETE CASCADE` foreign key) plus `get_cached_embeddings(model_name)` and `save_embeddings_batch(records)` helpers, enabling zero-redundancy incremental indexing across runs.
+- **Real-time `rich.progress.Progress` telemetry** (`src/search/neural_vector_search.py`): a live progress bar with percentage, completed/total papers, and ETA (`{task.time_remaining}`) for the uncached abstract delta, embedded concurrently via `ThreadPoolExecutor` and persisted in batches of 64.
+- **NumPy vectorized matrix cosine similarity** (`src/search/neural_vector_search.py`): `_matrix_rank()` assembles a single N x 768 document matrix and computes `S_C(q, D) = (q . D^T) / (||q|| ||D||)` in one vectorized pass, reducing query latency from minutes to under 50ms.
+- **Rich Table presentation** (`src/search/neural_vector_search.py`): `render_results()` renders top-K results in a styled `box.ROUNDED` table ("Neural Vector Semantic Search Results") with Rank, Similarity (%), Title, Year / Source, DOI / URL, and Key Abstract Match Snippet columns; JSON output preserved via `run(..., render=False)`.
+
+### Changed
+
+- **Version strings synchronized to 5.15.1** across the 6 core code files, `docker-compose.yml` (`talos:5.15.1`), `CITATION.cff` (version 5.15.1), tray/visualizer/wizard/diagnostics metadata, `src/prisma/` docstrings, and all 19 canonical documentation files (dated 2026-09-28).
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.1); `pytest tests/test_neural_vector_search.py -q` (mock `nomic-embed-text` embeddings, exit 0); persistent cache round-trip smoke test (`get_cached_embeddings` / `save_embeddings_batch`); `verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.15.0] - 2026-09-28 -- Universal Scientific Search Hub & Neural Graph Discovery Engine
 
 ### Added

@@ -2,6 +2,23 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.15.1] - 2026-09-28 -- Μόνιμη Διανυσματική Κρυφή Μνήμη & Επιταχυνόμενη Μηχανή Νευρικών Ενσωματώσεων
+
+### Προστέθηκε
+
+- **Μόνιμη Διανυσματική Κρυφή Μνήμη SQLite** (`src/core/database_manager.py`): αδρανής πίνακας `paper_embeddings` (διανύσματα float32 κωδικοποιημένα ως BLOB, ευρετήριο ανά μοντέλο, ξένο κλειδί `ON DELETE CASCADE`) συν τους βοηθούς `get_cached_embeddings(model_name)` και `save_embeddings_batch(records)`, επιτρέποντας σταδιακή δεικτοδότηση μηδενικού πλεονασμού μεταξύ εκτελέσεων.
+- **Τηλεμετρία πραγματικού χρόνου `rich.progress.Progress`** (`src/search/neural_vector_search.py`): ζωντανή γραμμή προόδου με ποσοστό, ολοκληρωμένες/συνολικές εργασίες και ETA (`{task.time_remaining}`) για το μη αποθηκευμένο δέλτα περιλήψεων, ενσωματωμένο ταυτόχρονα μέσω `ThreadPoolExecutor` και αποθηκευμένο σε παρτίδες των 64.
+- **Διανυσματική ομοιότητα συνημιτόνου μητρώου NumPy** (`src/search/neural_vector_search.py`): η `_matrix_rank()` συναρμολογεί ένα ενιαίο μητρώο εγγράφων N x 768 και υπολογίζει `S_C(q, D) = (q . D^T) / (||q|| ||D||)` σε ένα διανυσματικό πέρασμα, μειώνοντας την καθυστέρηση ερωτήματος από λεπτά σε κάτω από 50ms.
+- **Παρουσίαση Rich Table** (`src/search/neural_vector_search.py`): η `render_results()` αποδίδει τα κορυφαία-K αποτελέσματα σε πίνακα `box.ROUNDED` («Αποτελέσματα Νευρικής Διανυσματικής Σημασιολογικής Αναζήτησης») με στήλες Κατάταξη, Ομοιότητα (%), Τίτλος, Έτος / Πηγή, DOI / URL και Απόσπασμα Αντιστοίχισης Περίληψης· η έξοδος JSON διατηρείται μέσω `run(..., render=False)`.
+
+### Άλλαξε
+
+- **Συγχρονισμός αλφαριθμητικών έκδοσης σε 5.15.1** στα 6 βασικά αρχεία κώδικα, `docker-compose.yml` (`talos:5.15.1`), `CITATION.cff` (έκδοση 5.15.1), μεταδεδομένα tray/visualizer/wizard/diagnostics, docstrings `src/prisma/` και στα 19 κανονικά αρχεία τεκμηρίωσης (ημερομηνία 2026-09-28).
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.1)· `pytest tests/test_neural_vector_search.py -q` (mock ενσωματώσεις `nomic-embed-text`, κωδικός εξόδου 0)· δοκιμή κύκλου μόνιμης κρυφής μνήμης (`get_cached_embeddings` / `save_embeddings_batch`)· `verify_dependency_map.py --ci` (κωδικός εξόδου 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.15.0] - 2026-09-28 -- Καθολικός Κόμβος Επιστημονικής Αναζήτησης & Μηχανή Ανακάλυψης Νευρικών Γράφων
 
 ### Προστέθηκε

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: citation_snowballing.py
-Project: TALOS v5.15.0
+Project: TALOS v5.15.1
 Description:
     Autonomous citation snowballing engine. Starting from a seed paper (DOI, title,
     or database ID), it traverses the academic citation graph in two directions:
@@ -56,7 +56,7 @@ class CitationSnowballEngine:
         self.db_manager = db_manager
         self.timeout = timeout
         self.session = requests.Session()
-        self.session.headers.update({"User-Agent": "TALOS/5.15.0"})
+        self.session.headers.update({"User-Agent": "TALOS/5.15.1"})
 
     # -- OpenAlex primitives ----------------------------------------------------
     def _get_json(self, url, params=None):
@@ -362,7 +362,7 @@ class CitationSnowballEngine:
                 evaluation = {
                     "scores": {"strategic": 0, "operational": 0, "tactical": 0, "playground": 0},
                     "overall_score": 0.0,
-                    "reasoning": "Discovered via citation snowballing (v5.15.0).",
+                    "reasoning": "Discovered via citation snowballing (v5.15.1).",
                     "tags": ["snowballing"],
                 }
                 db.add_paper(paper, evaluation)

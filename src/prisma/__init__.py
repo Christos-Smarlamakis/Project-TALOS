@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: __init__.py
-Project: TALOS v5.15.0
+Project: TALOS v5.15.1
 Description:
     Package root for the Stanford DSPy PRISMA-ScR Declarative Synthesis Pipeline.
     Exposes the four typed declarative signatures (``dspy_signatures``), the

@@ -5,7 +5,7 @@
 #  This program is free software...
 """
 Module: database_manager.py (v5.0 - Multi-Provider Hybrid Embeddings)
-Project: TALOS v5.10.13
+Project: TALOS v5.15.1
 """
 import sqlite3
 import os
@@ -162,6 +162,27 @@ class DatabaseManager:
         # exporter can filter INCLUDE studies without re-running the pipeline. --
         if cols and not any(col[1] == 'prisma_decision' for col in cols):
             self.execute_query("ALTER TABLE papers ADD COLUMN prisma_decision TEXT DEFAULT NULL;", commit=True)
+        # -- v5.15.1: persistent vector cache table for accelerated neural
+        # retrieval. Stores one BLOB-encoded float32 vector per paper per
+        # embedding model, so the neural vector search engine can skip
+        # re-embedding abstracts that have already been indexed. The foreign
+        # key cascades so deleting a paper also removes its cached vector. --
+        self.execute_query(
+            '''
+            CREATE TABLE IF NOT EXISTS paper_embeddings (
+                paper_id INTEGER PRIMARY KEY,
+                model_name TEXT NOT NULL,
+                embedding_blob BLOB NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(paper_id) REFERENCES papers(id) ON DELETE CASCADE
+            )
+            ''',
+            commit=True,
+        )
+        self.execute_query(
+            "CREATE INDEX IF NOT EXISTS idx_paper_embeddings_model ON paper_embeddings(model_name);",
+            commit=True,
+        )
 
     # --- Paper CRUD ---
     def paper_exists_by_doi(self, doi):
@@ -276,6 +297,72 @@ class DatabaseManager:
                     return [dict(r) for r in conn.cursor().execute("SELECT id,embedding FROM papers WHERE embedding IS NOT NULL AND embedding_model=?", (model_filter,))]
                 else:
                     return [dict(r) for r in conn.cursor().execute("SELECT id,embedding FROM papers WHERE embedding IS NOT NULL")]
+
+    # --- Persistent Vector Cache (v5.15.1) ---
+    def get_cached_embeddings(self, model_name="nomic-embed-text"):
+        """Load all cached embedding vectors for a model into a dict.
+
+        Reads the ``paper_embeddings`` table and deserializes each BLOB back
+        into a 1D float32 NumPy array, keyed by ``paper_id``. This enables the
+        neural vector search engine to skip re-embedding abstracts that have
+        already been indexed, producing sub-100ms retrieval against a warm
+        in-memory cache.
+
+        Args:
+            model_name (str): Embedding model label to filter on. Defaults to
+                ``nomic-embed-text``.
+
+        Returns:
+            dict[int, numpy.ndarray]: Mapping of paper_id to a 1D float32 vector.
+        """
+        cache = {}
+        try:
+            with self._connect() as conn:
+                conn.row_factory = sqlite3.Row
+                rows = conn.cursor().execute(
+                    "SELECT paper_id, embedding_blob FROM paper_embeddings WHERE model_name=?",
+                    (model_name,),
+                ).fetchall()
+            for row in rows:
+                blob = row["embedding_blob"]
+                if not blob:
+                    continue
+                vector = np.frombuffer(blob, dtype=np.float32)
+                if vector.size:
+                    cache[int(row["paper_id"])] = vector
+        except sqlite3.Error as exc:
+            print(f"Persistent vector cache load failed: {exc}")
+        return cache
+
+    def save_embeddings_batch(self, records):
+        """Insert or replace a batch of embedding vectors atomically.
+
+        Persists newly computed embeddings into ``paper_embeddings`` using a
+        single transaction (WAL journal mode is applied by ``_connect``). Each
+        record is a tuple of ``(paper_id, model_name, embedding_blob)`` where
+        ``embedding_blob`` is the raw bytes of a float32 NumPy array obtained
+        via ``vector.tobytes()``.
+
+        Args:
+            records (list[tuple[int, str, bytes]]): Batch of embedding records.
+
+        Returns:
+            int: Number of rows written, or None on failure.
+        """
+        if not records:
+            return 0
+        try:
+            with self._connect() as conn:
+                conn.cursor().executemany(
+                    "INSERT OR REPLACE INTO paper_embeddings "
+                    "(paper_id, model_name, embedding_blob) VALUES (?,?,?)",
+                    records,
+                )
+                conn.commit()
+            return len(records)
+        except sqlite3.Error as exc:
+            print(f"Persistent vector cache write failed: {exc}")
+            return None
 
     def get_papers_by_ids(self, ids):
         if not ids: return []

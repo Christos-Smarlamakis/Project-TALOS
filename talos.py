@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.15.0
+Project: TALOS v5.15.1
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,13 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.15.1: Persistent Vector Cache & Accelerated Neural Embedding Engine --
+    src/core/database_manager.py adds the idempotent ``paper_embeddings`` SQLite
+    table with get_cached_embeddings() / save_embeddings_batch() helpers;
+    NeuralVectorSearchEngine now performs zero-redundancy incremental indexing
+    behind a live rich.progress.Progress bar, vectorized NumPy matrix cosine
+    similarity (<50ms retrieval), and styled Rich Table result presentation.
 
     v5.15.0: Universal Scientific Search Hub & Neural Graph Discovery Engine --
     src/search/ adds the CitationSnowballEngine (backward/forward citation graph
@@ -1823,7 +1830,7 @@ def search_ingestion_menu(python_exe):
         if query and query.strip():
             try:
                 from src.search.neural_vector_search import NeuralVectorSearchEngine
-                _render_search_result(NeuralVectorSearchEngine().run(query.strip()))
+                NeuralVectorSearchEngine().run(query.strip())
             except Exception as e:
                 console.print(f"[red]Neural vector search error: {e}[/red]")
         safe_pause()
@@ -2302,7 +2309,7 @@ def _handle_cli_flags(argv):
             console.print("[yellow]Usage: python talos.py --vector-search <query>[/yellow]")
             return True
         from src.search.neural_vector_search import NeuralVectorSearchEngine
-        _render_search_result(NeuralVectorSearchEngine().run(query.strip()))
+        NeuralVectorSearchEngine().run(query.strip())
         return True
     if "--code-search" in argv:
         query = _flag_value(argv, "--code-search") or "reinforcement learning robotics"

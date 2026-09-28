@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: __init__.py
-Project: TALOS v5.15.0
+Project: TALOS v5.15.1
 Description:
     Package root for the modular 18-source academic ingestion mesh. Exposes the
     unified ``SOURCE_REGISTRY`` mapping every source key (e.g., ``arxiv``) to its

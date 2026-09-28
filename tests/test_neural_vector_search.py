@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_neural_vector_search.py
-Project: TALOS v5.15.0
+Project: TALOS v5.15.1
 Description:
     Unit tests for the NeuralVectorSearchEngine covering cosine similarity,
     embedding response extraction (both Ollama schemas), ranking order, and the

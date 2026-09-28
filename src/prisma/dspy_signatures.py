@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: dspy_signatures.py
-Project: TALOS v5.15.0
+Project: TALOS v5.15.1
 Description:
     Typed declarative schema structures for the PRISMA-ScR scoping review
     pipeline. These models mirror the Stanford DSPy ``dspy.Signature``

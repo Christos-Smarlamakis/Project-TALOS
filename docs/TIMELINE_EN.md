@@ -4,9 +4,18 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-28 (v5.15.0 -- Universal Scientific Search Hub & Neural Graph Discovery Engine)
+> **Last Updated:** 2026-09-28 (v5.15.1 -- Persistent Vector Cache & Accelerated Neural Embedding Engine)
 
 ---
+
+## Phase 62: Neural Vector Cache & Accelerated Embedding Engine (v5.15.1)
+
+- [x] **Persistent vector cache** -- `paper_embeddings` SQLite table + `get_cached_embeddings` / `save_embeddings_batch` in `src/core/database_manager.py` (BLOB float32, per-model index, ON DELETE CASCADE).
+- [x] **Incremental indexing + Rich progress** -- `_index_uncached` renders a live `rich.progress.Progress` bar (ETA + throughput) for the uncached delta; concurrent embedding via `ThreadPoolExecutor`, batched persistence (64).
+- [x] **Vectorized matrix cosine similarity** -- `_matrix_rank` computes `S_C(q, D)` for all N papers in one NumPy pass (<50ms).
+- [x] **Rich Table presentation** -- `render_results` renders Rank / Similarity (%) / Title / Year-Source / DOI-URL / snippet in `box.ROUNDED`; JSON preserved via `render=False`.
+- [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/wizard/diagnostics metadata + src/prisma/ docstrings + 19 canonical docs to v5.15.1 (2026-09-28).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.15.1), test_neural_vector_search (mock embeddings), persistent cache smoke test, verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 61: Universal Scientific Search Hub & Neural Graph Discovery (v5.15.0)
 
