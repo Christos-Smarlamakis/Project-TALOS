@@ -4,7 +4,7 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-27 (v5.12.3 -- Research Pivot Modernization & Setup Wizard TUI Integration)
+> **Last Updated:** 2026-09-28 (v5.12.4 -- Concurrent Ingestion Mesh & Multi-Profile Research Onboarding)
 
 ---
 
@@ -643,6 +643,19 @@
 - [x] **Research Setup Wizard TUI promotion** -- `profile_settings_menu()` promotes the wizard to option 1 ("Full Onboarding & Reconfiguration") and renumbers the remaining entries, enabling re-running at any time to re-tune scope, 16 queries, criteria, search window, and AI execution strategy.
 - [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/evaluation-history/wizard metadata + 19 canonical docs to v5.12.3 (2026-09-27).
 - [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, test_research_setup_wizard (28 tests), verify_dependency_map --ci (exit 0), bash -n, UTF-8 integrity scan (zero U+FFFD glyphs).
+
+## Phase 55: Concurrent Ingestion Mesh & Multi-Profile Research Onboarding (v5.12.4)
+
+### Status: COMPLETED (2026-09-28)
+
+- [x] **Step 0 Profile Target Selection** -- `research_setup_wizard.py:_step0_profile_selection()` gates the wizard with a three-way choice (reconfigure active profile, switch to an existing profile, or create a fresh isolated `_profiles/<name>/` workspace); the header now renders `Target Profile: [<target_profile>]` and the canonical `_profiles/active_profile.txt` marker drives `get_active_profile_db_path()`.
+- [x] **Concurrent Academic Ingestion Mesh** -- `daily_search.py` replaces the sequential 16-source loop with `ThreadPoolExecutor(max_workers=min(16, len(enabled_scrapers)))`; each provider runs in `_harvest_single_source()` with strict per-thread exception isolation so a timeout in Science.gov or OSTI never aborts the run.
+- [x] **Rich Live concurrency telemetry** -- a live table tracks WAITING / HARVESTING / COMPLETED / FAILED per source with papers-found and elapsed-time columns, closing with a total-time / raw / deduplicated summary panel.
+- [x] **DOI + normalized-title-hash deduplication** -- `_deduplicate_papers()` collapses cross-source duplicates on the main thread before DB insertion.
+- [x] **Harvest latency reduction** -- from ~35-45s down to ~3-4s.
+- [x] **Environment Setup Guides** -- `docs/ENVIRONMENT_SETUP_GUIDE.md` / `_GR.md` documented as the official setup references.
+- [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/evaluation-history/wizard metadata + 19 canonical docs to v5.12.4 (2026-09-28).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version, test_research_setup_wizard (39 tests), verify_dependency_map --ci (exit 0), bash -n, UTF-8 integrity scan (zero U+FFFD glyphs).
 
 
 

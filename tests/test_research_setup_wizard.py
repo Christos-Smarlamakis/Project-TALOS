@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_research_setup_wizard.py
-Project: TALOS v5.12.3
+Project: TALOS v5.12.4
 Description:
     Hermetic unit tests for the Research Setup Wizard. Verifies three contract
     areas without any live Ollama, Fast Edge, or FastAPI dependency:
@@ -242,3 +242,90 @@ class TestPersistence:
             content = f.read()
         assert "TALOS_NETWORK_STRATEGY=local_first" in content
         assert "='local_first'" not in content
+
+
+class TestProfileSelection:
+    """Step 0 profile target gate helpers (v5.12.4)."""
+
+    def test_validate_profile_name_accepts_underscore(self):
+        assert wizard._validate_profile_name("uav_mission_planning") is True
+
+    def test_validate_profile_name_accepts_hyphen(self):
+        assert wizard._validate_profile_name("phd-chapter2") is True
+
+    def test_validate_profile_name_rejects_spaces(self):
+        assert wizard._validate_profile_name("my profile") is False
+
+    def test_validate_profile_name_rejects_empty(self):
+        assert wizard._validate_profile_name("") is False
+        assert wizard._validate_profile_name("   ") is False
+
+    def test_validate_profile_name_rejects_path_separator(self):
+        assert wizard._validate_profile_name("a/b") is False
+
+    def test_list_profiles_ignores_files(self, tmp_path):
+        profiles_dir = os.path.join(str(tmp_path), "_profiles")
+        os.makedirs(profiles_dir, exist_ok=True)
+        os.makedirs(os.path.join(profiles_dir, "alpha"), exist_ok=True)
+        with open(os.path.join(profiles_dir, "active_profile.txt"),
+                  "w", encoding="utf-8") as f:
+            f.write("alpha")
+        assert wizard._list_profiles(str(tmp_path)) == ["alpha"]
+
+    def test_active_profile_round_trip(self, tmp_path):
+        assert wizard._get_active_profile(str(tmp_path)) == "default"
+        wizard._set_active_profile(str(tmp_path), "phd_chapter2")
+        assert wizard._get_active_profile(str(tmp_path)) == "phd_chapter2"
+
+    def test_seed_profile_config_creates_config(self, tmp_path):
+        src = os.path.join(str(tmp_path), "config.json")
+        with open(src, "w", encoding="utf-8") as f:
+            json.dump({"research_topic": "drones"}, f)
+        dst = wizard._seed_profile_config(str(tmp_path), "new_profile")
+        assert os.path.exists(dst)
+        with open(dst, encoding="utf-8") as f:
+            assert json.load(f)["research_topic"] == "drones"
+
+    def test_step0_option1_returns_current(self, tmp_path, monkeypatch):
+        wizard._set_active_profile(str(tmp_path), "default")
+
+        class FakeSelect:
+            def ask(self):
+                return ("1. Current Active Profile: [default] "
+                        "(Reconfigure existing workspace)")
+
+        monkeypatch.setattr(wizard.questionary, "select",
+                            lambda *a, **k: FakeSelect())
+        assert wizard._step0_profile_selection(str(tmp_path)) == "default"
+
+    def test_step0_cancel_returns_none(self, tmp_path, monkeypatch):
+        class FakeSelect:
+            def ask(self):
+                return None
+
+        monkeypatch.setattr(wizard.questionary, "select",
+                            lambda *a, **k: FakeSelect())
+        assert wizard._step0_profile_selection(str(tmp_path)) is None
+
+    def test_step0_option3_creates_profile(self, tmp_path, monkeypatch):
+        src = os.path.join(str(tmp_path), "config.json")
+        with open(src, "w", encoding="utf-8") as f:
+            json.dump({}, f)
+
+        class FakeSelect:
+            def ask(self):
+                return ("3. Create a NEW isolated profile "
+                        "(e.g. 'uav_mission_planning', 'phd_chapter2')")
+
+        class FakeText:
+            def ask(self):
+                return "uav_mission_planning"
+
+        monkeypatch.setattr(wizard.questionary, "select",
+                            lambda *a, **k: FakeSelect())
+        monkeypatch.setattr(wizard.questionary, "text",
+                            lambda *a, **k: FakeText())
+        result = wizard._step0_profile_selection(str(tmp_path))
+        assert result == "uav_mission_planning"
+        assert "uav_mission_planning" in wizard._list_profiles(str(tmp_path))
+

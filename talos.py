@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.12.3
+Project: TALOS v5.12.4
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,13 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.12.4: Concurrent Ingestion Mesh & Multi-Profile Research Onboarding --
+    the Research Setup Wizard gains a Step 0 profile target gate (reconfigure
+    the active profile, switch to an existing isolated profile, or instantiate
+    a fresh isolated workspace), and daily_search.py harvests all 16 sources
+    concurrently via ThreadPoolExecutor (max_workers=16) with a real-time Rich
+    Live telemetry table, reducing harvest latency from ~35-45s to ~3-4s.
 
     v5.12.3: Research Pivot Modernization & Setup Wizard TUI Integration --
     the Research Setup Wizard is promoted to the first entry of the

@@ -1,4 +1,4 @@
-﻿# Project TALOS (v5.12.3)
+﻿# Project TALOS (v5.12.4)
 
 ### **Tactical Agentic Literature Orchestration System**
 
@@ -105,7 +105,7 @@ Project TALOS is designed to run seamlessly across all operating systems. Choose
 ### Method A: Docker (Recommended)
 Run TALOS in a completely isolated environment without installing Python or dependencies.
 1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Docker Compose v2 on Linux).
-2. Create your `.env` file from `example.env`.
+2. Create your `.env` file from `example.env` (see **[docs/ENVIRONMENT_SETUP_GUIDE.md](docs/ENVIRONMENT_SETUP_GUIDE.md)**).
 3. Start the headless FastAPI server (port 8001):
    ```bash
    docker compose up -d --build
@@ -123,7 +123,7 @@ For the full Docker reference (host Ollama connectivity, GPU notes, volumes, env
 
 ### Method B: 1-Click Launcher (Windows)
 For users without Docker.
-1. Set up your `.env` file (copy from `example.env` -- a fully commented, six-section environment canon).
+1. Set up your `.env` file (copy from `example.env` -- a fully commented, six-section environment canon). For a complete walkthrough of every key, credential source, and network strategy, see **[docs/ENVIRONMENT_SETUP_GUIDE.md](docs/ENVIRONMENT_SETUP_GUIDE.md)** (Greek: `docs/ENVIRONMENT_SETUP_GUIDE_GR.md`).
 2. Double-click **`run_talos.bat`**. The script provides a 10-option menu: Full Setup (Conda env + pip install), Start FastAPI Server (port 8001), MCP Server, Interim UI, TALOS CLI, Research Daemon, Live DRL Agent, Autonomous Red Tester, Run Test Suite, or Exit. The 24/7 daemon also exposes a **Desktop Control Hub** system tray icon with self-healing backend auto-bootstrap.
 
 ### Method C: Traditional Python Environment (Linux/Mac)

@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.12.3
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.12.4
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-09-27 (v5.12.3 -- Research Pivot Modernization & Setup Wizard TUI Integration)
+> **Last Updated:** 2026-09-28 (v5.12.4 -- Concurrent Ingestion Mesh & Multi-Profile Research Onboarding)
 
 ---
 
@@ -195,14 +195,17 @@ src/utils/research_setup_wizard.py
 | **Evaluation History (v5.11.0)** | `src/utils/evaluation_history.py` | `record_evaluation()` / `read_evaluation_history()` / `verdict_for_score()` -- append-only JSONL recorder at `data/history/daemon_evaluations.jsonl`; `_show_evaluation_history(limit=30)` Rich TUI viewer in `talos.py` |
 | **Live Telemetry HUD Console (v5.11.0)** | `templates/live_foraging_visualizer.html` | bottom-right glassmorphism stream (40-line ring buffer, auto-scroll, `C`/`L` hotkeys, snapshot auto-hide) driven by `appendConsoleLog()` |
 | **Win32 Close-to-Tray Hook (v5.11.0)** | `src/utils/tray_icon.py` | `enable_close_to_tray()` subclasses the console WndProc (WM_CLOSE / SC_CLOSE to SW_HIDE) so closing minimizes to tray |
-| **Research Setup Wizard (v5.12.0)** | `src/utils/research_setup_wizard.py` | `_ensure_local_ai_runtime()` (probe/spawn ports 11434+11435 with 2s bounded wait), `_analyze_scope_heuristic()` / `_analyze_scope_with_llm()`, `_generate_queries_llm()` / `_generate_queries_heuristic()`, `_apply_execution_strategy()`, `_write_search_window()`, `_create_sentinel()`, `_render_query_preview()` (query-transparency table + confirmation gate, v5.12.1), `_extract_salient_terms()` (heuristic stopword cleaner, v5.12.2), `_prompt_custom_days()` / `_step3_search_window()` (day-based window), `_render_cancelled()` (cancellation integrity), `LANGUAGE_AND_SYNTAX_MANDATE` (English-first mandate), 5-tier `EXECUTION_STRATEGIES` + `ai_strategy_selector.py` (strategy switcher) -- 4-step English-first onboarding with failsafe heuristic bypass |
+| **Research Setup Wizard (v5.12.0)** | `src/utils/research_setup_wizard.py` | `_ensure_local_ai_runtime()` (probe/spawn ports 11434+11435 with 2s bounded wait), `_analyze_scope_heuristic()` / `_analyze_scope_with_llm()`, `_generate_queries_llm()` / `_generate_queries_heuristic()`, `_apply_execution_strategy()`, `_write_search_window()`, `_create_sentinel()`, `_render_query_preview()` (query-transparency table + confirmation gate, v5.12.1), `_extract_salient_terms()` (heuristic stopword cleaner, v5.12.2), `_prompt_custom_days()` / `_step3_search_window()` (day-based window), `_render_cancelled()` (cancellation integrity), `LANGUAGE_AND_SYNTAX_MANDATE` (English-first mandate), 5-tier `EXECUTION_STRATEGIES` + `ai_strategy_selector.py` (strategy switcher) -- Step 0 profile gate (_step0_profile_selection + _list_profiles/_get_active_profile/_set_active_profile/_seed_profile_config/_persist_active_config, v5.12.4) + 4-step English-first onboarding with failsafe heuristic bypass |
 | **Research Pivot Wizard (v5.12.3)** | `src/ai/llm/research_pivot.py` | `_resolve_script_path()` / `run_script()` -- REPO_ROOT-anchored canonical path resolution via `_SCRIPT_MAP` (Cognitive Query Compiler, database re-evaluation, DRL trainer) executed with `sys.executable`; strict `proc.returncode` verification (YES only for code 0, otherwise `FAILED (Code X)`); Rule 9 codename elimination (PYTHIA/CHIRON) |
+| **Concurrent Ingestion Mesh (v5.12.4)** | `src/ingestion/daily_search.py` | `_harvest_single_source()` (per-thread source isolation with stdout capture + full exception guard), `_deduplicate_papers()` (DOI + SHA-1 normalized-title hash), `_normalize_title()` / `_title_hash()`, `ThreadPoolExecutor(max_workers=min(16, len(enabled_scrapers)))` with `as_completed()` + Rich Live telemetry table (WAITING/HARVESTING/COMPLETED/FAILED) and ingestion summary panel (~35-45s to ~3-4s) |
 
 ## 9. Auxiliary Files
 
 | File/Dir | Role |
 |----------|------|
-| `docs/` | Permanent documentation (CHANGELOG, ROADMAP, TIMELINE, PROJECT_MAP, SYSTEM_CAPABILITIES) |
+| `docs/` | Permanent documentation (CHANGELOG, ROADMAP, TIMELINE, PROJECT_MAP, SYSTEM_CAPABILITIES, ENVIRONMENT_SETUP_GUIDE EN/GR) |
+| `docs/ENVIRONMENT_SETUP_GUIDE.md` | Canonical English environment & credentials setup guide (`.env` vs `settings.py` decoupling, local Ollama, cloud mesh, academic APIs, network/port matrix) |
+| `docs/ENVIRONMENT_SETUP_GUIDE_GR.md` | Canonical Greek environment & credentials setup guide (pure Greek script) |
 | `docs/internal/` | Proprietary / confidential documents (API_HANDOVER, UX_UI_BLUEPRINT, IP_PROTECTION, TECH_RADAR EN/GR -- confidential strategy map) |
 | `tools/` | Dev & utility scripts |
 | `Dockerfile`, `docker-compose.yml` | Containerization |
@@ -233,8 +236,8 @@ src/utils/research_setup_wizard.py
 
 ---
 
-> **Last Updated:** 2026-09-27 (v5.12.3 -- Research Pivot Modernization & Setup Wizard TUI Integration)
-> **Project Version:** v5.12.3
+> **Last Updated:** 2026-09-28 (v5.12.4 -- Concurrent Ingestion Mesh & Multi-Profile Research Onboarding)
+> **Project Version:** v5.12.4
 > **Total .py modules under src/:** 86 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 23 + integration 3 + utils 20 + api 4 + mcp_server 1)
 
 

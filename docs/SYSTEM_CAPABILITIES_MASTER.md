@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.12.3
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.12.4
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-09-27
-> **Version:** v5.12.3 -- Research Pivot Modernization & Setup Wizard TUI Integration
+> **Last Updated:** 2026-09-28
+> **Version:** v5.12.4 -- Concurrent Ingestion Mesh & Multi-Profile Research Onboarding
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.12.3" | `config/settings.py` |
+| TALOS_VERSION | "5.12.4" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -970,6 +970,18 @@ For each evaluated paper, the AI generates:
 - **Research Setup Wizard TUI promotion** (`talos.py:profile_settings_menu()`): the wizard is promoted to option 1 ("Research Setup Wizard (Full Onboarding & Reconfiguration)"), enabling re-running at any time to re-tune research scope, 16 search queries, criteria, search window, and AI execution strategy; remaining menu entries renumbered.
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.12.3), `pytest tests/test_research_setup_wizard.py` (28 tests), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+
+### 15.28 Concurrent Ingestion Mesh & Multi-Profile Research Onboarding (v5.12.4)
+
+**Overview:** v5.12.4 introduces a pre-flight profile target gate to the Research Setup Wizard and replaces the sequential 16-source harvest loop with a concurrent ThreadPoolExecutor mesh, collapsing harvest latency from roughly 35-45 seconds to 3-4 seconds.
+
+- **Step 0 Profile Target Selection** (`src/utils/research_setup_wizard.py:_step0_profile_selection()`): a three-way pre-flight gate (reconfigure the active profile in place, switch to an existing isolated profile, or create a fresh isolated `_profiles/<name>/` workspace) backed by `_list_profiles()` / `_get_active_profile()` / `_set_active_profile()` / `_seed_profile_config()` / `_load_profile_config_to_root()` / `_persist_active_config()`. The canonical `_profiles/active_profile.txt` marker drives `get_active_profile_db_path()` (the single-source-of-truth per-profile SQLite resolver), and the header panel renders `Target Profile: [<target_profile>]`.
+- **Concurrent Academic Ingestion Mesh** (`src/ingestion/daily_search.py`): `ThreadPoolExecutor(max_workers=min(16, len(enabled_scrapers)))` isolates each provider in `_harvest_single_source(scraper_name, query, criteria, date_limit)` with per-thread stdout capture and a full exception guard; a timeout or HTTP error in one provider (e.g. Science.gov or OSTI) never aborts the batch. Results are gathered via `concurrent.futures.as_completed()` and aggregated on the main thread.
+- **Real-time Rich Live telemetry**: a live table tracks WAITING / HARVESTING / COMPLETED / FAILED per source with Papers Found and Elapsed Time columns, followed by a final summary panel (total harvest time, raw count, deduplicated count).
+- **DOI + normalized-title-hash deduplication** (`_deduplicate_papers()` / `_normalize_title()` / `_title_hash()`): main-thread dedup keyed by DOI with a SHA-1 normalized-title fallback collapses cross-source duplicates before database insertion.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py daily_search.py`, `pytest tests/test_system_integrity.py`, `pytest tests/test_multi_tier.py -k test_talos_version` (v5.12.4), `pytest tests/test_research_setup_wizard.py` (39 tests), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 
 ---

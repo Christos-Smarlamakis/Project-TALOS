@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: research_setup_wizard.py
-Project: TALOS v5.12.3
+Project: TALOS v5.12.4
 Description:
     Structured, step-by-step research onboarding wizard for TALOS. Guides the
     researcher through four plain-English steps: (1) research topic capture
@@ -46,6 +46,10 @@ Description:
       five-tier hierarchy (strict_local, local_first, cloud_first,
       strict_cloud, auto_dynamic) persisted to config.json under
       'ai_execution_strategy'.
+    - Step 0 profile target gate (v5.12.4): a pre-flight selection step lets
+      the researcher reconfigure the current active profile, switch to an
+      existing isolated profile, or instantiate a fresh isolated workspace
+      under _profiles/<name>/ before Steps 1-4 execute.
 
 Dependencies:
     - questionary: interactive prompts using the canonical TALOS theme.
@@ -116,6 +120,11 @@ STOPWORDS = {
     "this", "these", "those", "their", "its", "via", "as", "be", "was",
     "were", "within", "towards", "toward", "between", "among", "through",
 }
+
+# -- v5.12.4: Step 0 profile target gate constants ----------------------------
+PROFILES_DIRNAME = "_profiles"
+ACTIVE_PROFILE_FILENAME = "active_profile.txt"
+PROFILE_NAME_RE = re.compile(r"^[A-Za-z0-9_][A-Za-z0-9_-]*$")
 
 # -- The 16 ingestion source query keys written back to config.json -------------
 SOURCE_QUERY_KEYS = [
@@ -257,6 +266,187 @@ def _save_config(config, path):
     """
     with open(path, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
+
+
+# ---------------------------------------------------------------------------
+# -- v5.12.4: Step 0 profile target gate helpers --
+# ---------------------------------------------------------------------------
+
+def _profiles_dir(project_root=None):
+    """Return the absolute canonical _profiles directory for a project root.
+
+    Anchored to the repository root (the directory containing talos.py) so the
+    wizard operates on the same profile namespace as the database manager's
+    get_active_profile_db_path() resolver.
+
+    Args:
+        project_root (str, optional): Project root override for testing.
+
+    Returns:
+        str: Absolute path to the _profiles directory.
+    """
+    root = project_root or _project_root()
+    return os.path.join(root, PROFILES_DIRNAME)
+
+
+def _active_profile_file(project_root=None):
+    """Return the absolute path to the active-profile marker file.
+
+    Args:
+        project_root (str, optional): Project root override for testing.
+
+    Returns:
+        str: Absolute path to _profiles/active_profile.txt.
+    """
+    return os.path.join(_profiles_dir(project_root), ACTIVE_PROFILE_FILENAME)
+
+
+def _list_profiles(project_root=None):
+    """List the names of every existing research profile.
+
+    Only directory entries under _profiles are considered profiles; the
+    active_profile.txt marker and any stray files are ignored.
+
+    Args:
+        project_root (str, optional): Project root override for testing.
+
+    Returns:
+        list[str]: Sorted profile directory names (may be empty).
+    """
+    profiles_dir = _profiles_dir(project_root)
+    if not os.path.isdir(profiles_dir):
+        return []
+    names = []
+    for entry in os.listdir(profiles_dir):
+        if os.path.isdir(os.path.join(profiles_dir, entry)):
+            names.append(entry)
+    return sorted(names)
+
+
+def _get_active_profile(project_root=None):
+    """Return the currently active profile name, defaulting to 'default'.
+
+    Creates the _profiles directory and the marker file on first run so the
+    return value is always a concrete, usable profile name.
+
+    Args:
+        project_root (str, optional): Project root override for testing.
+
+    Returns:
+        str: The active profile name (never empty).
+    """
+    profiles_dir = _profiles_dir(project_root)
+    os.makedirs(profiles_dir, exist_ok=True)
+    marker = _active_profile_file(project_root)
+    if os.path.exists(marker):
+        try:
+            with open(marker, "r", encoding="utf-8") as f:
+                name = f.read().strip()
+            if name:
+                return name
+        except OSError:
+            pass
+    _set_active_profile(project_root, "default")
+    return "default"
+
+
+def _set_active_profile(project_root, name):
+    """Persist the given profile name as the active profile.
+
+    Args:
+        project_root (str): Project root (directory containing talos.py).
+        name (str): The profile name to activate.
+    """
+    profiles_dir = _profiles_dir(project_root)
+    os.makedirs(profiles_dir, exist_ok=True)
+    with open(_active_profile_file(project_root), "w", encoding="utf-8") as f:
+        f.write(name)
+
+
+def _validate_profile_name(name):
+    """Validate a proposed profile name for filesystem safety.
+
+    Accepts alphanumeric names optionally containing underscores or hyphens
+    after the first character. Spaces and path separators are rejected.
+
+    Args:
+        name (str): The raw proposed profile name.
+
+    Returns:
+        bool: True when the name is a safe single path component.
+    """
+    return bool(name) and bool(PROFILE_NAME_RE.match((name or "").strip()))
+
+
+def _seed_profile_config(project_root, name):
+    """Seed a new profile directory with an isolated config.json.
+
+    Copies the current root config.json (falling back to config.template.json)
+    into _profiles/<name>/config.json. No database file is copied: a fresh
+    talos_research.db is created lazily by DatabaseManager on first use.
+
+    Args:
+        project_root (str): Project root (directory containing talos.py).
+        name (str): The profile name to seed.
+
+    Returns:
+        str: Absolute path to the seeded profile config.json.
+    """
+    profile_dir = os.path.join(_profiles_dir(project_root), name)
+    os.makedirs(profile_dir, exist_ok=True)
+    src = os.path.join(project_root, "config.json")
+    if not os.path.exists(src):
+        src = os.path.join(project_root, "config.template.json")
+    dst = os.path.join(profile_dir, "config.json")
+    if os.path.exists(src):
+        with open(src, "r", encoding="utf-8") as f_in:
+            data = f_in.read()
+    else:
+        data = json.dumps({})
+    with open(dst, "w", encoding="utf-8") as f_out:
+        f_out.write(data)
+    return dst
+
+
+def _load_profile_config_to_root(project_root, name):
+    """Activate a profile by copying its config.json into the root workspace.
+
+    This mirrors the profile manager's swap model: the root config.json is the
+    active working copy consumed by the wizard and daily_search.py, while the
+    per-profile config lives under _profiles/<name>/config.json.
+
+    Args:
+        project_root (str): Project root (directory containing talos.py).
+        name (str): The profile name to activate.
+    """
+    src = os.path.join(_profiles_dir(project_root), name, "config.json")
+    dst = os.path.join(project_root, "config.json")
+    if os.path.exists(src):
+        with open(src, "r", encoding="utf-8") as f_in:
+            data = f_in.read()
+        with open(dst, "w", encoding="utf-8") as f_out:
+            f_out.write(data)
+
+
+def _persist_active_config(project_root, name):
+    """Persist the root config.json back into the active profile directory.
+
+    Called after successful onboarding so the isolated workspace retains the
+    researcher's final query, criteria, and strategy configuration.
+
+    Args:
+        project_root (str): Project root (directory containing talos.py).
+        name (str): The active profile name to persist to.
+    """
+    src = os.path.join(project_root, "config.json")
+    if not os.path.exists(src):
+        return
+    profile_dir = os.path.join(_profiles_dir(project_root), name)
+    os.makedirs(profile_dir, exist_ok=True)
+    with open(src, "r", encoding="utf-8") as f_in:
+        data = f_in.read()
+    with open(os.path.join(profile_dir, "config.json"), "w", encoding="utf-8") as f_out:
+        f_out.write(data)
 
 
 # ---------------------------------------------------------------------------
@@ -704,7 +894,7 @@ def _create_sentinel(project_root=None):
     path = _sentinel_path(project_root)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        f.write("TALOS onboarding complete (v5.12.3)\n")
+        f.write("TALOS onboarding complete (v5.12.4)\n")
     logger.info("Onboarding sentinel created: %s", path)
 
 # ---------------------------------------------------------------------------
@@ -786,11 +976,103 @@ def _run_first_flight():
 
 
 # ---------------------------------------------------------------------------
+# -- v5.12.4: Step 0 profile target gate --
+# ---------------------------------------------------------------------------
+
+def _step0_profile_selection(project_root):
+    """Step 0: select the target research profile before any configuration.
+
+    Offers three mutually exclusive paths:
+      1. Reconfigure the current active profile in place (no delay).
+      2. Switch to an existing isolated profile and load its config.
+      3. Create a brand-new isolated profile under _profiles/<name>/.
+
+    Args:
+        project_root (str): Project root (directory containing talos.py).
+
+    Returns:
+        str or None: The target profile name, or None when the user cancels.
+    """
+    current = _get_active_profile(project_root)
+    existing = _list_profiles(project_root)
+
+    console.print(Panel(
+        "TALOS isolates every research effort into its own profile. Each profile "
+        "owns a dedicated config.json and a fresh talos_research.db so parallel "
+        "research tracks never contaminate one another.",
+        title="[bold]Step 0 of 4: Profile Target Selection[/bold]",
+        border_style="#006699",
+    ))
+
+    choice = questionary.select(
+        "Select target profile for this research setup:",
+        choices=[
+            "1. Current Active Profile: [" + current + "] (Reconfigure existing workspace)",
+            "2. Switch to an existing profile...",
+            "3. Create a NEW isolated profile (e.g. 'uav_mission_planning', 'phd_chapter2')",
+        ],
+        style=TALOS_QUESTIONARY_STYLE,
+    ).ask()
+    if choice is None:
+        return None
+
+    # -- Option 1: keep the current active profile, proceed immediately. --
+    if choice.startswith("1."):
+        return current
+
+    # -- Option 2: switch to an existing isolated profile. --
+    if choice.startswith("2."):
+        if not existing:
+            console.print("[yellow]No existing profiles found. Create one with "
+                          "option 3, or stay on the current profile.[/yellow]")
+            return _step0_profile_selection(project_root)
+        selected = questionary.select(
+            "Select an existing profile to activate:",
+            choices=existing,
+            style=TALOS_QUESTIONARY_STYLE,
+        ).ask()
+        if selected is None:
+            return None
+        _set_active_profile(project_root, selected)
+        _load_profile_config_to_root(project_root, selected)
+        console.print(f"[green]Switched to profile: {selected}[/green]")
+        return selected
+
+    # -- Option 3: create a new isolated profile. --
+    while True:
+        raw = questionary.text(
+            "Enter a name for the new isolated profile (letters, digits, "
+            "underscores; e.g. 'uav_mission_planning'):",
+            style=TALOS_QUESTIONARY_STYLE,
+        ).ask()
+        if raw is None:
+            return None
+        name = (raw or "").strip().replace(" ", "_")
+        if not _validate_profile_name(name):
+            console.print("[yellow]Invalid profile name. Use only letters, "
+                          "digits, underscores, or hyphens (no spaces).[/yellow]")
+            continue
+        if name in _list_profiles(project_root):
+            console.print(f"[yellow]Profile '{name}' already exists. Choose "
+                          "another name.[/yellow]")
+            continue
+        _seed_profile_config(project_root, name)
+        _set_active_profile(project_root, name)
+        _load_profile_config_to_root(project_root, name)
+        console.print(f"[green]Created and activated new profile: {name}[/green]")
+        return name
+
+
+# ---------------------------------------------------------------------------
 # -- Visual header --
 # ---------------------------------------------------------------------------
 
-def _render_header():
-    """Render the styled Rich welcome header for the wizard."""
+def _render_header(target_profile=None):
+    """Render the styled Rich welcome header for the wizard.
+
+    Args:
+        target_profile (str, optional): The target profile name to display.
+    """
     body = Text()
     body.append("TALOS Research Setup Wizard\n", style="bold bright_cyan")
     body.append(
@@ -800,15 +1082,19 @@ def _render_header():
         style="white",
     )
     body.append(
+        "0. Profile Target Selection\n"
         "1. Research Topic & Cognitive Validation\n"
         "2. AI Execution Strategy\n"
         "3. Historical Search Window\n"
         "4. First Flight Test & Visualizer\n",
         style="dim cyan",
     )
+    if target_profile:
+        body.append("\nTarget Profile: ", style="dim")
+        body.append(f"[{target_profile}]", style="bold green")
     console.print(Panel(
         Align.center(body),
-        title="[bold]TALOS v5.12.3[/bold]",
+        title="[bold]TALOS v5.12.4[/bold]",
         border_style="#006699",
         padding=(1, 2),
     ))
@@ -1092,9 +1378,15 @@ def _render_cancelled():
 
 
 def main():
-    """Orchestrate the 4-step research setup wizard end to end."""
-    _render_header()
+    """Orchestrate the research setup wizard (Step 0 gate + Steps 1-4)."""
     project_root = _project_root()
+
+    # -- v5.12.4: Step 0 profile target gate runs before any configuration. --
+    target_profile = _step0_profile_selection(project_root)
+    if target_profile is None:
+        _render_cancelled()
+
+    _render_header(target_profile)
     config, config_path = _load_config(project_root)
 
     active_llm = _ensure_local_ai_runtime()
@@ -1122,6 +1414,7 @@ def main():
         _render_cancelled()
 
     _create_sentinel(project_root)
+    _persist_active_config(project_root, target_profile)
     _render_summary(topic, strategy_key, window_key, first_flight, config)
 
 

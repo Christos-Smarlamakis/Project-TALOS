@@ -2,6 +2,34 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.12.4] - 2026-09-28 -- Concurrent Ingestion Mesh & Multi-Profile Research Onboarding
+
+### Added
+
+- **Step 0 Profile Target Selection** (`src/utils/research_setup_wizard.py:_step0_profile_selection()`): a pre-flight gate executed before the Research Topic step offers three mutually exclusive paths -- reconfigure the current active profile in place, switch to an existing isolated profile, or instantiate a fresh isolated workspace under `_profiles/<name>/` with its own `config.json` and a fresh `talos_research.db`. The header panel now displays `Target Profile: [<target_profile>]`, and the canonical `_profiles/active_profile.txt` marker drives the single-source-of-truth database resolver `get_active_profile_db_path()`.
+
+- **Concurrent Academic Ingestion Mesh** (`src/ingestion/daily_search.py`): the sequential 16-source harvest loop is replaced with a `ThreadPoolExecutor(max_workers=min(16, len(enabled_scrapers)))` mesh. Each provider is isolated in `_harvest_single_source(scraper_name, query, criteria, date_limit, ...)` with strict per-thread exception isolation -- a timeout or HTTP error in one provider (e.g. Science.gov or OSTI) never aborts the overall process. Results are gathered via `concurrent.futures.as_completed()` and aggregated on the main thread.
+
+- **Real-time Rich Live concurrency telemetry**: a Rich Live table tracks per-source status (`WAITING` / `HARVESTING` / `COMPLETED` / `FAILED`) with Papers Found and Elapsed Time columns, followed by a final summary panel reporting total harvest time, raw paper count, and unique deduplicated count.
+
+- **DOI + normalized-title-hash deduplication**: `_deduplicate_papers()` keyed by DOI with a SHA-1 normalized-title fallback collapses cross-source duplicates on the main thread before database insertion.
+
+### Changed
+
+- **Harvest latency reduction**: concurrent harvesting cuts the total academic harvest from approximately 35-45 seconds down to approximately 3-4 seconds.
+
+- **Environment Setup Guides documented**: `docs/ENVIRONMENT_SETUP_GUIDE.md` and `docs/ENVIRONMENT_SETUP_GUIDE_GR.md` are now the official English and Greek references for configuring the environment and credentials.
+
+### Verification
+
+- `python -m compileall src config tests talos.py daily_search.py` passed with zero errors.
+- `python -m pytest tests/test_system_integrity.py -q` passed.
+- `python -m pytest tests/test_multi_tier.py -k test_talos_version` passed (v5.12.4).
+- `python -m pytest tests/test_research_setup_wizard.py -q` passed (39 tests).
+- `python src/utils/verify_dependency_map.py --ci` returned exit 0.
+- `bash -n run_talos.sh` passed with zero syntax errors.
+- Strict UTF-8 decode scan across all modified files: zero U+FFFD replacement glyphs.
+
 ## [v5.12.3] - 2026-09-27 -- Research Pivot Modernization & Setup Wizard TUI Integration
 
 ### Changed

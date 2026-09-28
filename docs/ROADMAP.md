@@ -2,8 +2,8 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.12.3 (Research Pivot Modernization & Setup Wizard TUI Integration)
-> **Last Updated:** 2026-09-27
+> **Current Version:** v5.12.4 (Concurrent Ingestion Mesh & Multi-Profile Research Onboarding)
+> **Last Updated:** 2026-09-28
 
 ---
 
@@ -140,7 +140,8 @@ The v5.10.x series transitions Project TALOS from an aggregator to a fully adapt
 | **v5.12.1** | Research Wizard Query Transparency & CLI Fast-Dispatch Engine | Step 1 query-preview table (top primary sources + inclusion/exclusion criteria) with a Questionary confirmation gate; `talos.py` CLI fast-dispatch flags (`--wizard`/`--daily`/`--stats`/`--help`). | Complete |
 | **v5.12.2** | Self-Healing AI Manager, 5-Tier Strategy Matrix & Research Wizard Integrity Engine | Self-healing Ollama probe/spawn, 5-tier execution strategy matrix (`strict_local`/`local_first`/`cloud_first`/`strict_cloud`/`auto_dynamic`), day-based historical search window, cancellation integrity, thinking-model parser, English-first cognitive mandate. | Complete |
 | **v5.12.3** | Research Pivot Modernization & Setup Wizard TUI Integration | `research_pivot.py` canonical REPO_ROOT-anchored subprocess paths with strict returncode verification, Rule 9 codename elimination (Cognitive Query Compiler / Citation Graph Analyzer), and Research Setup Wizard promoted to option 1 in the Configuration & Profiles TUI menu. | Complete |
-| **v5.13.0** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline (`src/ai/dspy_prisma_pipeline.py`) leveraging PlanEval architecture (Fast Edge Planner/Evaluator + Heavy Reasoning Executor). | Next |
+| **v5.12.4** | Concurrent Ingestion Mesh & Multi-Profile Research Onboarding | Step 0 profile target gate (`_step0_profile_selection()`: reconfigure active / switch existing / create fresh isolated profile) and `ThreadPoolExecutor(max_workers=16)` concurrent 16-source harvest with Rich Live telemetry and DOI + normalized-title-hash deduplication (~35-45s to ~3-4s). | Complete |
+| **v5.13.0** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline (`src/ai/dspy_prisma_pipeline.py`) leveraging PlanEval architecture (Fast Edge Planner/Evaluator + Heavy Reasoning Executor). | Next (Target: Christmas 2026) |
 | **v5.14.0** | CORTEX & n8n Gateway | Live arXiv RSS & text evaluation Discord Bot (`src/integration/discord_evaluator.py`) and SYNAPSE n8n Workflow Gateway templates (`templates/n8n_workflows/`). | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine. | Future |
 
@@ -200,7 +201,8 @@ Project ALEXANDRIA marks the full desktop and distributed release of the platfor
 | **v5.12.1** | Research Wizard Query Transparency & CLI Fast-Dispatch Engine | Step 1 query-preview table + confirmation gate; CLI fast-dispatch flags (--wizard/--daily/--stats/--help) | Complete |
 | **v5.12.2** | Self-Healing AI Manager, 5-Tier Strategy Matrix & Research Wizard Integrity Engine | Self-healing Ollama probe/spawn, 5-tier execution strategy matrix, day-based search windows, cancellation integrity, thinking-model parser, English-first mandate, LOCAL_GPU_MODEL baseline | Complete |
 | **v5.12.3** | Research Pivot Modernization & Setup Wizard TUI Integration | research_pivot.py canonical paths + returncode verification, Rule 9 codename elimination, Research Setup Wizard promoted to TUI option 1 | Complete |
-| **v5.13.0** | DSPy PRISMA Systematic Review Pipeline | Automated PRISMA 2020 SLR with PlanEval DSPy architecture | Next |
+| **v5.12.4** | Concurrent Ingestion Mesh & Multi-Profile Research Onboarding | Step 0 profile target gate + ThreadPoolExecutor(16) concurrent harvest, Rich Live telemetry, DOI + title-hash dedup (~35-45s to ~3-4s) | Complete |
+| **v5.13.0** | DSPy PRISMA Systematic Review Pipeline | Automated PRISMA 2020 SLR with PlanEval DSPy architecture | Next (Target: Christmas 2026) |
 | **v5.14.0** | CORTEX & n8n Gateway | Discord bot, n8n workflow templates, ecosystem integration | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine | Future |
 
