@@ -19,6 +19,8 @@ Description:
 Dependencies:
     - os, sys, sqlite3, socket, json, platform: Environment and resource probing.
     - urllib.request: HTTP probes (Ollama tags and network endpoints).
+    - concurrent.futures: ThreadPoolExecutor for concurrent endpoint probing.
+    - time: High-resolution latency measurement.
     - rich: Console, Table, and box for the rendered health report.
     - dotenv: Safe parsing of the .env configuration surface.
     - src.core.database_manager: Active-profile database resolution.
@@ -29,8 +31,10 @@ import json
 import socket
 import sqlite3
 import platform
+import time
 import urllib.request
 import urllib.error
+import concurrent.futures
 
 # -- Resolve project root (same bootstrap pattern as all src/*.py modules) --
 _P = os.path.abspath(os.path.dirname(__file__))
@@ -84,6 +88,28 @@ def _status(ok):
     if ok is None:
         return "WARN"
     return "FAIL"
+
+
+# ----------------------------------------------------------------------
+# -- Canonical zero-key open academic repositories (v5.13.1) --
+# ----------------------------------------------------------------------
+
+# User-Agent used for all outbound diagnostic HTTP probes.
+USER_AGENT = "TALOS-Research-Diagnostics/5.13.1"
+
+# Zero-key (open access) academic repository endpoints probed concurrently.
+# Each entry is a GET endpoint returning a small JSON/XML payload when the
+# repository is reachable. The query term ("drone") is a lightweight neutral
+# probe term; the endpoints require no API key or authentication.
+OPEN_ACADEMIC_ENDPOINTS = {
+    "arXiv": "https://export.arxiv.org/api/query?search_query=all:drone&max_results=1",
+    "OpenAlex": "https://api.openalex.org/works?search=drone&per_page=1",
+    "Crossref": "https://api.crossref.org/works?query=drone&rows=1",
+    "DBLP": "https://dblp.org/search/publ/api?q=drone&format=json&h=1",
+    "PubMed (NCBI)": "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=drone&retmode=json&retmax=1",
+    "OSTI (DOE)": "https://www.osti.gov/api/v1/records?term=drone&rows=1",
+    "PLOS": "https://api.plos.org/search?q=drone&rows=1",
+}
 
 
 # ----------------------------------------------------------------------
@@ -456,41 +482,84 @@ class SystemDiagnosticsEngine:
         )
 
     # ------------------------------------------------------------------
-    # -- Probe 8: Network endpoints (optional, local-first) --
+    # -- Probe 8: Network endpoints (optional, local-first, concurrent) --
     # ------------------------------------------------------------------
-    def check_network_endpoints(self):
-        """Verify arXiv and OpenAlex connectivity when network is reachable.
+    @staticmethod
+    def _probe_single_endpoint(name, url):
+        """Probe a single academic endpoint and return a structured result.
+
+        Sends a lightweight HTTP GET with a strict 1.5s timeout and a
+        canonical User-Agent, measuring the response latency in milliseconds.
+
+        Args:
+            name (str): Human-readable repository name.
+            url (str): Endpoint URL to probe.
 
         Returns:
-            dict: Structured probe result.
+            dict: Structured probe result with ``component``, ``target``,
+                ``status``, ``latency_ms``, ``detail``, and ``remediation``.
         """
-        endpoints = [
-            ("arXiv", "https://export.arxiv.org/api/query?search_query=all:test&max_results=1"),
-            ("OpenAlex", "https://api.openalex.org/works?per-page=1"),
-        ]
-        results = {}
-        for name, url in endpoints:
-            try:
-                req = urllib.request.Request(url, method="GET")
-                with urllib.request.urlopen(req, timeout=2.0) as resp:
-                    reachable = 200 <= resp.status < 400
-            except Exception as exc:
-                reachable = False
-                reason = str(exc)
+        start = time.perf_counter()
+        try:
+            req = urllib.request.Request(
+                url, method="GET", headers={"User-Agent": USER_AGENT},
+            )
+            with urllib.request.urlopen(req, timeout=1.5) as resp:
+                code = resp.status
+            latency_ms = int((time.perf_counter() - start) * 1000)
+            if 200 <= code < 400:
+                return {
+                    "component": "Academic Ingestion Endpoints",
+                    "target": f"{name}  HTTP {code} OK ({latency_ms}ms)",
+                    "status": "PASS",
+                    "latency_ms": latency_ms,
+                    "detail": f"{name} responded HTTP {code} in {latency_ms}ms.",
+                    "remediation": "No action required.",
+                }
+            return {
+                "component": "Academic Ingestion Endpoints",
+                "target": f"{name}  HTTP {code} ({latency_ms}ms)",
+                "status": "WARN",
+                "latency_ms": latency_ms,
+                "detail": f"{name} responded HTTP {code} in {latency_ms}ms.",
+                "remediation": f"Verify {name} service status; HTTP {code} may indicate rate limiting or an outage.",
+            }
+        except Exception as exc:
+            latency_ms = int((time.perf_counter() - start) * 1000)
+            return {
+                "component": "Academic Ingestion Endpoints",
+                "target": f"{name}  OFFLINE",
+                "status": "WARN",
+                "latency_ms": latency_ms,
+                "detail": f"{name} unreachable ({exc}). Network probes are optional in air-gapped mode.",
+                "remediation": "No action required offline; verify network to enable this source.",
+            }
 
-            if reachable:
-                results[name] = _result(
-                    "Network Endpoints", name, "PASS",
-                    "Endpoint responded successfully.",
-                    "No action required.",
-                )
-            else:
-                results[name] = _result(
-                    "Network Endpoints", name, "WARN",
-                    f"Endpoint unreachable ({reason}). Network probes are optional in air-gapped mode.",
-                    "No action required offline; verify network to enable cloud providers.",
-                )
-        return results
+    def check_network_endpoints(self):
+        """Probe all zero-key open academic repositories concurrently.
+
+        Uses a ThreadPoolExecutor sized to the endpoint count so all seven
+        repositories are probed in parallel, bounding the total wall-clock
+        time of this probe to roughly a single request timeout (1.5s).
+
+        Returns:
+            dict: Structured probe results keyed by repository name, in
+                canonical endpoint order.
+        """
+        results = {}
+        with concurrent.futures.ThreadPoolExecutor(
+            max_workers=len(OPEN_ACADEMIC_ENDPOINTS),
+        ) as executor:
+            future_map = {
+                executor.submit(self._probe_single_endpoint, name, url): name
+                for name, url in OPEN_ACADEMIC_ENDPOINTS.items()
+            }
+            for future in concurrent.futures.as_completed(future_map):
+                name = future_map[future]
+                results[name] = future.result()
+
+        # -- Preserve canonical endpoint ordering regardless of completion. --
+        return {name: results[name] for name in OPEN_ACADEMIC_ENDPOINTS}
 
     # ------------------------------------------------------------------
     # -- Orchestration --
