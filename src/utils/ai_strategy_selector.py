@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: ai_strategy_selector.py
-Project: TALOS v5.15.2
+Project: TALOS v5.15.3
 Description:
     Lightweight interactive and headless switcher for the TALOS 5-strategy AI
     execution matrix. It exposes the canonical strategy hierarchy

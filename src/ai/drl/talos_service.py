@@ -102,7 +102,7 @@ from rich.console import Console
 from rich.panel import Panel
 from src.utils.logger import get_logger
 from src.integration.visualizer_bridge import push_visualizer_event
-from src.utils.evaluation_history import record_evaluation, verdict_for_score
+from src.utils.evaluation_history import record_evaluation, verdict_for_score, normalize_authors
 
 # -- System tray companion (optional; degrades gracefully when pystray is
 #    missing so headless or non-Windows daemons keep working). --
@@ -571,14 +571,10 @@ def _run_daemon_iteration(env, agent, notifier, sleep_action, verbose, epsilon,
         _daemon_title = _daemon_paper.get("title", "Unknown") if isinstance(_daemon_paper, dict) else "Unknown"
         push_visualizer_event("paper_evaluated", routed_source, score, _daemon_title)
 
-        # -- v5.11.0: persist the daemon evaluation to the JSONL history --
-        _daemon_authors = _daemon_paper.get("authors") if isinstance(_daemon_paper, dict) else None
-        if isinstance(_daemon_authors, list):
-            _authors_display = ", ".join(str(a) for a in _daemon_authors)
-        elif _daemon_authors:
-            _authors_display = str(_daemon_authors)
-        else:
-            _authors_display = "Unknown Authors"
+        # -- v5.15.3: robust multi-key author normalization -- resolves
+        # -- authors_str / authors (list-of-dicts or list-of-strings) / author
+        # -- so evaluations never emit a false "Unknown Authors" fallback. --
+        _authors_display = normalize_authors(_daemon_paper)
         record_evaluation(
             title=_daemon_title,
             authors=_authors_display,
@@ -587,6 +583,23 @@ def _run_daemon_iteration(env, agent, notifier, sleep_action, verbose, epsilon,
             verdict=verdict_for_score(score),
             provider=routed_provider or "unknown",
         )
+
+        # -- v5.15.3: clean single-line [EVAL] telemetry for real evaluations --
+        # -- (gated on a resolved title so empty/simulated steps stay silent). --
+        if isinstance(_daemon_paper, dict) and _daemon_paper.get("title"):
+            _verdict = verdict_for_score(score)
+            _verdict_style = {
+                "ELITE": "[bold gold1]",
+                "ACCEPT": "[bold green]",
+                "REJECT": "[bold red]",
+            }.get(_verdict, "[bold white]")
+            console.print(
+                f"[bold bright_blue][EVAL][/bold bright_blue] "
+                f"[bold cyan]{_daemon_title}[/bold cyan] | "
+                f"[dim]Authors:[/] [italic white]{_authors_display}[/italic white] | "
+                f"Score: [bold white]{score:>4.1f}/10[/bold white] | "
+                f"{_verdict_style}[{_verdict}][/] [dim]-> DB[/dim]"
+            )
 
         # -- Throttle: mandatory cooldown between API calls --
         # This keeps CPU at ~0% and gives APIs time to breathe.

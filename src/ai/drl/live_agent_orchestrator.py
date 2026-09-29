@@ -34,7 +34,7 @@ from datetime import datetime
 #    emitted even when the daemon's stdout is piped or redirected). --
 from rich.console import Console
 from src.integration.visualizer_bridge import push_visualizer_event
-from src.utils.evaluation_history import record_evaluation, verdict_for_score
+from src.utils.evaluation_history import record_evaluation, verdict_for_score, normalize_authors
 
 # -- v5.10.3: module logger for router decision telemetry --
 logger = logging.getLogger(__name__)
@@ -554,14 +554,9 @@ def run_live_loop(agent, action_map, working_source_names, config,
                         status_badge = "[bold red][REJECT X][/bold red]"
                     # -- v5.11.0: full title + normalized authors (no 55-char
                     #    truncation) across a two-line Rich structure. --
+                    # -- v5.15.3: multi-key author resolution via normalize_authors --
                     clean_title = paper.get("title", "Unknown Title") or "Unknown Title"
-                    raw_authors = paper.get("authors")
-                    if isinstance(raw_authors, list):
-                        authors_display = ", ".join(str(a) for a in raw_authors)
-                    elif raw_authors:
-                        authors_display = str(raw_authors)
-                    else:
-                        authors_display = "Unknown Authors"
+                    authors_display = normalize_authors(paper)
 
                     eval_msg = (
                         f"  └─ [EVAL] {clean_title} | Score: {score:>4.1f}/10 | "

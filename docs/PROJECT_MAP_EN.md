@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.15.2
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.15.3
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-09-28 (v5.15.2 -- Universal Search Hub UX & Reporting Harmonization)
+> **Last Updated:** 2026-09-29 (v5.15.3 -- Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening)
 
 ---
 
@@ -237,6 +237,7 @@ src/prisma/swarm_evaluators.py
 | **Universal Scientific Search Hub & Neural Graph Discovery Engine (v5.15.0)** | `src/ingestion/sources/`, `src/search/citation_snowballing.py`, `src/search/neural_vector_search.py`, `src/search/code_first_search.py` | Unified `SOURCE_REGISTRY` (18 adapters); `CitationSnowballEngine` (backward/forward graph traversal, PRISMA filter, genealogy graph); `NeuralVectorSearchEngine` (local `nomic-embed-text`, cosine similarity); `CodeFirstSearchEngine` (reproducibility signals); CLI `--snowball`/`--vector-search`/`--code-search` + TUI Group 2 |
 | **Persistent Vector Cache & Accelerated Neural Embedding Engine (v5.15.1)** | `src/core/database_manager.py`, `src/search/neural_vector_search.py` | Idempotent `paper_embeddings` table + `get_cached_embeddings()` / `save_embeddings_batch()`; `NeuralVectorSearchEngine._index_uncached()` (live `rich.progress.Progress` + `ThreadPoolExecutor` + batch-64 persistence), `_matrix_rank()` (vectorized NumPy matrix cosine similarity, <50ms), `render_results()` (styled Rich Table) |
 | **Universal Search Hub UX & Reporting Harmonization (v5.15.2)** | `src/search/code_first_search.py`, `src/search/citation_snowballing.py`, `talos.py` | `CodeFirstSearchEngine.render_results()` / `export_search_report()` (`data/reports/code_search/`); `CitationSnowballEngine.render_genealogy()` / `export_snowball_report()` (`data/reports/snowball/`); raw JSON dumps eliminated (`_render_search_result` removed) |
+| **Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening (v5.15.3)** | `src/core/ai_manager.py`, `src/utils/evaluation_history.py`, `src/ai/drl/talos_service.py`, `src/ai/drl/live_agent_orchestrator.py`, `src/integration/synapse_client.py` | `AIManager.fast_tier_offline` (latches CPU Edge 11435 offline after first failure, zero re-probes/logs); `normalize_authors(paper)` (resolves `authors_str`/`authors`/`author`); clean `[EVAL]` daemon telemetry; silent SYNAPSE buffering (`synapse_available` + JSONL) |
 
 ## 9. Auxiliary Files
 
@@ -270,13 +271,14 @@ src/prisma/swarm_evaluators.py
 15. The `sys.exit` monkey-patch in `_run_scrape_background` is serialized by the module-level `_scrape_task_lock` -- never patch process-global symbols without this lock
 16. `DatabaseManager.semantic_search` clamps `top_k` to the loaded embedding count (`min(top_k, len(self._embedding_ids))`) -- keep the clamp when modifying
 17. The OpenReview V2 client rejects `get_notes(term=...)` with `TypeError` -- all note queries must route exclusively through `OpenReviewSource._query_notes()` (search_notes -> content query -> TypeError fallback)
-18. `AIManager._fast_edge_offline_memo` short-circuits a known-offline Fast Edge endpoint (11435) for the remainder of the batch -- it resets only on a new AIManager instance, never manually inside a loop
+18. `AIManager.fast_tier_offline` (session-level latch, v5.15.3) short-circuits a known-offline Fast Edge endpoint (11435) for the remainder of the process lifetime with zero logs -- the legacy `_fast_edge_offline_memo` is retained as a synonym; it resets only on a new AIManager instance, never manually inside a loop
 19. FastAPI startup runs through the `lifespan` context manager in `main_api.py` -- never reintroduce `@app.on_event` handlers (deprecated, emits DeprecationWarning)
+20. `SynapseClient.synapse_available` (v5.15.3) latches the SYNAPSE bus (port 8000) offline after the first connection refusal -- events are buffered silently to memory + `data/synapse_buffer.jsonl`; `normalize_authors()` prevents false "Unknown Authors"
 
 ---
 
-> **Last Updated:** 2026-09-28 (v5.15.2 -- Universal Search Hub UX & Reporting Harmonization)
-> **Project Version:** v5.15.2
+> **Last Updated:** 2026-09-29 (v5.15.3 -- Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening)
+> **Project Version:** v5.15.3
 > **Total .py modules under src/:** 99 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
 
 

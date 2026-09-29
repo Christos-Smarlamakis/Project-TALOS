@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.15.2
+Project: TALOS v5.15.3
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,14 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.15.3: Session Circuit Breaker, Robust Author Extraction & Daemon
+    Lifecycle Hardening -- a process-lifetime session circuit breaker in
+    AIManager latches the CPU edge tier (11435) offline after the first
+    failure (zero subsequent probes or fallback log spam), a multi-key author
+    normalizer (normalize_authors) eliminates "Unknown Authors" false
+    positives, the daemon emits clean single-line [EVAL] telemetry, and
+    SynapseClient buffers events silently in standalone quiet mode.
 
     v5.15.2: Universal Search Hub UX & Reporting Harmonization --
     src/search/code_first_search.py and src/search/citation_snowballing.py gain

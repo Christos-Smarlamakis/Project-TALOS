@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.15.2
+Project: TALOS v5.15.3
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -113,7 +113,7 @@ async def lifespan(app: FastAPI):
         None: Control returns to the server for the duration of its lifetime.
     """
     # -- Startup --
-    logger.info("TALOS FastAPI v5.15.2 starting up (Universal Search Hub UX & Reporting Harmonization, port 8001)...")
+    logger.info("TALOS FastAPI v5.15.3 starting up (Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")
@@ -126,8 +126,8 @@ async def lifespan(app: FastAPI):
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-    description="Facade REST API for the TALOS autonomous research platform (v5.15.2 -- Universal Search Hub UX & Reporting Harmonization)",
-    version="5.15.2",
+    description="Facade REST API for the TALOS autonomous research platform (v5.15.3 -- Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening)",
+    version="5.15.3",
     lifespan=lifespan,
 )
 app.add_middleware(

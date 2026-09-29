@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.15.2
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.15.3
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-09-28
-> **Version:** v5.15.2 -- Universal Search Hub UX & Reporting Harmonization
+> **Last Updated:** 2026-09-29
+> **Version:** v5.15.3 -- Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.15.2" | `config/settings.py` |
+| TALOS_VERSION | "5.15.3" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1083,6 +1083,17 @@ For each evaluated paper, the AI generates:
 - **TUI/CLI consolidation** (`talos.py`): `--code-search` and `--snowball` fast-dispatch flags plus Group 2 menu options 3 (Snowballing) and 5 (Code-First) invoke `run()` directly; the dead `_render_search_result()` JSON-dump helper was removed.
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.2), `python talos.py --code-search "spatio temporal graph neural networks"` and `python talos.py --snowball "10.1109/TTE.2026.3665346"` smoke tests, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+### 15.37 Session-Level Circuit Breakers, Multi-Key Author Normalization, and Silent Daemon Lifecycle (v5.15.3)
+
+**Overview:** v5.15.3 targets operational reliability in the 24/7 daemon: it removes the repetitive per-paper fallback log spam emitted during evaluations, hardens author extraction so no evaluation ever reports a false "Unknown Authors" when author data exists, and guarantees that standalone workstation execution stays 100% silent about the external SYNAPSE bus being offline. All three mechanisms are pure in-process state machines -- no new network dependencies, no schema changes, fully air-gapped safe.
+
+- **Fast Tier Circuit Breaker state machine** (`src/core/ai_manager.py`): a process-lifetime latch `AIManager.fast_tier_offline` (default `False`, i.e. CLOSED). The first connection-refused/timeout on the CPU Edge endpoint (`FAST_EDGE_BASE_URL`, port 11435) transitions the latch to OPEN/LATCHED, emits a single one-time notice (`[INFO] Fast CPU tier (11435) offline. Latching direct local GPU routing for this session.`), and routes directly to local GPU Ollama (`LOCAL_GPU_MODEL` at port 11434). While LATCHED, every subsequent fast-tier request bypasses port 11435 at the top of `_execute_ollama_http()` with ZERO network attempts, ZERO timeout latency, and ZERO warning logs. The latch is never reset mid-process (re-armed only on a new `AIManager` instance); the legacy `_fast_edge_offline_memo` is retained as a synonym. Root cause addressed: the prior per-batch memo logged an `[INFO]` fallback line on every subsequent paper evaluation; the session latch eliminates that entire class of repetitive spam.
+- **Author Resolution Normalizer** (`src/utils/evaluation_history.py:normalize_authors(paper)`): a single canonical resolver consumed by both `src/ai/drl/talos_service.py` and `src/ai/drl/live_agent_orchestrator.py`. It resolves author data across the standard key precedence `authors_str` -> `authors` -> `author`, handling (a) a flat string, (b) a list of dicts (`{"name": ...}`, `{"author": {"display_name": ...}}`, `{"full_name": ...}`, `{"text": ...}`), (c) a list of strings, and (d) a comma/semicolon-delimited string. It returns a clean comma-separated string and falls back to "Unknown Authors" only when no standard key holds data.
+- **Clean Daemon Evaluation Telemetry** (`src/ai/drl/talos_service.py`): the daemon loop emits one uncluttered Rich block per real evaluation -- `[EVAL] <Full Title> | Authors: <Extracted Authors> | Score: <X.X>/10 | [<DECISION>] -> DB` -- gated on a resolved title so empty/simulated steps stay silent.
+- **Silent Standalone SYNAPSE Buffering** (`src/integration/synapse_client.py`): a Standalone Quiet Mode state machine (`synapse_available`) latches the bus offline on the first connection-refused probe (port 8000) and buffers every subsequent event silently to a bounded in-memory ring buffer plus best-effort JSONL (`data/synapse_buffer.jsonl`), emitting a single one-time notice (`[INFO] SYNAPSE bus offline (port 8000). Operating in standalone quiet mode (local event buffering active).`) and zero per-paper warnings.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.3), `pytest tests/test_session_circuit_breaker.py -q` (12 passed: 10 author-normalization + 2 circuit-breaker latching), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 ---
 

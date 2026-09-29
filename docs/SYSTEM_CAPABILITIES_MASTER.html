@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.15.2</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.15.3</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.15.2</h1>
+<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.15.3</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-09-28 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.15.2 -- Universal Search Hub UX &amp; Reporting Harmonization
+  <strong>Version:</strong> v5.15.3 -- Session Circuit Breaker, Robust Author Extraction &amp; Daemon Lifecycle Hardening
 </div>
 
 <!-- ===================================================================== -->
@@ -357,7 +357,7 @@
 <table>
   <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
   <tbody>
-    <tr><td>TALOS_VERSION</td><td>"5.15.2"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_VERSION</td><td>"5.15.3"</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
@@ -1358,8 +1358,18 @@
 </ul>
 <p><strong>Verification surface:</strong> release gates include <code>compileall</code>, system integrity, version assertion (5.15.2), <code>--code-search</code> and <code>--snowball</code> smoke tests, <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
 
+<h3 id="s15-37">15.37 Session-Level Circuit Breakers, Multi-Key Author Normalization, and Silent Daemon Lifecycle (v5.15.3)</h3>
+<p><strong>Overview:</strong> v5.15.3 targets operational reliability in the 24/7 daemon: it removes the repetitive per-paper fallback log spam, hardens author extraction so no evaluation ever reports a false "Unknown Authors" when author data exists, and guarantees that standalone workstation execution stays 100% silent about the external SYNAPSE bus being offline. All three mechanisms are pure in-process state machines -- no new network dependencies, no schema changes, fully air-gapped safe.</p>
+<ul>
+  <li><strong>Fast Tier Circuit Breaker state machine</strong> (<code>src/core/ai_manager.py</code>): a process-lifetime latch <code>AIManager.fast_tier_offline</code> (default <code>False</code>, i.e. CLOSED). The first connection-refused/timeout on the CPU Edge endpoint (<code>FAST_EDGE_BASE_URL</code>, port 11435) transitions the latch to OPEN/LATCHED, emits a single one-time notice, and routes directly to local GPU Ollama (<code>LOCAL_GPU_MODEL</code> at port 11434). While LATCHED, every subsequent fast-tier request bypasses port 11435 with ZERO network attempts, ZERO timeout latency, and ZERO warning logs. The legacy <code>_fast_edge_offline_memo</code> is retained as a synonym.</li>
+  <li><strong>Author Resolution Normalizer</strong> (<code>src/utils/evaluation_history.py:normalize_authors(paper)</code>): a single canonical resolver consumed by both <code>src/ai/drl/talos_service.py</code> and <code>src/ai/drl/live_agent_orchestrator.py</code>. It resolves author data across the standard key precedence <code>authors_str</code> -&gt; <code>authors</code> -&gt; <code>author</code>, handling a flat string, a list of dicts, a list of strings, and a comma/semicolon-delimited string.</li>
+  <li><strong>Clean Daemon Evaluation Telemetry</strong> (<code>src/ai/drl/talos_service.py</code>): one uncluttered Rich block per real evaluation -- <code>[EVAL] &lt;Full Title&gt; | Authors: &lt;Extracted Authors&gt; | Score: &lt;X.X&gt;/10 | [&lt;DECISION&gt;] -&gt; DB</code> -- gated on a resolved title.</li>
+  <li><strong>Silent Standalone SYNAPSE Buffering</strong> (<code>src/integration/synapse_client.py</code>): a Standalone Quiet Mode state machine (<code>synapse_available</code>) latches the bus offline on the first connection-refused probe (port 8000) and buffers every subsequent event silently to a bounded in-memory ring buffer plus best-effort JSONL (<code>data/synapse_buffer.jsonl</code>).</li>
+</ul>
+<p><strong>Verification surface:</strong> release gates include <code>compileall</code>, system integrity, version assertion (5.15.3), <code>test_session_circuit_breaker.py</code> (12 passed), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.15.2</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.15.3</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

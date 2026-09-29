@@ -6,7 +6,7 @@
 #
 """
 Module: ai_manager.py (v4.1 - Self-Healing AI Manager, Universal Cloud Mesh & Auto-Dynamic Privacy Guardrails)
-Project: TALOS v5.13.0
+Project: TALOS v5.15.3
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture
@@ -62,6 +62,14 @@ Description:
     `evaluate_paper_json()` with dynamic worker throttling: 8 Cloud Mesh workers
     versus 2 local GPU workers behind a bounded `threading.Semaphore(2)` to
     eliminate CUDA Out-Of-Memory risks.
+
+    v5.15.3: Session-Level Circuit Breaker & Fast-Fail Routing -- replaces the
+    per-batch fast-edge memo with a process-lifetime latch
+    (`fast_tier_offline`). The first connection failure on the CPU edge
+    endpoint (port 11435) latches the tier offline and emits a single one-time
+    notice; every subsequent fast-tier request bypasses port 11435 with ZERO
+    network attempts, ZERO timeout latency, and ZERO warning logs, routing
+    directly to local GPU Ollama (LOCAL_GPU_MODEL at port 11434).
 """
 
 import os, json, re, requests, sys, functools, subprocess, time
@@ -402,9 +410,14 @@ class AIManager:
         self.provider_priority = config.get("ai_provider_priority", ["gemini", "deepseek"])
         self.active_embedding_model = None  # set after first successful embedding generation
         self.last_provider_used = None
-        # -- v5.11.3: Fast-Edge batch circuit breaker -- once the CPU edge --
-        # -- endpoint (port 11435) is observed offline, all remaining fast-tier --
-        # -- calls in this batch skip it instantly instead of paying timeouts. --
+        # -- v5.15.3: Session-Level Circuit Breaker -- once the CPU edge --
+        # -- endpoint (port 11435) is observed offline, the fast tier is --
+        # -- latched offline for the remainder of the process lifetime. --
+        # -- Subsequent fast-tier calls route directly to local GPU (11434) --
+        # -- with ZERO network attempts and ZERO warning logs. --
+        self.fast_tier_offline = False
+        # -- v5.11.3 legacy per-batch memo retained as a synonym so existing --
+        # -- diagnostics and documentation references never break. --
         self._fast_edge_offline_memo = False
         # -- v5.10.2: LLM Router Sub-Agent (provider selection delegate) --
         self.router = self._init_router()
@@ -1429,12 +1442,11 @@ class AIManager:
             model = os.getenv("LOCAL_MODEL_NAME", LOCAL_GPU_MODEL)
             label = "GPU Ollama"
 
-        # -- v5.11.3: Fast-Edge batch circuit breaker -- a known-offline edge --
-        # -- endpoint is skipped immediately; the GPU Ollama fallback runs --
-        # -- without waiting for another connection timeout. --
-        if use_edge and self._fast_edge_offline_memo:
-            print("  [INFO] Fast tier (11435) marked offline for current batch. "
-                  "Immediate fallback to local GPU active.")
+        # -- v5.15.3: Session-Level Circuit Breaker -- a known-offline edge --
+        # -- endpoint (port 11435) is bypassed silently for the remainder of --
+        # -- the process lifetime: ZERO probe attempts, ZERO timeout latency, --
+        # -- and ZERO warning logs. Direct local GPU routing (11434) active. --
+        if use_edge and self.fast_tier_offline:
             return self._execute_ollama_http(
                 prompt, response_format, use_edge=False, allow_prompt=allow_prompt
             )
@@ -1485,18 +1497,20 @@ class AIManager:
             # cloud fallback. This preserves air-gapped operation and avoids
             # unnecessary cloud API calls when only the edge endpoint is down.
             if use_edge:
-                # -- v5.11.3: memoize the offline edge endpoint so the rest of --
-                # -- the batch never waits on port 11435 connection timeouts. --
-                self._fast_edge_offline_memo = True
-                print("  [INFO] Fast tier (11435) marked offline for current batch. "
-                      "Immediate fallback to local GPU active.")
-                print("  [WARNING] Fast tier (11435) offline. Falling back to local Ollama (11434)...")
-                # -- Try the GPU Ollama endpoint --
+                # -- v5.15.3: session-latching circuit breaker -- the first --
+                # -- connection failure latches the fast tier offline for the --
+                # -- whole process, emits a single one-time notice, then routes --
+                # -- directly to local GPU Ollama (LOCAL_GPU_MODEL @ 11434). --
+                if not self.fast_tier_offline:
+                    self.fast_tier_offline = True
+                    self._fast_edge_offline_memo = True
+                    print("  [INFO] Fast CPU tier (11435) offline. "
+                          "Latching direct local GPU routing for this session.")
+                # -- Route directly to local GPU Ollama (port 11434) --
                 gpu_result = self._execute_ollama_http(
                     prompt, response_format, use_edge=False, allow_prompt=allow_prompt
                 )
                 if gpu_result is not None:
-                    print("  [RECOVERY] Fast-tier fallback to local Ollama (GPU) succeeded.")
                     return gpu_result
                 print("  [WARNING] Local Ollama (GPU) also unavailable.")
                 # -- Both local endpoints failed -- fall through to cloud fallback --

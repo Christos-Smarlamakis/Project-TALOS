@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: evaluation_history.py
-Project: TALOS v5.15.2
+Project: TALOS v5.15.3
 Description:
     Persistent evaluation history recorder and reader. Every paper evaluated by
     the live DRL agent and the 24/7 daemon is appended as a single JSON line to
@@ -65,6 +65,75 @@ def verdict_for_score(score):
     if score >= 6.0:
         return "ACCEPT"
     return "REJECT"
+
+
+def normalize_authors(paper):
+    """Resolve a paper record to a clean, comma-separated author string.
+
+    Handles every author representation produced across the 18-source
+    ingestion mesh so evaluations never emit a false "Unknown Authors"
+    fallback when author data exists under a standard key:
+
+    * ``authors_str`` -- the standardized flat string key emitted by the
+      modular source adapters (OpenAlex, Semantic Scholar, NASA NTRS, ...).
+    * ``authors`` as a list of dicts -- e.g. ``[{"name": "..."}]`` from
+      OpenAlex/Semantic Scholar, ``{"author": {"display_name": ...}}`` from
+      OpenAlex raw, or ``{"full_name": ...}`` from IEEE.
+    * ``authors`` as a list of strings -- e.g. ``["Author 1", "Author 2"]``.
+    * ``authors`` as a comma/semicolon-delimited string.
+    * ``author`` -- the singular legacy key.
+
+    Args:
+        paper (dict): A paper metadata record.
+
+    Returns:
+        str: A clean comma-separated author string, or "Unknown Authors"
+            only when no author data is present under any standard key.
+    """
+    if not isinstance(paper, dict):
+        return "Unknown Authors"
+
+    # -- Resolve the raw author payload across the standard key precedence --
+    raw = None
+    for key in ("authors_str", "authors", "author"):
+        if paper.get(key):
+            raw = paper[key]
+            break
+
+    if raw is None:
+        return "Unknown Authors"
+
+    # -- List payloads: dict entries or plain strings --
+    if isinstance(raw, list):
+        names = []
+        for entry in raw:
+            if isinstance(entry, dict):
+                nested = entry.get("author")
+                if not isinstance(nested, dict):
+                    nested = entry
+                name = (
+                    entry.get("name")
+                    or nested.get("display_name")
+                    or nested.get("name")
+                    or entry.get("full_name")
+                    or entry.get("text")
+                )
+            else:
+                name = entry
+            if name and str(name).strip():
+                names.append(str(name).strip())
+        if names:
+            return ", ".join(names)
+        return "Unknown Authors"
+
+    # -- Scalar string payload (may be comma/semicolon-delimited) --
+    if isinstance(raw, str):
+        normalized = raw.replace(";", ",")
+        parts = [p.strip() for p in normalized.split(",") if p.strip()]
+        if parts:
+            return ", ".join(parts)
+
+    return "Unknown Authors"
 
 
 def record_evaluation(title, authors, source, score, verdict, provider=None,

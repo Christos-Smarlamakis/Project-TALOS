@@ -4,9 +4,20 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-28 (v5.15.2 -- Universal Search Hub UX & Reporting Harmonization)
+> **Last Updated:** 2026-09-29 (v5.15.3 -- Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening)
 
 ---
+
+## Phase 64: Session-Level Circuit Breaker & Author Extraction Hardening (v5.15.3)
+
+### Status: COMPLETED (2026-09-29)
+
+- [x] **Session-Level Circuit Breaker** -- `AIManager.fast_tier_offline` process-lifetime latch: the first CPU Edge (11435) connection failure latches the tier offline and emits a single one-time notice; every subsequent fast-tier call bypasses port 11435 with ZERO probes, ZERO timeout latency, and ZERO fallback spam, routing directly to local GPU (11434).
+- [x] **Robust multi-key author normalization** -- `normalize_authors(paper)` resolves `authors_str` / `authors` (list-of-dicts, list-of-strings) / `author` across the 18-source mesh, eliminating "Unknown Authors" false positives; wired into the daemon (`talos_service.py`) and live orchestrator.
+- [x] **Clean daemon [EVAL] telemetry** -- one uncluttered Rich block per real evaluation (`[EVAL] <title> | Authors: <authors> | Score: <X.X>/10 | [<DECISION>] -> DB`), gated on a resolved title.
+- [x] **Silent Standalone SYNAPSE buffering** -- `SynapseClient.synapse_available` latches offline on first port-8000 probe and buffers events silently to memory + JSONL (`data/synapse_buffer.jsonl`) with zero per-paper warnings.
+- [x] **Version synced** -- 6 code files + docker-compose.yml (`talos:5.15.3`) + CITATION.cff (5.15.3, 2026-09-29) + tray/visualizer/wizard/diagnostics metadata + src/prisma/ and src/search/ docstrings + 19 canonical docs to v5.15.3 (2026-09-29).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.15.3), test_session_circuit_breaker (12 passed), verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 63: Universal Search Hub UX & Reporting Harmonization (v5.15.2)
 

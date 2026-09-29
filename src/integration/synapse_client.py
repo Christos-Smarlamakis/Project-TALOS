@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: synapse_client.py
-Project: TALOS v5.10.4
+Project: TALOS v5.15.3
 Description:
     EventEmitter class for the SYNAPSE Event-Driven Protocol. This module
     provides a thread-safe, non-blocking client that pushes JSON-structured
@@ -19,6 +19,10 @@ Description:
     - Non-blocking emission via threading.Thread with optional callback.
     - Graceful degradation: failed emissions log warnings but never raise.
     - Configurable timeout and retry logic for resilience.
+    - v5.15.3: Standalone Quiet Mode -- if the SYNAPSE bus (port 8000) is
+      offline on first probe, the emitter latches itself offline and buffers
+      subsequent events silently to local memory / JSONL with zero per-event
+      warning logs, so standalone workstation runs stay 100% silent.
     - Designed for future ALEXANDRIA ecosystem integration where TALOS is one
       of many microservices in a distributed research intelligence mesh.
 
@@ -32,6 +36,7 @@ Dependencies:
     - requests: HTTP POST to the SYNAPSE bus (optional, with fallback).
 """
 
+import os
 import uuid
 import json
 import logging
@@ -42,7 +47,7 @@ from typing import Optional, Callable, Dict, Any
 logger = logging.getLogger("talos.synapse")
 
 # -- Emission statistics (v5.10.4): shared counters for queue-health reporting --
-_EMISSION_STATS = {"total": 0, "success": 0, "failure": 0}
+_EMISSION_STATS = {"total": 0, "success": 0, "failure": 0, "buffered": 0}
 _EMISSION_STATS_LOCK = threading.Lock()
 
 
@@ -129,13 +134,26 @@ class EventEmitter:
         # -- Cap retries at 1 for connection-refused scenarios (v5.9.5) --
         self.max_retries = min(max_retries, 1)
 
+        # -- v5.15.3: Standalone Quiet Mode state machine -- the emitter starts
+        # -- assuming the SYNAPSE bus is reachable; the first connection-refused
+        # -- error latches it offline for the process lifetime and switches to
+        # -- silent local buffering (zero per-event warning logs). --
+        self.synapse_available = True
+        self._buffer_lock = threading.Lock()
+        self._buffered_events = []  # bounded in-memory buffer for offline mode
+        self._buffer_limit = 1000
+        self._buffer_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            "data", "synapse_buffer.jsonl",
+        )
+
         # -- Initialize HTTP session if requests is available --
         self._session = None
         if _REQUESTS_AVAILABLE:
             self._session = requests.Session()
             self._session.headers.update({
                 "Content-Type": "application/json",
-                "User-Agent": f"TALOS-SynapseClient/5.10.4",
+                "User-Agent": f"TALOS-SynapseClient/5.15.3",
             })
 
         logger.info(
@@ -217,6 +235,28 @@ class EventEmitter:
             "payload": payload,
         }
 
+    def _buffer_event(self, event: Dict[str, Any]) -> None:
+        """Buffer an event locally when the SYNAPSE bus is offline.
+
+        Appends the event to a bounded in-memory ring buffer and best-effort
+        appends it to a JSONL file on disk. The operation is fully silent: it
+        never raises and never writes a warning to the console or log.
+
+        Args:
+            event (dict): Fully constructed SYNAPSE event envelope.
+        """
+        with self._buffer_lock:
+            self._buffered_events.append(event)
+            if len(self._buffered_events) > self._buffer_limit:
+                self._buffered_events = self._buffered_events[-self._buffer_limit:]
+        _record_emission("buffered")
+        try:
+            os.makedirs(os.path.dirname(self._buffer_path), exist_ok=True)
+            with open(self._buffer_path, "a", encoding="utf-8") as handle:
+                handle.write(json.dumps(event, ensure_ascii=False) + "\n")
+        except Exception:
+            pass
+
     def _do_emit(
         self,
         event: Dict[str, Any],
@@ -233,6 +273,14 @@ class EventEmitter:
             callback: Optional post-emission callback.
         """
         _record_emission("total")
+        # -- v5.15.3: Standalone Quiet Mode fast-path -- the bus is latched
+        # -- offline, so buffer the event silently with ZERO network attempts
+        # -- and ZERO warning logs. --
+        if not self.synapse_available:
+            self._buffer_event(event)
+            if callback:
+                callback(True, None)
+            return
         if not _REQUESTS_AVAILABLE or self._session is None:
             _record_emission("success")
             # -- Local logging fallback --
@@ -282,10 +330,15 @@ class EventEmitter:
                     callback(True, None)
                 return
             except requests.exceptions.ConnectionError:
-                # -- Silent fallback (v5.9.5): single warning, no stack trace --
-                logger.warning(
-                    "SYNAPSE bus unreachable (port 8000 offline). Event logged locally."
-                )
+                # -- v5.15.3: Standalone Quiet Mode -- the first connection-
+                # -- refused error latches the bus offline for the process and
+                # -- switches to silent local buffering with a single notice. --
+                if self.synapse_available:
+                    self.synapse_available = False
+                    logger.info(
+                        "[INFO] SYNAPSE bus offline (port 8000). Operating in "
+                        "standalone quiet mode (local event buffering active)."
+                    )
                 last_error = "Connection refused: Synapse bus offline"
                 break  # Do not retry on connection-refused
             except requests.exceptions.Timeout as e:
@@ -320,8 +373,15 @@ class EventEmitter:
                     e,
                 )
 
-        # -- All attempts exhausted (v5.9.5: downgraded from error to warning) --
+        # -- All attempts exhausted --
         if last_error:
+            if not self.synapse_available:
+                # -- Quiet mode: buffer locally instead of warning per event --
+                self._buffer_event(event)
+                if callback:
+                    callback(True, None)
+                return
+            # -- v5.9.5: downgraded from error to warning for transient errors --
             logger.warning(
                 "SYNAPSE emission skipped: type=%s, id=%s, reason=%s",
                 event["event_type"],

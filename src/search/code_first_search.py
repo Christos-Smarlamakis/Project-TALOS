@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: code_first_search.py
-Project: TALOS v5.15.2
+Project: TALOS v5.15.3
 Description:
     Reproducible code-first search engine. Discovers research papers that are
     verified to possess an official GitHub / PapersWithCode repository, a PyTorch

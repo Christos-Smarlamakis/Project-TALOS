@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: research_setup_wizard.py
-Project: TALOS v5.15.2
+Project: TALOS v5.15.3
 Description:
     Structured, step-by-step research onboarding wizard for TALOS. Guides the
     researcher through four plain-English steps: (1) research topic capture
@@ -894,7 +894,7 @@ def _create_sentinel(project_root=None):
     path = _sentinel_path(project_root)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        f.write("TALOS onboarding complete (v5.15.2)\n")
+        f.write("TALOS onboarding complete (v5.15.3)\n")
     logger.info("Onboarding sentinel created: %s", path)
 
 # ---------------------------------------------------------------------------
@@ -1094,7 +1094,7 @@ def _render_header(target_profile=None):
         body.append(f"[{target_profile}]", style="bold green")
     console.print(Panel(
         Align.center(body),
-        title="[bold]TALOS v5.15.2[/bold]",
+        title="[bold]TALOS v5.15.3[/bold]",
         border_style="#006699",
         padding=(1, 2),
     ))

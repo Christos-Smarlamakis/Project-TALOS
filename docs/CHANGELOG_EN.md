@@ -2,6 +2,23 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.15.3] - 2026-09-29 -- Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening
+
+### Added
+
+- **Session-Level Circuit Breaker** (`src/core/ai_manager.py`): a process-lifetime latch `AIManager.fast_tier_offline` (default `False`) replaces the prior per-batch memo as the primary fast-tier guard. The first connection-refused/timeout on the CPU Edge endpoint (`FAST_EDGE_BASE_URL`, port 11435) latches the tier offline and emits a single one-time notice (`[INFO] Fast CPU tier (11435) offline. Latching direct local GPU routing for this session.`), after which every subsequent fast-tier request in the batch and daemon loop bypasses port 11435 with ZERO network attempts, ZERO timeout latency, and ZERO warning logs, routing directly to local GPU Ollama (`LOCAL_GPU_MODEL` at port 11434). The legacy `_fast_edge_offline_memo` is retained as a synonym so existing diagnostics and documentation references never break.
+- **Robust Multi-Key Author Extraction** (`src/utils/evaluation_history.py:normalize_authors(paper)`): a single canonical resolver handling every author representation produced across the 18-source ingestion mesh -- `authors_str` (flat string), `authors` as a list of dicts (`{"name": ...}` from OpenAlex/Semantic Scholar, `{"author": {"display_name": ...}}` from OpenAlex raw, `{"full_name": ...}` from IEEE), `authors` as a list of strings, `authors` as a comma/semicolon-delimited string, and the singular legacy `author` key. It never returns "Unknown Authors" when any standard key holds data. Consumed by both `src/ai/drl/talos_service.py` and `src/ai/drl/live_agent_orchestrator.py`.
+- **Silent Standalone SYNAPSE Buffering** (`src/integration/synapse_client.py`): a Standalone Quiet Mode state machine (`synapse_available`) latches the bus offline on the first connection-refused probe (port 8000) and buffers every subsequent event silently to bounded in-memory storage plus best-effort JSONL (`data/synapse_buffer.jsonl`) with a single one-time notice (`[INFO] SYNAPSE bus offline (port 8000). Operating in standalone quiet mode (local event buffering active).`), eliminating all per-paper emission warnings.
+
+### Changed
+
+- **Clean Daemon Evaluation Telemetry** (`src/ai/drl/talos_service.py`): the daemon loop now emits a single clean, uncluttered Rich block per real evaluation -- `[EVAL] <Full Title> | Authors: <Extracted Authors> | Score: <X.X>/10 | [<DECISION>] -> DB` -- gated on a resolved title so empty/simulated steps stay silent; no interstitial connection warnings clutter the console.
+- **Version strings synchronized to 5.15.3** across the 6 core code files, `docker-compose.yml` (`talos:5.15.3`), `CITATION.cff` (version 5.15.3, date-released 2026-09-29), tray/visualizer/wizard/diagnostics metadata, `src/prisma/` and `src/search/` docstrings, and all 19 canonical documentation files (dated 2026-09-29).
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.3); `pytest tests/test_session_circuit_breaker.py -q` (12 passed: 10 author-normalization + 2 circuit-breaker latching); `verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.15.2] - 2026-09-28 -- Universal Search Hub UX & Reporting Harmonization
 
 ### Added
