@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.15.1
+Project: TALOS v5.15.2
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,12 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.15.2: Universal Search Hub UX & Reporting Harmonization --
+    src/search/code_first_search.py and src/search/citation_snowballing.py gain
+    styled Rich Table rendering (render_results / render_genealogy) and
+    timestamped Markdown report export (data/reports/code_search and
+    data/reports/snowball), eliminating raw JSON dumps from the TUI and CLI.
 
     v5.15.1: Persistent Vector Cache & Accelerated Neural Embedding Engine --
     src/core/database_manager.py adds the idempotent ``paper_embeddings`` SQLite
@@ -1821,7 +1827,7 @@ def search_ingestion_menu(python_exe):
         if seed and seed.strip():
             try:
                 from src.search.citation_snowballing import CitationSnowballEngine
-                _render_search_result(CitationSnowballEngine().run(seed.strip()))
+                CitationSnowballEngine().run(seed.strip())
             except Exception as e:
                 console.print(f"[red]Citation snowballing error: {e}[/red]")
         safe_pause()
@@ -1839,7 +1845,7 @@ def search_ingestion_menu(python_exe):
         if query and query.strip():
             try:
                 from src.search.code_first_search import CodeFirstSearchEngine
-                _render_search_result(CodeFirstSearchEngine().run(query.strip()))
+                CodeFirstSearchEngine().run(query.strip())
             except Exception as e:
                 console.print(f"[red]Code-first search error: {e}[/red]")
         safe_pause()
@@ -2237,16 +2243,6 @@ def _flag_value(argv, flag):
     return None
 
 
-def _render_search_result(data):
-    """Render a search engine result as indented JSON to the console.
-
-    Args:
-        data: Any JSON-serializable search result.
-    """
-    import json
-    console.print(json.dumps(data, indent=2, ensure_ascii=False, default=str))
-
-
 def _handle_cli_flags(argv):
     """Dispatch CLI fast-path flags and return True when one was handled.
 
@@ -2301,7 +2297,7 @@ def _handle_cli_flags(argv):
             console.print("[yellow]Usage: python talos.py --snowball <seed_doi|title|db_id>[/yellow]")
             return True
         from src.search.citation_snowballing import CitationSnowballEngine
-        _render_search_result(CitationSnowballEngine().run(seed.strip()))
+        CitationSnowballEngine().run(seed.strip())
         return True
     if "--vector-search" in argv:
         query = _flag_value(argv, "--vector-search")
@@ -2314,7 +2310,7 @@ def _handle_cli_flags(argv):
     if "--code-search" in argv:
         query = _flag_value(argv, "--code-search") or "reinforcement learning robotics"
         from src.search.code_first_search import CodeFirstSearchEngine
-        _render_search_result(CodeFirstSearchEngine().run(query.strip()))
+        CodeFirstSearchEngine().run(query.strip())
         return True
     # -- v5.12.2: AI execution strategy switcher (--strategy / --mode). --
     flag_present, strategy_target = _parse_strategy_flag(argv)

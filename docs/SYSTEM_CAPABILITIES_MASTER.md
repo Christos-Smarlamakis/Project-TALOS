@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.15.1
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.15.2
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-09-28
-> **Version:** v5.15.1 -- Persistent Vector Cache & Accelerated Neural Embedding Engine
+> **Version:** v5.15.2 -- Universal Search Hub UX & Reporting Harmonization
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.15.1" | `config/settings.py` |
+| TALOS_VERSION | "5.15.2" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1072,6 +1072,17 @@ For each evaluated paper, the AI generates:
 - **Rich Table presentation** (`src/search/neural_vector_search.py`): `render_results()` renders top-K results in a `box.ROUNDED` table ("Neural Vector Semantic Search Results") with Rank, Similarity (%), Title, Year / Source, DOI / URL, and Key Abstract Match Snippet; JSON output preserved via `run(..., render=False)`.
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.1), `pytest tests/test_neural_vector_search.py -q` (mock `nomic-embed-text` embeddings, exit 0), persistent cache round-trip smoke test (`get_cached_embeddings` / `save_embeddings_batch`), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+### 15.36 Unified Reporting & Visual Telemetry across all 6 Discovery Modes (v5.15.2)
+
+**Overview:** v5.15.2 harmonizes the UX and reporting surface of the Universal Search Hub by giving every discovery mode a dedicated styled Rich Table and a timestamped Markdown report, while eliminating raw JSON dumps from the TUI and CLI. All rendering and reporting operate 100% locally from the active SQLite database and in-memory result models (air-gapped safe).
+
+- **Code-First Search reporting** (`src/search/code_first_search.py`): `render_results()` renders reproducible repositories in a `box.ROUNDED` table ("Reproducible Code-First Search Results") with Rank, Stars (`[bold yellow]N stars[/bold yellow]`, zero emoji), Repository Name, Paper Title & Description, Topics & Frameworks, and GitHub URL columns, plus supplementary PapersWithCode and matching-database tables; `export_search_report()` writes `data/reports/code_search/code_search_YYYYMMDD_HHMMSS.md` with clickable URLs; `run(..., render=True)` auto-invokes both.
+- **Citation Snowballing reporting** (`src/search/citation_snowballing.py`): `render_genealogy()` renders the citation graph in a `box.ROUNDED` table ("Citation Snowballing Genealogy Graph") with Traversal (Backward/Forward), Depth, Title, Year / Source, DOI / URL, and Relevance Score columns; `export_snowball_report()` writes `data/reports/snowball/snowball_YYYYMMDD_HHMMSS.md` with Backward (Cited References) and Forward (Citing Recent Literature 2024-2026) tables and clickable links; `run(..., render=True)` auto-invokes both.
+- **Neural Vector Search reporting** (`src/search/neural_vector_search.py`): pre-existing `render_results()` and `export_search_report()` (v5.15.1) now complete the unified trio across all three `src/search/` engines.
+- **TUI/CLI consolidation** (`talos.py`): `--code-search` and `--snowball` fast-dispatch flags plus Group 2 menu options 3 (Snowballing) and 5 (Code-First) invoke `run()` directly; the dead `_render_search_result()` JSON-dump helper was removed.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.2), `python talos.py --code-search "spatio temporal graph neural networks"` and `python talos.py --snowball "10.1109/TTE.2026.3665346"` smoke tests, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 ---
 

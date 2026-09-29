@@ -4,9 +4,17 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-28 (v5.15.1 -- Persistent Vector Cache & Accelerated Neural Embedding Engine)
+> **Last Updated:** 2026-09-28 (v5.15.2 -- Universal Search Hub UX & Reporting Harmonization)
 
 ---
+
+## Phase 63: Universal Search Hub UX & Reporting Harmonization (v5.15.2)
+
+- [x] **Code-First Search reporting** -- `render_results()` (box.ROUNDED, Rank / Stars / Repository / Description / Topics / GitHub URL, zero emoji) + `export_search_report()` (timestamped `data/reports/code_search/code_search_*.md`); `run()` auto-invokes both.
+- [x] **Citation Snowballing reporting** -- `render_genealogy()` (box.ROUNDED, Traversal / Depth / Title / Year-Source / DOI-URL / Relevance) + `export_snowball_report()` (timestamped `data/reports/snowball/snowball_*.md` with Backward + Forward 2024-2026 tables); `run()` auto-invokes both.
+- [x] **TUI/CLI JSON dumps eliminated** -- `--code-search` / `--snowball` flags and Group 2 menu options 3/5 invoke `run()` directly; `_render_search_result()` removed.
+- [x] **Version synced** -- 6 code files + docker-compose.yml + CITATION.cff + tray/visualizer/wizard/diagnostics metadata + src/prisma/ and src/search/ docstrings + 19 canonical docs to v5.15.2 (2026-09-28).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.15.2), --code-search and --snowball smoke tests, verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 62: Neural Vector Cache & Accelerated Embedding Engine (v5.15.1)
 

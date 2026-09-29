@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.15.1
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.15.2
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.15.1 -- Μόνιμη Διανυσματική Κρυφή Μνήμη & Επιταχυνόμενη Μηχανή Νευρικών Ενσωματώσεων)
+> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.15.2 -- Εναρμόνιση UX & Αναφορών Καθολικού Κόμβου Αναζήτησης)
 
 ---
 
@@ -236,6 +236,7 @@ src/prisma/swarm_evaluators.py
 | **Εξαγωγέας BibTeX, Κατάποση Αεροδιαστημικής 18 Πηγών & Πάγωμα Χαρακτηριστικών (v5.14.2)** | `src/utils/bibtex_exporter.py`, `src/ingestion/nasa_ntrs_source.py`, `src/ingestion/hal_inria_source.py` | `BibTeXExporter.export_library()` / `render_export_summary()` (κλειδιά `AuthorYearTitleKeyword`, απολύμανση LaTeX, `--export-bib`)· `NasaNtrsSource` (REST NASA NTRS, JSON χωρίς κλειδί)· `HalInriaSource` (REST HAL/Inria, JSON χωρίς κλειδί)· στήλη `papers.prisma_decision` στο `database_manager.create_table()`· CLI `--export-bib` + TUI Ομάδα 5 επιλογή 12 |
 | **Καθολικός Κόμβος Επιστημονικής Αναζήτησης & Μηχανή Ανακάλυψης Νευρικών Γράφων (v5.15.0)** | `src/ingestion/sources/`, `src/search/citation_snowballing.py`, `src/search/neural_vector_search.py`, `src/search/code_first_search.py` | Ενιαίο `SOURCE_REGISTRY` (18 προσαρμογείς)· `CitationSnowballEngine` (διάσχιση γράφου προς τα πίσω/εμπρός, φίλτρο PRISMA, γράφος γενεαλογίας)· `NeuralVectorSearchEngine` (τοπικό `nomic-embed-text`, ομοιότητα συνημιτόνου)· `CodeFirstSearchEngine` (σήματα αναπαραγωγιμότητας)· CLI `--snowball`/`--vector-search`/`--code-search` + TUI Ομάδα 2 |
 | **Μόνιμη Διανυσματική Κρυφή Μνήμη & Επιταχυνόμενη Μηχανή Νευρικών Ενσωματώσεων (v5.15.1)** | `src/core/database_manager.py`, `src/search/neural_vector_search.py` | Αδρανής πίνακας `paper_embeddings` + `get_cached_embeddings()` / `save_embeddings_batch()`· `NeuralVectorSearchEngine._index_uncached()` (ζωντανό `rich.progress.Progress` + `ThreadPoolExecutor` + αποθήκευση παρτίδων 64), `_matrix_rank()` (διανυσματική ομοιότητα συνημιτόνου μητρώου NumPy, <50ms), `render_results()` (στυλιζαρισμένο Rich Table) |
+| **Εναρμόνιση UX & Αναφορών Καθολικού Κόμβου Αναζήτησης (v5.15.2)** | `src/search/code_first_search.py`, `src/search/citation_snowballing.py`, `talos.py` | `CodeFirstSearchEngine.render_results()` / `export_search_report()` (`data/reports/code_search/`)· `CitationSnowballEngine.render_genealogy()` / `export_snowball_report()` (`data/reports/snowball/`)· κατάργηση ακατέργαστων JSON dumps (`_render_search_result` αφαιρέθηκε) |
 
 ## 9. Βοηθητικά Αρχεία
 
@@ -274,8 +275,8 @@ src/prisma/swarm_evaluators.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.15.1 -- Μόνιμη Διανυσματική Κρυφή Μνήμη & Επιταχυνόμενη Μηχανή Νευρικών Ενσωματώσεων)
-> **Έκδοση Project:** v5.15.1
+> **Τελευταία Ενημέρωση:** 2026-09-28 (v5.15.2 -- Εναρμόνιση UX & Αναφορών Καθολικού Κόμβου Αναζήτησης)
+> **Έκδοση Project:** v5.15.2
 > **Συνολικά .py modules στο src/:** 99 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
 
 

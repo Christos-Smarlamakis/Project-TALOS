@@ -2,6 +2,22 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.15.2] - 2026-09-28 -- Universal Search Hub UX & Reporting Harmonization
+
+### Added
+
+- **Code-First Search Rich Table & Markdown report** (`src/search/code_first_search.py`): `render_results()` renders reproducible repositories in a styled `box.ROUNDED` table ("Reproducible Code-First Search Results") with Rank, Stars (rendered as `[bold yellow]N stars[/bold yellow]`, zero emoji), Repository Name, Paper Title & Description, Topics & Frameworks, and GitHub URL columns, plus supplementary PapersWithCode and matching-database tables; `export_search_report()` writes a timestamped `code_search_YYYYMMDD_HHMMSS.md` report under `data/reports/code_search/` with clickable URLs, and `run(..., render=True)` auto-invokes both.
+- **Citation Snowballing Rich genealogy & Markdown report** (`src/search/citation_snowballing.py`): `render_genealogy()` renders the citation graph in a `box.ROUNDED` table ("Citation Snowballing Genealogy Graph") with Traversal (Backward/Forward), Depth, Title, Year / Source, DOI / URL, and Relevance Score columns; `export_snowball_report()` writes a timestamped `snowball_YYYYMMDD_HHMMSS.md` report under `data/reports/snowball/` with Backward (Cited References) and Forward (Citing Recent Literature 2024-2026) tables and clickable links; `run(..., render=True)` auto-invokes both.
+
+### Changed
+
+- **TUI/CLI raw JSON dumps eliminated** (`talos.py`): `--code-search` and `--snowball` fast-dispatch flags plus the Group 2 Universal Search Hub menu options 3 (Snowballing) and 5 (Code-First) now invoke the engines' `run()` methods directly, which render their dedicated Rich tables and report paths without printing redundant raw JSON (the dead `_render_search_result()` helper was removed).
+- **Version strings synchronized to 5.15.2** across the 6 core code files, `docker-compose.yml` (`talos:5.15.2`), `CITATION.cff` (version 5.15.2), tray/visualizer/wizard/diagnostics metadata, `src/prisma/` and `src/search/` docstrings, and all 19 canonical documentation files (dated 2026-09-28).
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.2); `python talos.py --code-search "spatio temporal graph neural networks"` (Rich Table + `data/reports/code_search/` report); `python talos.py --snowball "10.1109/TTE.2026.3665346"` (Rich genealogy + `data/reports/snowball/` report); `verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.15.1] - 2026-09-28 -- Persistent Vector Cache & Accelerated Neural Embedding Engine
 
 ### Added

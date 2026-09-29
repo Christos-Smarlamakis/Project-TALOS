@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.15.1</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.15.2</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.15.1</h1>
+<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.15.2</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-09-28 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.15.1 -- Persistent Vector Cache &amp; Accelerated Neural Embedding Engine
+  <strong>Version:</strong> v5.15.2 -- Universal Search Hub UX &amp; Reporting Harmonization
 </div>
 
 <!-- ===================================================================== -->
@@ -357,7 +357,7 @@
 <table>
   <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
   <tbody>
-    <tr><td>TALOS_VERSION</td><td>"5.15.1"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_VERSION</td><td>"5.15.2"</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
@@ -1348,8 +1348,18 @@
 </ul>
 <p><strong>Verification surface:</strong> release gates include <code>compileall</code>, system integrity, version assertion (5.15.1), <code>test_neural_vector_search</code> (mock embeddings, exit 0), persistent cache round-trip smoke test, <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
 
+<h3 id="s15-36">15.36 Unified Reporting &amp; Visual Telemetry across all 6 Discovery Modes (v5.15.2)</h3>
+<p><strong>Overview:</strong> v5.15.2 harmonizes the UX and reporting surface of the Universal Search Hub by giving every discovery mode a dedicated styled Rich Table and a timestamped Markdown report, while eliminating raw JSON dumps from the TUI and CLI. All rendering and reporting operate 100% locally from the active SQLite database and in-memory result models (air-gapped safe).</p>
+<ul>
+  <li><strong>Code-First Search reporting</strong> (<code>src/search/code_first_search.py</code>): <code>render_results()</code> renders reproducible repositories in a <code>box.ROUNDED</code> table with Rank, Stars (<code>[bold yellow]N stars[/bold yellow]</code>, zero emoji), Repository Name, Paper Title &amp; Description, Topics &amp; Frameworks, and GitHub URL, plus supplementary PapersWithCode and matching-database tables; <code>export_search_report()</code> writes <code>data/reports/code_search/code_search_YYYYMMDD_HHMMSS.md</code>; <code>run(..., render=True)</code> auto-invokes both.</li>
+  <li><strong>Citation Snowballing reporting</strong> (<code>src/search/citation_snowballing.py</code>): <code>render_genealogy()</code> renders the citation graph in a <code>box.ROUNDED</code> table with Traversal (Backward/Forward), Depth, Title, Year / Source, DOI / URL, and Relevance Score; <code>export_snowball_report()</code> writes <code>data/reports/snowball/snowball_YYYYMMDD_HHMMSS.md</code> with Backward and Forward (2024-2026) tables; <code>run(..., render=True)</code> auto-invokes both.</li>
+  <li><strong>Neural Vector Search reporting</strong> (<code>src/search/neural_vector_search.py</code>): pre-existing <code>render_results()</code> and <code>export_search_report()</code> (v5.15.1) now complete the unified trio across all three <code>src/search/</code> engines.</li>
+  <li><strong>TUI/CLI consolidation</strong> (<code>talos.py</code>): <code>--code-search</code> and <code>--snowball</code> flags plus Group 2 menu options 3 and 5 invoke <code>run()</code> directly; the dead <code>_render_search_result()</code> helper was removed.</li>
+</ul>
+<p><strong>Verification surface:</strong> release gates include <code>compileall</code>, system integrity, version assertion (5.15.2), <code>--code-search</code> and <code>--snowball</code> smoke tests, <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.15.1</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.15.2</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

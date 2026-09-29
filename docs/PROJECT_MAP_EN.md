@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.15.1
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.15.2
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-09-28 (v5.15.1 -- Persistent Vector Cache & Accelerated Neural Embedding Engine)
+> **Last Updated:** 2026-09-28 (v5.15.2 -- Universal Search Hub UX & Reporting Harmonization)
 
 ---
 
@@ -236,6 +236,7 @@ src/prisma/swarm_evaluators.py
 | **BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze (v5.14.2)** | `src/utils/bibtex_exporter.py`, `src/ingestion/nasa_ntrs_source.py`, `src/ingestion/hal_inria_source.py` | `BibTeXExporter.export_library()` / `render_export_summary()` (`AuthorYearTitleKeyword` cite keys, LaTeX sanitization, `--export-bib`); `NasaNtrsSource` (keyless NASA NTRS REST JSON); `HalInriaSource` (keyless HAL/Inria REST JSON); `papers.prisma_decision` column in `database_manager.create_table()`; CLI `--export-bib` + TUI Group 5 option 12 |
 | **Universal Scientific Search Hub & Neural Graph Discovery Engine (v5.15.0)** | `src/ingestion/sources/`, `src/search/citation_snowballing.py`, `src/search/neural_vector_search.py`, `src/search/code_first_search.py` | Unified `SOURCE_REGISTRY` (18 adapters); `CitationSnowballEngine` (backward/forward graph traversal, PRISMA filter, genealogy graph); `NeuralVectorSearchEngine` (local `nomic-embed-text`, cosine similarity); `CodeFirstSearchEngine` (reproducibility signals); CLI `--snowball`/`--vector-search`/`--code-search` + TUI Group 2 |
 | **Persistent Vector Cache & Accelerated Neural Embedding Engine (v5.15.1)** | `src/core/database_manager.py`, `src/search/neural_vector_search.py` | Idempotent `paper_embeddings` table + `get_cached_embeddings()` / `save_embeddings_batch()`; `NeuralVectorSearchEngine._index_uncached()` (live `rich.progress.Progress` + `ThreadPoolExecutor` + batch-64 persistence), `_matrix_rank()` (vectorized NumPy matrix cosine similarity, <50ms), `render_results()` (styled Rich Table) |
+| **Universal Search Hub UX & Reporting Harmonization (v5.15.2)** | `src/search/code_first_search.py`, `src/search/citation_snowballing.py`, `talos.py` | `CodeFirstSearchEngine.render_results()` / `export_search_report()` (`data/reports/code_search/`); `CitationSnowballEngine.render_genealogy()` / `export_snowball_report()` (`data/reports/snowball/`); raw JSON dumps eliminated (`_render_search_result` removed) |
 
 ## 9. Auxiliary Files
 
@@ -274,8 +275,8 @@ src/prisma/swarm_evaluators.py
 
 ---
 
-> **Last Updated:** 2026-09-28 (v5.15.1 -- Persistent Vector Cache & Accelerated Neural Embedding Engine)
-> **Project Version:** v5.15.1
+> **Last Updated:** 2026-09-28 (v5.15.2 -- Universal Search Hub UX & Reporting Harmonization)
+> **Project Version:** v5.15.2
 > **Total .py modules under src/:** 99 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
 
 

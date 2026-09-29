@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: citation_snowballing.py
-Project: TALOS v5.15.1
+Project: TALOS v5.15.2
 Description:
     Autonomous citation snowballing engine. Starting from a seed paper (DOI, title,
     or database ID), it traverses the academic citation graph in two directions:
@@ -28,6 +28,48 @@ import os
 import re
 
 import requests
+
+try:
+    from rich.console import Console
+    from rich.table import Table
+    from rich import box
+    RICH_AVAILABLE = True
+except ImportError:  # pragma: no cover - rich not installed
+    RICH_AVAILABLE = False
+
+
+def _md_escape(text):
+    """Escape Markdown table-breaking characters in a cell value.
+
+    Args:
+        text (str): Raw cell text.
+
+    Returns:
+        str: A single-line, pipe-escaped Markdown-safe string.
+    """
+    if text is None:
+        return ""
+    return str(text).replace("|", "\\|").replace("\r", " ").replace("\n", " ").strip()
+
+
+def _format_link(doi, url):
+    """Build a Markdown clickable link from a DOI or URL.
+
+    Args:
+        doi (str): DOI identifier (e.g. ``10.1109/...``).
+        url (str): Direct URL.
+
+    Returns:
+        str: Markdown link, or an empty string when neither is present.
+    """
+    doi = str(doi or "").strip()
+    url = str(url or "").strip()
+    if doi:
+        href = doi if doi.startswith(("http://", "https://")) else f"https://doi.org/{doi}"
+        return f"[{_md_escape(doi)}]({href})"
+    if url:
+        return f"[{_md_escape(url)}]({url})"
+    return ""
 
 
 class CitationSnowballEngine:
@@ -56,7 +98,7 @@ class CitationSnowballEngine:
         self.db_manager = db_manager
         self.timeout = timeout
         self.session = requests.Session()
-        self.session.headers.update({"User-Agent": "TALOS/5.15.1"})
+        self.session.headers.update({"User-Agent": "TALOS/5.15.2"})
 
     # -- OpenAlex primitives ----------------------------------------------------
     def _get_json(self, url, params=None):
@@ -362,7 +404,7 @@ class CitationSnowballEngine:
                 evaluation = {
                     "scores": {"strategic": 0, "operational": 0, "tactical": 0, "playground": 0},
                     "overall_score": 0.0,
-                    "reasoning": "Discovered via citation snowballing (v5.15.1).",
+                    "reasoning": "Discovered via citation snowballing (v5.15.2).",
                     "tags": ["snowballing"],
                 }
                 db.add_paper(paper, evaluation)
@@ -527,10 +569,164 @@ class CitationSnowballEngine:
             edges.append({"source": "seed", "target": node_id, "relation": "cites_seed"})
         return {"seed": seed, "nodes": nodes, "edges": edges}
 
+    def render_genealogy(self, results: dict):
+        """Render the citation genealogy as a styled Rich Table.
+
+        Args:
+            results (dict): The result dict returned by ``run``, with keys
+                ``backward``, ``forward``, and ``relevant``.
+        """
+        backward = results.get("backward") or []
+        forward = results.get("forward") or []
+
+        if not RICH_AVAILABLE:
+            for rank, paper in enumerate(backward, start=1):
+                print(f"Backward {rank}. {paper.get('title')} ({paper.get('publication_year')})")
+            for rank, paper in enumerate(forward, start=1):
+                print(f"Forward {rank}. {paper.get('title')} ({paper.get('publication_year')})")
+            return
+
+        relevant_keys = set()
+        for paper in results.get("relevant") or []:
+            key = (paper.get("doi") or "").strip().lower()
+            if not key:
+                key = (paper.get("title") or "").strip().lower()
+            if key:
+                relevant_keys.add(key)
+
+        def _relevance(paper):
+            key = (paper.get("doi") or "").strip().lower()
+            if not key:
+                key = (paper.get("title") or "").strip().lower()
+            if key and key in relevant_keys:
+                return "[green]Relevant[/green]"
+            return "[dim]-[/dim]"
+
+        table = Table(
+            title="Citation Snowballing Genealogy Graph",
+            box=box.ROUNDED,
+            header_style="bold cyan",
+            title_style="bold bright_cyan",
+        )
+        table.add_column("Traversal", style="bold")
+        table.add_column("Depth", justify="right", style="cyan")
+        table.add_column("Title", style="bold white", overflow="fold", max_width=46)
+        table.add_column("Year / Source", style="cyan")
+        table.add_column("DOI / URL", style="dim", overflow="fold", max_width=26)
+        table.add_column("Relevance Score", style="magenta")
+
+        depth = results.get("depth", 1)
+        for paper in backward:
+            table.add_row(
+                "Backward",
+                str(depth),
+                str(paper.get("title") or ""),
+                f"{paper.get('publication_year') or ''} / {paper.get('source') or ''}".strip(" /"),
+                str(paper.get("doi") or paper.get("url") or ""),
+                _relevance(paper),
+            )
+        for paper in forward:
+            table.add_row(
+                "Forward",
+                "1",
+                str(paper.get("title") or ""),
+                f"{paper.get('publication_year') or ''} / {paper.get('source') or ''}".strip(" /"),
+                str(paper.get("doi") or paper.get("url") or ""),
+                _relevance(paper),
+            )
+        Console().print(table)
+
+    def export_snowball_report(self, seed: str, results: dict,
+                               output_dir: str = "data/reports/snowball") -> str:
+        """Generate a structured Markdown report of a citation snowballing run.
+
+        Writes a timestamped Markdown report under ``output_dir`` (resolved
+        relative to the project root) with the seed header, backward and
+        forward traversal tables, and direct clickable links.
+
+        Args:
+            seed (str): Seed DOI, database ID, or title.
+            results (dict): The result dict returned by ``run``.
+            output_dir (str): Directory in which to write the report. Defaults
+                to ``data/reports/snowball`` relative to the project root.
+
+        Returns:
+            str: Absolute path to the generated Markdown report.
+        """
+        import datetime
+
+        project_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", ".."))
+        report_dir = output_dir
+        if not os.path.isabs(report_dir):
+            report_dir = os.path.join(project_root, report_dir)
+        os.makedirs(report_dir, exist_ok=True)
+
+        now = datetime.datetime.now()
+        report_path = os.path.join(
+            report_dir, f"snowball_{now.strftime('%Y%m%d_%H%M%S')}.md")
+
+        seed_paper = results.get("seed") or {}
+        backward = results.get("backward") or []
+        forward = results.get("forward") or []
+        depth = results.get("depth", 1)
+        year_window = results.get("year_window", "2024-2026")
+        nodes = len(backward) + len(forward)
+
+        seed_label = seed_paper.get("title") or seed_paper.get("doi") or seed
+
+        lines = []
+        lines.append("# Citation Snowballing Report")
+        lines.append("")
+        lines.append("| Field | Value |")
+        lines.append("|-------|-------|")
+        lines.append(f"| **Seed Paper Identifier** | {_md_escape(seed_label)} |")
+        lines.append(f"| **Traversal Depth** | {depth} |")
+        lines.append(f"| **Timestamp** | {now.strftime('%Y-%m-%d %H:%M:%S')} |")
+        lines.append(f"| **Nodes Discovered** | {nodes} |")
+        lines.append("")
+        lines.append("## Backward Snowballing (Cited References)")
+        lines.append("")
+        lines.append("| Rank | Title | Authors | Year | DOI / URL |")
+        lines.append("|------|-------|---------|------|-----------|")
+        for rank, paper in enumerate(backward, start=1):
+            link = _format_link(paper.get("doi"), paper.get("url"))
+            lines.append(
+                f"| {rank} | {_md_escape(paper.get('title'))} | "
+                f"{_md_escape(paper.get('authors_str'))} | "
+                f"{paper.get('publication_year') or ''} | {link} |"
+            )
+        lines.append("")
+        lines.append(f"## Forward Snowballing (Citing Recent Literature {year_window})")
+        lines.append("")
+        lines.append("| Rank | Title | Authors | Year | DOI / URL |")
+        lines.append("|------|-------|---------|------|-----------|")
+        for rank, paper in enumerate(forward, start=1):
+            link = _format_link(paper.get("doi"), paper.get("url"))
+            lines.append(
+                f"| {rank} | {_md_escape(paper.get('title'))} | "
+                f"{_md_escape(paper.get('authors_str'))} | "
+                f"{paper.get('publication_year') or ''} | {link} |"
+            )
+        lines.append("")
+
+        with open(report_path, "w", encoding="utf-8") as handle:
+            handle.write("\n".join(lines) + "\n")
+
+        if RICH_AVAILABLE:
+            Console().print(f"[dim]Snowball report saved to: {report_path}[/dim]")
+        else:
+            print(f"Snowball report saved to: {report_path}")
+        return str(report_path)
+
     # -- End-to-end orchestration ----------------------------------------------
     def run(self, seed: str, depth: int = 1, year_from: int = 2024, year_to: int = 2026,
-            import_to_db: bool = True, criteria=None):
+            import_to_db: bool = True, criteria=None, render: bool = True):
         """Run the full citation snowballing workflow.
+
+        Traverses the citation graph around the seed, filters relevant nodes,
+        imports them, and (when ``render``) presents a styled Rich genealogy
+        table plus a timestamped Markdown report under ``data/reports/snowball``.
 
         Args:
             seed (str): Seed DOI, database ID, or title.
@@ -539,9 +735,11 @@ class CitationSnowballEngine:
             year_to (int): Forward citation window end year.
             import_to_db (bool): Whether to import relevant nodes into the DB.
             criteria (list, optional): Inclusion criteria for relevance filtering.
+            render (bool): When True, render the genealogy table and report.
 
         Returns:
-            dict: {seed, backward, forward, relevant, genealogy, imported}.
+            dict: {seed, backward, forward, relevant, genealogy, imported,
+                depth, year_window}.
         """
         seed_paper = self.resolve_seed(seed)
         if not seed_paper:
@@ -555,12 +753,19 @@ class CitationSnowballEngine:
 
         imported = self._import_papers(relevant) if import_to_db else 0
 
-        return {
+        results = {
             "seed": seed_paper,
             "backward": backward,
             "forward": forward,
             "relevant": relevant,
             "genealogy": self.generate_genealogy(seed_paper, backward, forward),
             "imported": imported,
+            "depth": depth,
+            "year_window": f"{year_from}-{year_to}",
         }
+
+        if render:
+            self.render_genealogy(results)
+            self.export_snowball_report(seed, results)
+        return results
 

@@ -2,6 +2,22 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.15.2] - 2026-09-28 -- Εναρμόνιση UX & Αναφορών Καθολικού Κόμβου Αναζήτησης
+
+### Προστέθηκε
+
+- **Rich Table & αναφορά Markdown Αναζήτησης με Προτεραιότητα στον Κώδικα** (`src/search/code_first_search.py`): η `render_results()` αποδίδει αναπαραγώγιμα αποθετήρια σε πίνακα `box.ROUNDED` («Αποτελέσματα Αναπαραγώγιμης Αναζήτησης με Προτεραιότητα στον Κώδικα») με στήλες Κατάταξη, Αστέρια (ως `[bold yellow]N stars[/bold yellow]`, χωρίς emoji), Όνομα Αποθετηρίου, Τίτλος Εργασίας & Περιγραφή, Θέματα & Πλαίσια και URL GitHub, συν συμπληρωματικούς πίνακες PapersWithCode και αντίστοιχης βάσης δεδομένων· η `export_search_report()` γράφει χρονικά σημασμένη αναφορά `code_search_YYYYMMDD_HHMMSS.md` στον `data/reports/code_search/` με clickable URLs, και η `run(..., render=True)` καλεί αυτόματα και τα δύο.
+- **Πλούσια γενεαλογία & αναφορά Markdown Χιονοστιβάδας Παραπομπών** (`src/search/citation_snowballing.py`): η `render_genealogy()` αποδίδει τον γράφο παραπομπών σε πίνακα `box.ROUNDED` («Γράφος Γενεαλογίας Χιονοστιβάδας Παραπομπών») με στήλες Διάσχιση (Πίσω/Μπροστά), Βάθος, Τίτλος, Έτος / Πηγή, DOI / URL και Βαθμολογία Σχετικότητας· η `export_snowball_report()` γράφει χρονικά σημασμένη αναφορά `snowball_YYYYMMDD_HHMMSS.md` στον `data/reports/snowball/` με πίνακες Πίσω (Αναφερόμενες Αναφορές) και Μπροστά (Πρόσφατη Βιβλιογραφία που Παραπέμπει 2024-2026) και clickable συνδέσμους· η `run(..., render=True)` καλεί αυτόματα και τα δύο.
+
+### Άλλαξε
+
+- **Κατάργηση ακατέργαστων JSON dumps TUI/CLI** (`talos.py`): οι σημαίες ταχείας αποστολής `--code-search` και `--snowball` συν οι επιλογές 3 (Χιονοστιβάδα) και 5 (Προτεραιότητα στον Κώδικα) του μενού Ομάδας 2 «Καθολικός Κόμβος Αναζήτησης» καλούν πλέον απευθείας τις μεθόδους `run()` των μηχανών, οι οποίες αποδίδουν τους ειδικούς πίνακες Rich και τις διαδρομές αναφορών τους χωρίς εκτύπωση περιττού ακατέργαστου JSON (ο νεκρός βοηθός `_render_search_result()` αφαιρέθηκε).
+- **Συγχρονισμός αλφαριθμητικών έκδοσης σε 5.15.2** στα 6 βασικά αρχεία κώδικα, `docker-compose.yml` (`talos:5.15.2`), `CITATION.cff` (έκδοση 5.15.2), μεταδεδομένα tray/visualizer/wizard/diagnostics, docstrings `src/prisma/` και `src/search/` και στα 19 κανονικά αρχεία τεκμηρίωσης (ημερομηνία 2026-09-28).
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.2)· `python talos.py --code-search "spatio temporal graph neural networks"` (Rich Table + αναφορά `data/reports/code_search/`)· `python talos.py --snowball "10.1109/TTE.2026.3665346"` (Rich γενεαλογία + αναφορά `data/reports/snowball/`)· `verify_dependency_map.py --ci` (κωδικός 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.15.1] - 2026-09-28 -- Μόνιμη Διανυσματική Κρυφή Μνήμη & Επιταχυνόμενη Μηχανή Νευρικών Ενσωματώσεων
 
 ### Προστέθηκε
