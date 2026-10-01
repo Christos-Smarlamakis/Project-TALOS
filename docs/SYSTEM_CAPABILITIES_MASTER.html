@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.15.5</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.16.0</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.15.5</h1>
+<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.16.0</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-10-01 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.15.5 -- Dual-Surface Interactive Help System &amp; Scientific Foundations Canon
+  <strong>Version:</strong> v5.16.0 -- PRISMA Quality Appraisal &amp; Dual-Axis Scientific Rigor Engine
 </div>
 
 <!-- ===================================================================== -->
@@ -357,7 +357,7 @@
 <table>
   <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
   <tbody>
-    <tr><td>TALOS_VERSION</td><td>"5.15.5"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_VERSION</td><td>"5.16.0"</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
@@ -1387,8 +1387,20 @@
 </ul>
 <p><strong>Verification surface:</strong> release gates include <code>compileall</code>, system integrity, version assertion (5.15.5), <code>talos.py --help</code> (exit 0), <code>GET /help</code> (200) / <code>GET /manual</code> (307), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
 
+<h3 id="s15-40">15.40 PRISMA Quality Appraisal, Kitchenham's Standardized Rubric, and the 2D Decision Quadrant Plane (v5.16.0)</h3>
+<p><strong>Overview:</strong> v5.16.0 introduces the PRISMA Quality Appraisal &amp; Dual-Axis Scientific Rigor Engine, operationalizing the Kitchenham et al. (2007) guidelines for systematic literature reviews as a standardized, six-question, three-point categorical rubric. The engine formally decouples Semantic Relevance (S_rel, the existing four-layer <code>overall_score</code>) from Methodological Quality (S_qual) and projects every study onto a 2D Evidence Decision Plane with four quadrants.</p>
+<ul>
+  <li><strong>Typed Kitchenham rubric</strong> (<code>src/prisma/quality_appraisal.py</code>): <code>KitchenhamRubric</code> (six <code>Literal[0.0, 0.5, 1.0]</code> questions), <code>QualityAppraisalResult</code>, and <code>PrismaQualityAppraiser</code>, with <code>_normalize_ternary</code> snapping drifted LLM outputs back onto the strict grid and <code>quality_score</code> computing <code>S_qual = (sum(Q_i) / 6.0) * 10.0</code>.</li>
+  <li><strong>2D Evidence Decision Plane</strong> (<code>map_evidence_quadrant</code>): orthogonal thresholds tau_rel = 7.0 / tau_qual = 7.5 yield <code>ELITE_FOUNDATIONAL</code>, <code>IDEA_MINE</code>, <code>METHODOLOGICAL_EXEMPLAR</code>, and <code>METHODOLOGICAL_NOISE</code>.</li>
+  <li><strong>Batch appraisal</strong> (<code>appraise_candidates_batch</code>, CLI <code>--appraise-quality</code>): queries uncached candidates, runs <code>ThreadPoolExecutor</code> behind <code>VRAM_SEMAPHORE = threading.Semaphore(2)</code> (8 workers Cloud Mesh), and renders a Rich quadrant table.</li>
+  <li><strong>SQLite schema expansion</strong> (<code>src/core/database_manager.py</code>): <code>quality_score</code>, <code>quality_rubric_json</code>, <code>evidence_quadrant</code> columns + <code>update_paper_quality()</code>.</li>
+  <li><strong>BibTeX dual-filter export</strong> (<code>src/utils/bibtex_exporter.py</code>): <code>export_library(min_quality, quadrant)</code> with a <code>note</code> field (Relevance, Scientific Quality, Quadrant).</li>
+  <li><strong>Integration surfaces</strong>: CLI <code>--appraise-quality</code>, TUI Group 3 Option 15, help panels + web manual card, README Kitchenham IEEE [11]-[12], and Rule 10 dossier 05.</li>
+</ul>
+<p><strong>Verification surface:</strong> release gates include <code>compileall</code>, <code>pytest tests/test_quality_appraisal.py -q</code> (17 hermetic), system integrity, version assertion (5.16.0), <code>talos.py --appraise-quality --min-score 7.0</code>, BibTeX <code>min_quality=7.5</code> export, <code>talos.py --help</code> / <code>GET /help</code>, <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.15.5</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.16.0</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: mermaid_generator.py
-Project: TALOS v5.15.5
+Project: TALOS v5.16.0
 Description:
     Generates a standard-compliant PRISMA 2020 flow diagram in pure Mermaid
     syntax (``flowchart TD``) for the TALOS declarative scoping review pipeline.

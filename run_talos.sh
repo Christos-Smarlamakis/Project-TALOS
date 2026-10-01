@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ===========================================================================
 # script         : run_talos.sh
-# version        : v5.15.5 (Dual-Surface Interactive Help System & Scientific Foundations Canon)
+# version        : v5.16.0 (PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine)
 # description    : Cross-Platform POSIX Dashboard for Project TALOS.
 #                  Implements Two-Column UI, IEEE WEIGD standard telemetry,
 #                  defensive error handling, Universal ASCII rendering, and
@@ -216,7 +216,7 @@ show_menu() {
     echo -e "${C_IEEE_LIGHT}             ##      ##    ##  ##        ##    ##       ## ${C_RESET}"
     echo -e "${C_IEEE_LIGHT}             ##      ##    ##  ########   ######   ######  ${C_RESET}"
     echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
-    echo -e "  ${C_CYAN}Project TALOS v5.15.5 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)${C_RESET}"
+    echo -e "  ${C_CYAN}Project TALOS v5.16.0 -- Research Intelligence Ecosystem (IEEE WEIGD Supported)${C_RESET}"
     echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
     echo -e "  [ SYSTEM TELEMETRY ]  API (8001): ${API_STATUS} | BUS (8000): ${SYNAPSE_STATUS} | OLLAMA (11434): ${OLLAMA_STATUS} | OPTICA (8002): ${OPTICA_STATUS}"
     echo -e "${C_IEEE_DARK}-----------------------------------------------------------------------------------------------------${C_RESET}"
@@ -269,7 +269,7 @@ do_setup() {
     log_info "Validating database integrity (db_stats.py)..."
     $PYTHON_CMD src/utils/db_stats.py || log_warn "Database statistics check skipped."
 
-    log_success "TALOS v5.15.5 deployment finalized."
+    log_success "TALOS v5.16.0 deployment finalized."
     press_enter
 }
 
@@ -402,7 +402,7 @@ while true; do
         10)
             echo ""
         echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
-        echo -e "  Closing Project TALOS v5.15.5..."
+        echo -e "  Closing Project TALOS v5.16.0..."
         echo -e "${C_IEEE_DARK}=====================================================================================================${C_RESET}"
             # Reset viewport constraint on exit
             printf '\033[8;24;80t' >/dev/null 2>&1 || true

@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.15.5
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.16.0
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-01
-> **Version:** v5.15.5 -- Dual-Surface Interactive Help System & Scientific Foundations Canon
+> **Version:** v5.16.0 -- PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.15.5" | `config/settings.py` |
+| TALOS_VERSION | "5.16.0" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1120,6 +1120,24 @@ For each evaluated paper, the AI generates:
 - **Formal IEEE Scientific References & Theoretical Foundations** (`README.md`): Section 5 (English) and the mirrored Greek "Επιστημονικές Αναφορές & Θεωρητικό Υπόβαθρο" present ten strictly-formatted IEEE citations ([1]-[10]) spanning Stanford DSPy, Net2Net, PRISMA 2020, PRISMA-ScR, Cohen's Kappa, Fleiss' Kappa, citation snowballing, Nomic Embed, Dueling DQN, and Double Q-Learning.
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.5), `python talos.py --help` (4-panel Rich manual, exit 0), `GET /help` (HTMLResponse 200) and `GET /manual` (307 redirect), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+### 15.40 PRISMA Quality Appraisal, Kitchenham's Standardized Rubric, and the 2D Decision Quadrant Plane (v5.16.0)
+
+**Overview:** v5.16.0 introduces the PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine, operationalizing the Kitchenham et al. (2007) guidelines for systematic literature reviews as a standardized, six-question, three-point categorical rubric. The engine formally decouples Semantic Relevance (S_rel, the existing four-layer `overall_score`) from Methodological Quality (S_qual, computed by the rubric) and projects every study onto a 2D Evidence Decision Plane with four quadrants.
+
+- **Typed Kitchenham rubric** (`src/prisma/quality_appraisal.py`): `KitchenhamRubric` is a Pydantic-v2 model whose six fields (`q1_aims_clarity`, `q2_context_realism`, `q3_baseline_rigor`, `q4_statistical_validity`, `q5_open_reproducibility`, `q6_limitations_negative_results`) are typed as `Literal[0.0, 0.5, 1.0]` and normalized by a `field_validator` calling `_normalize_ternary`, which snaps drifted local-LLM outputs (e.g. `1`, `0.75`) back onto the strict ternary grid. `quality_score` is a property computing `S_qual = (sum(Q_i) / 6.0) * 10.0`.
+
+- **2D Evidence Decision Plane** (`map_evidence_quadrant`): the plane is partitioned by orthogonal thresholds tau_rel = 7.0 and tau_qual = 7.5, yielding `ELITE_FOUNDATIONAL` (S_rel >= 7.0 and S_qual >= 7.5), `IDEA_MINE` (S_rel >= 7.0 and S_qual < 7.5), `METHODOLOGICAL_EXEMPLAR` (S_rel < 7.0 and S_qual >= 7.5), and `METHODOLOGICAL_NOISE` (S_rel < 7.0 and S_qual < 7.5).
+
+- **Batch appraisal** (`PrismaQualityAppraiser`): `appraise_paper()` prompts the multi-tier `AIManager` with the structured rubric, recovers JSON via `extract_json_payload`, validates, computes S_qual, and maps the quadrant. `appraise_candidates_batch(min_relevance=7.0)` queries `overall_score >= ? AND quality_score IS NULL`, then runs a `ThreadPoolExecutor` bounded by `VRAM_SEMAPHORE = threading.Semaphore(2)` on local GPU (8 workers on the Cloud Mesh), persisting each result through `DatabaseManager.update_paper_quality`. `render_quadrant_summary()` emits a Rich quadrant-distribution table.
+
+- **SQLite schema expansion** (`src/core/database_manager.py`): idempotent `ALTER TABLE` adds `quality_score REAL`, `quality_rubric_json TEXT`, and `evidence_quadrant TEXT`; `update_paper_quality()` writes all three columns in one WAL transaction.
+
+- **BibTeX dual-filter export** (`src/utils/bibtex_exporter.py`): `export_library()` gains `min_quality` and `quadrant`, building `overall_score >= ? AND (quality_score >= ? OR quality_score IS NULL)` (plus an optional quadrant predicate). Each entry emits a `note` field (`TALOS Relevance: X.X/10, Scientific Quality: Y.Y/10 (Kitchenham 2007: High Rigor), Quadrant: Z`), with `_rigor_label()` mapping quality to High/Moderate/Low Rigor.
+
+- **Integration surfaces**: CLI `--appraise-quality [--min-score 7.0]` in `talos.py:_handle_cli_flags()`; TUI Group 3 Option 15; Panel 1 and Panel 4 of `src/utils/help_system.py`; a new interactive card in `templates/help_manual.html`; Kitchenham IEEE citations [11]-[12] in `README.md` (EN and GR); and Rule 10 academic dossier 05 under `docs/internal/academic/`.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_quality_appraisal.py -q` (17 hermetic tests), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.16.0), `python talos.py --appraise-quality --min-score 7.0` (Rich quadrant table), BibTeX `min_quality=7.5` dual-filter export, `python talos.py --help` / `GET /help`, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 ---
 

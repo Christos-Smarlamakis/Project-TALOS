@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: __init__.py
-Project: TALOS v5.15.5
+Project: TALOS v5.16.0
 Description:
     Package root for the Stanford DSPy PRISMA-ScR Declarative Synthesis Pipeline.
     Exposes the four typed declarative signatures (``dspy_signatures``), the
@@ -52,6 +52,12 @@ from src.prisma.scoping_review_synthesizer import (
     synthesize_scoping_review,
     synthesize_scoping_review_latex,
 )
+from src.prisma.quality_appraisal import (
+    KitchenhamRubric,
+    QualityAppraisalResult,
+    PrismaQualityAppraiser,
+    map_evidence_quadrant,
+)
 
 __all__ = [
     "PrismaPlanSignature",
@@ -76,4 +82,8 @@ __all__ = [
     "mermaid_to_html",
     "synthesize_scoping_review",
     "synthesize_scoping_review_latex",
+    "KitchenhamRubric",
+    "QualityAppraisalResult",
+    "PrismaQualityAppraiser",
+    "map_evidence_quadrant",
 ]

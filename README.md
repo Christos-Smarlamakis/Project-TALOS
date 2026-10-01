@@ -241,6 +241,8 @@ The architecture and algorithmic pipelines of Project TALOS are grounded in the 
 [8] Z. Nussbaum, J. X. Morris, B. Duderstadt, and A. Mulyar, "Nomic Embed: Training a reproducible long context text embedder," *arXiv preprint arXiv:2402.01613*, Feb. 2024.
 [9] Z. Wang et al., "Dueling network architectures for deep reinforcement learning," in *Proc. 33rd Int. Conf. Mach. Learn. (ICML)*, New York, NY, USA, Jun. 2016, pp. 1995–2003.
 [10] H. van Hasselt, A. Guez, and D. Silver, "Deep reinforcement learning with double Q-learning," in *Proc. 30th AAAI Conf. Artif. Intell. (AAAI)*, Phoenix, AZ, USA, Feb. 2016, pp. 2094–2100.
+[11] B. Kitchenham and S. Charters, "Guidelines for performing Systematic Literature Reviews in Software Engineering," Keele Univ. and Durham Univ., Joint Tech. Rep. EBSE-2007-01, Jul. 2007.
+[12] B. Kitchenham et al., "Systematic literature reviews in software engineering -- a systematic literature review," *Inf. Softw. Technol.*, vol. 51, no. 1, pp. 7--15, Jan. 2009, doi: 10.1016/j.infsof.2008.09.009.
 
 ---
 
@@ -412,6 +414,8 @@ https://github.com/Christos-Smarlamakis/Project-TALOS, doi: 10.5281/zenodo.19224
 [8] Z. Nussbaum, J. X. Morris, B. Duderstadt, and A. Mulyar, "Nomic Embed: Training a reproducible long context text embedder," *arXiv preprint arXiv:2402.01613*, Feb. 2024.
 [9] Z. Wang et al., "Dueling network architectures for deep reinforcement learning," in *Proc. 33rd Int. Conf. Mach. Learn. (ICML)*, New York, NY, USA, Jun. 2016, pp. 1995–2003.
 [10] H. van Hasselt, A. Guez, and D. Silver, "Deep reinforcement learning with double Q-learning," in *Proc. 30th AAAI Conf. Artif. Intell. (AAAI)*, Phoenix, AZ, USA, Feb. 2016, pp. 2094–2100.
+[11] B. Kitchenham and S. Charters, "Guidelines for performing Systematic Literature Reviews in Software Engineering," Keele Univ. and Durham Univ., Joint Tech. Rep. EBSE-2007-01, Jul. 2007.
+[12] B. Kitchenham et al., "Systematic literature reviews in software engineering -- a systematic literature review," *Inf. Softw. Technol.*, vol. 51, no. 1, pp. 7--15, Jan. 2009, doi: 10.1016/j.infsof.2008.09.009.
 
 ---
 

@@ -4,9 +4,23 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-01 (v5.15.5 -- Dual-Surface Interactive Help System & Scientific Foundations Canon)
+> **Last Updated:** 2026-10-01 (v5.16.0 -- PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine)
 
 ---
+
+## Phase 67: PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine (v5.16.0)
+
+### Status: COMPLETED (2026-10-01)
+
+- [x] **Standardized Kitchenham (2007) quality rubric** -- `src/prisma/quality_appraisal.py` ships `KitchenhamRubric` (six three-point categorical questions), `QualityAppraisalResult`, and `PrismaQualityAppraiser`, with a `_normalize_ternary` snap-to-grid normalizer for local-LLM drift.
+- [x] **Formal relevance/rigor decoupling** -- `S_qual = (sum(Q_i)/6.0)*10.0` is computed independently of the four-layer `overall_score`; `map_evidence_quadrant()` projects each study onto the 2D Evidence Decision Plane (ELITE_FOUNDATIONAL, IDEA_MINE, METHODOLOGICAL_EXEMPLAR, METHODOLOGICAL_NOISE).
+- [x] **Batch quality appraisal** -- `--appraise-quality [--min-score 7.0]` (CLI) and TUI Group 3 Option 15 appraise uncached candidates concurrently via `ThreadPoolExecutor` (`Semaphore(2)` local / 8 Cloud Mesh) and render a Rich quadrant-distribution table.
+- [x] **SQLite schema expansion** -- `quality_score REAL`, `quality_rubric_json TEXT`, `evidence_quadrant TEXT` columns added idempotently with a new `update_paper_quality()` helper.
+- [x] **BibTeX dual-filter export** -- `export_library(min_quality, quadrant)` plus a `note` field carrying Relevance, Scientific Quality, and Quadrant.
+- [x] **Kitchenham IEEE citations [11]-[12]** in `README.md` (EN and mirrored GR section).
+- [x] **Rule 10 dossier 05** -- `docs/internal/academic/05_PRISMA_QUALITY_APPRAISAL_KITCHENHAM.md` (7 sections, dual-layer traceability).
+- [x] **Version synced** -- 6 core files + docker-compose.yml (`talos:5.16.0`) + CITATION.cff (5.16.0, 2026-10-01) + tray/visualizer/wizard/strategy/diagnostics metadata + src/prisma/ and src/search/ docstrings + 19 canonical docs to v5.16.0 (2026-10-01).
+- [x] **Verification gates passed** -- compileall, test_quality_appraisal (17 hermetic), test_system_integrity, test_talos_version (5.16.0), `--appraise-quality` CLI, BibTeX `min_quality=7.5`, `--help` / `GET /help`, README [11]/[12], dossier 0 U+FFFD, verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 66: Dual-Surface Help System & IEEE Scientific Foundations (v5.15.5)
 

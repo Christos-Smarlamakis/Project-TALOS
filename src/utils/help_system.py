@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: help_system.py
-Project: TALOS v5.15.5
+Project: TALOS v5.16.0
 Description:
     Dual-Surface User Assistance System. This module renders a rich, four-panel
     interactive command reference for the TALOS terminal UI and provides the
@@ -87,9 +87,12 @@ def _panel_1_cli_flags() -> Panel:
     table.add_row("PRISMA Swarm", "--prisma [--swarm]",
                   "PRISMA-ScR declarative synthesis pipeline; --swarm enables the "
                   "3-agent peer-review consensus swarm.")
-    table.add_row("Exports", "--export-bib [min_score]",
-                  "Export curated papers to a BibTeX / LaTeX library "
-                  "(data/exports/talos_library.bib).")
+    table.add_row("Exports", "--export-bib [score] [--min-quality Q] [--quadrant Q]",
+                  "Export curated papers to a BibTeX / LaTeX library with dual "
+                  "relevance/quality filtering (data/exports/talos_library.bib).")
+    table.add_row("Quality Appraisal", "--appraise-quality [--min-score 7.0]",
+                  "Batch Kitchenham (2007) scientific quality appraisal of "
+                  "candidate papers with 2D evidence-quadrant classification.")
     table.add_row("AI Strategy", "--strategy [mode]",
                   "Switch the AI execution strategy (strict_local, local_first, "
                   "cloud_first, strict_cloud, auto_dynamic).")
@@ -212,6 +215,8 @@ def _panel_4_artifacts() -> Panel:
                   "src/prisma/scoping_review_synthesizer.py output")
     table.add_row("Active profile database", "data/talos_research.db (default)")
     table.add_row("Isolated profile databases", "_profiles/<profile>/talos_research.db")
+    table.add_row("Quality appraisal fields",
+                  "papers.quality_score / quality_rubric_json / evidence_quadrant")
 
     return Panel(
         Align.left(table),

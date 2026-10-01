@@ -4,9 +4,23 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-01 (v5.15.5 -- Σύστημα Βοήθειας Διπλής Επιφάνειας & Κανόνας Επιστημονικών Θεμελίων)
+> **Τελευταία Ενημέρωση:** 2026-10-01 (v5.16.0 -- Μηχανή Αξιολόγησης Ποιότητας PRISMA & Διαξονικής Επιστημονικής Αυστηρότητας)
 
 ---
+
+## Φάση 67: Αξιολόγηση Ποιότητας PRISMA & Μηχανή Διαξονικής Επιστημονικής Αυστηρότητας (v5.16.0)
+
+### Κατάσταση: ΟΛΟΚΛΗΡΩΘΗΚΕ (2026-10-01)
+
+- [x] **Τυποποιημένη ρουμπρίκα ποιότητας Kitchenham (2007)** -- το `src/prisma/quality_appraisal.py` παρέχει `KitchenhamRubric` (έξι τριμερείς κατηγορικές ερωτήσεις), `QualityAppraisalResult` και `PrismaQualityAppraiser`, με κανονικοποιητή `_normalize_ternary` για απόκλιση τοπικών μοντέλων.
+- [x] **Τυπικός διαχωρισμός συνάφειας/αυστηρότητας** -- το `S_qual = (άθροισμα(Q_i)/6.0)*10.0` υπολογίζεται ανεξάρτητα από το `overall_score` τεσσάρων επιπέδων· η `map_evidence_quadrant()` προβάλλει κάθε μελέτη στο Δισδιάστατο Επίπεδο Απόφασης Τεκμηρίων (ELITE_FOUNDATIONAL, IDEA_MINE, METHODOLOGICAL_EXEMPLAR, METHODOLOGICAL_NOISE).
+- [x] **Μαζική αξιολόγηση ποιότητας** -- `--appraise-quality [--min-score 7.0]` (CLI) και Επιλογή 15 της Ομάδας 3 TUI αξιολογούν μη αποθηκευμένα υποψήφια άρθρα ταυτόχρονα μέσω `ThreadPoolExecutor` (`Semaphore(2)` τοπικά / 8 Cloud Mesh) και αποδίδουν πίνακα κατανομής τεταρτημορίων Rich.
+- [x] **Επέκταση σχήματος SQLite** -- στήλες `quality_score REAL`, `quality_rubric_json TEXT`, `evidence_quadrant TEXT` προστίθενται ιδιοδύναμα με νέα βοηθητική μέθοδο `update_paper_quality()`.
+- [x] **Εξαγωγή BibTeX με διπλό φίλτρο** -- `export_library(min_quality, quadrant)` συν πεδίο `note` με Συνάφεια, Επιστημονική Ποιότητα και Τεταρτημόριο.
+- [x] **Παραπομπές IEEE Kitchenham [11]-[12]** στο `README.md` (EN και αντίστοιχη ελληνική ενότητα).
+- [x] **Φάκελος Κανόνα 10, αρ. 05** -- `docs/internal/academic/05_PRISMA_QUALITY_APPRAISAL_KITCHENHAM.md` (7 ενότητες, ανιχνευσιμότητα διπλού επιπέδου).
+- [x] **Συγχρονισμός έκδοσης** -- 6 βασικά αρχεία + docker-compose.yml (`talos:5.16.0`) + CITATION.cff (5.16.0, 2026-10-01) + μεταδεδομένα tray/visualizer/wizard/strategy/diagnostics + docstrings src/prisma/ και src/search/ + 19 κανονικά έγγραφα σε v5.16.0 (2026-10-01).
+- [x] **Πύλες επαλήθευσης πέρασαν** -- compileall, test_quality_appraisal (17 ερμητικά), test_system_integrity, test_talos_version (5.16.0), CLI `--appraise-quality`, BibTeX `min_quality=7.5`, `--help` / `GET /help`, README [11]/[12], φάκελος 0 U+FFFD, verify_dependency_map --ci (έξοδος 0), bash -n, σάρωση UTF-8 (0 U+FFFD).
 
 ## Φάση 66: Σύστημα Βοήθειας Διπλής Επιφάνειας & Επιστημονικά Θεμέλια IEEE (v5.15.5)
 

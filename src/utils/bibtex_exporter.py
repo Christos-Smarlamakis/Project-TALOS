@@ -11,7 +11,7 @@
 
 """
 Module: bibtex_exporter.py
-Project: TALOS v5.14.2
+Project: TALOS v5.16.0
 Description:
     Automated BibTeX / LaTeX scientific library exporter for TALOS. Reads the
     active-profile SQLite research database (``talos_research.db``) and emits a
@@ -110,7 +110,7 @@ class BibTeXExporter:
     COLUMNS = (
         "doi", "url", "title", "authors", "publication_year", "abstract",
         "source", "overall_score", "suggested_tags", "publisher",
-        "journal_issn", "prisma_decision",
+        "journal_issn", "prisma_decision", "quality_score", "evidence_quadrant",
     )
 
     def __init__(self):
@@ -223,6 +223,25 @@ class BibTeXExporter:
     # -- Single-entry formatting --
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _rigor_label(quality_score):
+        """Map a Kitchenham quality score onto a short rigor label.
+
+        Args:
+            quality_score (float or None): Normalized ``S_qual`` in [0.0, 10.0].
+
+        Returns:
+            str: One of ``High Rigor``, ``Moderate Rigor``, or ``Low Rigor``.
+        """
+        if quality_score is None:
+            return "Unassessed"
+        value = float(quality_score)
+        if value >= 7.5:
+            return "High Rigor"
+        if value >= 5.0:
+            return "Moderate Rigor"
+        return "Low Rigor"
+
     def _format_entry(self, paper, used_keys):
         """Render a single paper record as a BibTeX entry block.
 
@@ -242,12 +261,20 @@ class BibTeXExporter:
         venue = self._venue(paper)
 
         score = paper.get("overall_score")
-        note = ""
+        quality = paper.get("quality_score")
+        quadrant = paper.get("evidence_quadrant")
+        note_parts = []
         if score is not None:
-            note = f"TALOS evaluation score: {float(score):.2f}"
-        kappa = paper.get("swarm_kappa")
-        if kappa is not None:
-            note = (note + f"; consensus Kappa: {float(kappa):.3f}").strip("; ")
+            note_parts.append(f"TALOS Relevance: {float(score):.1f}/10")
+        if quality is not None:
+            rigor = self._rigor_label(quality)
+            note_parts.append(
+                f"Scientific Quality: {float(quality):.1f}/10 "
+                f"(Kitchenham 2007: {rigor})"
+            )
+            if quadrant:
+                note_parts.append(f"Quadrant: {quadrant}")
+        note = "; ".join(note_parts)
 
         lines = [f"@{entry_type}{{{cite_key},"]
         lines.append(f"  title = {{{_escape_bibtex(title)}}},")
@@ -276,7 +303,7 @@ class BibTeXExporter:
     # ------------------------------------------------------------------
 
     def export_library(self, output_path=None, min_score=7.0, only_prisma_included=False,
-                       active_profile=None):
+                       active_profile=None, min_quality=0.0, quadrant=None):
         """Export curated papers to a BibTeX (.bib) library file.
 
         Args:
@@ -287,6 +314,11 @@ class BibTeXExporter:
                 ``prisma_decision`` equals ``INCLUDE`` instead of score-filtering.
             active_profile (str or None): Optional profile name. When None, the
                 DatabaseManager resolves the active profile automatically.
+            min_quality (float): Minimum Kitchenham ``quality_score`` threshold.
+                Papers with a ``NULL`` quality score are always retained so
+                unappraised studies are not silently dropped (dual filter).
+            quadrant (str or None): Optional ``evidence_quadrant`` restriction.
+                When set, only papers in that quadrant are exported.
 
         Returns:
             tuple[str, int]: (output_file_path, exported_count).
@@ -301,7 +333,7 @@ class BibTeXExporter:
             db_path = os.path.join(self.project_root, "_profiles", active_profile, "talos_research.db")
         db = DatabaseManager(db_path=db_path)
 
-        # -- Build the selection query. --
+        # -- Build the selection query (dual relevance/quality filter). --
         column_sql = ", ".join(self.COLUMNS)
         if only_prisma_included:
             rows = db.execute_query(
@@ -310,10 +342,19 @@ class BibTeXExporter:
                 fetch_all=True,
             ) or []
         else:
+            conditions = [
+                "overall_score >= ?",
+                "(quality_score >= ? OR quality_score IS NULL)",
+            ]
+            params = [float(min_score), float(min_quality)]
+            if quadrant:
+                conditions.append("evidence_quadrant = ?")
+                params.append(quadrant)
+            where_clause = " AND ".join(conditions)
             rows = db.execute_query(
-                f"SELECT {column_sql} FROM papers WHERE overall_score >= ? "
+                f"SELECT {column_sql} FROM papers WHERE {where_clause} "
                 "ORDER BY overall_score DESC",
-                (float(min_score),),
+                tuple(params),
                 fetch_all=True,
             ) or []
 
@@ -325,7 +366,7 @@ class BibTeXExporter:
 
         with open(output, "w", encoding="utf-8") as handle:
             handle.write("% TALOS curated literature library\n")
-            handle.write("% Generated by Project TALOS v5.14.2 (BibTeX Scientific Exporter)\n\n")
+            handle.write("% Generated by Project TALOS v5.16.0 (BibTeX Scientific Exporter)\n\n")
             handle.write("\n\n".join(entries))
             if entries:
                 handle.write("\n")
@@ -357,7 +398,7 @@ class BibTeXExporter:
         return panel
 
     def export_and_render(self, output_path=None, min_score=7.0, only_prisma_included=False,
-                          active_profile=None):
+                          active_profile=None, min_quality=0.0, quadrant=None):
         """Export the library and render the confirmation panel in one call.
 
         Args:
@@ -365,6 +406,8 @@ class BibTeXExporter:
             min_score (float): Minimum overall_score threshold.
             only_prisma_included (bool): Export PRISMA-included studies only.
             active_profile (str or None): Optional explicit profile name.
+            min_quality (float): Minimum Kitchenham quality_score threshold.
+            quadrant (str or None): Optional evidence_quadrant restriction.
 
         Returns:
             tuple[str, int]: (output_file_path, exported_count).
@@ -374,6 +417,8 @@ class BibTeXExporter:
             min_score=min_score,
             only_prisma_included=only_prisma_included,
             active_profile=active_profile,
+            min_quality=min_quality,
+            quadrant=quadrant,
         )
         self.render_export_summary(filepath, count)
         return filepath, count
@@ -399,6 +444,11 @@ def main(argv=None):
                         help="Target .bib path (default: data/exports/talos_library.bib).")
     parser.add_argument("--profile", default=None,
                         help="Optional explicit profile name.")
+    parser.add_argument("--min-quality", type=float, default=0.0,
+                        help="Minimum Kitchenham quality_score threshold (default: 0.0).")
+    parser.add_argument("--quadrant", default=None,
+                        help="Optional evidence_quadrant filter "
+                             "(ELITE_FOUNDATIONAL, IDEA_MINE, METHODOLOGICAL_EXEMPLAR, METHODOLOGICAL_NOISE).")
     args = parser.parse_args(argv)
 
     exporter = BibTeXExporter()
@@ -407,6 +457,8 @@ def main(argv=None):
         min_score=args.min_score,
         only_prisma_included=args.prisma_only,
         active_profile=args.profile,
+        min_quality=args.min_quality,
+        quadrant=args.quadrant,
     )
     return 0
 

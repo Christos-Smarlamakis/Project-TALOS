@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: neural_vector_search.py
-Project: TALOS v5.15.5
+Project: TALOS v5.16.0
 Description:
     Neural vector semantic search engine. Encodes a research query and candidate
     paper abstracts into dense embedding vectors using the local Ollama model

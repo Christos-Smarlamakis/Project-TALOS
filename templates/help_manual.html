@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Project TALOS Interactive Command Reference and Architecture Guide. Self-contained, air-gapped web manual.">
-<title>TALOS v5.15.5 -- Interactive Command Reference &amp; Architecture Guide</title>
+<title>TALOS v5.16.0 -- Interactive Command Reference &amp; Architecture Guide</title>
 <style>
   :root {
     --bg: #0f1117;
@@ -129,7 +129,7 @@
 </head>
 <body>
 <header>
-  <h1>Project TALOS v5.15.5 -- Interactive Command Reference &amp; Architecture Guide</h1>
+  <h1>Project TALOS v5.16.0 -- Interactive Command Reference &amp; Architecture Guide</h1>
   <p class="subtitle">Dual-Surface User Assistance System. Fully air-gapped, local-first, zero external CDN.</p>
 </header>
 
@@ -174,8 +174,13 @@
       <button class="copy" type="button">Copy</button>
     </div>
     <div class="cmd-row">
-      <code>python talos.py --export-bib [min_score]</code>
-      <span class="desc">Export curated papers to <code>data/exports/talos_library.bib</code>. <small>(Exports)</small></span>
+      <code>python talos.py --export-bib [score] [--min-quality Q] [--quadrant Q]</code>
+      <span class="desc">Export curated papers to <code>data/exports/talos_library.bib</code> with dual relevance/quality filtering. <small>(Exports)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --appraise-quality [--min-score 7.0]</code>
+      <span class="desc">Batch Kitchenham (2007) scientific quality appraisal with 2D evidence-quadrant classification. <small>(Quality Appraisal)</small></span>
       <button class="copy" type="button">Copy</button>
     </div>
     <div class="cmd-row">
@@ -269,6 +274,33 @@
       <tr><td>PRISMA-ScR LaTeX synthesis</td><td class="dir">src/prisma/scoping_review_synthesizer.py output</td></tr>
       <tr><td>Active profile database</td><td class="dir">data/talos_research.db (default)</td></tr>
       <tr><td>Isolated profile databases</td><td class="dir">_profiles/&lt;profile&gt;/talos_research.db</td></tr>
+      <tr><td>Quality appraisal fields</td><td class="dir">papers.quality_score / quality_rubric_json / evidence_quadrant</td></tr>
+    </table>
+  </section>
+
+  <!-- Card 6: PRISMA Quality Appraisal & 2D Quadrants -->
+  <section class="card wide" data-search="prisma quality appraisal kitchenham scientific rigor quadrant evidence decision plane relevance elite foundational idea mine methodological exemplar noise">
+    <h2>PRISMA Scientific Quality Appraisal &amp; 2D Quadrants (Kitchenham 2007)</h2>
+    <p>The Kitchenham et al. (2007) standardized rubric decouples semantic
+    relevance (S_rel) from methodological rigor (S_qual). Each study is scored on
+    six three-point questions and mapped onto the 2D Evidence Decision Plane
+    below.</p>
+    <div class="cmd-row">
+      <code>python talos.py --appraise-quality --min-score 7.0</code>
+      <span class="desc">Appraise candidate papers (overall_score &gt;= 7.0) and classify them into quadrants.</span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --export-bib 7.0 --min-quality 7.5 --quadrant ELITE_FOUNDATIONAL</code>
+      <span class="desc">Export only high-rigor foundational studies with the dual-threshold filter.</span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <table>
+      <tr><th>Quadrant</th><th>S_rel</th><th>S_qual</th><th>Interpretation</th></tr>
+      <tr><td>ELITE_FOUNDATIONAL</td><td>&gt;= 7.0</td><td>&gt;= 7.5</td><td>High relevance and high rigor; the literature foundation.</td></tr>
+      <tr><td>IDEA_MINE</td><td>&gt;= 7.0</td><td>&lt; 7.5</td><td>High relevance but weak rigor; promising ideas needing scrutiny.</td></tr>
+      <tr><td>METHODOLOGICAL_EXEMPLAR</td><td>&lt; 7.0</td><td>&gt;= 7.5</td><td>Low relevance but strong rigor; transferable methods.</td></tr>
+      <tr><td>METHODOLOGICAL_NOISE</td><td>&lt; 7.0</td><td>&lt; 7.5</td><td>Low relevance and low rigor; unlikely to contribute.</td></tr>
     </table>
   </section>
 </main>

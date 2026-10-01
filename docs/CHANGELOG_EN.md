@@ -2,6 +2,36 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.16.0] - 2026-10-01 -- PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine (Kitchenham 2007 Standard)
+
+### Added
+
+- **PRISMA Quality Appraisal engine** (`src/prisma/quality_appraisal.py`): a standardized six-question, three-point categorical quality rubric formalizing the Kitchenham et al. (2007) guidelines for systematic literature reviews. The typed Pydantic-v2 schema (`KitchenhamRubric`) enforces each question onto the strict {0.0, 0.5, 1.0} grid (aims clarity, context realism, baseline rigor, statistical validity, open reproducibility, limitations and negative results) with a permissive ternary normalizer (`_normalize_ternary`) that snaps drifted local-LLM outputs back onto the grid. `QualityAppraisalResult` binds the normalized methodological-quality score, the rubric, and the evidence quadrant.
+
+- **Formal decoupling of Semantic Relevance ($S_{rel}$) from Methodological Quality ($S_{qual}$)**: the quality score is computed strictly as `S_qual = (sum(Q_i) / 6.0) * 10.0`, independently of the four-layer `overall_score`. `map_evidence_quadrant()` projects every study onto a 2D Evidence Decision Plane with orthogonal thresholds ($\tau_{rel}=7.0$, $\tau_{qual}=7.5$), yielding four quadrants: `ELITE_FOUNDATIONAL`, `IDEA_MINE`, `METHODOLOGICAL_EXEMPLAR`, and `METHODOLOGICAL_NOISE`.
+
+- **Batch quality appraisal** (`PrismaQualityAppraiser.appraise_candidates_batch`, CLI `--appraise-quality [--min-score 7.0]`): queries the active-profile SQLite database for papers with `overall_score >= min_relevance AND quality_score IS NULL`, appraises them concurrently via `ThreadPoolExecutor` (bounded by `threading.Semaphore(2)` on local GPU, 8 workers on the Cloud Mesh), persists each result, and renders a Rich quadrant-distribution table (`render_quadrant_summary`).
+
+- **SQLite schema expansion** (`src/core/database_manager.py`): idempotent `ALTER TABLE` adds `quality_score REAL`, `quality_rubric_json TEXT`, and `evidence_quadrant TEXT` columns to the `papers` table, with a new `update_paper_quality()` helper for WAL-safe concurrent persistence.
+
+- **BibTeX dual-filter export** (`src/utils/bibtex_exporter.py`): `export_library()` gains `min_quality` and `quadrant` parameters, building `overall_score >= ? AND (quality_score >= ? OR quality_score IS NULL)` (plus an optional quadrant predicate). Each generated entry now emits a `note` field in the form `{TALOS Relevance: 9.2/10, Scientific Quality: 8.3/10 (Kitchenham 2007: High Rigor), Quadrant: ELITE_FOUNDATIONAL}`.
+
+- **Kitchenham IEEE citations [11]-[12]** (`README.md`): Section 5 (English) and the mirrored Greek section append the formal Kitchenham and Charters (2007) EBSE technical report and the Kitchenham et al. (2009) Information and Software Technology systematic-review citations.
+
+- **Rule 10 private academic dossier** (`docs/internal/academic/05_PRISMA_QUALITY_APPRAISAL_KITCHENHAM.md`): a seven-section confidential dossier implementing the dual-layer traceability standard, with metadata and BibTeX for Kitchenham (2007/2009), Higgins (2011/2019) Cochrane Risk of Bias, and PRISMA 2020 item 11; LaTeX equations; an ELI5 explanation; a 1:1 code traceability matrix; engineering adaptations; version lineage; and pre-compiled PhD/ICBE 2026 excerpts.
+
+### Changed
+
+- **Dual-Surface Help System** (`src/utils/help_system.py` and `templates/help_manual.html`): Panel 1 documents `--appraise-quality [--min-score 7.0]` and the dual-threshold `--export-bib`; Panel 4 documents the `quality_score` / `evidence_quadrant` database fields; the Web Manual gains a new interactive card with click-to-copy commands and a four-quadrant visual explanation.
+
+- **CLI & TUI integration** (`talos.py`): `_handle_cli_flags()` dispatches `--appraise-quality`; `analysis_visualization_menu()` (Group 3) gains Option 15 "PRISMA Scientific Quality Appraisal & 2D Quadrant Analysis (Kitchenham 2007)" (Back renumbered to Option 16).
+
+- **Version strings synchronized to 5.16.0** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py` version assertion), `docker-compose.yml` (`talos:5.16.0`), `CITATION.cff` (version 5.16.0, date-released 2026-10-01), tray/visualizer/wizard/strategy/diagnostics metadata, `src/prisma/` and `src/search/` docstrings, and all 19 canonical documentation files (dated 2026-10-01).
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_quality_appraisal.py -q` (17 passed, hermetic); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.16.0); `python talos.py --appraise-quality --min-score 7.0` renders the Rich quadrant table; `python talos.py --help` shows `--appraise-quality`; BibTeX `min_quality=7.5` dual-filter export; `GET /help` renders the updated HTML manual; README [11]/[12] present in EN and GR; dossier has 0 U+FFFD glyphs; `verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.15.5] - 2026-10-01 -- Dual-Surface Interactive Help System & Scientific Foundations Canon
 
 ### Added

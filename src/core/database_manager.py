@@ -162,6 +162,17 @@ class DatabaseManager:
         # exporter can filter INCLUDE studies without re-running the pipeline. --
         if cols and not any(col[1] == 'prisma_decision' for col in cols):
             self.execute_query("ALTER TABLE papers ADD COLUMN prisma_decision TEXT DEFAULT NULL;", commit=True)
+        # -- v5.16.0: persist the standardized Kitchenham (2007) quality
+        # appraisal so the BibTeX exporter can dual-filter by methodological
+        # rigor. quality_score stores the normalized S_qual in [0.0, 10.0],
+        # quality_rubric_json stores the full six-question rubric, and
+        # evidence_quadrant stores the 2D decision-plane classification. --
+        if cols and not any(col[1] == 'quality_score' for col in cols):
+            self.execute_query("ALTER TABLE papers ADD COLUMN quality_score REAL;", commit=True)
+        if cols and not any(col[1] == 'quality_rubric_json' for col in cols):
+            self.execute_query("ALTER TABLE papers ADD COLUMN quality_rubric_json TEXT;", commit=True)
+        if cols and not any(col[1] == 'evidence_quadrant' for col in cols):
+            self.execute_query("ALTER TABLE papers ADD COLUMN evidence_quadrant TEXT;", commit=True)
         # -- v5.15.1: persistent vector cache table for accelerated neural
         # retrieval. Stores one BLOB-encoded float32 vector per paper per
         # embedding model, so the neural vector search engine can skip
@@ -245,6 +256,32 @@ class DatabaseManager:
             datetime.now(), paper_id)
         self.execute_query(sql, params, commit=True)
         print(f"  --> Updated evaluation for Paper ID: {paper_id}")
+
+    def update_paper_quality(self, paper_id: int, quality_score: float,
+                             rubric_json: str, quadrant: str) -> None:
+        """Persist a Kitchenham quality appraisal onto an existing paper.
+
+        Updates the ``quality_score``, ``quality_rubric_json``, and
+        ``evidence_quadrant`` columns for a single paper row. The method is
+        idempotent and safe to call from concurrent batch-appraisal workers
+        because SQLite runs in WAL journal mode (see ``_apply_pragmas``).
+
+        Args:
+            paper_id (int): The primary key of the paper to update.
+            quality_score (float): Normalized ``S_qual`` in [0.0, 10.0].
+            rubric_json (str): JSON-serialized ``KitchenhamRubric``.
+            quadrant (str): One of the four evidence quadrant identifiers.
+
+        Returns:
+            None
+        """
+        sql = """UPDATE papers SET quality_score=?, quality_rubric_json=?,
+            evidence_quadrant=? WHERE id=?"""
+        self.execute_query(
+            sql,
+            (float(quality_score), rubric_json, quadrant, int(paper_id)),
+            commit=True,
+        )
 
     def get_papers_not_recently_evaluated(self, days_window, limit):
         cutoff = datetime.now() - timedelta(days=days_window)

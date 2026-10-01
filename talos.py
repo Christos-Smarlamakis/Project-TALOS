@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.15.5
+Project: TALOS v5.16.0
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,16 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.16.0: PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine
+    (Kitchenham 2007 Standard) -- a standardized six-question, three-point
+    quality rubric (src/prisma/quality_appraisal.py) decouples Semantic
+    Relevance (S_rel) from Methodological Quality (S_qual) and maps each study
+    onto a 2D Evidence Decision Plane (Elite Foundational, Idea Mine,
+    Methodological Exemplar, Noise); batch appraisal via --appraise-quality,
+    SQLite schema expansion (quality_score / quality_rubric_json /
+    evidence_quadrant), and BibTeX dual-filter export (--min-quality /
+    --quadrant); README.md gains Kitchenham IEEE citations [11]-[12].
 
     v5.15.5: Dual-Surface Interactive Help System & Scientific Foundations
     Canon -- a rich four-panel console manual (src/utils/help_system.py)
@@ -1924,7 +1934,8 @@ def analysis_visualization_menu(python_exe):
         "12. Baseline Report (Academic -- 600 DPI)",
         "13. Academic Export (BibTeX & LaTeX Tables)",
         "14. PRISMA-ScR Declarative Synthesis Pipeline (Stanford DSPy Engine)",
-        "15. Back / Return to Main Menu"
+        "15. PRISMA Scientific Quality Appraisal & 2D Quadrant Analysis (Kitchenham 2007)",
+        "16. Back / Return to Main Menu"
     ])
     if not choice or "Back" in choice: return
     if choice.startswith("1."): _launch_visualizer()
@@ -1987,6 +1998,31 @@ def analysis_visualization_menu(python_exe):
             PrismaExecutor(evaluation_mode=evaluation_mode).run_interactive()
         except Exception as e:
             console.print(f"[red]PRISMA pipeline error: {e}[/red]")
+        safe_pause()
+    elif choice.startswith("15."):
+        console.print(_build_info_panel(
+            "PRISMA Scientific Quality Appraisal & 2D Quadrant Analysis (Kitchenham 2007)",
+            "Runs the standardized Kitchenham et al. (2007) six-question quality\n"
+            "appraisal on candidate papers (overall_score >= 7.0 by default),\n"
+            "decouples semantic relevance (S_rel) from methodological rigor\n"
+            "(S_qual), and maps every study onto the 2D Evidence Decision Plane\n"
+            "(Elite Foundational, Idea Mine, Methodological Exemplar, Noise).",
+            border_style="cyan",
+        ))
+        min_raw = questionary.text(
+            "Minimum relevance threshold (overall_score, default 7.0):",
+            default="7.0",
+            style=TALOS_QUESTIONARY_STYLE, instruction=NAV_TEXT,
+        ).ask()
+        try:
+            min_score = float(min_raw) if min_raw else 7.0
+        except ValueError:
+            min_score = 7.0
+        try:
+            from src.prisma.quality_appraisal import PrismaQualityAppraiser
+            PrismaQualityAppraiser().run(min_relevance=min_score)
+        except Exception as e:
+            console.print(f"[red]Quality appraisal error: {e}[/red]")
         safe_pause()
 
 
@@ -2304,6 +2340,18 @@ def _handle_cli_flags(argv):
                     threshold = 7.0
                 break
         BibTeXExporter().export_and_render(min_score=threshold)
+        return True
+    # -- v5.16.0: PRISMA Quality Appraisal (--appraise-quality [--min-score]). --
+    if "--appraise-quality" in argv:
+        from src.prisma.quality_appraisal import PrismaQualityAppraiser
+        min_score = 7.0
+        raw = _flag_value(argv, "--min-score")
+        if raw:
+            try:
+                min_score = float(raw)
+            except ValueError:
+                min_score = 7.0
+        PrismaQualityAppraiser().run(min_relevance=min_score)
         return True
     # -- v5.15.0: Universal Search Hub fast-dispatch flags. --
     if "--snowball" in argv:

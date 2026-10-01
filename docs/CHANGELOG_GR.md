@@ -2,6 +2,36 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.16.0] - 2026-10-01 -- Μηχανή Αξιολόγησης Ποιότητας PRISMA & Διαξονικής Επιστημονικής Αυστηρότητας (Πρότυπο Kitchenham 2007)
+
+### Προστέθηκε
+
+- **Μηχανή Αξιολόγησης Ποιότητας PRISMA** (`src/prisma/quality_appraisal.py`): μια τυποποιημένη ρουμπρίκα ποιότητας έξι ερωτήσεων και τριών σημείων που υλοποιεί τις κατευθυντήριες οδηγίες Kitchenham et al. (2007) για συστηματικές ανασκοπήσεις λογισμικού. Το τυποποιημένο σχήμα Pydantic v2 (`KitchenhamRubric`) επιβάλλει σε κάθε ερώτηση την αυστηρή τριμερή κλίμακα {0.0, 0.5, 1.0} (σαφήνεια στόχων, ρεαλισμός πλαισίου, αυστηρότητα βάσεων σύγκρισης, στατιστική εγκυρότητα, ανοιχτή αναπαραγωγιμότητα, περιορισμοί και αρνητικά αποτελέσματα) με έναν ανεκτικό κανονικοποιητή τριμερών τιμών (`_normalize_ternary`) που επαναφέρει τυχόν αποκλίνουσες εξόδους τοπικών μοντέλων στην κλίμακα. Το `QualityAppraisalResult` συνδέει την κανονικοποιημένη βαθμολογία μεθοδολογικής ποιότητας, τη ρουμπρίκα και το τεταρτημόριο τεκμηρίων.
+
+- **Τυπικός διαχωρισμός Σημασιολογικής Συνάφειας (S_rel) από τη Μεθοδολογική Ποιότητα (S_qual)**: η βαθμολογία ποιότητας υπολογίζεται αυστηρά ως `S_qual = (άθροισμα(Q_i) / 6.0) * 10.0`, ανεξάρτητα από τη βαθμολογία `overall_score` τεσσάρων επιπέδων. Η `map_evidence_quadrant()` προβάλλει κάθε μελέτη σε ένα Δισδιάστατο Επίπεδο Απόφασης Τεκμηρίων με ορθογώνια κατώφλια (τ_rel = 7.0, τ_qual = 7.5), δίνοντας τέσσερα τεταρτημόρια: `ELITE_FOUNDATIONAL`, `IDEA_MINE`, `METHODOLOGICAL_EXEMPLAR` και `METHODOLOGICAL_NOISE`.
+
+- **Μαζική αξιολόγηση ποιότητας** (`PrismaQualityAppraiser.appraise_candidates_batch`, CLI `--appraise-quality [--min-score 7.0]`): αναζητά στη βάση δεδομένων SQLite του ενεργού προφίλ άρθρα με `overall_score >= min_relevance AND quality_score IS NULL`, τα αξιολογεί ταυτόχρονα μέσω `ThreadPoolExecutor` (οριοθετημένο από `threading.Semaphore(2)` στην τοπική GPU, 8 εργάτες στο Cloud Mesh), αποθηκεύει κάθε αποτέλεσμα και αποδίδει έναν πίνακα κατανομής τεταρτημορίων Rich (`render_quadrant_summary`).
+
+- **Επέκταση σχήματος SQLite** (`src/core/database_manager.py`): ιδιοδύναμες εντολές `ALTER TABLE` προσθέτουν τις στήλες `quality_score REAL`, `quality_rubric_json TEXT` και `evidence_quadrant TEXT` στον πίνακα `papers`, με νέα μέθοδο `update_paper_quality()` για ταυτόχρονη εγγραφή ασφαλή σε WAL.
+
+- **Εξαγωγή BibTeX με διπλό φίλτρο** (`src/utils/bibtex_exporter.py`): η `export_library()` αποκτά παραμέτρους `min_quality` και `quadrant`, κατασκευάζοντας `overall_score >= ? AND (quality_score >= ? OR quality_score IS NULL)` (συν προαιρετικό κατηγόρημα τεταρτημορίου). Κάθε εγγραφή εκπέμπει πλέον πεδίο `note` της μορφής `{TALOS Relevance: 9.2/10, Scientific Quality: 8.3/10 (Kitchenham 2007: High Rigor), Quadrant: ELITE_FOUNDATIONAL}`.
+
+- **Παραπομπές IEEE Kitchenham [11]-[12]** (`README.md`): η Ενότητα 5 (Αγγλικά) και η αντίστοιχη ελληνική ενότητα προσθέτουν τις τυπικές παραπομπές Kitchenham και Charters (2007) (τεχνική αναφορά EBSE) και Kitchenham et al. (2009) (Information and Software Technology).
+
+- **Ιδιωτικός ακαδημαϊκός φάκελος Κανόνα 10** (`docs/internal/academic/05_PRISMA_QUALITY_APPRAISAL_KITCHENHAM.md`): εμπιστευτικός φάκελος επτά ενοτήτων που υλοποιεί το πρότυπο ανιχνευσιμότητας διπλού επιπέδου, με μεταδεδομένα και BibTeX για Kitchenham (2007/2009), Higgins (2011/2019) Cochrane Risk of Bias και PRISMA 2020 σημείο 11· εξισώσεις LaTeX· εξήγηση ELI5· μήτρα ανιχνευσιμότητας κώδικα 1:1· προσαρμογές μηχανικής· καταγωγή εκδόσεων· και έτοιμα αποσπάσματα διδακτορικής διατριβής / ICBE 2026.
+
+### Άλλαξε
+
+- **Σύστημα Βοήθειας Διπλής Επιφάνειας** (`src/utils/help_system.py` και `templates/help_manual.html`): ο Πίνακας 1 τεκμηριώνει το `--appraise-quality [--min-score 7.0]` και το `--export-bib` με διπλό κατώφλι· ο Πίνακας 4 τεκμηριώνει τα πεδία βάσης `quality_score` / `evidence_quadrant`· το Web Εγχειρίδιο αποκτά νέα διαδραστική κάρτα με κουμπιά αντιγραφής και οπτική εξήγηση των τεσσάρων τεταρτημορίων.
+
+- **Ενσωμάτωση CLI & TUI** (`talos.py`): η `_handle_cli_flags()` αποστέλλει το `--appraise-quality`· το `analysis_visualization_menu()` (Ομάδα 3) αποκτά Επιλογή 15 "PRISMA Scientific Quality Appraisal & 2D Quadrant Analysis (Kitchenham 2007)" (η Επιστροφή αναριθμείται σε Επιλογή 16).
+
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.16.0** στα 6 βασικά αρχεία κώδικα (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` μεταδεδομένα/lifespan/περιγραφή FastAPI, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py` βεβαίωση έκδοσης), `docker-compose.yml` (`talos:5.16.0`), `CITATION.cff` (έκδοση 5.16.0, ημερομηνία κυκλοφορίας 2026-10-01), μεταδεδομένα tray/visualizer/wizard/strategy/diagnostics, docstrings `src/prisma/` και `src/search/`, και στα 19 κανονικά έγγραφα τεκμηρίωσης (ημερομηνία 2026-10-01).
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_quality_appraisal.py -q` (17 πέρασε, ερμητικό)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.16.0)· `python talos.py --appraise-quality --min-score 7.0` αποδίδει τον πίνακα τεταρτημορίων Rich· `python talos.py --help` εμφανίζει το `--appraise-quality`· εξαγωγή BibTeX με `min_quality=7.5`· `GET /help` αποδίδει το ενημερωμένο HTML εγχειρίδιο· παρουσία [11]/[12] σε EN και GR· φάκελος με 0 U+FFFD· `verify_dependency_map.py --ci` (έξοδος 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.15.5] - 2026-10-01 -- Σύστημα Βοήθειας Διπλής Επιφάνειας & Κανόνας Επιστημονικών Θεμελίων
 
 ### Προστέθηκε
