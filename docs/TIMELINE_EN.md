@@ -4,9 +4,31 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-09-29 (v5.15.3 -- Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening)
+> **Last Updated:** 2026-10-01 (v5.15.5 -- Dual-Surface Interactive Help System & Scientific Foundations Canon)
 
 ---
+
+## Phase 66: Dual-Surface Help System & IEEE Scientific Foundations (v5.15.5)
+
+### Status: COMPLETED (2026-10-01)
+
+- [x] **Dual-Surface Help Architecture** -- `src/utils/help_system.py` renders a four-panel Rich console manual (CLI Fast-Dispatch Flags, Interactive Controls & Navigation, Port Mapping & Services Architecture, Generated Reports & Storage Artifacts), served via `talos.py --help` and TUI Option 7 with an interactive `[O] Open Interactive Web Manual` / `[Enter] Return to Menu` prompt (ISO/IEC 25010 Context of Use).
+- [x] **Interactive Web Manual** -- `templates/help_manual.html` (self-contained, zero-CDN, responsive academic dark theme) served at `GET /help` with live search, click-to-copy, structured cards, and dark/print-mode toggle; `GET /manual` issues a 307 redirect. API endpoint count rises 23 -> 25.
+- [x] **Formal IEEE Scientific References** -- `README.md` Section 5 (English) and the mirrored Greek "Επιστημονικές Αναφορές & Θεωρητικό Υπόβαθρο" present 10 strictly-formatted IEEE citations ([1]-[10]).
+- [x] **TUI & CLI integration** -- `_cli_help_table()` delegates to `help_system.render_help_manual(interactive=False)`; the main menu gains Option 7 (Exit renumbered to 8).
+- [x] **Version synced** -- 6 core files + docker-compose.yml (`talos:5.15.5`) + CITATION.cff (5.15.5, 2026-10-01) + tray/visualizer/wizard/diagnostics metadata + src/prisma/ and src/search/ docstrings + 19 canonical docs to v5.15.5 (2026-10-01).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.15.5), `talos.py --help` (exit 0), `GET /help` (200) / `GET /manual` (307), verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
+
+## Phase 65: DRL Action-Space Expansion & Net2Net Checkpoint Migration (v5.15.4)
+
+### Status: COMPLETED (2026-10-01)
+
+- [x] **DRL action-space expansion to 18 sources** -- `ALL_KNOWN_SOURCES` gains `nasa_ntrs` and `hal_inria`; Gymnasium action space `Discrete(17) -> Discrete(19)` (18 sources + sleep) and observation space 23 -> 25 dims; `_load_source_list()` guarantees the full 18-source list.
+- [x] **Net2Net checkpoint surgery** -- `scripts/migrate_d3qn_checkpoint.py` widens the DuelingLSTM advantage head (15 -> 19) and LSTM input layer (21 -> 25) in `models/dddqn_trained.pth`, preserving all trained weights bit-for-bit and optimistically initialising the four new source heads; verified via strict `DuelingLSTM(25, 19).load_state_dict()` (zero mismatch); safety backup `models/dddqn_trained.pth.bak`.
+- [x] **18-source profile sync** -- `nasa_ntrs`/`hal_inria` added to `max_results_config` + query keys across `config.json`, `config.template.json`, `_profiles/default_drones/config.json`.
+- [x] **Scopus/Elsevier author normalization locked in** -- `normalize_authors()` handles `$`, `@name`/`@surname`, and `given_name`/`surname` with 4-author + et al. truncation.
+- [x] **Version synced** -- 6 code files + docker-compose.yml (`talos:5.15.4`) + CITATION.cff (5.15.4, 2026-10-01) + tray/visualizer/wizard/diagnostics metadata + src/prisma/ and src/search/ docstrings + 19 canonical docs to v5.15.4 (2026-10-01).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.15.4), DRL model strict load, daemon source detection (18/18), verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 64: Session-Level Circuit Breaker & Author Extraction Hardening (v5.15.3)
 

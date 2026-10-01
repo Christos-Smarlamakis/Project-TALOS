@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_session_circuit_breaker.py
-Project: TALOS v5.15.3
+Project: TALOS v5.15.4
 Description:
     Hermetic unit tests for the v5.15.3 reliability hardening:
 
@@ -73,6 +73,41 @@ class TestAuthorNormalization:
 
     def test_empty_list_falls_back(self):
         assert normalize_authors({"authors": []}) == "Unknown Authors"
+
+    def test_scopus_dollar_key(self):
+        paper = {"authors": [{"$": "Wang Tong"}]}
+        assert normalize_authors(paper) == "Wang Tong"
+
+    def test_scopus_at_name_surname(self):
+        paper = {"authors": [{"@name": "Bernhard", "@surname": "Kasberger"}]}
+        assert normalize_authors(paper) == "Bernhard Kasberger"
+
+    def test_scopus_mixed_dollar_and_at_keys(self):
+        paper = {"authors": [
+            {"$": "Wang Tong"},
+            {"@name": "Bernhard", "@surname": "Kasberger"},
+        ]}
+        assert normalize_authors(paper) == "Wang Tong, Bernhard Kasberger"
+
+    def test_given_name_surname(self):
+        paper = {"authors": [{"given_name": "Wang", "surname": "Tong"}]}
+        assert normalize_authors(paper) == "Wang Tong"
+
+    def test_truncate_more_than_five_authors(self):
+        paper = {"authors": [
+            "Wang Tong", "Yuan Chaochun", "Cai Yingfeng",
+            "He Youguo", "Li Ming", "Zhang Wei",
+        ]}
+        result = normalize_authors(paper)
+        assert result == "Wang Tong, Yuan Chaochun, Cai Yingfeng, He Youguo et al."
+
+    def test_exactly_five_authors_not_truncated(self):
+        paper = {"authors": ["A", "B", "C", "D", "E"]}
+        assert normalize_authors(paper) == "A, B, C, D, E"
+
+    def test_truncate_comma_delimited_string(self):
+        paper = {"authors": "A, B, C, D, E, F, G"}
+        assert normalize_authors(paper) == "A, B, C, D et al."
 
 
 # ------------------------------------------------------------------

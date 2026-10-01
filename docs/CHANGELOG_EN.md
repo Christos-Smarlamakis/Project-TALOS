@@ -2,6 +2,46 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.15.5] - 2026-10-01 -- Dual-Surface Interactive Help System & Scientific Foundations Canon
+
+### Added
+
+- **Dual-Surface Interactive Help System** (`src/utils/help_system.py`): a rich four-panel console command reference manual (Panel 1 -- categorized CLI Fast-Dispatch Flags; Panel 2 -- Interactive Controls & Navigation; Panel 3 -- Port Mapping & Services Architecture; Panel 4 -- Generated Reports & Storage Artifacts). `render_help_manual(interactive=False)` returns a `rich.console.Group` renderable consumed by `python talos.py --help`, while `render_help_manual(interactive=True)` prints the panels and prompts the user to either open the Web Manual in a browser or return to the menu (ISO/IEC 25010 Context of Use compliance). Zero emojis across every heading and cell.
+
+- **Interactive Web HTML Manual** (`templates/help_manual.html` plus `GET /help` and `GET /manual` redirect in `src/api/main_api.py`): a self-contained, zero-CDN, responsive page matching the TALOS academic dark theme, served at `http://localhost:8001/help`. Features a live search filter bar, click-to-copy buttons on every CLI command, structured cards (CLI Commands, Research Search Paradigms, Ports & Services, Directory Layout), and a dark/print-mode toggle. The API endpoint count rises from 23 to 25.
+
+- **Formal IEEE Scientific References & Theoretical Foundations** (`README.md`): Section 5 in the English guide and the mirrored "Επιστημονικές Αναφορές & Θεωρητικό Υπόβαθρο" section in the Greek guide, presenting ten strictly-formatted IEEE citations ([1]-[10]) covering Stanford DSPy, Net2Net, PRISMA 2020, PRISMA-ScR, Cohen's Kappa, Fleiss' Kappa, citation snowballing, Nomic Embed, Dueling DQN, and Double Q-Learning.
+
+### Changed
+
+- **TUI & CLI integration** (`talos.py`): `_cli_help_table()` now delegates to `help_system.render_help_manual(interactive=False)`, and the main menu gains Option 7 "Help & Command Reference Manual" (Exit renumbered to Option 8).
+
+- **Version strings synchronized to 5.15.5** across the 6 core code files, `docker-compose.yml` (`talos:5.15.5`), `CITATION.cff` (version 5.15.5, date-released 2026-10-01), tray/visualizer/wizard/diagnostics metadata, `src/prisma/` and `src/search/` docstrings, and all 19 canonical documentation files (dated 2026-10-01).
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.5); `python talos.py --help` (4-panel Rich manual, exit 0); `GET /help` (HTMLResponse 200) and `GET /manual` (307 redirect); `verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
+## [v5.15.4] - 2026-10-01 -- DRL Action-Space Expansion to 18 Sources & Net2Net Checkpoint Migration
+
+### Added
+
+- **DRL Action-Space Expansion to 18 Sources** (`src/ai/drl/talos_env.py`): `ALL_KNOWN_SOURCES` grows from 16 to 18 academic sources by appending `nasa_ntrs` and `hal_inria`, completing the 18-source autonomous foraging action space. The Gymnasium action space scales from `Discrete(17)` to `Discrete(19)` -- actions 0..17 query the 18 sources, action 18 is the sleep/cooldown action -- and the observation space scales from 23 to 25 dimensions (1 normalized hour + 18 source usage ratios + 2 streaks + 4 provider ratios). `_load_source_list()` now guarantees the full canonical 18-source list is always present, and the module docstring, `_build_obs()`, and `get_default_state_space()`/`get_default_action_space()` are synchronized to the 25-dim / 19-action baseline. The companion DRL modules (`drl_agent.py`, `drl_networks.py`, `live_agent_sources.py`, `live_agent_orchestrator.py`) and the `TestDRLEnvironment` test class were likewise re-baselined to 18 sources.
+
+- **Net2Net Checkpoint Migration Utility** (`scripts/migrate_d3qn_checkpoint.py`): a one-shot Net2Net (Net2WiderNet) tensor-surgery utility that migrates `models/dddqn_trained.pth` to the 18-source action space while preserving every trained weight bit-for-bit. It performs two complementary widening operations. First, the DuelingLSTM advantage head `A.weight` / `A.bias` is widened to `[19, 32]` / `[19]`: surviving source rows are copied exactly, the four newly introduced source heads (`openaire`, `openreview`, `nasa_ntrs`, `hal_inria`) are initialized with the mean of the top-5 existing source rows (ranked by L2 norm) plus a +0.05 optimistic exploratory bias, and the sleep row is re-indexed to position 18. Second, the LSTM input layer `lstm1.weight_ih_l0` is widened to `[512, 25]` by name-based column remapping: existing source columns are copied by name, the four new source columns are initialized with a column-mean prior (the standard replicate-then-specialise Net2WiderNet strategy), and the two streak columns plus the four provider columns are shifted to their new trailing positions. The checkpoint metadata dictionary is updated in place (`state_dim=25`, `action_dim=19`, `source_names=18`), and the result is verified by a strict `DuelingLSTM(25, 19).load_state_dict()` load with zero tensor-mismatch errors. A safety backup `models/dddqn_trained.pth.bak` is created on first run. Note: inspection revealed the legacy checkpoint was trained on 14 sources (state_dim=21, action_dim=15), not the 16 sources assumed by the prior documentation, so the migration name-based approach expands 15 -> 19 actions and 21 -> 25 state dimensions and is robust to any legacy ordering.
+
+- **18-Source Profile Synchronization** (`config.json`, `config.template.json`, `_profiles/default_drones/config.json`): `nasa_ntrs` and `hal_inria` were added to the `max_results_config` surfaces and query-key sets (with new `nasa_ntrs_query` / `hal_inria_query` keys, plus -- in the drone profile -- the previously-missing `openreview_query` / `openaire_query` and the `core`/`scigov` result caps), so the daemon detects and reports 18 configured and working sources on startup.
+
+### Changed
+
+- **Scopus/Elsevier XML-JSON Author Normalization** (`src/utils/evaluation_history.py`): the canonical `normalize_authors()` resolver now explicitly locks in the Scopus/Elsevier XML-JSON author forms -- the `$`-wrapped value nodes, the `@name` / `@surname` attribute pairs, and the `given_name` / `surname` fallback -- with a clean 4-author + "et al." truncation for long author lists, backed by dedicated unit coverage (`tests/test_session_circuit_breaker.py`).
+
+- **Version strings synchronized to 5.15.4** across the 6 core code files, `docker-compose.yml` (`talos:5.15.4`), `CITATION.cff` (version 5.15.4, date-released 2026-10-01), tray/visualizer/wizard/diagnostics metadata, `src/prisma/` and `src/search/` docstrings, and all 19 canonical documentation files (dated 2026-10-01).
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.15.4); DRL model load verification (`DuelingLSTM(25, 19)` strict load, zero tensor mismatch); daemon source detection (Configured sources: 18, Working sources: 18); `verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.15.3] - 2026-09-29 -- Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening
 
 ### Added

@@ -6,7 +6,7 @@
 #
 """
 Module: ai_manager.py (v4.1 - Self-Healing AI Manager, Universal Cloud Mesh & Auto-Dynamic Privacy Guardrails)
-Project: TALOS v5.15.3
+Project: TALOS v5.15.4
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture

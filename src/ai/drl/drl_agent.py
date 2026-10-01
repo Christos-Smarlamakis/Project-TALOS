@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: drl_agent.py (v2.1 — 16-Source Scaling)
-Project: TALOS v5.10.1
+Module: drl_agent.py (v2.2 — 18-Source Scaling)
+Project: TALOS v5.15.4
 Description:
     Deep Reinforcement Learning agent for TALOS API source selection.
     Implements Double Dueling DQN with an LSTM-based neural network that
@@ -23,8 +23,8 @@ Description:
     - save() stores metadata (state_space, action_space, source_names)
       alongside weights for reproducibility.
 
-    v2.1 (DRL Environment Scaling & Retraining):
-    - Default dimensions are now input_dim=23 (state) and action_dim=17.
+    v2.2 (DRL Action-Space Expansion to 18 Sources):
+    - Default dimensions are now input_dim=25 (state) and action_dim=19.
     - load() auto-reconstructs the online/target networks whenever the saved
       model dimensions differ from the current environment dimensions.
 """
@@ -62,9 +62,9 @@ try:
     STATE_SPACE = get_default_state_space()
     ACTION_SPACE = get_default_action_space()
 except Exception:
-    # Fallback: canonical 16 sources + sleep = 17 actions, 23-dim observation
-    STATE_SPACE = 23
-    ACTION_SPACE = 17
+    # Fallback: canonical 18 sources + sleep = 19 actions, 25-dim observation
+    STATE_SPACE = 25
+    ACTION_SPACE = 19
 
 # ── Named tuple for storing experiences in replay memory ────────────────────
 # Each experience captures: state before action, action taken, reward received,

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Module: talos_env.py (v3.2 — 16-source / 23-dim scaling)
-Project: TALOS v5.10.1
+Module: talos_env.py (v3.3 — 18-source / 25-dim scaling)
+Project: TALOS v5.15.4
 Description:
     Gymnasium reinforcement learning environment for TALOS API source selection.
-    Supports ALL 16 academic sources dynamically (not just the original 3).
+    Supports ALL 18 academic sources dynamically (not just the original 3).
     The agent chooses which API to query next from N sources plus a "sleep"
     option. Each source has a daily call limit read from config.json.
 
@@ -12,17 +12,18 @@ Description:
     - On init, reads the list of sources from a well-known config key
       ("source_names") or auto-detects them from config keys ending in "_query".
     - For each source, reads its per-day API limit from config (defaults to 100).
-    - Action indices 0..15 correspond to the 16 sources.
-    - Action 16 is the sleep/cooldown action.
-    - Observation vector (23 dims): [hour/24.0, usage_ratio_0, ...,
-      usage_ratio_15, low_score_streak/10, error_streak/10,
+    - Action indices 0..17 correspond to the 18 sources.
+    - Action 18 is the sleep/cooldown action.
+    - Observation vector (25 dims): [hour/24.0, usage_ratio_0, ...,
+      usage_ratio_17, low_score_streak/10, error_streak/10,
       provider_ratio_0, ..., provider_ratio_3] — fully dynamic.
 
-    v3.2 (DRL Environment Scaling & Retraining):
-    - State space scaled to 23 dimensions (1 hour + 16 source ratios + 2
+    v3.3 (DRL Action-Space Expansion to 18 Sources & Net2Net Migration):
+    - State space scaled to 25 dimensions (1 hour + 18 source ratios + 2
       streaks + 4 provider ratios).
-    - Action space scaled to 17 actions (16 sources + sleep).
-    - openreview and openaire are guaranteed members of the source list.
+    - Action space scaled to 19 actions (18 sources + sleep).
+    - nasa_ntrs and hal_inria are guaranteed members of the source list,
+      completing the 18-source autonomous foraging action space.
 
     Key design decisions:
     - All source state is stored in parallel numpy arrays (calls, limits) so
@@ -49,12 +50,12 @@ from gymnasium import spaces
 # ── Default API limit when config doesn't specify one ────────────────────────
 DEFAULT_SOURCE_LIMIT = 100
 
-# ── Known 16-source list (used as fallback when config doesn't define them) ───
+# ── Known 18-source list (used as fallback when config doesn't define them) ───
 ALL_KNOWN_SOURCES = [
     "arxiv", "openalex", "semantic_scholar", "crossref", "dblp",
     "pubmed", "plos", "core", "osti", "scigov",
     "openarchives", "ieee", "elsevier", "springer",
-    "openreview", "openaire",
+    "openreview", "openaire", "nasa_ntrs", "hal_inria",
 ]
 
 # ── Provider names for observation vector (v3.0 — Provider-Aware) ─────────────
@@ -71,10 +72,10 @@ def _load_source_list(config=None):
       2. Auto-detect: scan all config keys ending in "_query", extract the
          source name before "_query", and sort alphabetically for determinism.
       3. If neither works (no config file at all), return the canonical
-         16-source list (including openreview and openaire).
+         18-source list (including nasa_ntrs and hal_inria).
 
-    v3.2 guarantee: openreview and openaire are always appended if missing,
-    so the action space is stable at 16 sources + sleep = 17 actions.
+    v3.3 guarantee: nasa_ntrs and hal_inria are always appended if missing,
+    so the action space is stable at 18 sources + sleep = 19 actions.
 
     Args:
         config (dict, optional): Loaded config.json as a dict.
@@ -98,12 +99,12 @@ def _load_source_list(config=None):
     else:
         names = []
 
-    # ── Fallback to the canonical 16-source list when discovery is empty ─────
+    # ── Fallback to the canonical 18-source list when discovery is empty ─────
     if not names:
         names = list(ALL_KNOWN_SOURCES)
 
-    # ── Guarantee openreview and openaire are always present ─────────────────
-    for required in ("openreview", "openaire"):
+    # ── Guarantee the canonical 18-source list is always present ─────────────
+    for required in ALL_KNOWN_SOURCES:
         if required not in names:
             names.append(required)
 
@@ -401,7 +402,7 @@ class TalosEnv(gym.Env):
         """
         Construct the normalized observation vector from current state.
 
-        Structure (v3.2 — 23 dims for 16 sources):
+        Structure (v3.3 — 25 dims for 18 sources):
             [0]           hour / 24.0  (0.0–1.0)
             [1 .. N]       usage ratio per source (calls/limit, 0.0–1.0)
             [N+1]          consecutive_low_scores / 10.0
@@ -482,8 +483,8 @@ def get_default_state_space():
     """
     Return the STATE_SPACE size for the default auto-detected source count.
 
-    v3.2: 16 sources -> 1 (hour) + 16 (source ratios) + 2 (streaks) + 4
-    (provider ratios) = 23 dimensions.
+    v3.3: 18 sources -> 1 (hour) + 18 (source ratios) + 2 (streaks) + 4
+    (provider ratios) = 25 dimensions.
 
     Returns:
         int: Default observation vector length (1 + num_sources + 2 + 4).
@@ -496,8 +497,8 @@ def get_default_action_space():
     """
     Return the ACTION_SPACE size for the default auto-detected source count.
 
-    v3.2: 16 sources -> 16 query actions (indices 0..15) + 1 sleep action
-    (index 16) = 17 actions.
+    v3.3: 18 sources -> 18 query actions (indices 0..17) + 1 sleep action
+    (index 18) = 19 actions.
 
     Returns:
         int: Default number of actions (num_sources + 1 sleep).

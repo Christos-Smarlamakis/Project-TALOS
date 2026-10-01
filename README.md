@@ -1,4 +1,4 @@
-# Project TALOS (v5.15.3)
+# Project TALOS (v5.15.5)
 
 ### Tactical Agentic Literature Orchestration System
 
@@ -10,9 +10,9 @@
 [![License](https://img.shields.io/badge/License-AGPLv3-red?style=flat-square)](LICENSE)
 [![DOI](https://zenodo.org/badge/1191928488.svg)](https://doi.org/10.5281/zenodo.19224912)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker)](docs/DOCKER.md)
-![Version](https://img.shields.io/badge/Version-v5.15.3-006699?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v5.15.5-006699?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square)
-[![FastAPI](https://img.shields.io/badge/FastAPI-23_REST_Endpoints-009688?style=flat-square&logo=fastapi&logoColor=white)](src/api/main_api.py)
+[![FastAPI](https://img.shields.io/badge/FastAPI-25_REST_Endpoints-009688?style=flat-square&logo=fastapi&logoColor=white)](src/api/main_api.py)
 [![Architecture](https://img.shields.io/badge/Architecture-100%25_Air--Gapped_%26_Local--First-111827?style=flat-square)](config/settings.py)
 [![System Capabilities](https://img.shields.io/badge/System_Capabilities-006699?style=flat-square&logo=html5&logoColor=white)](https://christos-smarlamakis.github.io/Project-TALOS/)
 
@@ -207,7 +207,7 @@ hub and a glassmorphism telemetry HUD console (`src/utils/tray_icon.py`).
 ### IEEE Citation
 
 C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature
-Orchestration System," version 5.15.3, 2026. [Online]. Available:
+Orchestration System," version 5.15.5, 2026. [Online]. Available:
 https://github.com/Christos-Smarlamakis/Project-TALOS, doi: 10.5281/zenodo.19224912.
 
 ### BibTeX
@@ -216,7 +216,7 @@ https://github.com/Christos-Smarlamakis/Project-TALOS, doi: 10.5281/zenodo.19224
 @software{talos2026,
   author       = {Smarlamakis, Christos and Georgopoulos, Efstratios},
   title        = {Project TALOS: Tactical Agentic Literature Orchestration System},
-  version      = {5.15.3},
+  version      = {5.15.5},
   year         = {2026},
   doi          = {10.5281/zenodo.19224912},
   url          = {https://github.com/Christos-Smarlamakis/Project-TALOS},
@@ -227,7 +227,24 @@ https://github.com/Christos-Smarlamakis/Project-TALOS, doi: 10.5281/zenodo.19224
 
 ---
 
-## 5. License & Acknowledgements
+## 5. Scientific References & Theoretical Foundations
+
+The architecture and algorithmic pipelines of Project TALOS are grounded in the following foundational peer-reviewed literature:
+
+[1] O. Khattab, A. Singh, C. Potts, M. Zaharia, and S. Rosenthal, "DSPy: Compiling declarative language model calls into self-improving pipelines," *arXiv preprint arXiv:2310.03714*, Oct. 2023.
+[2] T. Chen, I. Goodfellow, and J. Shlens, "Net2Net: Accelerating learning via knowledge transfer," in *Proc. 4th Int. Conf. Learn. Represent. (ICLR)*, San Juan, Puerto Rico, May 2016, pp. 1–10.
+[3] M. J. Page et al., "The PRISMA 2020 statement: An updated guideline for reporting systematic reviews," *BMJ*, vol. 372, p. n71, Mar. 2021, doi: 10.1136/bmj.n71.
+[4] A. C. Tricco et al., "PRISMA extension for scoping reviews (PRISMA-ScR): Checklist and explanation," *Ann. Intern. Med.*, vol. 169, no. 7, pp. 467–473, Oct. 2018, doi: 10.7326/M18-0850.
+[5] J. Cohen, "A coefficient of agreement for nominal scales," *Educ. Psychol. Meas.*, vol. 20, no. 1, pp. 37–46, Apr. 1960, doi: 10.1177/001316446002000104.
+[6] J. L. Fleiss, "Measuring nominal scale agreement among many raters," *Psychol. Bull.*, vol. 76, no. 5, pp. 378–382, Nov. 1971, doi: 10.1037/h0031619.
+[7] S. Jalali and C. Wohlin, "Systematic literature studies: Database searches vs. backward snowballing," in *Proc. ACM/IEEE Int. Symp. Empirical Softw. Eng. Meas. (ESEM)*, Lund, Sweden, Sep. 2012, pp. 29–38, doi: 10.1145/2372251.2372257.
+[8] Z. Nussbaum, J. X. Morris, B. Duderstadt, and A. Mulyar, "Nomic Embed: Training a reproducible long context text embedder," *arXiv preprint arXiv:2402.01613*, Feb. 2024.
+[9] Z. Wang et al., "Dueling network architectures for deep reinforcement learning," in *Proc. 33rd Int. Conf. Mach. Learn. (ICML)*, New York, NY, USA, Jun. 2016, pp. 1995–2003.
+[10] H. van Hasselt, A. Guez, and D. Silver, "Deep reinforcement learning with double Q-learning," in *Proc. 30th AAAI Conf. Artif. Intell. (AAAI)*, Phoenix, AZ, USA, Feb. 2016, pp. 2094–2100.
+
+---
+
+## 6. License & Acknowledgements
 
 Project TALOS is distributed under the **GNU Affero General Public License v3.0
 (AGPLv3)**.
@@ -362,14 +379,14 @@ GPU heavy και προαιρετικού Universal Cloud Mesh.
 ### Ακαδημαϊκή Παραπομπή
 
 C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature
-Orchestration System," version 5.15.3, 2026. [Online]. Available:
+Orchestration System," version 5.15.5, 2026. [Online]. Available:
 https://github.com/Christos-Smarlamakis/Project-TALOS, doi: 10.5281/zenodo.19224912.
 
 ```bibtex
 @software{talos2026,
   author       = {Smarlamakis, Christos and Georgopoulos, Efstratios},
   title        = {Project TALOS: Tactical Agentic Literature Orchestration System},
-  version      = {5.15.3},
+  version      = {5.15.5},
   year         = {2026},
   doi          = {10.5281/zenodo.19224912},
   url          = {https://github.com/Christos-Smarlamakis/Project-TALOS},
@@ -377,6 +394,24 @@ https://github.com/Christos-Smarlamakis/Project-TALOS, doi: 10.5281/zenodo.19224
   note         = {IEEE Computer Society WEIGD Student Support Fund (2026) recipient}
 }
 ```
+
+---
+
+### Επιστημονικές Αναφορές & Θεωρητικό Υπόβαθρο
+
+Η αρχιτεκτονική και οι αλγοριθμικές αλυσίδες του Project TALOS θεμελιώνονται
+στην ακόλουθη θεμελιώδη βιβλιογραφία:
+
+[1] O. Khattab, A. Singh, C. Potts, M. Zaharia, and S. Rosenthal, "DSPy: Compiling declarative language model calls into self-improving pipelines," *arXiv preprint arXiv:2310.03714*, Oct. 2023.
+[2] T. Chen, I. Goodfellow, and J. Shlens, "Net2Net: Accelerating learning via knowledge transfer," in *Proc. 4th Int. Conf. Learn. Represent. (ICLR)*, San Juan, Puerto Rico, May 2016, pp. 1–10.
+[3] M. J. Page et al., "The PRISMA 2020 statement: An updated guideline for reporting systematic reviews," *BMJ*, vol. 372, p. n71, Mar. 2021, doi: 10.1136/bmj.n71.
+[4] A. C. Tricco et al., "PRISMA extension for scoping reviews (PRISMA-ScR): Checklist and explanation," *Ann. Intern. Med.*, vol. 169, no. 7, pp. 467–473, Oct. 2018, doi: 10.7326/M18-0850.
+[5] J. Cohen, "A coefficient of agreement for nominal scales," *Educ. Psychol. Meas.*, vol. 20, no. 1, pp. 37–46, Apr. 1960, doi: 10.1177/001316446002000104.
+[6] J. L. Fleiss, "Measuring nominal scale agreement among many raters," *Psychol. Bull.*, vol. 76, no. 5, pp. 378–382, Nov. 1971, doi: 10.1037/h0031619.
+[7] S. Jalali and C. Wohlin, "Systematic literature studies: Database searches vs. backward snowballing," in *Proc. ACM/IEEE Int. Symp. Empirical Softw. Eng. Meas. (ESEM)*, Lund, Sweden, Sep. 2012, pp. 29–38, doi: 10.1145/2372251.2372257.
+[8] Z. Nussbaum, J. X. Morris, B. Duderstadt, and A. Mulyar, "Nomic Embed: Training a reproducible long context text embedder," *arXiv preprint arXiv:2402.01613*, Feb. 2024.
+[9] Z. Wang et al., "Dueling network architectures for deep reinforcement learning," in *Proc. 33rd Int. Conf. Mach. Learn. (ICML)*, New York, NY, USA, Jun. 2016, pp. 1995–2003.
+[10] H. van Hasselt, A. Guez, and D. Silver, "Deep reinforcement learning with double Q-learning," in *Proc. 30th AAAI Conf. Artif. Intell. (AAAI)*, Phoenix, AZ, USA, Feb. 2016, pp. 2094–2100.
 
 ---
 

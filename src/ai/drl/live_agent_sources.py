@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: live_agent_sources.py (v1.1)
-Project: TALOS v5.10.1
+Module: live_agent_sources.py (v1.2)
+Project: TALOS v5.15.4
 Description:
     Source discovery and management for the TALOS Live DRL Agent.
     Handles auto-detection of configured API sources from config.json,
@@ -23,12 +23,11 @@ def import_source_class(source_name):
     """
     Dynamically import a source class from the ingestion package.
 
-    The 16 source modules follow two naming conventions: 14 use a `_source`
-    suffix (e.g. `arxiv_source.py`) while the v5.10.0 additions (`openaire.py`,
-    `openreview.py`) do not. This function first tries the suffixed module and
-    falls back to the unsuffixed name when the suffixed module does not exist,
-    so all 16 sources resolve and the DRL agent's state space keeps its full
-    dimensionality.
+    The 18 source modules all follow the `_source` suffix convention
+    (e.g. `arxiv_source.py`, `nasa_ntrs_source.py`, `hal_inria_source.py`).
+    This function first tries the suffixed module and falls back to the
+    unsuffixed name when the suffixed module does not exist, so all 18 sources
+    resolve and the DRL agent's state space keeps its full dimensionality.
 
     Args:
         source_name (str): Source key (e.g., "arxiv", "openaire", "openreview").

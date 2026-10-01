@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: evaluation_history.py
-Project: TALOS v5.15.3
+Project: TALOS v5.15.5
 Description:
     Persistent evaluation history recorder and reader. Every paper evaluated by
     the live DRL agent and the 24/7 daemon is appended as a single JSON line to
@@ -78,10 +78,15 @@ def normalize_authors(paper):
       modular source adapters (OpenAlex, Semantic Scholar, NASA NTRS, ...).
     * ``authors`` as a list of dicts -- e.g. ``[{"name": "..."}]`` from
       OpenAlex/Semantic Scholar, ``{"author": {"display_name": ...}}`` from
-      OpenAlex raw, or ``{"full_name": ...}`` from IEEE.
+      OpenAlex raw, ``{"full_name": ...}`` from IEEE, and the Scopus/Elsevier
+      XML-JSON forms ``{"$": "..."}``, ``{"@name": ..., "@surname": ...}``,
+      and ``{"given_name": ..., "surname": ...}``.
     * ``authors`` as a list of strings -- e.g. ``["Author 1", "Author 2"]``.
     * ``authors`` as a comma/semicolon-delimited string.
     * ``author`` -- the singular legacy key.
+
+    Author lists longer than five entries are truncated cleanly to the first
+    four authors followed by "et al." so the result stays on a single line.
 
     Args:
         paper (dict): A paper metadata record.
@@ -111,8 +116,13 @@ def normalize_authors(paper):
                 nested = entry.get("author")
                 if not isinstance(nested, dict):
                     nested = entry
+                # -- Scopus/Elsevier XML-JSON hierarchy first, then the
+                # -- OpenAlex / IEEE / DBLP fallbacks. --
                 name = (
-                    entry.get("name")
+                    entry.get("$")
+                    or entry.get("name")
+                    or f"{entry.get('@name', '')} {entry.get('@surname', '')}".strip()
+                    or f"{entry.get('given_name', '')} {entry.get('surname', '')}".strip()
                     or nested.get("display_name")
                     or nested.get("name")
                     or entry.get("full_name")
@@ -123,6 +133,9 @@ def normalize_authors(paper):
             if name and str(name).strip():
                 names.append(str(name).strip())
         if names:
+            # -- Truncate long author lists to the first four + "et al." --
+            if len(names) > 5:
+                return ", ".join(names[:4]) + " et al."
             return ", ".join(names)
         return "Unknown Authors"
 
@@ -131,6 +144,9 @@ def normalize_authors(paper):
         normalized = raw.replace(";", ",")
         parts = [p.strip() for p in normalized.split(",") if p.strip()]
         if parts:
+            # -- Truncate long author strings to the first four + "et al." --
+            if len(parts) > 5:
+                return ", ".join(parts[:4]) + " et al."
             return ", ".join(parts)
 
     return "Unknown Authors"

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Project TALOS Interactive Command Reference and Architecture Guide. Self-contained, air-gapped web manual.">
+<title>TALOS v5.15.5 -- Interactive Command Reference &amp; Architecture Guide</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg-soft: #161a22;
+    --panel: #1a1f2b;
+    --panel-border: #2a3342;
+    --text: #d7dee8;
+    --muted: #8b96a5;
+    --accent: #006699;
+    --accent-bright: #00b8d9;
+    --accent-2: #10b981;
+    --accent-3: #f59e0b;
+    --mono: "Consolas", "Menlo", "DejaVu Sans Mono", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.55;
+    padding: 1.5rem;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  body.print-theme {
+    --bg: #f5f7fa;
+    --bg-soft: #ffffff;
+    --panel: #ffffff;
+    --panel-border: #c7d0db;
+    --text: #1a2230;
+    --muted: #5a6675;
+  }
+  header { max-width: 1080px; margin: 0 auto 1.25rem auto; }
+  h1 {
+    font-size: 1.55rem;
+    letter-spacing: 0.02em;
+    color: var(--accent-bright);
+    margin-bottom: 0.35rem;
+  }
+  .subtitle { color: var(--muted); font-size: 0.92rem; }
+  .toolbar {
+    max-width: 1080px; margin: 0 auto 1.25rem auto;
+    display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center;
+  }
+  #search {
+    flex: 1 1 320px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.95rem;
+    outline: none;
+  }
+  #search:focus { border-color: var(--accent-bright); }
+  button {
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+  }
+  button:hover { filter: brightness(1.15); }
+  main { max-width: 1080px; margin: 0 auto; display: grid; grid-template-columns: 1fr; gap: 1.25rem; }
+  @media (min-width: 820px) { main { grid-template-columns: 1fr 1fr; } }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 1.15rem 1.25rem;
+  }
+  .card.wide { grid-column: 1 / -1; }
+  .card h2 {
+    font-size: 1.05rem;
+    color: var(--accent-bright);
+    border-bottom: 1px solid var(--panel-border);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .cmd-row {
+    display: flex; align-items: flex-start; gap: 0.6rem;
+    padding: 0.5rem 0; border-bottom: 1px dashed var(--panel-border);
+  }
+  .cmd-row:last-child { border-bottom: none; }
+  .cmd-row code {
+    font-family: var(--mono);
+    color: #e6edf7;
+    background: var(--bg-soft);
+    border: 1px solid var(--panel-border);
+    border-radius: 5px;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+    font-size: 0.85rem;
+  }
+  .cmd-row .desc { flex: 1; font-size: 0.9rem; color: var(--text); }
+  .cmd-row .desc small { color: var(--muted); }
+  .copy {
+    background: transparent;
+    color: var(--accent-bright);
+    border: 1px solid var(--accent-bright);
+    border-radius: 5px;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+  .copy.copied { background: var(--accent-2); border-color: var(--accent-2); color: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 0.45rem 0.5rem; border-bottom: 1px solid var(--panel-border); vertical-align: top; }
+  th { color: var(--accent-bright); font-weight: 600; }
+  td.port { font-family: var(--mono); color: var(--accent-3); white-space: nowrap; }
+  .dir { font-family: var(--mono); font-size: 0.85rem; color: #e6edf7; }
+  .hidden { display: none !important; }
+  @media print {
+    body { background: #fff; color: #111; padding: 0.25in; }
+    .toolbar, .copy { display: none; }
+    .card { border: 1px solid #bbb; background: #fff; break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Project TALOS v5.15.5 -- Interactive Command Reference &amp; Architecture Guide</h1>
+  <p class="subtitle">Dual-Surface User Assistance System. Fully air-gapped, local-first, zero external CDN.</p>
+</header>
+
+<div class="toolbar">
+  <input id="search" type="text" placeholder="Filter commands, flags, ports, and directories..." autocomplete="off">
+  <button id="btn-theme" type="button">Toggle Print / Light Mode</button>
+</div>
+
+<main>
+  <!-- Card 1: CLI Commands -->
+  <section class="card wide" data-search="cli command flags wizard daily stats diagnostics doctor strategy prisma swarm export bib snowball vector code help">
+    <h2>CLI Fast-Dispatch Flags</h2>
+
+    <div class="cmd-row">
+      <code>python talos.py --wizard</code>
+      <span class="desc">Launch the 4-step Research Setup Wizard. <small>(Research Setup)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --daily</code>
+      <span class="desc">Trigger the 18-source Daily Search ingestion pipeline. <small>(Ingestion)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --snowball &lt;seed&gt;</code>
+      <span class="desc">Backward/forward citation snowballing (DOI, DB ID, or title). <small>(Universal Search Hub)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --vector-search &lt;query&gt;</code>
+      <span class="desc">Neural vector semantic search over local nomic-embed-text embeddings. <small>(Universal Search Hub)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --code-search &lt;query&gt;</code>
+      <span class="desc">Reproducible code-first discovery (GitHub / PapersWithCode / benchmarks). <small>(Universal Search Hub)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --prisma [--swarm]</code>
+      <span class="desc">PRISMA-ScR declarative synthesis; <code>--swarm</code> enables the 3-agent peer-review consensus swarm. <small>(PRISMA Swarm)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --export-bib [min_score]</code>
+      <span class="desc">Export curated papers to <code>data/exports/talos_library.bib</code>. <small>(Exports)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --strategy [mode]</code>
+      <span class="desc">Switch AI execution strategy (strict_local, local_first, cloud_first, strict_cloud, auto_dynamic). <small>(AI Strategy)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --diagnostics</code>
+      <span class="desc">Run the 8-point ISO/IEC 25010 System Diagnostics Analyzer. Alias: <code>--doctor</code>, <code>-d</code>. <small>(Diagnostics)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --stats</code>
+      <span class="desc">Run the Database Statistics health report. <small>(Diagnostics)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --help</code>
+      <span class="desc">Display the four-panel command reference manual. <small>(Diagnostics)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+  </section>
+
+  <!-- Card 2: Research Search Paradigms -->
+  <section class="card" data-search="research search paradigms daily historical snowballing vector semantic code first prisma synthesis discovery modes">
+    <h2>Research Search Paradigms</h2>
+    <div class="cmd-row">
+      <code>Daily Concurrent Ingestion</code>
+      <span class="desc">All 18 academic APIs harvested in parallel via ThreadPoolExecutor.</span>
+    </div>
+    <div class="cmd-row">
+      <code>Historical Deep Window</code>
+      <span class="desc">Configurable days-window archive crawl of the source mesh.</span>
+    </div>
+    <div class="cmd-row">
+      <code>Citation Snowballing</code>
+      <span class="desc">Backward and forward citation-graph traversal.</span>
+    </div>
+    <div class="cmd-row">
+      <code>Neural Vector Search</code>
+      <span class="desc">Local nomic-embed-text dense retrieval with cosine ranking.</span>
+    </div>
+    <div class="cmd-row">
+      <code>Code-First Search</code>
+      <span class="desc">GitHub / PapersWithCode / benchmark linked discovery.</span>
+    </div>
+    <div class="cmd-row">
+      <code>PRISMA-ScR Synthesis</code>
+      <span class="desc">Four-phase declarative scoping-review pipeline (DSPy-style).</span>
+    </div>
+  </section>
+
+  <!-- Card 3: Interactive Controls -->
+  <section class="card" data-search="interactive controls navigation tui arrow keys enter escape cancel 3d webgl hud mouse drag pan zoom">
+    <h2>Interactive Controls &amp; Navigation</h2>
+    <table>
+      <tr><th>Surface</th><th>Input</th><th>Action</th></tr>
+      <tr><td>TUI</td><td>Up / Down</td><td>Move the selection highlight.</td></tr>
+      <tr><td>TUI</td><td>Enter</td><td>Confirm the highlighted operation.</td></tr>
+      <tr><td>TUI</td><td>Esc / Ctrl+C</td><td>Cancel safely without corrupting state.</td></tr>
+      <tr><td>3D WebGL</td><td>C / L</td><td>Toggle the telemetry console overlay.</td></tr>
+      <tr><td>3D WebGL</td><td>R / T / F / S</td><td>Reset view / toggle theme / fullscreen / PNG snapshot.</td></tr>
+      <tr><td>3D WebGL</td><td>Space / 1-3</td><td>Pause-play / replay speed.</td></tr>
+      <tr><td>3D WebGL</td><td>Mouse</td><td>Left-drag orbit, right-drag pan, wheel zoom.</td></tr>
+    </table>
+  </section>
+
+  <!-- Card 4: Ports & Services -->
+  <section class="card wide" data-search="ports services architecture fastapi synapse optica ollama gpu cpu edge 8001 8000 8002 11434 11435">
+    <h2>Ports &amp; Services Architecture</h2>
+    <table>
+      <tr><th>Port</th><th>Service</th><th>Role</th></tr>
+      <tr><td class="port">8001</td><td>TALOS FastAPI</td><td>REST API, Web Manual (/help), 3D Knowledge Constellation Visualizer.</td></tr>
+      <tr><td class="port">8000</td><td>SYNAPSE Event Bus</td><td>Event-driven interoperability mesh for the ALEXANDRIA ecosystem.</td></tr>
+      <tr><td class="port">8002</td><td>OPTICA Bridge</td><td>Visualization offload microservice (cnsplots / PyVis).</td></tr>
+      <tr><td class="port">11434</td><td>Ollama GPU</td><td>Heavy reasoning tier (large local models on GPU).</td></tr>
+      <tr><td class="port">11435</td><td>Fast Edge CPU</td><td>Lightweight low-latency edge tier (dedicated local endpoint).</td></tr>
+    </table>
+  </section>
+
+  <!-- Card 5: Directory Layout -->
+  <section class="card wide" data-search="directory layout storage artifacts bibtex latex vector code snowball prisma database profile exports reports">
+    <h2>Generated Reports &amp; Storage Artifacts</h2>
+    <table>
+      <tr><th>Artifact</th><th>Path / Location</th></tr>
+      <tr><td>BibTeX / LaTeX library</td><td class="dir">data/exports/talos_library.bib</td></tr>
+      <tr><td>Neural vector search reports</td><td class="dir">data/reports/vector_search/</td></tr>
+      <tr><td>Code-first search reports</td><td class="dir">data/reports/code_search/</td></tr>
+      <tr><td>Citation snowballing genealogy</td><td class="dir">data/reports/snowball/</td></tr>
+      <tr><td>PRISMA-ScR LaTeX synthesis</td><td class="dir">src/prisma/scoping_review_synthesizer.py output</td></tr>
+      <tr><td>Active profile database</td><td class="dir">data/talos_research.db (default)</td></tr>
+      <tr><td>Isolated profile databases</td><td class="dir">_profiles/&lt;profile&gt;/talos_research.db</td></tr>
+    </table>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+
+  // -- Live search filter: hide cards whose data-search text does not match. --
+  var searchInput = document.getElementById('search');
+  var cards = document.querySelectorAll('.card');
+  searchInput.addEventListener('input', function () {
+    var q = searchInput.value.trim().toLowerCase();
+    cards.forEach(function (card) {
+      var haystack = (card.getAttribute('data-search') || '') + ' ' + card.textContent.toLowerCase();
+      var show = q === '' || haystack.indexOf(q) !== -1;
+      card.classList.toggle('hidden', !show);
+      // Hide non-matching rows inside visible cards for finer-grained filtering.
+      if (q !== '') {
+        card.querySelectorAll('.cmd-row').forEach(function (row) {
+          var text = row.textContent.toLowerCase();
+          row.classList.toggle('hidden', text.indexOf(q) === -1);
+        });
+        card.querySelectorAll('table tr').forEach(function (tr) {
+          if (tr.querySelector('th')) { return; }
+          var text = tr.textContent.toLowerCase();
+          tr.classList.toggle('hidden', text.indexOf(q) === -1);
+        });
+      } else {
+        card.querySelectorAll('.cmd-row, table tr').forEach(function (el) {
+          el.classList.remove('hidden');
+        });
+      }
+    });
+  });
+
+  // -- Click-to-copy: copy the preceding <code> text to the clipboard. --
+  var copyButtons = document.querySelectorAll('.copy');
+  copyButtons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var row = btn.closest('.cmd-row');
+      var code = row ? row.querySelector('code') : null;
+      var text = code ? code.textContent.trim() : '';
+      if (!text) { return; }
+      function done() {
+        btn.textContent = 'Copied';
+        btn.classList.add('copied');
+        setTimeout(function () {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 1400);
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(function () { fallback(); });
+      } else { fallback(); }
+      function fallback() {
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try { document.execCommand('copy'); } catch (e) { /* noop */ }
+        document.body.removeChild(ta);
+        done();
+      }
+    });
+  });
+
+  // -- Dark / Academic print-mode toggle. --
+  var themeBtn = document.getElementById('btn-theme');
+  themeBtn.addEventListener('click', function () {
+    document.body.classList.toggle('print-theme');
+  });
+})();
+</script>
+</body>
+</html>
+
+
+

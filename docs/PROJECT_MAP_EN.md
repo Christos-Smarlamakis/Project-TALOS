@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.15.3
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.15.5
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-09-29 (v5.15.3 -- Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening)
+> **Last Updated:** 2026-10-01 (v5.15.5 -- Dual-Surface Interactive Help System & Scientific Foundations Canon)
 
 ---
 
@@ -29,7 +29,7 @@ SRC PACKAGES
   src/analysis/     (10 files)  citation_analyzer, author_profiler, recommender, knowledge_path, etc.
   src/ingestion/    (25 files)  18 source agents + 7 pipelines
   src/integration/   (3 files)  synapse_client, optica_client, visualizer_bridge
-  src/utils/        (20 files)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, evaluation_history, research_setup_wizard, etc.
+  src/utils/        (21 files)  db_stats, logger, tray_icon, help_system, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, evaluation_history, research_setup_wizard, etc.
   src/api/           (4 files)  main_api, synapse_routes, red_tester_routes, talos_service_api
   src/prisma/        (6 files)  dspy_signatures, dspy_modules, swarm_evaluators, mermaid_generator, scoping_review_synthesizer
   src/mcp_server.py             MCP stdio server (4 tools)
@@ -104,7 +104,7 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 | `src/ai/llm/` | 4 | `model_manager.py`, `query_translator.py`, `research_pivot.py`, `model_discovery.py` |
 | `src/analysis/` | 10 | `citation_analyzer.py`, `author_profiler.py`, `recommender.py`, `knowledge_path_generator.py`, `trend_analyzer.py`, `graphify_adapter.py`, `generate_baseline_report.py`, etc. |
 | `src/ingestion/` | 25 | 18 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `pdf_downloader.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
-| `src/utils/` | 17 | `db_stats.py`, `logger.py`, `tray_icon.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, `http_client.py`, `snapshot_manager.py`, `academic_export.py`, etc. |
+| `src/utils/` | 18 | `db_stats.py`, `logger.py`, `tray_icon.py`, `help_system.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, `http_client.py`, `snapshot_manager.py`, `academic_export.py`, etc. |
 | `src/prisma/` | 6 | `dspy_signatures.py` (typed declarative Pydantic-v2 signatures), `dspy_modules.py` (PlanEval: Planner/Evaluator/EligibilityJudge/Executor), `swarm_evaluators.py` (3-agent peer-review swarm + Cohen's Kappa + consensus arbiter), `mermaid_generator.py`, `scoping_review_synthesizer.py` |
 
 ## 5. Sources (18 APIs)
@@ -196,6 +196,11 @@ src/utils/system_diagnostics.py
   +-- src/core/database_manager.py
   +-- config/settings.py
 
+src/utils/help_system.py
+  +-- config/settings.py
+  +-- src/utils/ui_theme.py
+  +-- rich, questionary, webbrowser
+
 src/prisma/dspy_modules.py
   +-- src/prisma/dspy_signatures.py
   +-- src/prisma/swarm_evaluators.py
@@ -204,6 +209,10 @@ src/prisma/dspy_modules.py
 
 src/prisma/swarm_evaluators.py
   +-- src/prisma/dspy_signatures.py
+
+scripts/migrate_d3qn_checkpoint.py
+  +-- torch
+  +-- src/ai/drl/drl_networks.py (DuelingLSTM)
 ```
 
 ## 8. Module Descriptions (recent additions highlighted)
@@ -238,6 +247,8 @@ src/prisma/swarm_evaluators.py
 | **Persistent Vector Cache & Accelerated Neural Embedding Engine (v5.15.1)** | `src/core/database_manager.py`, `src/search/neural_vector_search.py` | Idempotent `paper_embeddings` table + `get_cached_embeddings()` / `save_embeddings_batch()`; `NeuralVectorSearchEngine._index_uncached()` (live `rich.progress.Progress` + `ThreadPoolExecutor` + batch-64 persistence), `_matrix_rank()` (vectorized NumPy matrix cosine similarity, <50ms), `render_results()` (styled Rich Table) |
 | **Universal Search Hub UX & Reporting Harmonization (v5.15.2)** | `src/search/code_first_search.py`, `src/search/citation_snowballing.py`, `talos.py` | `CodeFirstSearchEngine.render_results()` / `export_search_report()` (`data/reports/code_search/`); `CitationSnowballEngine.render_genealogy()` / `export_snowball_report()` (`data/reports/snowball/`); raw JSON dumps eliminated (`_render_search_result` removed) |
 | **Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening (v5.15.3)** | `src/core/ai_manager.py`, `src/utils/evaluation_history.py`, `src/ai/drl/talos_service.py`, `src/ai/drl/live_agent_orchestrator.py`, `src/integration/synapse_client.py` | `AIManager.fast_tier_offline` (latches CPU Edge 11435 offline after first failure, zero re-probes/logs); `normalize_authors(paper)` (resolves `authors_str`/`authors`/`author`); clean `[EVAL]` daemon telemetry; silent SYNAPSE buffering (`synapse_available` + JSONL) |
+| **DRL Action-Space Expansion to 18 Sources & Net2Net Checkpoint Migration (v5.15.4)** | `src/ai/drl/talos_env.py`, `scripts/migrate_d3qn_checkpoint.py`, `config.json`, `config.template.json`, `_profiles/default_drones/config.json` | `ALL_KNOWN_SOURCES` 16 -> 18 (adds `nasa_ntrs`, `hal_inria`); action space `Discrete(17) -> Discrete(19)`, observation 23 -> 25 dims; Net2Net surgery (`migrate_d3qn_checkpoint.py`) widens the DuelingLSTM advantage head (15 -> 19) + LSTM input (21 -> 25) preserving all trained weights; 18-source profile/daemon sync; Scopus `$`/`@name`/`@surname` author normalization locked in |
+| **Dual-Surface Interactive Help System & Scientific Foundations Canon (v5.15.5)** | `src/utils/help_system.py`, `templates/help_manual.html`, `src/api/main_api.py`, `README.md` | `render_help_manual()` 4-panel Rich manual (`--help` + TUI Option 7); `GET /help` + `GET /manual` (307 redirect) serve the zero-CDN `help_manual.html` (live search, click-to-copy, dark/print-mode toggle); README Section 5 IEEE references [1]-[10] (EN + GR) |
 
 ## 9. Auxiliary Files
 
@@ -277,8 +288,8 @@ src/prisma/swarm_evaluators.py
 
 ---
 
-> **Last Updated:** 2026-09-29 (v5.15.3 -- Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening)
-> **Project Version:** v5.15.3
+> **Last Updated:** 2026-10-01 (v5.15.5 -- Dual-Surface Interactive Help System & Scientific Foundations Canon)
+> **Project Version:** v5.15.5
 > **Total .py modules under src/:** 99 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
 
 

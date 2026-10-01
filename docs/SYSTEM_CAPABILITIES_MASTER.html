@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.15.3</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.15.5</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -244,7 +244,7 @@
   <a href="#s5-2" class="sub-link">5.2 Outbound Event Types</a>
   <a href="#s5-3" class="sub-link">5.3 Event Schema</a>
   <a href="#s5-4" class="sub-link">5.4 Inbound Commands (Webhook)</a>
-  <a href="#s6" class="section-link">6. REST API Reference (23 endpoints)</a>
+  <a href="#s6" class="section-link">6. REST API Reference (25 endpoints)</a>
   <a href="#s6-1" class="sub-link">6.1 Endpoint Catalog</a>
   <a href="#s6-2" class="sub-link">6.2 Pydantic v2 Model Inventory</a>
   <a href="#s6-3" class="sub-link">6.3 Background Task System</a>
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.15.3</h1>
+<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.15.5</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -302,8 +302,8 @@
   <strong>Document ID:</strong> TALOS-SYS-CAP-001 &nbsp;|&nbsp;
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
-  <strong>Last Updated:</strong> 2026-09-28 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.15.3 -- Session Circuit Breaker, Robust Author Extraction &amp; Daemon Lifecycle Hardening
+  <strong>Last Updated:</strong> 2026-10-01 &nbsp;|&nbsp;
+  <strong>Version:</strong> v5.15.5 -- Dual-Surface Interactive Help System &amp; Scientific Foundations Canon
 </div>
 
 <!-- ===================================================================== -->
@@ -321,7 +321,7 @@
   <thead><tr><th>Layer</th><th>Component</th><th>Role</th></tr></thead>
   <tbody>
     <tr><td><strong>Frontend</strong></td><td>React 18 with Tailwind CSS and Shadcn UI</td><td>User-facing dashboard leveraging the REST API</td></tr>
-    <tr><td><strong>Backend</strong></td><td><code>src/api/main_api.py</code> (23 endpoints)</td><td>Headless FastAPI facade exposing all core capabilities</td></tr>
+    <tr><td><strong>Backend</strong></td><td><code>src/api/main_api.py</code> (25 endpoints)</td><td>Headless FastAPI facade exposing all core capabilities</td></tr>
     <tr><td><strong>AI Core</strong></td><td><code>src/core/ai_manager.py</code> (4 providers + circuit breaker + 2D matrix)</td><td>Multi-provider LLM orchestration with hardware-aware routing and interactive cloud fallback</td></tr>
     <tr><td><strong>Persistence</strong></td><td><code>src/core/database_manager.py</code></td><td>SQLite + multi-model vector embeddings (Ollama + Gemini)</td></tr>
     <tr><td><strong>Integration</strong></td><td><code>src/integration/synapse_client.py</code> + <code>src/mcp_server.py</code> + <code>src/analysis/graphify_adapter.py</code></td><td>SYNAPSE Event Bus + MCP Tool Server + AST Knowledge Graph Intelligence</td></tr>
@@ -357,7 +357,7 @@
 <table>
   <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
   <tbody>
-    <tr><td>TALOS_VERSION</td><td>"5.15.3"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_VERSION</td><td>"5.15.5"</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
@@ -662,7 +662,7 @@
 </table>
 
 <!-- ===================================================================== -->
-<h2 id="s6">Section 6: REST API Reference (23 endpoints)</h2>
+<h2 id="s6">Section 6: REST API Reference (25 endpoints)</h2>
 
 <h3 id="s6-1">6.1 Endpoint Catalog</h3>
 
@@ -1368,8 +1368,27 @@
 </ul>
 <p><strong>Verification surface:</strong> release gates include <code>compileall</code>, system integrity, version assertion (5.15.3), <code>test_session_circuit_breaker.py</code> (12 passed), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
 
+<h3 id="s15-38">15.38 DRL Action-Space Expansion, Net2Net Checkpoint Surgery, and 18-Source Autonomous Foraging (v5.15.4)</h3>
+<p><strong>Overview:</strong> v5.15.4 expands the autonomous foraging action space from 16 to 18 academic sources and migrates the trained DDDQN checkpoint to the new geometry without retraining, preserving all pre-trained episodes of knowledge. The release has three pillars: (1) the Gymnasium environment (<code>talos_env.py</code>) grows <code>ALL_KNOWN_SOURCES</code> to 18 by registering NASA NTRS and HAL/Inria, scaling the action space from <code>Discrete(17)</code> to <code>Discrete(19)</code> and the observation space from 23 to 25 dimensions; (2) a Net2Net (Net2WiderNet) tensor-surgery utility (<code>scripts/migrate_d3qn_checkpoint.py</code>) widens the DuelingLSTM advantage head and LSTM input layer in place; and (3) the active profile configs explicitly enable all 18 sources so the daemon reports 18 configured and working sources on startup.</p>
+<ul>
+  <li><strong>DRL action-space expansion</strong> (<code>src/ai/drl/talos_env.py</code>): <code>ALL_KNOWN_SOURCES</code> grows from 16 to 18 by appending <code>nasa_ntrs</code> and <code>hal_inria</code>. The action space becomes <code>spaces.Discrete(len(sources) + 1) == Discrete(19)</code> (actions 0..17 query the 18 sources, action 18 is sleep), and the observation space becomes <code>1 + 18 + 2 + 4 = 25</code> dimensions. <code>_load_source_list()</code> guarantees the full 18-source list; the companion modules (<code>drl_agent.py</code>, <code>drl_networks.py</code>, <code>live_agent_sources.py</code>, <code>live_agent_orchestrator.py</code>) are re-baselined.</li>
+  <li><strong>Net2Net checkpoint surgery</strong> (<code>scripts/migrate_d3qn_checkpoint.py</code>): a one-shot Net2WiderNet migration of <code>models/dddqn_trained.pth</code> to the 18-source geometry. For the advantage head <code>A.weight</code> (<code>[old_A, hidden] -&gt; [19, hidden]</code>) and <code>A.bias</code> (<code>[old_A] -&gt; [19]</code>), surviving source rows are copied identically, the four new source heads (<code>openaire</code>, <code>openreview</code>, <code>nasa_ntrs</code>, <code>hal_inria</code>) are initialised with the mean of the top-5 existing source rows (L2-norm ranked) plus a +0.05 optimistic exploratory bias, and the sleep row is re-indexed to position 18. For the LSTM input <code>lstm1.weight_ih_l0</code> (<code>[512, 21] -&gt; [512, 25]</code>), columns are remapped by source name with a column-mean prior for new sources. The legacy checkpoint held 14 sources (state_dim=21, action_dim=15), so the name-based migration expands 15 -&gt; 19 actions and 21 -&gt; 25 state dimensions. Verified via strict <code>DuelingLSTM(25, 19).load_state_dict()</code> (zero mismatch); backup <code>models/dddqn_trained.pth.bak</code>.</li>
+  <li><strong>18-source profile synchronization</strong> (<code>config.json</code>, <code>config.template.json</code>, <code>_profiles/default_drones/config.json</code>): <code>nasa_ntrs</code> and <code>hal_inria</code> added to <code>max_results_config</code> + query keys, so the daemon reports 18 configured and working sources.</li>
+  <li><strong>Scopus/Elsevier XML-JSON author normalization locked in</strong> (<code>src/utils/evaluation_history.py</code>): <code>normalize_authors()</code> resolves <code>$</code>, <code>@name</code>/<code>@surname</code>, and <code>given_name</code>/<code>surname</code> with 4-author + "et al." truncation.</li>
+</ul>
+<p><strong>Verification surface:</strong> release gates include <code>compileall</code>, system integrity, version assertion (5.15.4), a standalone DRL model strict-load check (<code>DuelingLSTM(25, 19)</code>), daemon source detection (Configured sources: 18, Working sources: 18), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
+
+<h3 id="s15-39">15.39 Dual-Surface User Assistance Architecture, Interactive Web Manual, and IEEE Theoretical Foundations (v5.15.5)</h3>
+<p><strong>Overview:</strong> v5.15.5 introduces a Dual-Surface User Assistance Architecture: a rich four-panel console manual rendered by <code>src/utils/help_system.py</code> (reachable via <code>python talos.py --help</code> and TUI Option 7), and an interactive zero-CDN Web Manual served at <code>GET /help</code> (<code>http://localhost:8001/help</code>, with <code>GET /manual</code> issuing a 307 redirect). The release also formalizes the scientific pedigree by adding a strict IEEE-style Section 5 &quot;Scientific References &amp; Theoretical Foundations&quot; to <code>README.md</code> (English and Greek).</p>
+<ul>
+  <li><strong>Four-panel Rich console manual</strong> (<code>src/utils/help_system.py</code>): <code>render_help_manual(interactive=False)</code> returns a <code>rich.console.Group</code> of four panels -- (1) CLI Fast-Dispatch Flags, (2) Interactive Controls &amp; Navigation, (3) Port Mapping &amp; Services Architecture, (4) Generated Reports &amp; Storage Artifacts. <code>render_help_manual(interactive=True)</code> prints the panels and prompts the user with an interactive action (<code>[O] Open Interactive Web Manual in Browser (http://localhost:8001/help)</code> vs <code>Return to Menu</code>), auto-bootstrapping the FastAPI backend on a cold start before <code>webbrowser.open(...)</code>. Zero emojis across every heading and cell (ISO/IEC 25010 Context of Use compliance).</li>
+  <li><strong>Interactive Web Manual</strong> (<code>templates/help_manual.html</code> + <code>src/api/main_api.py</code>): a self-contained, zero-CDN, responsive page matching the academic dark theme, with a live search filter bar, click-to-copy buttons beside every CLI command (Clipboard API with <code>execCommand</code> fallback), structured cards (CLI Commands, Research Search Paradigms, Ports &amp; Services, Directory Layout), and a dark/print-mode toggle. Endpoints <code>GET /help</code> (HTMLResponse) and <code>GET /manual</code> (307 redirect) raise the REST surface from 23 to 25 endpoints.</li>
+  <li><strong>Formal IEEE Scientific References &amp; Theoretical Foundations</strong> (<code>README.md</code>): Section 5 (English) and the mirrored Greek &quot;Επιστημονικές Αναφορές &amp; Θεωρητικό Υπόβαθρο&quot; present ten strictly-formatted IEEE citations ([1]-[10]) spanning Stanford DSPy, Net2Net, PRISMA 2020, PRISMA-ScR, Cohen's Kappa, Fleiss' Kappa, citation snowballing, Nomic Embed, Dueling DQN, and Double Q-Learning.</li>
+</ul>
+<p><strong>Verification surface:</strong> release gates include <code>compileall</code>, system integrity, version assertion (5.15.5), <code>talos.py --help</code> (exit 0), <code>GET /help</code> (200) / <code>GET /manual</code> (307), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.15.3</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.15.5</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: drl_networks.py (v1.0)
-Project: TALOS v5.10.0
+Module: drl_networks.py (v1.1)
+Project: TALOS v5.15.4
 Description:
     Neural network architectures for the TALOS Deep Reinforcement Learning
     agent. This module is designed to be PLUGGABLE — any network with the
@@ -21,7 +21,7 @@ Description:
       each network class, not applied as a wrapper. This gives each
       architecture full control over how value and advantage are computed.
     - All networks accept (input_dim, output_dim) at construction so the
-      agent can vary dimensions dynamically (3 sources vs 16 sources).
+      agent can vary dimensions dynamically (3 sources vs 18 sources).
 """
 import torch as T
 import torch.nn as nn

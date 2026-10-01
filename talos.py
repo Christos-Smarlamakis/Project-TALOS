@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.15.3
+Project: TALOS v5.15.5
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,25 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.15.5: Dual-Surface Interactive Help System & Scientific Foundations
+    Canon -- a rich four-panel console manual (src/utils/help_system.py)
+    served via --help and TUI Option 7, plus an interactive zero-CDN Web
+    Manual at http://localhost:8001/help (templates/help_manual.html) with
+    live search, click-to-copy, and a dark/print-mode toggle; README.md gains
+    a formal IEEE-style Scientific References & Theoretical Foundations
+    section ([1]-[10]).
+
+    v5.15.4: DRL Action-Space Expansion to 18 Sources & Net2Net Checkpoint
+    Migration -- the DRL environment scales to 18 academic sources (action
+    space 17 -> 19, observation space 23 -> 25 dims) by registering NASA NTRS
+    and HAL/Inria in ALL_KNOWN_SOURCES; a Net2Net tensor-surgery utility
+    (scripts/migrate_d3qn_checkpoint.py) widens both the DuelingLSTM advantage
+    head (15 -> 19) and its LSTM input layer (21 -> 25) in
+    models/dddqn_trained.pth, preserving all trained weights exactly while
+    optimistically initialising the four newly introduced source heads; and
+    Scopus/Elsevier XML-JSON author normalisation locks in the $, @name and
+    @surname fields with clean 4-author + et al. truncation.
 
     v5.15.3: Session Circuit Breaker, Robust Author Extraction & Daemon
     Lifecycle Hardening -- a process-lifetime session circuit breaker in
@@ -2157,7 +2176,8 @@ def main_menu():
             questionary.Separator("  [ 6. SYSTEM HEALTH, DIAGNOSTICS & CI/CD ]"),
             "  6. System Health, Diagnostics & CI/CD",
             questionary.Separator(),
-            "  7. Exit",
+            "  7. Help & Command Reference Manual",
+            "  8. Exit",
         ])
         if choice is None or "Exit" in choice: break
         fm = "Press Enter to return..."
@@ -2175,6 +2195,9 @@ def main_menu():
             database_data_menu(python_exe)
         elif " 6." in choice:
             system_health_menu(python_exe)
+        elif " 7." in choice:
+            from src.utils.help_system import render_help_manual
+            render_help_manual(interactive=True)
 
         if choice and "Exit" not in choice:
             safe_pause(fm)
@@ -2188,33 +2211,17 @@ def main_menu():
 # ---------------------------------------------------------------------------
 
 def _cli_help_table():
-    """Render a Rich Table documenting the available CLI fast-dispatch flags.
+    """Render the four-panel TALOS command reference manual.
+
+    Delegates to ``src.utils.help_system.render_help_manual(interactive=False)``
+    so the CLI --help fast-dispatch path and the TUI Option 7 share a single
+    canonical manual definition.
 
     Returns:
-        A rich.table.Table ready for console.print().
+        A rich.console.Group renderable ready for console.print().
     """
-    table = Table(
-        title="TALOS CLI Fast-Dispatch Flags",
-        box=box.ROUNDED,
-        border_style="bright_cyan",
-        show_lines=True,
-        header_style="bold bright_cyan",
-    )
-    table.add_column("Flag", style="bold cyan", no_wrap=True)
-    table.add_column("Description", style="white")
-    table.add_row("--wizard", "Launch the 4-step Research Setup Wizard (src/utils/research_setup_wizard.py).")
-    table.add_row("--daily", "Trigger the Daily Search ingestion pipeline (src/ingestion/daily_search.py).")
-    table.add_row("--stats", "Run the Database Statistics health report (src/utils/db_stats.py).")
-    table.add_row("--diagnostics", "Run the 8-point System Diagnostics Analyzer health report (src/utils/system_diagnostics.py).")
-    table.add_row("--doctor, -d", "DevOps alias for --diagnostics (same 8-point health report).")
-    table.add_row("--strategy [mode]", "Switch the AI execution strategy (strict_local, local_first, cloud_first, strict_cloud, auto_dynamic). Omit [mode] for the interactive switcher.")
-    table.add_row("--prisma [--swarm]", "Run the PRISMA-ScR Declarative Synthesis Pipeline interactively. Add --swarm for the rigorous 3-agent Multi-Agent Review Swarm (Cohen's Kappa consensus).")
-    table.add_row("--export-bib [min_score]", "Export curated papers to a BibTeX / LaTeX (.bib) library (src/utils/bibtex_exporter.py). Optional score threshold (default 7.0).")
-    table.add_row("--snowball [seed]", "Autonomous citation snowballing search (src/search/citation_snowballing.py). Seed = DOI, database ID, or title.")
-    table.add_row("--vector-search [query]", "Neural vector semantic search over the local nomic-embed-text model (src/search/neural_vector_search.py).")
-    table.add_row("--code-search [query]", "Reproducible code-first search (GitHub / PapersWithCode / benchmarks) (src/search/code_first_search.py).")
-    table.add_row("--help, -h", "Display this CLI flag reference.")
-    return table
+    from src.utils.help_system import render_help_manual
+    return render_help_manual(interactive=False)
 
 
 def _parse_strategy_flag(argv):

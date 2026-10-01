@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.15.3
+Project: TALOS v5.15.5
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -9,7 +9,7 @@ Description:
     Tailwind CSS + Shadcn UI frontend. All endpoints wrap existing synchronous
     core functions -- no logic is rewritten.
 
-    Endpoints (23 total -- 100% ecosystem coverage + Synapse protocol + capabilities + tester + visualizer):
+    Endpoints (25 total -- 100% ecosystem coverage + Synapse protocol + capabilities + tester + visualizer + web manual):
     - GET  /api/v1/health              -> system health, DB stats, embedding coverage
     - GET  /api/v1/papers              -> paginated paper list
     - GET  /api/v1/papers/{paper_id}   -> full paper detail
@@ -33,6 +33,8 @@ Description:
     - GET  /api/v1/visualizer/stream   -> SSE event stream for live visualizer
     - GET  /api/v1/visualizer/demo-data -> recent evaluated papers for offline replay
     - GET  /api/v1/visualizer/state     -> consolidated AJAX state snapshot (sources + latest evaluation)
+    - GET  /help                        -> interactive Web Command Reference Manual (HTML)
+    - GET  /manual                      -> redirect alias to /help (Web Manual)
 
     Key design decisions:
     - Port 8001 (avoids conflict with SYNAPSE event bus on port 8000)
@@ -83,7 +85,7 @@ from typing import Optional, List, Dict, Any
 import numpy as np
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, FileResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
@@ -113,7 +115,7 @@ async def lifespan(app: FastAPI):
         None: Control returns to the server for the duration of its lifetime.
     """
     # -- Startup --
-    logger.info("TALOS FastAPI v5.15.3 starting up (Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening, port 8001)...")
+    logger.info("TALOS FastAPI v5.15.5 starting up (Dual-Surface Interactive Help System & Scientific Foundations Canon, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")
@@ -126,8 +128,8 @@ async def lifespan(app: FastAPI):
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-    description="Facade REST API for the TALOS autonomous research platform (v5.15.3 -- Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening)",
-    version="5.15.3",
+    description="Facade REST API for the TALOS autonomous research platform (v5.15.5 -- Dual-Surface Interactive Help System & Scientific Foundations Canon)",
+    version="5.15.5",
     lifespan=lifespan,
 )
 app.add_middleware(
@@ -1311,6 +1313,35 @@ async def get_capabilities():
     if capabilities_path.exists():
         return HTMLResponse(content=capabilities_path.read_text(encoding="utf-8"))
     raise HTTPException(status_code=404, detail="Capabilities document not found.")
+
+
+# -- GET /help & /manual (Dual-Surface Web Manual, v5.15.5) ---------------------
+
+@app.get("/help", response_class=HTMLResponse, tags=["System"])
+async def serve_help_manual():
+    """Serve the interactive Web Command Reference Manual (v5.15.5).
+
+    Reads templates/help_manual.html from the project root and returns it as a
+    self-contained HTML page. The manual features live search, click-to-copy
+    command buttons, structured cards, and a dark/print-mode toggle. No
+    external CDN or network fetches are required (100% air-gapped compliant).
+
+    Returns 404 if templates/help_manual.html does not exist.
+    """
+    project_root = _get_project_root()
+    help_path = os.path.join(project_root, "templates", "help_manual.html")
+    if not os.path.exists(help_path):
+        raise HTTPException(
+            status_code=404,
+            detail="help_manual.html not found in templates/ directory.",
+        )
+    return HTMLResponse(content=Path(help_path).read_text(encoding="utf-8"))
+
+
+@app.get("/manual", tags=["System"])
+async def redirect_manual_to_help():
+    """Redirect the /manual alias to the canonical /help Web Manual endpoint."""
+    return RedirectResponse(url="/help", status_code=307)
 
 
 # -- GET /api/v1/visualizer/live ------------------------------------------------

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Module: live_agent_orchestrator.py (v1.3 — 16-Source Scaling)
-Project: TALOS v5.10.4
+Module: live_agent_orchestrator.py (v1.4 — 18-Source Scaling)
+Project: TALOS v5.15.4
 Description:
     Main orchestration loop for the TALOS Live DRL Agent. Handles the
     full cycle: state calculation → action selection → API fetch →
@@ -104,12 +104,12 @@ def calculate_state(normalized_hour, source_call_counts, source_limits,
     """
     Build the dynamic state vector expected by the DRL agent.
 
-    Structure (v3.2 — 23-dim, 16 sources):
+    Structure (v3.3 — 25-dim, 18 sources):
         [0]           hour / 24.0
-        [1 .. 16]     source usage ratios (calls/limit)
-        [17]          low_score_streak / MAX
-        [18]          error_streak / MAX
-        [19 .. 22]    provider usage ratios (gemini, deepseek, hf, local)
+        [1 .. 18]     source usage ratios (calls/limit)
+        [19]          low_score_streak / MAX
+        [20]          error_streak / MAX
+        [21 .. 24]    provider usage ratios (gemini, deepseek, hf, local)
 
     Args:
         normalized_hour (float): Current hour / 24.0.

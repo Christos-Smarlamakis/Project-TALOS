@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: synapse_client.py
-Project: TALOS v5.15.3
+Project: TALOS v5.15.4
 Description:
     EventEmitter class for the SYNAPSE Event-Driven Protocol. This module
     provides a thread-safe, non-blocking client that pushes JSON-structured
@@ -153,7 +153,7 @@ class EventEmitter:
             self._session = requests.Session()
             self._session.headers.update({
                 "Content-Type": "application/json",
-                "User-Agent": f"TALOS-SynapseClient/5.15.3",
+                "User-Agent": f"TALOS-SynapseClient/5.15.4",
             })
 
         logger.info(

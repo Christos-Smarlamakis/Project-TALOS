@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.15.3
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.15.5
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-09-29 (v5.15.3 -- Διακόπτης Κυκλώματος Συνόδου, Ισχυρή Εξαγωγή Συγγραφέων & Ενίσχυση Κύκλου Ζωής Δαίμονα)
+> **Τελευταία Ενημέρωση:** 2026-10-01 (v5.15.5 -- Σύστημα Βοήθειας Διπλής Επιφάνειας & Κανόνας Επιστημονικών Θεμελίων)
 
 ---
 
@@ -29,7 +29,7 @@ SRC PACKAGES
   src/analysis/     (10 αρχεία)  citation_analyzer, author_profiler, recommender, knowledge_path, κ.ά.
   src/ingestion/    (23 αρχεία)  16 source agents + 7 pipelines
   src/integration/   (3 αρχεία)  synapse_client, optica_client, visualizer_bridge
-  src/utils/        (20 αρχεία)  db_stats, logger, tray_icon, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, evaluation_history, research_setup_wizard, κ.ά.
+  src/utils/        (21 αρχεία)  db_stats, logger, tray_icon, help_system, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, evaluation_history, research_setup_wizard, κ.ά.
   src/api/           (4 αρχεία)  main_api, synapse_routes, red_tester_routes, talos_service_api
   src/prisma/        (6 αρχεία)  dspy_signatures, dspy_modules, swarm_evaluators, mermaid_generator, scoping_review_synthesizer
   src/mcp_server.py              MCP stdio server (4 tools)
@@ -104,10 +104,10 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 | `src/ai/llm/` | 4 | `model_manager.py`, `query_translator.py`, `research_pivot.py`, `model_discovery.py` |
 | `src/analysis/` | 10 | `citation_analyzer.py`, `author_profiler.py`, `recommender.py`, `knowledge_path_generator.py`, `trend_analyzer.py`, `graphify_adapter.py`, `generate_baseline_report.py`, κ.ά. |
 | `src/ingestion/` | 23 | 16 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `pdf_downloader.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
-| `src/utils/` | 17 | `db_stats.py`, `logger.py`, `tray_icon.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, `http_client.py`, `snapshot_manager.py`, `academic_export.py`, κ.ά. |
+| `src/utils/` | 18 | `db_stats.py`, `logger.py`, `tray_icon.py`, `help_system.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, `http_client.py`, `snapshot_manager.py`, `academic_export.py`, κ.ά. |
 | `src/prisma/` | 6 | `dspy_signatures.py` (τυπικές δηλωτικές υπογραφές Pydantic v2), `dspy_modules.py` (PlanEval: Planner/Evaluator/EligibilityJudge/Executor), `swarm_evaluators.py` (σμήνος ομότιμης αναθεώρησης 3 πρακτόρων + Kappa του Cohen + διαιτητής συναίνεσης), `mermaid_generator.py`, `scoping_review_synthesizer.py` |
 
-## 5. Πηγές (16 APIs)
+## 5. Πηγές (18 APIs)
 
 arxiv, ieee, semantic_scholar, springer, openalex, dblp, elsevier, core, crossref, openarchives, pubmed, scigov, osti, plos, openreview, openaire
 
@@ -196,6 +196,11 @@ src/utils/system_diagnostics.py
   +-- src/core/database_manager.py
   +-- config/settings.py
 
+src/utils/help_system.py
+  +-- config/settings.py
+  +-- src/utils/ui_theme.py
+  +-- rich, questionary, webbrowser
+
 src/prisma/dspy_modules.py
   +-- src/prisma/dspy_signatures.py
   +-- src/prisma/swarm_evaluators.py
@@ -204,6 +209,10 @@ src/prisma/dspy_modules.py
 
 src/prisma/swarm_evaluators.py
   +-- src/prisma/dspy_signatures.py
+
+scripts/migrate_d3qn_checkpoint.py
+  +-- torch
+  +-- src/ai/drl/drl_networks.py (DuelingLSTM)
 ```
 
 ## 8. Περιγραφές Modules (επισημασμένες πρόσφατες προσθήκες)
@@ -238,6 +247,8 @@ src/prisma/swarm_evaluators.py
 | **Μόνιμη Διανυσματική Κρυφή Μνήμη & Επιταχυνόμενη Μηχανή Νευρικών Ενσωματώσεων (v5.15.1)** | `src/core/database_manager.py`, `src/search/neural_vector_search.py` | Αδρανής πίνακας `paper_embeddings` + `get_cached_embeddings()` / `save_embeddings_batch()`· `NeuralVectorSearchEngine._index_uncached()` (ζωντανό `rich.progress.Progress` + `ThreadPoolExecutor` + αποθήκευση παρτίδων 64), `_matrix_rank()` (διανυσματική ομοιότητα συνημιτόνου μητρώου NumPy, <50ms), `render_results()` (στυλιζαρισμένο Rich Table) |
 | **Εναρμόνιση UX & Αναφορών Καθολικού Κόμβου Αναζήτησης (v5.15.2)** | `src/search/code_first_search.py`, `src/search/citation_snowballing.py`, `talos.py` | `CodeFirstSearchEngine.render_results()` / `export_search_report()` (`data/reports/code_search/`)· `CitationSnowballEngine.render_genealogy()` / `export_snowball_report()` (`data/reports/snowball/`)· κατάργηση ακατέργαστων JSON dumps (`_render_search_result` αφαιρέθηκε) |
 | **Διακόπτης Κυκλώματος Συνόδου, Ισχυρή Εξαγωγή Συγγραφέων & Ενίσχυση Κύκλου Ζωής Δαίμονα (v5.15.3)** | `src/core/ai_manager.py`, `src/utils/evaluation_history.py`, `src/ai/drl/talos_service.py`, `src/ai/drl/live_agent_orchestrator.py`, `src/integration/synapse_client.py` | `AIManager.fast_tier_offline` (κλείδωμα CPU Edge 11435 εκτός σύνδεσης μετά την πρώτη αποτυχία, μηδενικές επανελεγχές/καταγραφές)· `normalize_authors(paper)` (επίλυση `authors_str`/`authors`/`author`)· καθαρό `[EVAL]` τηλεμετρία δαίμονα· σιωπηλή αποθήκευση SYNAPSE (`synapse_available` + JSONL) |
+| **Επέκταση Χώρου Δράσεων DRL σε 18 Πηγές & Μετανάστευση Checkpoint Net2Net (v5.15.4)** | `src/ai/drl/talos_env.py`, `scripts/migrate_d3qn_checkpoint.py`, `config.json`, `config.template.json`, `_profiles/default_drones/config.json` | `ALL_KNOWN_SOURCES` 16 -> 18 (προσθήκη `nasa_ntrs`, `hal_inria`)· χώρος δράσεων `Discrete(17) -> Discrete(19)`, καταστάσεις 23 -> 25 διαστάσεις· χειρουργική Net2Net (`migrate_d3qn_checkpoint.py`) διευρύνει την κεφαλή πλεονεκτήματος DuelingLSTM (15 -> 19) + είσοδο LSTM (21 -> 25) διατηρώντας όλα τα εκπαιδευμένα βάρη· συγχρονισμός προφίλ/δαίμονα 18 πηγών· κλείδωμα κανονικοποίησης συγγραφέων Scopus `$`/`@name`/`@surname` |
+| **Σύστημα Βοήθειας Διπλής Επιφάνειας & Κανόνας Επιστημονικών Θεμελίων (v5.15.5)** | `src/utils/help_system.py`, `templates/help_manual.html`, `src/api/main_api.py`, `README.md` | `render_help_manual()` εγχειρίδιο Rich 4 πινάκων (`--help` + TUI Επιλογή 7)· `GET /help` + `GET /manual` (ανακατεύθυνση 307) εξυπηρετούν το zero-CDN `help_manual.html` (ζωντανή αναζήτηση, αντιγραφή με κλικ, εναλλαγή σκοτεινής/εκτυπώσιμης λειτουργίας)· Ενότητα 5 IEEE αναφορών [1]-[10] στο README (EN + GR) |
 
 ## 9. Βοηθητικά Αρχεία
 
@@ -277,8 +288,8 @@ src/prisma/swarm_evaluators.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-09-29 (v5.15.3 -- Διακόπτης Κυκλώματος Συνόδου, Ισχυρή Εξαγωγή Συγγραφέων & Ενίσχυση Κύκλου Ζωής Δαίμονα)
-> **Έκδοση Project:** v5.15.3
+> **Τελευταία Ενημέρωση:** 2026-10-01 (v5.15.5 -- Σύστημα Βοήθειας Διπλής Επιφάνειας & Κανόνας Επιστημονικών Θεμελίων)
+> **Έκδοση Project:** v5.15.5
 > **Συνολικά .py modules στο src/:** 99 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
 
 
