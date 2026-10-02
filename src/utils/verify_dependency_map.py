@@ -110,7 +110,7 @@ EXTERNAL_PACKAGES = {
     "duckduckgo_search", "ddgs", "openai", "networkx", "pickle",
     "fastapi", "uvicorn", "pydantic", "mcp",
     "arxiv", "semanticscholar", "openreview", "tree_sitter", "rapidfuzz",
-    "plotly", "dash", "psutil",
+    "plotly", "dash", "psutil", "pypdf",
     "gymnasium", "torch", "pytest",
     # standard library
     "concurrent", "concurrent.futures", "logging", "warnings",

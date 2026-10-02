@@ -2,6 +2,42 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.18.0] - 2026-10-02 -- Ethical Academic PDF Harvester, Smart Section Slicing & SQLite FTS5 Engine
+
+### Added
+
+- **Ethical Academic PDF Harvester** (`src/ingestion/pdf_harvester/`): a modular, air-gapped subsystem that resolves and downloads legal Open Access / preprint full-text PDFs into the gitignored `data/fulltext_cache/` directory. The package comprises `resolvers.py` (the cascading resolver), `harvester.py` (the six-layer fault-tolerant download pipeline), and `section_extractor.py` (local text extraction and smart section slicing).
+
+- **Cascading Open Access resolver** (`resolvers.py:resolve_oa_url`): an ordered chain of thirteen legal resolvers spanning (1) direct preprint repositories -- Cornell arXiv, IEEE TechRxiv (`10.36227/techrxiv`), HAL/Inria, NASA NTRS; (2) publisher OA APIs -- Elsevier ScienceDirect OA (`ELSEVIER_API_KEY`), PLOS, PubMed Central; and (3) meta-resolvers -- Unpaywall, OpenAlex `best_oa_location`, Semantic Scholar `openAccessPdf`, CORE, Crossref OA, and SSRN. Each resolver returns a `(pdf_url, resolver_source)` tuple and fails soft so the cascade never aborts.
+
+- **Six-layer download pipeline** (`harvester.py:AcademicPDFHarvester`): `%PDF-` magic-bytes validation (first five bytes), atomic temporary-file writing (`tmp_<id>.pdf` -> `<id>.pdf` via `os.replace`), SHA-256 integrity hashing, a 20 second timeout, a 50 MB size cap, and a 1.5 second polite inter-request delay under the academic User-Agent `TALOS-Academic-Research-Bot/5.18.0 (University of the Peloponnese; mailto:c.smarlamakis@uop.gr)`.
+
+- **`harvest_candidates(min_relevance=7.0, active_profile=None)`**: queries the active profile SQLite database for candidates with `overall_score >= min_relevance`, downloads sequentially, and persists `local_pdf_path`, `pdf_sha256`, and `pdf_status` ('DOWNLOADED' | 'UNAVAILABLE' | 'FAILED').
+
+- **Smart section slicing** (`section_extractor.py:PDFSectionExtractor`): local `pypdf` extraction (with a printable-byte fallback parser) caches four evidence windows under `data/fulltext_cache/<id>/` -- `methodology.txt`, `experiments.txt`, `code_availability.txt`, and `limitations.txt` -- for the Tier-2 Quality Swarm.
+
+- **SQLite FTS5 full-text engine** (`src/search/fulltext_search.py:FullTextSearchEngine`): creates the `papers_fts(paper_id, title, fulltext_content)` virtual table, indexes cached bodies incrementally, and executes sub-millisecond FTS5 `MATCH` queries with BM25 ranking and `snippet(papers_fts, 2, '<b>', '</b>', '...', 15)` highlighting. Results render in a styled Rich Table (`box.ROUNDED`, title "SQLite FTS5 Full-Text Search Results") with matched sentences and best-effort page estimates.
+
+- **CLI & TUI integration** (`talos.py`): `--download-pdfs [--min-score 7.0]`, `--fts "<query>"`, and `--open-pdf [paper_id]` (opens the local PDF in the default system viewer); the Universal Search Hub (Group 2) gains "SQLite FTS5 Full-Text Search" and the Database & Data menu (Group 5) gains "Harvest Open Access Full-Text PDFs (12 Cascading Sources)".
+
+- **Rule 10 private dossier** (`docs/internal/academic/07_ETHICAL_OPEN_ACCESS_PDF_HARVESTING_FTS.md`): a seven-section confidential academic dossier documenting the EU Directive 2019/790 TDM framework, magic-bytes/SHA-256/BM25 mathematics, plain-language explanation, code traceability matrix, engineering adaptations, and pre-compiled PhD/publication excerpts.
+
+### Changed
+
+- **SmartSectionSlicer cached-section integration** (`src/prisma/quality_swarm.py`): the Tier-2 slicer now reads real cached PDF section text whenever a local PDF has been harvested (a `full_text`-absent fallback to `data/fulltext_cache/<id>/*.txt`), preserving the existing title-plus-abstract fallback and all prior tests.
+
+- **Database schema** (`src/core/database_manager.py`): added `papers.local_pdf_path`, `papers.pdf_sha256`, and `papers.pdf_status` columns (idempotent migration).
+
+- **Dependency map verifier** (`src/utils/verify_dependency_map.py`): `pypdf` added to the `EXTERNAL_PACKAGES` whitelist.
+
+- **Version strings synchronized to 5.18.0** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py` version assertion), `docker-compose.yml` (`talos:5.18.0`), `CITATION.cff` (version 5.18.0, date-released 2026-10-02), `config.template.json`, tray/visualizer/wizard/strategy/diagnostics/bibtex/help metadata, all `src/prisma/` and `src/search/` docstrings, and all 19 canonical documentation files (dated 2026-10-02).
+
+- **ROADMAP.md**: current version advanced to v5.18.0 (Complete, 2026-10-02); CORTEX & n8n orchestration advanced to v5.19.0.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_pdf_harvester.py -q` (8 passed -- mocked `%PDF-` / atomic write / SHA-256); `pytest tests/test_fulltext_search.py -q` (4 passed -- FTS5 virtual table + snippet MATCH); `pytest tests/test_quality_swarm.py tests/test_quality_appraisal.py -q` (34 passed -- backward compatible); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.0); `python talos.py --help` documents `--download-pdfs`, `--fts`, `--open-pdf`; dossier 07 conforms to the 7-section standard with 0 U+FFFD glyphs; `python src/utils/verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.17.1] - 2026-10-02 -- PRISMA Quality Appraisal UX Transparency & Force Re-Appraisal Engine
 
 ### Added

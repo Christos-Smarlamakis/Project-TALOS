@@ -26,6 +26,7 @@ elsapy                      # Elsevier/Scopus API client
 pymed                       # PubMed API client
 pyzotero                    # Zotero Web API client
 openreview-py               # OpenReview API V2 client (optional, degrades to guest access)
+pypdf>=4.0.0                # PDF text extraction (Ethical Academic PDF Harvester -- section_extractor.py)
 
 # === Data Science: Analysis & ML ===
 numpy                       # Numerical operations & embedding calculations

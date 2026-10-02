@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.17.0</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.18.0</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.17.0</h1>
+<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.18.0</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-10-02 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.17.1 -- PRISMA Quality Appraisal UX Transparency &amp; Force Re-Appraisal Engine
+  <strong>Version:</strong> v5.18.0 -- Ethical Academic PDF Harvester, Smart Section Slicing &amp; SQLite FTS5 Engine
 </div>
 
 <!-- ===================================================================== -->
@@ -357,7 +357,7 @@
 <table>
   <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
   <tbody>
-    <tr><td>TALOS_VERSION</td><td>"5.17.0"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_VERSION</td><td>"5.18.0"</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
@@ -1441,8 +1441,19 @@
 </ul>
 <p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_quality_appraisal.py -q</code> (17 backward compatible), <code>test_quality_swarm.py -q</code> (17), system integrity, version assertion (5.17.1), <code>talos.py --help</code>, <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (0 U+FFFD).</p>
 
+<h3 id="s15-45">15.45 Ethical Open Access PDF Harvesting, Smart Section Extraction, and SQLite FTS5 Full-Text Indexing (v5.18.0)</h3>
+<p><strong>Overview:</strong> v5.18.0 introduces an ethical, fully air-gapped full-text acquisition and retrieval stack. <code>src/ingestion/pdf_harvester/</code> resolves legal Open Access and preprint full-text URLs through a cascading thirteen-source resolver and downloads PDFs under six layers of fault tolerance. <code>PDFSectionExtractor</code> slices each PDF into four evidentiary windows, and <code>FullTextSearchEngine</code> indexes those bodies with SQLite FTS5 for sub-millisecond BM25-ranked search.</p>
+<ul>
+  <li><strong>Cascading resolver</strong> (<code>resolvers.py</code>): <code>resolve_oa_url(paper_dict)</code> walks direct preprints (arXiv, TechRxiv, HAL/Inria, NASA NTRS), publisher OA APIs (Elsevier ScienceDirect OA, PLOS, PubMed Central), and meta-resolvers (Unpaywall, OpenAlex, Semantic Scholar, CORE, Crossref OA, SSRN).</li>
+  <li><strong>Download pipeline</strong> (<code>harvester.py</code>): <code>%PDF-</code> magic-bytes validation, atomic writes, SHA-256, 20 s timeout, 50 MB cap, 1.5 s polite delay under <code>TALOS-Academic-Research-Bot/5.18.0</code>; <code>harvest_candidates()</code> persists <code>local_pdf_path</code> / <code>pdf_sha256</code> / <code>pdf_status</code>.</li>
+  <li><strong>Section extraction</strong> (<code>section_extractor.py</code>): local <code>pypdf</code> caches methodology/experiments/code_availability/limitations windows consumed by <code>SmartSectionSlicer</code>.</li>
+  <li><strong>FTS5 engine</strong> (<code>src/search/fulltext_search.py</code>): <code>papers_fts</code> virtual table, <code>search_fulltext()</code> with <code>snippet(...)</code> and BM25 ranking, rendered in a <code>box.ROUNDED</code> Rich table.</li>
+  <li><strong>CLI / TUI</strong>: <code>--download-pdfs</code>, <code>--fts</code>, <code>--open-pdf</code>; Group 2 and Group 5 menu options; Rule 10 dossier 07.</li>
+</ul>
+<p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_pdf_harvester.py -q</code> (8 hermetic), <code>test_fulltext_search.py -q</code> (4 hermetic), <code>test_quality_swarm.py</code>/<code>test_quality_appraisal.py -q</code> (34), system integrity, version assertion (5.18.0), <code>talos.py --help</code>, dossier 07 (0 U+FFFD), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (0 U+FFFD).</p>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.17.1</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.18.0</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

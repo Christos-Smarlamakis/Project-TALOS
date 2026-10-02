@@ -2,7 +2,44 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.18.0] - 2026-10-02 -- Ηθικός Συλλέκτης Ακαδημαϊκών PDF, Έξυπνος Τεμαχισμός Ενοτήτων & Μηχανή SQLite FTS5
+
+### Προστέθηκε
+
+- **Ηθικός Συλλέκτης Ακαδημαϊκών PDF** (`src/ingestion/pdf_harvester/`): αρθρωτό, πλήρως απομονωμένο (air-gapped) υποσύστημα που επιλύει και μεταφορτώνει νόμιμα πλήρη κείμενα PDF Ανοικτής Πρόσβασης / προεκτυπώσεων στον gitignored κατάλογο `data/fulltext_cache/`. Περιλαμβάνει τα `resolvers.py`, `harvester.py` και `section_extractor.py`.
+
+- **Αλυσιδωτός επιλυτής Ανοικτής Πρόσβασης** (`resolvers.py:resolve_oa_url`): διατεταγμένη αλυσίδα δεκατριών νόμιμων επιλυτών: (1) άμεσες προεκτυπώσεις -- Cornell arXiv, IEEE TechRxiv (`10.36227/techrxiv`), HAL/Inria, NASA NTRS· (2) API εκδοτών Ανοικτής Πρόσβασης -- Elsevier ScienceDirect OA (`ELSEVIER_API_KEY`), PLOS, PubMed Central· (3) μετα-επιλυτές -- Unpaywall, OpenAlex `best_oa_location`, Semantic Scholar `openAccessPdf`, CORE, Crossref OA, SSRN. Κάθε επιλυτής επιστρέφει `(pdf_url, resolver_source)` και αποτυγχάνει ομαλά.
+
+- **Αγωγός λήψης έξι επιπέδων** (`harvester.py:AcademicPDFHarvester`): επικύρωση μαγικών byte `%PDF-` (πρώτα πέντε byte), ατομική εγγραφή προσωρινού αρχείου (`tmp_<id>.pdf` -> `<id>.pdf` μέσω `os.replace`), κατακερματισμός SHA-256, χρονικό όριο 20 δευτερολέπτων, ανώτατο μέγεθος 50 MB και καθυστέρηση 1,5 δευτερολέπτου υπό το User-Agent `TALOS-Academic-Research-Bot/5.18.0`.
+
+- **`harvest_candidates(min_relevance=7.0, active_profile=None)`**: αναζητά υποψήφια με `overall_score >= min_relevance`, τα μεταφορτώνει διαδοχικά και καταγράφει `local_pdf_path`, `pdf_sha256`, `pdf_status` ('DOWNLOADED' | 'UNAVAILABLE' | 'FAILED').
+
+- **Έξυπνος τεμαχισμός ενοτήτων** (`section_extractor.py:PDFSectionExtractor`): τοπική εξαγωγή μέσω `pypdf` (με εφεδρικό αναλυτή) αποθηκεύει τέσσερα παράθυρα κάτω από `data/fulltext_cache/<id>/` -- `methodology.txt`, `experiments.txt`, `code_availability.txt`, `limitations.txt` -- για το Σμήνος Ποιότητας Επιπέδου-2.
+
+- **Μηχανή πλήρους κειμένου SQLite FTS5** (`src/search/fulltext_search.py:FullTextSearchEngine`): δημιουργεί τον εικονικό πίνακα `papers_fts(paper_id, title, fulltext_content)`, ευρετηριάζει σταδιακά και εκτελεί υπο-χιλιοστοδευτερόλεπτα ερωτήματα FTS5 `MATCH` με κατάταξη BM25 και `snippet(...)`. Απόδοση σε πίνακα Rich (`box.ROUNDED`, «SQLite FTS5 Full-Text Search Results»).
+
+- **Ενσωμάτωση CLI & TUI** (`talos.py`): `--download-pdfs [--min-score 7.0]`, `--fts "<query>"`, `--open-pdf [paper_id]`· ο Κόμβος Καθολικής Αναζήτησης (Ομάδα 2) αποκτά «SQLite FTS5 Full-Text Search» και το μενού Βάσης (Ομάδα 5) αποκτά «Harvest Open Access Full-Text PDFs (12 Cascading Sources)».
+
+- **Ιδιωτικός φάκελος Rule 10** (`docs/internal/academic/07_ETHICAL_OPEN_ACCESS_PDF_HARVESTING_FTS.md`): επταενοτικός εμπιστευτικός φάκελος για την Οδηγία ΕΕ 2019/790 (TDM), τα μαθηματικά magic-bytes/SHA-256/BM25, μήτρα ανιχνευσιμότητας κώδικα και έτοιμα αποσπάσματα διατριβής/δημοσίευσης.
+
+### Άλλαξε
+
+- **Ενσωμάτωση αποθηκευμένων ενοτήτων στον SmartSectionSlicer** (`src/prisma/quality_swarm.py`): ο τεμαχιστής Επιπέδου-2 διαβάζει πλέον πραγματικό αποθηκευμένο κείμενο ενοτήτων PDF όταν υπάρχει τοπικό PDF (εφεδρική ανάγνωση `data/fulltext_cache/<id>/*.txt` όταν απουσιάζει `full_text`), διατηρώντας το εφεδρικό μονοπάτι τίτλου-συν-περίληψης και όλα τα προηγούμενα τεστ.
+
+- **Σχήμα βάσης** (`src/core/database_manager.py`): προστέθηκαν οι στήλες `papers.local_pdf_path`, `papers.pdf_sha256`, `papers.pdf_status` (αδιάφορη προς επανάληψη μετάβαση).
+
+- **Επαληθευτής χάρτη εξαρτήσεων** (`src/utils/verify_dependency_map.py`): το `pypdf` προστέθηκε στη whitelist `EXTERNAL_PACKAGES`.
+
+- **Συγχρονισμός έκδοσης σε 5.18.0** στα 6 βασικά αρχεία κώδικα, `docker-compose.yml` (`talos:5.18.0`), `CITATION.cff` (5.18.0, 2026-10-02), `config.template.json`, μεταδεδομένα tray/visualizer/wizard/strategy/diagnostics/bibtex/help, docstrings `src/prisma/` και `src/search/`, και στα 19 κανονικά αρχεία τεκμηρίωσης (2026-10-02).
+
+- **ROADMAP.md**: τρέχουσα έκδοση v5.18.0 (Complete, 2026-10-02)· ενορχήστρωση CORTEX & n8n σε v5.19.0.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_pdf_harvester.py -q` (8 πέρασαν)· `pytest tests/test_fulltext_search.py -q` (4 πέρασαν)· `pytest tests/test_quality_swarm.py tests/test_quality_appraisal.py -q` (34 πέρασαν)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.0)· `python talos.py --help` τεκμηριώνει `--download-pdfs`, `--fts`, `--open-pdf`· φάκελος 07 με 0 glyphs U+FFFD· `python src/utils/verify_dependency_map.py --ci` (έξοδος 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.17.1] - 2026-10-02 -- Διαφάνεια UX Αξιολόγησης Ποιότητας PRISMA & Μηχανή Αναγκαστικής Επαναξιολόγησης
+
 
 ### Προστέθηκε
 

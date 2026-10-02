@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.17.1
+Project: TALOS v5.18.0
 Description:
-    Canonical configuration hub for TALOS v5.17.1. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.18.0. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
@@ -25,6 +25,11 @@ Description:
       Engine -- Tier-2 quality swarm (src/prisma/quality_swarm.py) with
       profile-compiled auditor skills under _profiles/<name>/skills/.
       (src/core/hardware_advisor.py) consumes VRAM telemetry for budgeting.
+    - v5.18.0: Ethical Academic PDF Harvester, Smart Section Slicing & SQLite
+      FTS5 Engine -- src/ingestion/pdf_harvester/ cascades 12+ legal Open
+      Access resolvers into data/fulltext_cache/, section_extractor caches
+      Methodology/Experiments/Code/Limitations windows for the Tier-2 swarm,
+      and src/search/fulltext_search.py indexes cached bodies with FTS5.
     - Cloud LLM providers (Gemini, NVIDIA NIM, Groq, Cerebras, GitHub Models,
       Mistral, OpenRouter, DeepSeek, HuggingFace) are configured via environment
       variables for optional redundancy/failover (v5.9.18 Universal Cloud Mesh).
@@ -196,7 +201,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.17.1"
+TALOS_VERSION = "5.18.0"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.

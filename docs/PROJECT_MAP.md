@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.17.1
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.18.0
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.17.1 -- Διαφάνεια UX Αξιολόγησης Ποιότητας PRISMA & Μηχανή Αναγκαστικής Επαναξιολόγησης)
+> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.18.0 -- Ηθικός Συλλέκτης Ακαδημαϊκών PDF, Έξυπνος Τεμαχισμός Ενοτήτων & Μηχανή SQLite FTS5)
 
 ---
 
@@ -254,6 +254,7 @@ src/core/ai_manager.py
 | **Profile Manager SSOT (v5.16.1)** | `src/core/profile_manager.py` | Κανονική κλάση `ProfileManager` (ριζικός `_profiles/`), εκθέτοντας `get_profiles_dir()` / `get_active_profile_name()` / `set_active_profile()` / `list_profiles()` / `create_profile()` / `get_active_db_path()` / `get_active_config_path()`· κανονικός χώρος `uav_mission_planning` |
 | **Pluggable Provider Registry (v5.16.2)** | `src/core/provider_registry.py` | `ProviderDescriptor` (dataclass) + `ProviderRegistry` με `register` / `get` / `list_all` / `list_active` -- 10 πάροχοι (Ollama + NVIDIA NIM, DeepSeek, Gemini, Groq, Cerebras, Mistral, Hugging Face, OpenRouter, Anthropic)· δυναμική αξιολόγηση `is_active` |
 | **Hardware-Aware Model Advisor (v5.16.2)** | `src/core/hardware_advisor.py` | `HardwareModelAdvisor` -- `get_hardware_profile()` (`{has_cuda, device_name, total_vram_gb, system_ram_gb, is_laptop_cpu}`), `calculate_vram_budget()` (4-bit τμηματικός), `get_recommendations()`, `scan_sota_models()` (ραντάρ SOTA) |
+| **Ηθικός Συλλέκτης Ακαδημαϊκών PDF, Έξυπνος Τεμαχισμός Ενοτήτων & Μηχανή SQLite FTS5 (v5.18.0)** | `src/ingestion/pdf_harvester/`, `src/search/fulltext_search.py`, `src/core/database_manager.py` | `resolve_oa_url()` (αλυσιδωτός επιλυτής 13 νόμιμων πηγών Ανοικτής Πρόσβασης)· `AcademicPDFHarvester.harvest_candidates()` (μαγικά byte `%PDF-`, ατομικές εγγραφές, SHA-256, ευγενικός ρυθμός)· `PDFSectionExtractor.extract_sections()` (παράθυρα methodology/experiments/code_availability/limitations)· `FullTextSearchEngine.search_fulltext()` (FTS5 `papers_fts` + BM25 + snippet)· ενσωμάτωση αποθηκευμένων ενοτήτων `SmartSectionSlicer`· CLI `--download-pdfs` / `--fts` / `--open-pdf`· στήλες `local_pdf_path` / `pdf_sha256` / `pdf_status` |
 | **Εγκληματολογικό Σμήνος Ποιότητας Δύο Επιπέδων (v5.17.0)** | `src/prisma/quality_swarm.py` | Σμήνος Επιπέδου-2: `SkillCompiler.compile_profile_skills()` (πρότυπα αγνωστικισμού πεδίου -> `_profiles/<name>/skills/*.md`), `SmartSectionSlicer.slice_for_auditor()`, τέσσερις εξειδικευμένοι ελεγκτές (`TheoryAuditor` Q1 / `OperationalAuditor` Q2 / `BenchmarkAuditor` Q3-Q4 / `OpenScienceAuditor` Q5-Q6), `KitchenhamQualitySynthesizer.synthesize()` (`S_qual` + Fleiss `kappa_qual` + τεταρτημόριο + αφήγηση) και `SwarmQualityVerdict` |
 | **3D Visualizer (v5.10.12)** | `templates/live_foraging_visualizer.html` | Αστερισμός Three.js με 60 FPS ακτίνες λέιζερ, παλμούς φωτονίων, raycaster, στιγμιότυπο |
 | **OPTICA Bridge (v5.10.7)** | `src/integration/optica_client.py` | REST client στο Project OPTICA (θύρα 8002) εκφορτώνοντας βαριά γραφικά |
@@ -323,8 +324,8 @@ src/core/ai_manager.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.17.1 -- Διαφάνεια UX Αξιολόγησης Ποιότητας PRISMA & Μηχανή Αναγκαστικής Επαναξιολόγησης)
-> **Έκδοση Project:** v5.17.1
+> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.18.0 -- Ηθικός Συλλέκτης Ακαδημαϊκών PDF, Έξυπνος Τεμαχισμός Ενοτήτων & Μηχανή SQLite FTS5)
+> **Έκδοση Project:** v5.18.0
 > **Συνολικά .py modules στο src/:** 103 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 8 + mcp_server 1)
 
 

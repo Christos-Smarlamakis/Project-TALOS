@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.17.1
+Project: TALOS v5.18.0
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -36,6 +36,14 @@ Description:
     persisted 2D Evidence Quadrant distribution instead; CLI gains
     --appraise-quality [--swarm] [--force] and TUI Option 15 prompts before a
     deliberate re-audit.
+
+    v5.18.0: Ethical Academic PDF Harvester, Smart Section Slicing & SQLite
+    FTS5 Engine -- src/ingestion/pdf_harvester/ resolves and downloads legal
+    Open Access / preprint full-text PDFs into data/fulltext_cache/ (magic-bytes
+    validation, atomic writes, SHA-256, polite rate limiting), section_extractor
+    caches Methodology/Experiments/Code/Limitations windows for the Tier-2
+    Quality Swarm, and src/search/fulltext_search.py indexes cached bodies with
+    SQLite FTS5. CLI gains --download-pdfs, --fts, and --open-pdf.
 
     v5.16.2: Pluggable Provider Registry & Hardware-Aware Model Advisor -- a
     modular adapter-based provider registry (src/core/provider_registry.py)
@@ -816,7 +824,8 @@ def database_data_menu(python_exe):
         "10. Zotero Cloud Connector",
         "11. View Recent Evaluation History",
         "12. Export Curated Papers to BibTeX / LaTeX (.bib)",
-        "13. Back / Return to Main Menu"
+        "13. Harvest Open Access Full-Text PDFs (12 Cascading Sources)",
+        "14. Back / Return to Main Menu"
     ])
     if not choice or "Back" in choice: return
     if choice.startswith("1."): run_script("db_stats.py", python_exe, args=["--optimize"])
@@ -833,6 +842,14 @@ def database_data_menu(python_exe):
     elif choice.startswith("12."):
         from src.utils.bibtex_exporter import BibTeXExporter
         BibTeXExporter().export_and_render()
+    elif choice.startswith("13."):
+        try:
+            from src.ingestion.pdf_harvester.harvester import AcademicPDFHarvester
+            summary = AcademicPDFHarvester().harvest_candidates(min_relevance=7.0)
+            _render_harvest_summary(summary)
+        except Exception as e:
+            console.print(f"[red]PDF harvest error: {e}[/red]")
+        safe_pause()
 
 def system_health_menu(python_exe):
     """System health, diagnostics, chaos engineering and CI/CD sub-menu."""
@@ -1889,8 +1906,9 @@ def search_ingestion_menu(python_exe):
         "7. Grey Literature Miner",
         "8. Zotero Cloud Sync",
         "9. Interactive Dashboard (Flask)",
+        "10. SQLite FTS5 Full-Text Search (Search Inside PDF Bodies)",
         questionary.Separator(),
-        "10. Back / Return to Main Menu"
+        "11. Back / Return to Main Menu"
     ])
     if not choice or "Back" in choice: return
     if choice.startswith("1."):
@@ -1958,6 +1976,15 @@ def search_ingestion_menu(python_exe):
         run_script("zotero_connector.py", python_exe)
     elif choice.startswith("9."):
         run_script("interactive_dashboard.py", python_exe)
+    elif choice.startswith("10."):
+        query = questionary.text("Full-text query (SQLite FTS5):", style=TALOS_QUESTIONARY_STYLE).ask()
+        if query and query.strip():
+            try:
+                from src.search.fulltext_search import FullTextSearchEngine
+                FullTextSearchEngine().run(query.strip())
+            except Exception as e:
+                console.print(f"[red]FTS5 search error: {e}[/red]")
+        safe_pause()
 
 
 def analysis_visualization_menu(python_exe):
@@ -2401,6 +2428,71 @@ def _flag_value(argv, flag):
     return None
 
 
+def _render_harvest_summary(summary):
+    """Render a Rich summary table for the Open Access PDF harvest result.
+
+    Args:
+        summary (dict): Output of ``AcademicPDFHarvester.harvest_candidates``.
+    """
+    from rich.table import Table
+    from rich import box
+    table = Table(
+        title="Open Access PDF Harvest Summary",
+        box=box.ROUNDED,
+        border_style="bright_cyan",
+        header_style="bold bright_cyan",
+        expand=False,
+    )
+    table.add_column("Metric", style="bold cyan", no_wrap=True)
+    table.add_column("Value", style="bold white", no_wrap=True)
+    table.add_row("Candidates", str(summary.get("candidates", 0)))
+    table.add_row("Downloaded", str(summary.get("downloaded", 0)))
+    table.add_row("Unavailable", str(summary.get("unavailable", 0)))
+    table.add_row("Failed", str(summary.get("failed", 0)))
+    console.print(table)
+    for result in summary.get("results", []):
+        status = result.get("status", "")
+        color = "green" if status == "DOWNLOADED" else ("yellow" if status == "UNAVAILABLE" else "red")
+        source = f" [{result.get('source')}]" if result.get("source") else ""
+        console.print(f"  [{color}]{status}[/{color}] (id={result.get('id')}) {str(result.get('title') or '')[:70]}{source}")
+
+
+def _open_local_pdf(paper_id):
+    """Open a downloaded local PDF in the default system viewer.
+
+    Args:
+        paper_id (str): The database id of the paper whose PDF should open.
+    """
+    if not paper_id:
+        console.print("[yellow]Usage: python talos.py --open-pdf <paper_id>[/yellow]")
+        return
+    from src.core.database_manager import DatabaseManager
+    db = DatabaseManager()
+    row = db.execute_query(
+        "SELECT local_pdf_path, title FROM papers WHERE id = ?",
+        (paper_id,),
+        fetch_one=True,
+    )
+    if not row:
+        console.print(f"[red]Paper {paper_id} not found.[/red]")
+        return
+    path, title = row[0], row[1]
+    if not path or not os.path.exists(path):
+        console.print(f"[yellow]No downloaded PDF for paper {paper_id} "
+                      f"({title or 'untitled'}). Run --download-pdfs first.[/yellow]")
+        return
+    try:
+        if os.name == "nt":
+            os.startfile(path)
+        elif sys.platform == "darwin":
+            subprocess.run(["open", path], check=False)
+        else:
+            subprocess.run(["xdg-open", path], check=False)
+        console.print(f"[green]Opened local PDF: {path}[/green]")
+    except OSError as exc:
+        console.print(f"[red]Failed to open PDF: {exc}[/red]")
+
+
 def _handle_cli_flags(argv):
     """Dispatch CLI fast-path flags and return True when one was handled.
 
@@ -2508,6 +2600,32 @@ def _handle_cli_flags(argv):
         from src.utils.ai_strategy_selector import select_ai_execution_strategy
         if not select_ai_execution_strategy(strategy_target):
             sys.exit(1)
+        return True
+    # -- v5.18.0: Ethical Academic PDF Harvester (--download-pdfs [--min-score]). -- #
+    if "--download-pdfs" in argv:
+        from src.ingestion.pdf_harvester.harvester import AcademicPDFHarvester
+        min_score = 7.0
+        raw = _flag_value(argv, "--min-score")
+        if raw:
+            try:
+                min_score = float(raw)
+            except ValueError:
+                min_score = 7.0
+        summary = AcademicPDFHarvester().harvest_candidates(min_relevance=min_score)
+        _render_harvest_summary(summary)
+        return True
+    # -- v5.18.0: SQLite FTS5 full-text search (--fts "<query>"). -- #
+    if "--fts" in argv:
+        query = _flag_value(argv, "--fts")
+        if not query:
+            console.print("[yellow]Usage: python talos.py --fts \"<query>\"[/yellow]")
+            return True
+        from src.search.fulltext_search import FullTextSearchEngine
+        FullTextSearchEngine().run(query.strip())
+        return True
+    # -- v5.18.0: Open a downloaded local PDF (--open-pdf [paper_id]). -- #
+    if "--open-pdf" in argv:
+        _open_local_pdf(_flag_value(argv, "--open-pdf"))
         return True
     return False
 

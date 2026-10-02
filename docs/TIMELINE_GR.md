@@ -4,9 +4,25 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.17.1 -- Διαφάνεια UX Αξιολόγησης Ποιότητας PRISMA & Μηχανή Αναγκαστικής Επαναξιολόγησης)
+> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.18.0 -- Ηθικός Συλλέκτης Ακαδημαϊκών PDF, Έξυπνος Τεμαχισμός Ενοτήτων & Μηχανή SQLite FTS5)
 
 ---
+
+## Φάση 72: Ηθικός Συλλέκτης Ακαδημαϊκών PDF & Μηχανή Πλήρους Κειμένου FTS5 (v5.18.0)
+
+- [x] **Κατάσταση:** ΟΛΟΚΛΗΡΩΜΕΝΟ (2026-10-02).
+
+- [x] **Ηθικός Συλλέκτης Ακαδημαϊκών PDF** -- το `src/ingestion/pdf_harvester/` εισάγει την `resolve_oa_url` (αλυσιδωτός επιλυτής 13 νόμιμων πηγών Ανοικτής Πρόσβασης: arXiv, TechRxiv, HAL/Inria, NASA NTRS, Elsevier OA, PLOS, PubMed Central, Unpaywall, OpenAlex, Semantic Scholar, CORE, Crossref OA, SSRN), τον `AcademicPDFHarvester` (αγωγός λήψης έξι επιπέδων: επικύρωση `%PDF-`, ατομικές εγγραφές, SHA-256, όριο 20 s, ανώτατο 50 MB, καθυστέρηση 1,5 s) και τον `PDFSectionExtractor` (απομονωμένη εξαγωγή `pypdf` + έξυπνος τεμαχισμός ενοτήτων).
+
+- [x] **Μηχανή πλήρους κειμένου SQLite FTS5** -- το `src/search/fulltext_search.py` χτίζει τον εικονικό πίνακα `papers_fts`, ευρετηριάζει τα σώματα και εκτελεί ερωτήματα `MATCH` με κατάταξη BM25 και `snippet()` σε πίνακα `box.ROUNDED`.
+
+- [x] **CLI & TUI** -- σημαίες `--download-pdfs [--min-score]`, `--fts "<query>"` και `--open-pdf [paper_id]` συν επιλογές Ομάδας 2 και Ομάδας 5· ο `SmartSectionSlicer` διαβάζει αποθηκευμένες ενότητες PDF· το σχήμα `papers` αποκτά `local_pdf_path` / `pdf_sha256` / `pdf_status`.
+
+- [x] **Φάκελος Rule 10 (07)** -- `docs/internal/academic/07_ETHICAL_OPEN_ACCESS_PDF_HARVESTING_FTS.md` (πρότυπο 7 ενοτήτων, πλαίσιο TDM Οδηγίας ΕΕ 2019/790).
+
+- [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose.yml (`talos:5.18.0`) + CITATION.cff (5.18.0, 2026-10-02) + μεταδεδομένα + 19 κανονικά έγγραφα σε v5.18.0 (2026-10-02).
+
+- [x] **Πέρασαν οι πύλες επαλήθευσης** -- compileall, `test_pdf_harvester.py` (8 πέρασαν), `test_fulltext_search.py` (4 πέρασαν), `test_quality_swarm.py`/`test_quality_appraisal.py` (34 πέρασαν), `test_system_integrity.py`, `test_talos_version` (5.18.0), `talos.py --help`, `verify_dependency_map.py --ci` (έξοδος 0), `bash -n`, σάρωση UTF-8 (0 U+FFFD).
 
 ## Φάση 71: Διαφάνεια UX Αξιολόγησης Ποιότητας PRISMA & Αναγκαστική Επαναξιολόγηση (v5.17.1)
 

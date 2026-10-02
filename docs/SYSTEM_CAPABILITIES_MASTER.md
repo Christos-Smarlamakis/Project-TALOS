@@ -4,7 +4,7 @@
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-02
-> **Version:** v5.17.1 -- PRISMA Quality Appraisal UX Transparency & Force Re-Appraisal Engine
+> **Version:** v5.18.0 -- Ethical Academic PDF Harvester, Smart Section Slicing & SQLite FTS5 Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.17.0" | `config/settings.py` |
+| TALOS_VERSION | "5.18.0" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1198,6 +1198,24 @@ For each evaluated paper, the AI generates:
 - **Dual-Surface Help**: Panel 1 (`help_system.py`) and web manual Card 6 (`help_manual.html`) document `--appraise-quality [--swarm] [--force]` with a dedicated force re-appraisal command.
 
 **Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_quality_appraisal.py -q` (17 -- backward compatible), `pytest tests/test_quality_swarm.py -q` (17), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.17.1), `python talos.py --help`, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
+
+---
+
+### 15.45 Ethical Open Access PDF Harvesting, Smart Section Extraction, and SQLite FTS5 Full-Text Indexing (v5.18.0)
+
+**Overview:** v5.18.0 introduces an ethical, fully air-gapped full-text acquisition and retrieval stack. `src/ingestion/pdf_harvester/` resolves legal Open Access and preprint full-text URLs through a cascading thirteen-source resolver and downloads PDFs under six layers of fault tolerance. `PDFSectionExtractor` slices each PDF into four evidentiary windows, and `FullTextSearchEngine` indexes those bodies with SQLite FTS5 for sub-millisecond BM25-ranked search.
+
+- **Cascading resolver** (`src/ingestion/pdf_harvester/resolvers.py`): `resolve_oa_url(paper_dict)` walks (1) direct preprints (arXiv, IEEE TechRxiv `10.36227`, HAL/Inria, NASA NTRS), (2) publisher OA APIs (Elsevier ScienceDirect OA `ELSEVIER_API_KEY`, PLOS, PubMed Central), and (3) meta-resolvers (Unpaywall, OpenAlex `best_oa_location`, Semantic Scholar `openAccessPdf`, CORE, Crossref OA, SSRN), returning the first viable `(pdf_url, resolver_source)`.
+
+- **Download pipeline** (`harvester.py:AcademicPDFHarvester`): `%PDF-` magic-bytes validation, atomic temporary-file writes (`tmp_<id>.pdf` -> `<id>.pdf`), SHA-256 integrity hashing, 20 s timeout, 50 MB cap, and 1.5 s polite delay under `TALOS-Academic-Research-Bot/5.18.0`. `harvest_candidates(min_relevance=7.0)` persists `papers.local_pdf_path`, `papers.pdf_sha256`, and `papers.pdf_status`.
+
+- **Section extraction** (`section_extractor.py:PDFSectionExtractor`): local `pypdf` (printable-byte fallback) caches `methodology.txt`, `experiments.txt`, `code_availability.txt`, and `limitations.txt` under `data/fulltext_cache/<id>/`; `SmartSectionSlicer` consumes these windows.
+
+- **FTS5 engine** (`src/search/fulltext_search.py:FullTextSearchEngine`): `papers_fts(paper_id, title, fulltext_content)` virtual table, `index_paper` / `index_from_cache`, `search_fulltext(query, limit=20)` with `snippet(papers_fts, 2, '<b>', '</b>', '...', 15)` and BM25 ranking, rendered in a `box.ROUNDED` Rich table.
+
+- **CLI / TUI** (`talos.py`): `--download-pdfs [--min-score 7.0]`, `--fts "<query>"`, `--open-pdf [paper_id]`; Group 2 (Universal Search Hub) and Group 5 (Database & Data) menu options; Rule 10 dossier 07.
+
+**Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_pdf_harvester.py -q` (8 hermetic), `pytest tests/test_fulltext_search.py -q` (4 hermetic), `pytest tests/test_quality_swarm.py tests/test_quality_appraisal.py -q` (34), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.0), `python talos.py --help` (`--download-pdfs` / `--fts` / `--open-pdf`), dossier 07 (0 U+FFFD), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
 
 ---
 

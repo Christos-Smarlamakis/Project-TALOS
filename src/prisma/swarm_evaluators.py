@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: swarm_evaluators.py
-Project: TALOS v5.17.1
+Project: TALOS v5.18.0
 Description:
     Multi-agent peer-review swarm and consensus engine for the PRISMA-ScR
     screening stage. This module introduces three specialized reviewer personas

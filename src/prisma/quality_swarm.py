@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: quality_swarm.py
-Project: TALOS v5.17.1
+Project: TALOS v5.18.0
 Description:
     Tier-2 Forensic Quality Swarm for the Two-Tier Hierarchical Swarm
     Architecture. Where the Tier-1 swarm (``swarm_evaluators.py``) performs
@@ -498,6 +498,58 @@ class SmartSectionSlicer:
 
         return {key: "\n".join(block).strip() for key, block in sections.items()}
 
+    # -- Cached PDF section windows (v5.18.0): the SmartSectionSlicer reads
+    # real extracted section text whenever a local PDF has been harvested. -- #
+    _CACHED_SECTION_FILES: Dict[str, str] = {
+        "methodology": "methodology.txt",
+        "experiments": "experiments.txt",
+        "code_availability": "code_availability.txt",
+        "discussion_limitations": "limitations.txt",
+    }
+
+    @staticmethod
+    def _cached_section_dir(paper: Dict[str, Any]) -> Optional[str]:
+        """Resolve the cached section directory for a paper, if present.
+
+        Args:
+            paper (Dict[str, Any]): Paper record with an ``id`` key.
+
+        Returns:
+            Optional[str]: Absolute cache directory, or None when absent.
+        """
+        pid = paper.get("id")
+        if pid is None:
+            return None
+        project_root = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "..", "..")
+        )
+        cache_dir = os.path.join(project_root, "data", "fulltext_cache", str(pid))
+        return cache_dir if os.path.isdir(cache_dir) else None
+
+    def _load_cached_sections(self, paper: Dict[str, Any]) -> Dict[str, str]:
+        """Load cached section text files for a paper into a keyed mapping.
+
+        Args:
+            paper (Dict[str, Any]): Paper record with an ``id`` key.
+
+        Returns:
+            Dict[str, str]: Mapping of section key to cached text (empty where
+                no file exists).
+        """
+        cache_dir = self._cached_section_dir(paper)
+        out: Dict[str, str] = {}
+        if not cache_dir:
+            return out
+        for key, filename in self._CACHED_SECTION_FILES.items():
+            path = os.path.join(cache_dir, filename)
+            if os.path.exists(path):
+                try:
+                    with open(path, "r", encoding="utf-8") as handle:
+                        out[key] = handle.read().strip()
+                except OSError:
+                    out[key] = ""
+        return out
+
     def slice_for_auditor(self, auditor_key: str, paper: Dict[str, Any],
                           max_words: int = 400) -> str:
         """Return the targeted, word-capped text slice for one auditor.
@@ -523,6 +575,17 @@ class SmartSectionSlicer:
 
         fallback = f"Title: {title}\nAbstract: {abstract or '(no abstract)'}"
         if not full_text:
+            # -- v5.18.0: read real cached PDF section text when a local PDF
+            # was harvested by the Ethical Academic PDF Harvester. -- #
+            cached = self._load_cached_sections(paper)
+            if cached:
+                cached_parts: List[str] = []
+                for section_key in self.AUDITOR_SECTIONS.get(auditor_key, tuple()):
+                    body = cached.get(section_key) or ""
+                    if body:
+                        cached_parts.append(f"[{section_key.upper()}]\n{body}")
+                if cached_parts:
+                    return self._cap_words("\n\n".join(cached_parts), max_words)
             return self._cap_words(fallback, max_words)
 
         sections = self._extract_sections(full_text)

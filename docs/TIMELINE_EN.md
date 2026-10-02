@@ -4,9 +4,25 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-02 (v5.17.1 -- PRISMA Quality Appraisal UX Transparency & Force Re-Appraisal Engine)
+> **Last Updated:** 2026-10-02 (v5.18.0 -- Ethical Academic PDF Harvester, Smart Section Slicing & SQLite FTS5 Engine)
 
 ---
+
+## Phase 72: Ethical Academic PDF Harvester & Full-Text FTS5 Engine (v5.18.0)
+
+- [x] **Status:** COMPLETED (2026-10-02).
+
+- [x] **Ethical Academic PDF Harvester** -- `src/ingestion/pdf_harvester/` introduces `resolve_oa_url` (a cascading 13-source legal Open Access resolver: arXiv, TechRxiv, HAL/Inria, NASA NTRS, Elsevier OA, PLOS, PubMed Central, Unpaywall, OpenAlex, Semantic Scholar, CORE, Crossref OA, SSRN), `AcademicPDFHarvester` (six-layer download pipeline: `%PDF-` magic-bytes validation, atomic writes, SHA-256, 20 s timeout, 50 MB cap, 1.5 s polite delay), and `PDFSectionExtractor` (air-gapped `pypdf` text extraction + smart section slicing).
+
+- [x] **SQLite FTS5 full-text engine** -- `src/search/fulltext_search.py` builds the `papers_fts` virtual table, indexes cached bodies, and executes BM25-ranked `MATCH` queries with `snippet()` highlighting rendered in a `box.ROUNDED` Rich table.
+
+- [x] **CLI & TUI** -- `--download-pdfs [--min-score]`, `--fts "<query>"`, and `--open-pdf [paper_id]` flags plus Group 2 and Group 5 menu options; `SmartSectionSlicer` reads cached PDF sections; `papers` schema gains `local_pdf_path` / `pdf_sha256` / `pdf_status`.
+
+- [x] **Rule 10 dossier 07** -- `docs/internal/academic/07_ETHICAL_OPEN_ACCESS_PDF_HARVESTING_FTS.md` (7-section standard, EU Directive 2019/790 TDM framework).
+
+- [x] **Version synced** -- 6 code files + docker-compose.yml (`talos:5.18.0`) + CITATION.cff (5.18.0, 2026-10-02) + metadata + 19 canonical docs to v5.18.0 (2026-10-02).
+
+- [x] **Verification gates passed** -- compileall, `test_pdf_harvester.py` (8 passed), `test_fulltext_search.py` (4 passed), `test_quality_swarm.py`/`test_quality_appraisal.py` (34 passed), `test_system_integrity.py`, `test_talos_version` (5.18.0), `talos.py --help`, `verify_dependency_map.py --ci` (exit 0), `bash -n`, UTF-8 scan (0 U+FFFD).
 
 ## Phase 71: PRISMA Quality Appraisal UX Transparency & Force Re-Appraisal (v5.17.1)
 

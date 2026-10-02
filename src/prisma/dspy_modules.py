@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: dspy_modules.py
-Project: TALOS v5.17.1
+Project: TALOS v5.18.0
 Description:
     Modular pipeline classes implementing the four-phase PRISMA-ScR flow
     (Identification -> Screening -> Eligibility -> Included) on top of the typed

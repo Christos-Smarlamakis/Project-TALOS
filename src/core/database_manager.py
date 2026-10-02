@@ -5,7 +5,7 @@
 #  This program is free software...
 """
 Module: database_manager.py (v5.0 - Multi-Provider Hybrid Embeddings)
-Project: TALOS v5.16.2
+Project: TALOS v5.18.0
 """
 import sqlite3
 import os
@@ -163,6 +163,16 @@ class DatabaseManager:
             self.execute_query("ALTER TABLE papers ADD COLUMN quality_rubric_json TEXT;", commit=True)
         if cols and not any(col[1] == 'evidence_quadrant' for col in cols):
             self.execute_query("ALTER TABLE papers ADD COLUMN evidence_quadrant TEXT;", commit=True)
+        # -- v5.18.0: Ethical Academic PDF Harvester persistence columns. The
+        # local_pdf_path stores the cache location, pdf_sha256 stores the
+        # SHA-256 integrity digest, and pdf_status stores the state machine
+        # value ('DOWNLOADED' | 'UNAVAILABLE' | 'FAILED'). -- #
+        if cols and not any(col[1] == 'local_pdf_path' for col in cols):
+            self.execute_query("ALTER TABLE papers ADD COLUMN local_pdf_path TEXT;", commit=True)
+        if cols and not any(col[1] == 'pdf_sha256' for col in cols):
+            self.execute_query("ALTER TABLE papers ADD COLUMN pdf_sha256 TEXT;", commit=True)
+        if cols and not any(col[1] == 'pdf_status' for col in cols):
+            self.execute_query("ALTER TABLE papers ADD COLUMN pdf_status TEXT;", commit=True)
         # -- v5.15.1: persistent vector cache table for accelerated neural
         # retrieval. Stores one BLOB-encoded float32 vector per paper per
         # embedding model, so the neural vector search engine can skip

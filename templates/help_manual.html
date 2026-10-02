@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Project TALOS Interactive Command Reference and Architecture Guide. Self-contained, air-gapped web manual.">
-<title>TALOS v5.16.2 -- Interactive Command Reference &amp; Architecture Guide</title>
+<title>TALOS v5.18.0 -- Interactive Command Reference &amp; Architecture Guide</title>
 <style>
   :root {
     --bg: #0f1117;
@@ -129,7 +129,7 @@
 </head>
 <body>
 <header>
-  <h1>Project TALOS v5.16.2 -- Interactive Command Reference &amp; Architecture Guide</h1>
+  <h1>Project TALOS v5.18.0 -- Interactive Command Reference &amp; Architecture Guide</h1>
   <p class="subtitle">Dual-Surface User Assistance System. Fully air-gapped, local-first, zero external CDN.</p>
 </header>
 
@@ -140,7 +140,7 @@
 
 <main>
   <!-- Card 1: CLI Commands -->
-  <section class="card wide" data-search="cli command flags wizard daily stats diagnostics doctor strategy prisma swarm export bib snowball vector code help">
+  <section class="card wide" data-search="cli command flags wizard daily stats diagnostics doctor strategy prisma swarm export bib snowball vector code help download pdfs fts open pdf harvest fulltext open access">
     <h2>CLI Fast-Dispatch Flags</h2>
 
     <div class="cmd-row">
@@ -166,6 +166,21 @@
     <div class="cmd-row">
       <code>python talos.py --code-search &lt;query&gt;</code>
       <span class="desc">Reproducible code-first discovery (GitHub / PapersWithCode / benchmarks). <small>(Universal Search Hub)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --download-pdfs [--min-score 7.0]</code>
+      <span class="desc">Harvest legal Open Access / preprint full-text PDFs via the 12-source cascading resolver into <code>data/fulltext_cache/</code>. <small>(PDF Harvesting)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --fts &quot;&lt;query&gt;&quot;</code>
+      <span class="desc">SQLite FTS5 full-text search inside cached PDF bodies with BM25 ranking and snippet highlighting. <small>(Full-Text Search)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --open-pdf &lt;paper_id&gt;</code>
+      <span class="desc">Open a downloaded local PDF in the default system viewer. <small>(PDF Viewer)</small></span>
       <button class="copy" type="button">Copy</button>
     </div>
     <div class="cmd-row">
@@ -340,6 +355,50 @@
       <tr><td>METHODOLOGICAL_EXEMPLAR</td><td>&lt; 7.0</td><td>&gt;= 7.5</td><td>Low relevance but strong rigor; transferable methods.</td></tr>
       <tr><td>METHODOLOGICAL_NOISE</td><td>&lt; 7.0</td><td>&lt; 7.5</td><td>Low relevance and low rigor; unlikely to contribute.</td></tr>
     </table>
+  </section>
+
+  <!-- Card 7: Ethical PDF Harvester & SQLite FTS5 Full-Text Search -->
+  <section class="card wide" data-search="pdf harvester open access download magic bytes sha256 atomic write rate limit elsevier arxiv techrxiv unpaywall openalex semantic scholar crossref core plos pubmed central ftf fts5 full text search bm25 snippet air gapped section slicing methodology experiments limitations code availability">
+    <h2>Ethical Open Access PDF Harvesting &amp; SQLite FTS5 Full-Text Search</h2>
+    <p><strong>v5.18.0 -- Ethical Academic PDF Harvester.</strong> The
+    <code>src/ingestion/pdf_harvester/</code> package resolves legal Open Access
+    and preprint full-text URLs through a cascading 12-source resolver (Cornell
+    arXiv, IEEE TechRxiv, HAL/Inria, NASA NTRS, Elsevier ScienceDirect OA, PLOS,
+    PubMed Central, Unpaywall, OpenAlex, Semantic Scholar, CORE, Crossref OA, and
+    SSRN) and downloads PDFs into the gitignored <code>data/fulltext_cache/</code>
+    directory. Every download is guarded by <code>%PDF-</code> magic-bytes
+    validation, atomic temporary-file writes, SHA-256 integrity hashing, a 20 s
+    timeout, a 50 MB size cap, and a 1.5 s polite inter-request delay under the
+    academic User-Agent <code>TALOS-Academic-Research-Bot/5.18.0</code>. The
+    pipeline operates strictly within EU Directive 2019/790 (Text and Data Mining,
+    Articles 3 and 4).</p>
+    <p><strong>Smart Section Slicing.</strong> After download,
+    <code>PDFSectionExtractor</code> extracts four evidence windows per paper
+    (Methodology, Experiments, Code Availability, Limitations) and caches them
+    under <code>data/fulltext_cache/&lt;id&gt;/</code>. The Tier-2 Quality Swarm
+    (<code>SmartSectionSlicer</code>) consumes these windows so forensic auditors
+    read real extracted PDF text whenever a local PDF exists.</p>
+    <p><strong>SQLite FTS5 Engine.</strong> <code>FullTextSearchEngine</code>
+    maintains the <code>papers_fts(paper_id, title, fulltext_content)</code>
+    virtual table, indexes cached bodies incrementally, and executes
+    sub-millisecond FTS5 <code>MATCH</code> queries with BM25 ranking and
+    <code>snippet()</code> highlighting. All matching runs 100% locally with zero
+    external telemetry.</p>
+    <div class="cmd-row">
+      <code>python talos.py --download-pdfs --min-score 7.0</code>
+      <span class="desc">Harvest full-text PDFs for every elite candidate paper (overall_score &gt;= 7.0).</span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --fts &quot;spatio-temporal graph neural network&quot;</code>
+      <span class="desc">FTS5 full-text search inside cached PDF bodies with snippet extraction.</span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --open-pdf 42</code>
+      <span class="desc">Open the downloaded PDF for paper id 42 in the default viewer.</span>
+      <button class="copy" type="button">Copy</button>
+    </div>
   </section>
 </main>
 

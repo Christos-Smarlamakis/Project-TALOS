@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: help_system.py
-Project: TALOS v5.17.1
+Project: TALOS v5.18.0
 Description:
     Dual-Surface User Assistance System. This module renders a rich, four-panel
     interactive command reference for the TALOS terminal UI and provides the
@@ -90,6 +90,14 @@ def _panel_1_cli_flags() -> Panel:
     table.add_row("Exports", "--export-bib [score] [--min-quality Q] [--quadrant Q]",
                   "Export curated papers to a BibTeX / LaTeX library with dual "
                   "relevance/quality filtering (data/exports/talos_library.bib).")
+    table.add_row("PDF Harvesting", "--download-pdfs [--min-score 7.0]",
+                  "Harvest legal Open Access / preprint full-text PDFs via the "
+                  "12-source cascading resolver (src/ingestion/pdf_harvester/).")
+    table.add_row("Full-Text Search", "--fts \"[query]\"",
+                  "SQLite FTS5 full-text search inside cached PDF bodies "
+                  "(src/search/fulltext_search.py).")
+    table.add_row("PDF Viewer", "--open-pdf [paper_id]",
+                  "Open a downloaded local PDF in the default system viewer.")
     table.add_row("Quality Appraisal", "--appraise-quality [--min-score 7.0] [--swarm] [--force]",
                   "Batch Kitchenham (2007) scientific quality appraisal of "
                   "candidate papers with 2D evidence-quadrant classification; "

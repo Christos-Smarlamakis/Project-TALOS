@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: scoping_review_synthesizer.py
-Project: TALOS v5.17.1
+Project: TALOS v5.18.0
 Description:
     Produces a publication-grade Scoping Review draft structured strictly per
     the PRISMA-ScR reporting guidelines (Tricco et al., 2018) and the PRISMA

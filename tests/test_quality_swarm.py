@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_quality_swarm.py
-Project: TALOS v5.17.1
+Project: TALOS v5.18.0
 Description:
     Hermetic unit tests for the Tier-2 Forensic Quality Swarm (v5.17.0).
     The suite makes no live Ollama or external API calls: the LLM backend is
