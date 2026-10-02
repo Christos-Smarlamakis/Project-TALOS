@@ -2,6 +2,25 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.16.2] - 2026-10-02 -- Ενθέσιμο Μητρώο Παρόχων & Σύμβουλος Μοντέλων με Επίγνωση Υλικού
+
+### Προστέθηκε
+
+- **Ενθέσιμο Μητρώο Παρόχων** (`src/core/provider_registry.py`): αρθρωτός κατάλογος προσαρμογέων που υλοποιεί την Αρχή Ανοικτού-Κλειστού (ανοικτό προς επέκταση, κλειστό προς τροποποίηση). Ο `ProviderDescriptor` (dataclass αντικείμενο τιμής) καταγράφει το κανονικό `name`, το `base_url`, το προαιρετικό `api_key_env`, το `default_model`, την κατηγορία καθυστέρησης `category` (`local_gpu` / `local_cpu` / `cloud_reasoning` / `cloud_fast` / `cloud_heavy`), τη σημαία `is_openai_compatible` και τη δυναμικά αξιολογούμενη σημαία `is_active`. Το `ProviderRegistry` προ-καταχωρίζει το τοπικό runtime Ollama συν εννέα παρόχους νέφους (NVIDIA NIM, DeepSeek, Gemini, Groq, Cerebras, Mistral, Hugging Face, OpenRouter, Anthropic) και εκθέτει ένα σταθερό API τεσσάρων μεθόδων (`register`, `get`, `list_all`, `list_active`). Η προσθήκη οποιουδήποτε μελλοντικού παρόχου (ένα προσαρμοσμένο στιγμιότυπο NVIDIA NIM, το Anthropic Claude ή ένας προσαρμοσμένος edge server) αποτελεί πλέον καθαρή λειτουργία δεδομένων -- κανένας βρόχος αξιολόγησης πυρήνα δεν τροποποιείται ποτέ. Το `is_active` επαναξιολογείται με ειλικρίνεια κατά το χρόνο ερωτήματος: οι πάροχοι νέφους είναι ενεργοί όταν το κλειδί τους υπάρχει στο περιβάλλον, ενώ το τοπικό Ollama είναι ενεργό όταν η θύρα του απαντά σε ελαφρύ ανιχνευτή TCP.
+- **Σύμβουλος Μοντέλων με Επίγνωση Υλικού** (`src/core/hardware_advisor.py`): ο `HardwareModelAdvisor` επαναχρησιμοποιεί την υφιστάμενη τηλεμετρία VRAM (`detect_vram_gb()` μέσω nvidia-smi) και την επαυξάνει με ενδοσκόπηση Torch CUDA (όνομα συσκευής και `total_memory`), μνήμη συστήματος psutil και ευρετική ανίχνευση φορητού επεξεργαστή μέσω μπαταρίας -- όλα θωρακισμένα ώστε υπολογιστές μόνο-CPU να υποβαθμίζονται ομαλά. Η `get_hardware_profile()` επιστρέφει `{has_cuda, device_name, total_vram_gb, system_ram_gb, is_laptop_cpu}`. Η `calculate_vram_budget()` εφαρμόζει τμηματικό τύπο κβαντοποίησης 4-bit (`VRAM >= 11.0 GB -> 14B`, `5.5 <= VRAM < 11.0 -> 8B`, `VRAM < 5.5 / CPU -> 3B`) και η `get_recommendations()` επιστρέφει στοίβα ανά ρόλο (`screening_local`, `reasoning_local`, `reasoning_cloud`, `fast_cloud`) διαστασιολογημένη στον ανιχνευμένο προϋπολογισμό.
+- **Διαδικτυακό ραντάρ SOTA** (`scan_sota_models(timeout=1.5)`): ελαφρύς, μη αποκλειστικός έλεγχος πάνω σε στατικό επαληθευμένο ραντάρ συν ζωντανές ετικέτες Ollama και ανιχνευτή OpenRouter, που αναδεικνύει νεότερες κυκλοφορίες (Qwen 3/4, Llama 4) που χωρούν στον ανιχνευμένο προϋπολογισμό. Εκτός σύνδεσης υποβαθμίζεται στη στατική επαληθευμένη λίστα και δεν αποτυγχάνει ποτέ.
+- **Μοναδιαίες δοκιμές** (`tests/test_provider_registry.py`, `tests/test_hardware_advisor.py`): 18 ερμητικές δοκιμές που καλύπτουν καταχώριση/ανάκτηση μητρώου, δυναμική αξιολόγηση `is_active`, την αριθμητική προϋπολογισμού VRAM, συστάσεις ανά ρόλο και το φίλτρο προϋπολογισμού του ραντάρ SOTA.
+
+### Άλλαξε
+
+- **Αποσύζευξη AIManager χωρίς παλινδρόμηση** (`src/core/ai_manager.py`): ο διαχειριστής ενσωματώνει και καταναλώνει το `ProviderRegistry` μέσω δύο προσθετικών, μόνο-ανάγνωσης βοηθητικών -- `list_active_providers()` και `get_provider_descriptor(name)` -- πάνω από το αμετάβλητο `OPENAI_COMPATIBLE_REGISTRY`, τους υφιστάμενους βρόχους εκκίνησης SDK και την υφιστάμενη κατάσταση διακόπτη κυκλώματος. Όλα τα δημόσια συμβόλαια μεθόδων (`evaluate_paper_json`, `analyze_generic_text`, `batch_evaluate_papers`, `_resolve_strategies`) παραμένουν 100% συμβατά προς τα πίσω.
+- **Ενσωμάτωση CLI & TUI** (`talos.py`, `src/utils/help_system.py`): η `_handle_cli_flags()` αποστέλλει `--hardware-advisor` / `--recommend-models` (αποδίδει Προφίλ Υλικού, Προϋπολογισμό Παραμέτρων, Προτεινόμενη Στοίβα και ραντάρ SOTA ως στυλιζαρισμένους πίνακες Rich, έξοδος 0)· το μενού Διαμόρφωσης & Προφίλ αποκτά την Επιλογή 8 «Σύμβουλος Μοντέλων με Επίγνωση Υλικού (VRAM Budget & SOTA)» (οι επόμενες επιλογές αναριθμούνται)· ο Πίνακας 1 του εγχειριδίου τεσσάρων πινάκων τεκμηριώνει τη νέα σημαία.
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.16.2** στα 6 βασικά αρχεία κώδικα, `docker-compose.yml` (`talos:5.16.2`), `CITATION.cff` (5.16.2, 2026-10-02), μεταδεδομένα tray/visualizer/wizard/strategy/diagnostics, docstrings `src/prisma/` και `src/search/`, και στα 19 κανονικά έγγραφα τεκμηρίωσης (ημερομηνία 2026-10-02).
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_provider_registry.py tests/test_hardware_advisor.py -q` (18 επιτυχείς, ερμητικές)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.16.2)· `python talos.py --recommend-models` αποδίδει τον πίνακα συμβούλου Rich σε RTX 4070 (12 GB -> προϋπολογισμός 14B) και εξέρχεται με 0· `verify_dependency_map.py --ci` (έξοδος 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.16.1] - 2026-10-02 -- Ενοποιημένη Αρχιτεκτονική Προφίλ & Μηχανή Συγχρονισμού Χώρου Εργασίας
 
 ### Προστέθηκε

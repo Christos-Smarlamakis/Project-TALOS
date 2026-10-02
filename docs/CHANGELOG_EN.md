@@ -2,6 +2,25 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.16.2] - 2026-10-02 -- Pluggable Provider Registry & Hardware-Aware Model Advisor
+
+### Added
+
+- **Pluggable Provider Registry** (`src/core/provider_registry.py`): a modular adapter catalogue implementing the Open-Closed Principle (open for extension, closed for modification). `ProviderDescriptor` (a dataclass value object) captures the canonical `name`, `base_url`, optional `api_key_env`, `default_model`, latency `category` (`local_gpu` / `local_cpu` / `cloud_reasoning` / `cloud_fast` / `cloud_heavy`), an `is_openai_compatible` flag, and a dynamically evaluated `is_active` flag. `ProviderRegistry` pre-registers the local Ollama runtime plus nine cloud providers (NVIDIA NIM, DeepSeek, Gemini, Groq, Cerebras, Mistral, Hugging Face, OpenRouter, Anthropic) and exposes a stable four-method API (`register`, `get`, `list_all`, `list_active`). Adding any future provider (a custom NVIDIA NIM instance, Anthropic Claude, or a custom edge server) is now a pure data operation -- no core evaluation loop is ever edited. `is_active` is re-evaluated truthfully at query time: cloud providers are active when their key is present in the environment, while local Ollama is active when its port answers a lightweight TCP probe.
+- **Hardware-Aware Model Advisor** (`src/core/hardware_advisor.py`): `HardwareModelAdvisor` reuses the existing VRAM telemetry (`detect_vram_gb()` via nvidia-smi) and augments it with Torch CUDA introspection (device name and `total_memory`), psutil system RAM, and a battery-based laptop-CPU heuristic -- all guarded so CPU-only hosts degrade gracefully. `get_hardware_profile()` returns `{has_cuda, device_name, total_vram_gb, system_ram_gb, is_laptop_cpu}`. `calculate_vram_budget()` applies a piecewise 4-bit-quantization formula (`VRAM >= 11.0 GB -> 14B`, `5.5 <= VRAM < 11.0 -> 8B`, `VRAM < 5.5 / CPU -> 3B`) and `get_recommendations()` returns a role-based stack (`screening_local`, `reasoning_local`, `reasoning_cloud`, `fast_cloud`) sized to the detected budget.
+- **SOTA online radar** (`scan_sota_models(timeout=1.5)`): a lightweight, non-blocking scan over a static verified radar plus live Ollama tags and an OpenRouter probe, surfacing newer releases (Qwen 3/4, Llama 4) that fit within the detected budget. When offline it degrades to the static verified list and never raises.
+- **Unit tests** (`tests/test_provider_registry.py`, `tests/test_hardware_advisor.py`): 18 hermetic tests covering registry registration/retrieval, dynamic `is_active` evaluation, the VRAM budget arithmetic, role-based recommendations, and the SOTA radar budget filter.
+
+### Changed
+
+- **Zero-regression AIManager decoupling** (`src/core/ai_manager.py`): the manager now instantiates and consumes `ProviderRegistry` through two additive, read-only helpers -- `list_active_providers()` and `get_provider_descriptor(name)` -- layered on top of the unchanged `OPENAI_COMPATIBLE_REGISTRY`, the existing SDK initialization loops, and the existing circuit-breaker state. All public method contracts (`evaluate_paper_json`, `analyze_generic_text`, `batch_evaluate_papers`, `_resolve_strategies`) remain 100% backward compatible.
+- **CLI & TUI integration** (`talos.py`, `src/utils/help_system.py`): `_handle_cli_flags()` dispatches `--hardware-advisor` / `--recommend-models` (renders the Hardware Profile, Parameter Budget, Recommended Stack, and SOTA radar as styled Rich tables, exit 0); the Configuration & Profiles menu gains Option 8 "Hardware-Aware Model Advisor (VRAM Budget & SOTA)" (later options renumbered); Panel 1 of the four-panel help manual documents the new flag.
+- **Version strings synchronized to 5.16.2** across the 6 core code files, `docker-compose.yml` (`talos:5.16.2`), `CITATION.cff` (5.16.2, 2026-10-02), tray/visualizer/wizard/strategy/diagnostics metadata, `src/prisma/` and `src/search/` docstrings, and all 19 canonical documentation files (dated 2026-10-02).
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_provider_registry.py tests/test_hardware_advisor.py -q` (18 passed, hermetic); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.16.2); `python talos.py --recommend-models` renders the Rich advisor table on an RTX 4070 (12 GB -> 14B budget) and exits 0; `verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.16.1] - 2026-10-02 -- Unified Profile Architecture & Workspace Synchronization Engine
 
 ### Added

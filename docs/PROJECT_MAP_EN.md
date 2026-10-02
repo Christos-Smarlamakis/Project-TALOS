@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.16.1
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.16.2
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-10-02 (v5.16.1 -- Unified Profile Architecture & Workspace Synchronization Engine)
+> **Last Updated:** 2026-10-02 (v5.16.2 -- Pluggable Provider Registry & Hardware-Aware Model Advisor)
 
 ---
 
@@ -20,7 +20,7 @@ USER INTERFACES
         v
 
 SRC PACKAGES
-  src/core/          (5 files)  ai_manager, database_manager, hardware, notifier, profile_manager
+  src/core/          (7 files)  ai_manager, database_manager, hardware, notifier, profile_manager, provider_registry, hardware_advisor
   src/ai/drl/       (10 files)  drl_agent, drl_networks, talos_env, train_agent, live_agent_*
   src/ai/optimizers/ (3 files)  gwo_foraging_hyperparameter_tuner, gwo_live_dashboard, gwo_llm_router_reward_shaper
   src/ai/embeddings/ (2 files)  embedding_generator, db_embedding_upgrade
@@ -68,6 +68,8 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 | `ai_manager.py` | Multi-provider LLM manager (Gemini, DeepSeek, HuggingFace, Ollama) with circuit breakers, JSON/text/embedding modes, and `last_provider_used` attribution; v5.12.2 adds self-healing Ollama probe/spawn (`probe_local_ollama`), provider trimming (`STANDBY_NO_KEY`), on-demand .env key injection, google.genai GA SDK, thinking-model parser (`_strip_thinking_tags()` / `_extract_assistant_content()`), and `LOCAL_GPU_MODEL` baseline |
 | `database_manager.py` | SQLite persistence (20+ columns), 4-layer scoring (strategic/operational/tactical/playground), embeddings table, cosine semantic search, enrichment state machine |
 | `hardware.py` | Single source of truth for GPU detection and VRAM queries; CPU fallback with graceful degradation |
+| `provider_registry.py` | Pluggable LLM provider registry (Open-Closed Principle): `ProviderDescriptor` + `ProviderRegistry` with `register`/`get`/`list_all`/`list_active` -- local Ollama + 9 cloud providers |
+| `hardware_advisor.py` | Hardware-aware model advisor: `HardwareModelAdvisor` -- `get_hardware_profile()`, `calculate_vram_budget()` (4-bit), `get_recommendations()`, `scan_sota_models()` |
 | `notifier.py` | Telegram / Discord / Email alerting for high-score papers |
 | `profile_manager.py` | Profile switching and retrieval (isolated config + DB per research topic) |
 
@@ -153,6 +155,7 @@ Alerts: `DISCORD_WEBHOOK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `SMTP_*
 talos.py
   +-- src/utils/ui_theme.py, logger.py
   +-- src/core/profile_manager.py
+  +-- src/core/hardware_advisor.py
   +-- src/core/ai_manager.py
   +-- src/api/main_api.py (subprocess uvicorn)
   +-- src/ai/drl/talos_service.py (subprocess CREATE_NEW_CONSOLE)
@@ -220,6 +223,16 @@ src/prisma/quality_appraisal.py
 scripts/migrate_d3qn_checkpoint.py
   +-- torch
   +-- src/ai/drl/drl_networks.py (DuelingLSTM)
+
+src/core/provider_registry.py
+  +-- config/settings.py
+
+src/core/hardware_advisor.py
+  +-- src/core/hardware.py
+  +-- config/settings.py
+
+src/core/ai_manager.py
+  +-- src/core/provider_registry.py
 ```
 
 ## 8. Module Descriptions (recent additions highlighted)
@@ -230,6 +243,8 @@ scripts/migrate_d3qn_checkpoint.py
 | **Desktop Control Hub (v5.10.13)** | `src/utils/tray_icon.py` | `launch_tray_icon_async()` -- 7-item pystray menu (3D Visualizer, Reports Folder, System Log, Swagger, Instant Search, Console, Terminate) with `_is_api_alive()` / `_ensure_api_server()` self-healing |
 | **DatabaseManager Persistence (v5.10.13)** | `src/core/database_manager.py` | Default `db_path=None` -> `get_active_profile_db_path()` (active profile DB `_profiles/<active>/talos_research.db`) |
 | **Profile Manager SSOT (v5.16.1)** | `src/core/profile_manager.py` | Canonical `ProfileManager` class (repo-root `_profiles/`), exposing `get_profiles_dir()` / `get_active_profile_name()` / `set_active_profile()` / `list_profiles()` / `create_profile()` / `get_active_db_path()` / `get_active_config_path()`; canonical `uav_mission_planning` workspace |
+| **Pluggable Provider Registry (v5.16.2)** | `src/core/provider_registry.py` | `ProviderDescriptor` (dataclass) + `ProviderRegistry` with `register` / `get` / `list_all` / `list_active` -- 10 providers (Ollama + NVIDIA NIM, DeepSeek, Gemini, Groq, Cerebras, Mistral, Hugging Face, OpenRouter, Anthropic); dynamic `is_active` evaluation |
+| **Hardware-Aware Model Advisor (v5.16.2)** | `src/core/hardware_advisor.py` | `HardwareModelAdvisor` -- `get_hardware_profile()` (`{has_cuda, device_name, total_vram_gb, system_ram_gb, is_laptop_cpu}`), `calculate_vram_budget()` (4-bit piecewise), `get_recommendations()`, `scan_sota_models()` (SOTA radar) |
 | **3D Visualizer (v5.10.12)** | `templates/live_foraging_visualizer.html` | Three.js constellation with 60 FPS laser beams, photon pulses, raycaster, snapshot |
 | **OPTICA Bridge (v5.10.7)** | `src/integration/optica_client.py` | REST client to Project OPTICA (port 8002) offloading heavy graphics |
 | **Daemon OS Autostart (v5.10.6)** | `src/utils/daemon_autostart.py` | Windows Startup shortcut + boot batch generator |
@@ -258,6 +273,7 @@ scripts/migrate_d3qn_checkpoint.py
 | **DRL Action-Space Expansion to 18 Sources & Net2Net Checkpoint Migration (v5.15.4)** | `src/ai/drl/talos_env.py`, `scripts/migrate_d3qn_checkpoint.py`, `config.json`, `config.template.json`, `_profiles/default_drones/config.json` | `ALL_KNOWN_SOURCES` 16 -> 18 (adds `nasa_ntrs`, `hal_inria`); action space `Discrete(17) -> Discrete(19)`, observation 23 -> 25 dims; Net2Net surgery (`migrate_d3qn_checkpoint.py`) widens the DuelingLSTM advantage head (15 -> 19) + LSTM input (21 -> 25) preserving all trained weights; 18-source profile/daemon sync; Scopus `$`/`@name`/`@surname` author normalization locked in |
 | **Dual-Surface Interactive Help System & Scientific Foundations Canon (v5.15.5)** | `src/utils/help_system.py`, `templates/help_manual.html`, `src/api/main_api.py`, `README.md` | `render_help_manual()` 4-panel Rich manual (`--help` + TUI Option 7); `GET /help` + `GET /manual` (307 redirect) serve the zero-CDN `help_manual.html` (live search, click-to-copy, dark/print-mode toggle); README Section 5 IEEE references [1]-[10] (EN + GR) |
 | **PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine (v5.16.0)** | `src/prisma/quality_appraisal.py`, `src/core/database_manager.py`, `src/utils/bibtex_exporter.py` | `KitchenhamRubric` / `QualityAppraisalResult` / `PrismaQualityAppraiser`; `map_evidence_quadrant()` (2D quadrants, tau_rel=7.0 / tau_qual=7.5); `appraise_paper()` / `appraise_candidates_batch()` (ThreadPoolExecutor + `Semaphore(2)`); `update_paper_quality()` (`quality_score`/`quality_rubric_json`/`evidence_quadrant`); `export_library(min_quality, quadrant)` (BibTeX dual-filter + `note` field); CLI `--appraise-quality` + TUI Group 3 Option 15 |
+| **Pluggable Provider Registry & Hardware-Aware Model Advisor (v5.16.2)** | `src/core/provider_registry.py`, `src/core/hardware_advisor.py`, `src/core/ai_manager.py`, `talos.py`, `src/utils/help_system.py` | `ProviderRegistry` (Open-Closed Principle, 10 providers); `HardwareModelAdvisor` (hardware profile, 4-bit VRAM budget, role-based stack, SOTA radar); `AIManager.list_active_providers()` / `get_provider_descriptor()` (zero regression); CLI `--hardware-advisor` / `--recommend-models` + TUI Option 8 |
 
 ## 9. Auxiliary Files
 
@@ -297,8 +313,8 @@ scripts/migrate_d3qn_checkpoint.py
 
 ---
 
-> **Last Updated:** 2026-10-02 (v5.16.1 -- Unified Profile Architecture & Workspace Synchronization Engine)
-> **Project Version:** v5.16.1
-> **Total .py modules under src/:** 99 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
+> **Last Updated:** 2026-10-02 (v5.16.2 -- Pluggable Provider Registry & Hardware-Aware Model Advisor)
+> **Project Version:** v5.16.2
+> **Total .py modules under src/:** 101 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
 
 

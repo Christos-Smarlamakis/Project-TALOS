@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.16.1
+Project: TALOS v5.16.2
 Description:
-    Canonical configuration hub for TALOS v5.16.1. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.16.2. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
@@ -18,6 +18,10 @@ Description:
       strict_cloud) and TALOS_HARDWARE_STRATEGY (cpu_only, gpu_only, cpu_gpu_split).
     - v5.16.1: Fast tier uses Neutrino-8B at the unified local AI runtime (port 11434).
     - Heavy tier uses qwen2.5:14b at the standard Ollama endpoint (port 11434).
+    - v5.16.2: Pluggable Provider Registry & Hardware-Aware Model Advisor --
+      canonical provider base URLs and default models feed the modular
+      registry (src/core/provider_registry.py), and the hardware advisor
+      (src/core/hardware_advisor.py) consumes VRAM telemetry for budgeting.
     - Cloud LLM providers (Gemini, NVIDIA NIM, Groq, Cerebras, GitHub Models,
       Mistral, OpenRouter, DeepSeek, HuggingFace) are configured via environment
       variables for optional redundancy/failover (v5.9.18 Universal Cloud Mesh).
@@ -189,7 +193,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.16.1"
+TALOS_VERSION = "5.16.2"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.

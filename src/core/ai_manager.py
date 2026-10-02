@@ -6,7 +6,7 @@
 #
 """
 Module: ai_manager.py (v4.1 - Self-Healing AI Manager, Universal Cloud Mesh & Auto-Dynamic Privacy Guardrails)
-Project: TALOS v5.15.4
+Project: TALOS v5.16.2
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture
@@ -70,6 +70,14 @@ Description:
     notice; every subsequent fast-tier request bypasses the failed endpoint with
     ZERO network attempts, ZERO timeout latency, and ZERO warning logs, routing
     directly to the local heavy tier (LOCAL_GPU_MODEL at port 11434).
+
+    v5.16.2: Pluggable Provider Registry & Hardware-Aware Model Advisor -- the
+    manager now consumes a modular :class:`ProviderRegistry` (Open-Closed
+    Principle) via `list_active_providers()` / `get_provider_descriptor()`.
+    All existing circuit-breaker state, SDK initialization loops, and public
+    method contracts (evaluate_paper_json / analyze_generic_text /
+    batch_evaluate_papers / _resolve_strategies) remain 100% backward
+    compatible; the registry is purely additive and extensible.
 """
 
 import os, json, re, requests, sys, functools, subprocess, time
@@ -96,6 +104,12 @@ from config.settings import (
     HF_BASE_URL, HF_MODEL_NAME,
     LOCAL_GPU_MODEL,
 )
+
+# -- v5.16.2: Pluggable Provider Registry (Open-Closed Principle). The registry
+# -- is a read-only introspection/extensibility layer consumed by the manager;
+# -- the concrete client initialization loops below remain the authoritative
+# -- source of runtime provider state (circuit breakers, SDK paths).
+from src.core.provider_registry import ProviderRegistry, ProviderDescriptor
 
 # -- Lazy SDK imports (Constitution II: cloud providers are OPTIONAL) --
 # All SDKs are loaded only when their provider is configured and needed.
@@ -426,6 +440,11 @@ class AIManager:
         # -- STANDBY_NO_KEY (unconfigured), or STANDBY_NO_SDK (key present but
         # -- the optional SDK is absent). Missing keys are recorded silently. --
         self.provider_status = {}
+
+        # -- v5.16.2: Pluggable Provider Registry (Open-Closed Principle). --
+        # -- Instantiated as a read-only introspection/extensibility surface; --
+        # -- the concrete init loops below remain the authoritative runtime.  --
+        self.provider_registry = ProviderRegistry()
 
         # --- Gemini Provider (google.genai GA SDK preferred; v1 fallback) ---
         gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -792,6 +811,35 @@ class AIManager:
             ordered.remove(preferred)
             ordered.insert(0, preferred)
         return ordered
+
+    # ------------------------------------------------------------------
+    # -- Pluggable Provider Registry helpers (v5.16.2) ------------------
+    # ------------------------------------------------------------------
+
+    def list_active_providers(self):
+        """Return the currently-active provider descriptors.
+
+        Delegates to the pluggable :class:`ProviderRegistry` so callers can
+        enumerate providers without touching the internal ``self.providers``
+        dict. The registry evaluates ``is_active`` dynamically from key
+        presence (cloud) or port responsiveness (local Ollama).
+
+        Returns:
+            list[ProviderDescriptor]: Active provider descriptors.
+        """
+        return self.provider_registry.list_active()
+
+    def get_provider_descriptor(self, name: str) -> Optional["ProviderDescriptor"]:
+        """Return a provider descriptor by canonical name, or ``None``.
+
+        Args:
+            name (str): Canonical provider identifier.
+
+        Returns:
+            Optional[ProviderDescriptor]: The descriptor, or ``None`` when
+                the name is not registered.
+        """
+        return self.provider_registry.get(name)
 
     # --- JSON Cleaning ---
 

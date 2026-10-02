@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.16.1</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.16.2</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.16.1</h1>
+<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.16.2</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-10-02 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.16.1 -- Unified Profile Architecture &amp; Workspace Synchronization Engine
+  <strong>Version:</strong> v5.16.2 -- Pluggable Provider Registry &amp; Hardware-Aware Model Advisor
 </div>
 
 <!-- ===================================================================== -->
@@ -357,7 +357,7 @@
 <table>
   <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
   <tbody>
-    <tr><td>TALOS_VERSION</td><td>"5.16.1"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_VERSION</td><td>"5.16.2"</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
@@ -1409,8 +1409,18 @@
 </ul>
 <p><strong>Verification surface:</strong> release gates include <code>compileall</code>, system integrity, version assertion (5.16.1), Profile SSOT smoke test, <code>talos.py --diagnostics</code> (no 11435), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
 
+<h3 id="s15-42">15.42 Pluggable LLM Provider Registry, Hardware-Aware Parameter Budgeting, and SOTA Discovery (v5.16.2)</h3>
+<p><strong>Overview:</strong> v5.16.2 introduces a modular, adapter-based provider registry and a hardware-aware model advisor, decoupling provider and hardware concerns from the core evaluation loops while remaining 100% air-gapped and local-first. Adding a new inference backend is now a pure data operation (Open-Closed Principle), and VRAM-based model sizing is a deterministic, unit-testable function of detected hardware.</p>
+<ul>
+  <li><strong>ProviderRegistry</strong> (<code>src/core/provider_registry.py</code>): <code>ProviderDescriptor</code> records <code>name</code>, <code>base_url</code>, <code>api_key_env</code>, <code>default_model</code>, <code>category</code>, <code>is_openai_compatible</code>, and a dynamic <code>is_active</code>; pre-registers local Ollama plus nine cloud providers and exposes <code>register</code> / <code>get</code> / <code>list_all</code> / <code>list_active</code>.</li>
+  <li><strong>HardwareModelAdvisor</strong> (<code>src/core/hardware_advisor.py</code>): <code>get_hardware_profile()</code>, <code>calculate_vram_budget()</code> (4-bit piecewise formula), and <code>get_recommendations()</code>.</li>
+  <li><strong>SOTA radar</strong> (<code>scan_sota_models(timeout=1.5)</code>): static radar plus live Ollama/OpenRouter probes filtered by the budget (Qwen 3/4, Llama 4); offline-graceful.</li>
+  <li><strong>Integration surfaces</strong>: CLI <code>--hardware-advisor</code> / <code>--recommend-models</code>, TUI Configuration &amp; Profiles Option 8, Panel 1 help manual.</li>
+</ul>
+<p><strong>Verification surface:</strong> release gates include <code>compileall</code>, 18 hermetic unit tests, system integrity, version assertion (5.16.2), <code>talos.py --recommend-models</code> (RTX 4070 -&gt; 14B), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.16.1</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.16.2</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

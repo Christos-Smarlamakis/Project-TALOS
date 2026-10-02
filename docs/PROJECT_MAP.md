@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.16.1
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.16.2
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.16.1 -- Ενοποιημένη Αρχιτεκτονική Προφίλ & Μηχανή Συγχρονισμού Χώρου Εργασίας)
+> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.16.2 -- Ενθέσιμο Μητρώο Παρόχων & Σύμβουλος Μοντέλων με Επίγνωση Υλικού)
 
 ---
 
@@ -20,7 +20,7 @@ USER INTERFACES
         v
 
 SRC PACKAGES
-  src/core/          (5 αρχεία)  ai_manager, database_manager, hardware, notifier, profile_manager
+  src/core/          (7 αρχεία)  ai_manager, database_manager, hardware, notifier, profile_manager, provider_registry, hardware_advisor
   src/ai/drl/       (10 αρχεία)  drl_agent, drl_networks, talos_env, train_agent, live_agent_*
   src/ai/optimizers/ (3 αρχεία)  gwo_foraging_hyperparameter_tuner, gwo_live_dashboard, gwo_llm_router_reward_shaper
   src/ai/embeddings/ (2 αρχεία)  embedding_generator, db_embedding_upgrade
@@ -68,6 +68,8 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 | `ai_manager.py` | Multi-provider LLM manager (Gemini, DeepSeek, HuggingFace, Ollama) με circuit breakers, λειτουργίες JSON/text/embedding, και απόδοση `last_provider_used`; v5.12.2 προσθέτει αυτο-θεραπευόμενο έλεγχο/εκκίνηση Ollama (`probe_local_ollama`), περικοπή παρόχων (`STANDBY_NO_KEY`), έγχυση κλειδιού .env κατά παραγγελία, google.genai GA SDK, αναλυτή μοντέλων σκέψης (`_strip_thinking_tags()` / `_extract_assistant_content()`) και βάση `LOCAL_GPU_MODEL` |
 | `database_manager.py` | Αποθήκευση SQLite (20+ στήλες), βαθμολόγηση 4 επιπέδων (strategic/operational/tactical/playground), πίνακας embeddings, σημασιολογική αναζήτηση συνημιτόνου, state machine εμπλουτισμού |
 | `hardware.py` | Μοναδική πηγή αλήθειας για ανίχνευση GPU και ερωτήματα VRAM; CPU fallback με ομαλή υποβάθμιση |
+| `provider_registry.py` | Ενθέσιμο μητρώο παρόχων LLM (Αρχή Ανοικτού-Κλειστού): `ProviderDescriptor` + `ProviderRegistry` με `register`/`get`/`list_all`/`list_active` -- τοπικό Ollama + 9 πάροχοι νέφους |
+| `hardware_advisor.py` | Σύμβουλος μοντέλων με επίγνωση υλικού: `HardwareModelAdvisor` -- `get_hardware_profile()`, `calculate_vram_budget()` (4-bit), `get_recommendations()`, `scan_sota_models()` |
 | `notifier.py` | Ειδοποιήσεις Telegram / Discord / Email για papers υψηλής βαθμολογίας |
 | `profile_manager.py` | Εναλλαγή και ανάκτηση profile (απομονωμένο config + DB ανά ερευνητικό θέμα) |
 
@@ -153,6 +155,7 @@ LLM & runtime: `FAST_EDGE_MODEL`, `FAST_EDGE_BASE_URL`, `HEAVY_REASONING_MODEL`,
 talos.py
   +-- src/utils/ui_theme.py, logger.py
   +-- src/core/profile_manager.py
+  +-- src/core/hardware_advisor.py
   +-- src/core/ai_manager.py
   +-- src/api/main_api.py (subprocess uvicorn)
   +-- src/ai/drl/talos_service.py (subprocess CREATE_NEW_CONSOLE)
@@ -220,6 +223,16 @@ src/prisma/quality_appraisal.py
 scripts/migrate_d3qn_checkpoint.py
   +-- torch
   +-- src/ai/drl/drl_networks.py (DuelingLSTM)
+
+src/core/provider_registry.py
+  +-- config/settings.py
+
+src/core/hardware_advisor.py
+  +-- src/core/hardware.py
+  +-- config/settings.py
+
+src/core/ai_manager.py
+  +-- src/core/provider_registry.py
 ```
 
 ## 8. Περιγραφές Modules (επισημασμένες πρόσφατες προσθήκες)
@@ -230,6 +243,8 @@ scripts/migrate_d3qn_checkpoint.py
 | **Desktop Control Hub (v5.10.13)** | `src/utils/tray_icon.py` | `launch_tray_icon_async()` -- pystray εικονίδιο 7 στοιχείων (3D Visualizer, Φάκελος Αναφορών, Καταγραφή Συστήματος, Swagger, Άμεση Αναζήτηση, Κονσόλα, Τερματισμός) με `_is_api_alive()` / `_ensure_api_server()` αυτοθεραπεία |
 | **DatabaseManager Persistence (v5.10.13)** | `src/core/database_manager.py` | Προεπιλογή `db_path=None` -> `get_active_profile_db_path()` (βάση ενεργού προφίλ `_profiles/<active>/talos_research.db`) |
 | **Profile Manager SSOT (v5.16.1)** | `src/core/profile_manager.py` | Κανονική κλάση `ProfileManager` (ριζικός `_profiles/`), εκθέτοντας `get_profiles_dir()` / `get_active_profile_name()` / `set_active_profile()` / `list_profiles()` / `create_profile()` / `get_active_db_path()` / `get_active_config_path()`· κανονικός χώρος `uav_mission_planning` |
+| **Pluggable Provider Registry (v5.16.2)** | `src/core/provider_registry.py` | `ProviderDescriptor` (dataclass) + `ProviderRegistry` με `register` / `get` / `list_all` / `list_active` -- 10 πάροχοι (Ollama + NVIDIA NIM, DeepSeek, Gemini, Groq, Cerebras, Mistral, Hugging Face, OpenRouter, Anthropic)· δυναμική αξιολόγηση `is_active` |
+| **Hardware-Aware Model Advisor (v5.16.2)** | `src/core/hardware_advisor.py` | `HardwareModelAdvisor` -- `get_hardware_profile()` (`{has_cuda, device_name, total_vram_gb, system_ram_gb, is_laptop_cpu}`), `calculate_vram_budget()` (4-bit τμηματικός), `get_recommendations()`, `scan_sota_models()` (ραντάρ SOTA) |
 | **3D Visualizer (v5.10.12)** | `templates/live_foraging_visualizer.html` | Αστερισμός Three.js με 60 FPS ακτίνες λέιζερ, παλμούς φωτονίων, raycaster, στιγμιότυπο |
 | **OPTICA Bridge (v5.10.7)** | `src/integration/optica_client.py` | REST client στο Project OPTICA (θύρα 8002) εκφορτώνοντας βαριά γραφικά |
 | **Daemon OS Autostart (v5.10.6)** | `src/utils/daemon_autostart.py` | Συντόμευση Windows Startup + γεννήτρια boot batch |
@@ -258,6 +273,7 @@ scripts/migrate_d3qn_checkpoint.py
 | **Επέκταση Χώρου Δράσεων DRL σε 18 Πηγές & Μετανάστευση Checkpoint Net2Net (v5.15.4)** | `src/ai/drl/talos_env.py`, `scripts/migrate_d3qn_checkpoint.py`, `config.json`, `config.template.json`, `_profiles/default_drones/config.json` | `ALL_KNOWN_SOURCES` 16 -> 18 (προσθήκη `nasa_ntrs`, `hal_inria`)· χώρος δράσεων `Discrete(17) -> Discrete(19)`, καταστάσεις 23 -> 25 διαστάσεις· χειρουργική Net2Net (`migrate_d3qn_checkpoint.py`) διευρύνει την κεφαλή πλεονεκτήματος DuelingLSTM (15 -> 19) + είσοδο LSTM (21 -> 25) διατηρώντας όλα τα εκπαιδευμένα βάρη· συγχρονισμός προφίλ/δαίμονα 18 πηγών· κλείδωμα κανονικοποίησης συγγραφέων Scopus `$`/`@name`/`@surname` |
 | **Σύστημα Βοήθειας Διπλής Επιφάνειας & Κανόνας Επιστημονικών Θεμελίων (v5.15.5)** | `src/utils/help_system.py`, `templates/help_manual.html`, `src/api/main_api.py`, `README.md` | `render_help_manual()` εγχειρίδιο Rich 4 πινάκων (`--help` + TUI Επιλογή 7)· `GET /help` + `GET /manual` (ανακατεύθυνση 307) εξυπηρετούν το zero-CDN `help_manual.html` (ζωντανή αναζήτηση, αντιγραφή με κλικ, εναλλαγή σκοτεινής/εκτυπώσιμης λειτουργίας)· Ενότητα 5 IEEE αναφορών [1]-[10] στο README (EN + GR) |
 | **Μηχανή Αξιολόγησης Ποιότητας PRISMA & Διαξονικής Επιστημονικής Αυστηρότητας (v5.16.0)** | `src/prisma/quality_appraisal.py`, `src/core/database_manager.py`, `src/utils/bibtex_exporter.py` | `KitchenhamRubric` / `QualityAppraisalResult` / `PrismaQualityAppraiser`· `map_evidence_quadrant()` (2D τεταρτημόρια, τ_rel=7.0 / τ_qual=7.5)· `appraise_paper()` / `appraise_candidates_batch()` (ThreadPoolExecutor + `Semaphore(2)`)· `update_paper_quality()` (στήλες `quality_score`/`quality_rubric_json`/`evidence_quadrant`)· `export_library(min_quality, quadrant)` (διπλό φίλτρο BibTeX + πεδίο `note`)· CLI `--appraise-quality` + TUI Ομάδα 3 Επιλογή 15 |
+| **Ενθέσιμο Μητρώο Παρόχων & Σύμβουλος Μοντέλων με Επίγνωση Υλικού (v5.16.2)** | `src/core/provider_registry.py`, `src/core/hardware_advisor.py`, `src/core/ai_manager.py`, `talos.py`, `src/utils/help_system.py` | `ProviderRegistry` (Αρχή Ανοικτού-Κλειστού, 10 πάροχοι)· `HardwareModelAdvisor` (προφίλ υλικού, τμηματικός προϋπολογισμός VRAM 4-bit, στοίβα ανά ρόλο, ραντάρ SOTA)· `AIManager.list_active_providers()` / `get_provider_descriptor()` (μηδενική παλινδρόμηση)· CLI `--hardware-advisor` / `--recommend-models` + TUI Επιλογή 8 |
 
 ## 9. Βοηθητικά Αρχεία
 
@@ -297,8 +313,8 @@ scripts/migrate_d3qn_checkpoint.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.16.1 -- Ενοποιημένη Αρχιτεκτονική Προφίλ & Μηχανή Συγχρονισμού Χώρου Εργασίας)
-> **Έκδοση Project:** v5.16.1
-> **Συνολικά .py modules στο src/:** 99 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
+> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.16.2 -- Ενθέσιμο Μητρώο Παρόχων & Σύμβουλος Μοντέλων με Επίγνωση Υλικού)
+> **Έκδοση Project:** v5.16.2
+> **Συνολικά .py modules στο src/:** 101 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
 
 

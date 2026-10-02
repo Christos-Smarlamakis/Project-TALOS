@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.16.1
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.16.2
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-02
-> **Version:** v5.16.1 -- Unified Profile Architecture & Workspace Synchronization Engine
+> **Version:** v5.16.2 -- Pluggable Provider Registry & Hardware-Aware Model Advisor
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.16.1" | `config/settings.py` |
+| TALOS_VERSION | "5.16.2" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1152,6 +1152,20 @@ For each evaluated paper, the AI generates:
 - **Local AI runtime unification**: `FAST_EDGE_URL` defaults to `http://127.0.0.1:11434/v1` (with `FAST_EDGE_BASE_URL` as a backward-compatible alias); `src/core/ai_manager.py` routes the fast edge tier directly to the verified Ollama runtime; `system_diagnostics.py`, `help_system.py`, and `help_manual.html` document 11434 as the Universal Local AI Runtime (GPU/CPU), removing every phantom 11435 probe.
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.16.1), a `ProfileManager` get/set/switch/list smoke test, `python talos.py --diagnostics` (no 11435), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+### 15.42 Pluggable LLM Provider Registry, Hardware-Aware Parameter Budgeting, and SOTA Discovery (v5.16.2)
+
+**Overview:** v5.16.2 introduces a modular, adapter-based provider registry and a hardware-aware model advisor, both designed to decouple provider and hardware concerns from the core evaluation loops while remaining 100% air-gapped and local-first. The release follows the Open-Closed Principle: adding a new inference backend is now a pure data operation, and VRAM-based model sizing is a deterministic, unit-testable function of detected hardware.
+
+- **ProviderRegistry** (`src/core/provider_registry.py`): `ProviderDescriptor` (dataclass) records `name`, `base_url`, `api_key_env`, `default_model`, `category` (`local_gpu` / `local_cpu` / `cloud_reasoning` / `cloud_fast` / `cloud_heavy`), `is_openai_compatible`, and a dynamically evaluated `is_active`. `ProviderRegistry` pre-registers local Ollama plus nine cloud providers (NVIDIA NIM, DeepSeek, Gemini, Groq, Cerebras, Mistral, Hugging Face, OpenRouter, Anthropic) and exposes `register`, `get`, `list_all`, and `list_active`. `is_active` is re-evaluated at query time (key presence for cloud, TCP port probe for local Ollama). `AIManager` consumes it through additive `list_active_providers()` / `get_provider_descriptor()` helpers with zero changes to `OPENAI_COMPATIBLE_REGISTRY`, SDK initialization loops, or circuit breakers.
+
+- **HardwareModelAdvisor** (`src/core/hardware_advisor.py`): `get_hardware_profile()` returns `{has_cuda, device_name, total_vram_gb, system_ram_gb, is_laptop_cpu}` by combining Torch CUDA introspection, the nvidia-smi `detect_vram_gb()` fallback, psutil system RAM, and a battery heuristic. `calculate_vram_budget()` applies the piecewise 4-bit-quantization formula (`VRAM >= 11.0 GB -> 14B`, `5.5 <= VRAM < 11.0 -> 8B`, `VRAM < 5.5 / CPU -> 3B`); `get_recommendations()` returns `{screening_local, reasoning_local, reasoning_cloud, fast_cloud}`.
+
+- **SOTA radar** (`scan_sota_models(timeout=1.5)`): a static verified radar plus live Ollama tags and an OpenRouter probe, filtered by the detected budget to surface newer releases (Qwen 3/4, Llama 4). Offline it degrades to the static verified list and never raises.
+
+- **Integration surfaces**: CLI `--hardware-advisor` / `--recommend-models` in `talos.py:_handle_cli_flags()`; TUI Configuration & Profiles Option 8; Panel 1 of `src/utils/help_system.py`.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_provider_registry.py tests/test_hardware_advisor.py -q` (18 hermetic tests), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.16.2), `python talos.py --recommend-models` (RTX 4070 -> 14B budget), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 ---
 

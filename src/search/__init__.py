@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: __init__.py
-Project: TALOS v5.16.1
+Project: TALOS v5.16.2
 Description:
     Package root for the Universal Scientific Search Hub. Hosts the three
     advanced graph-and-embedding discovery engines introduced in v5.15.0:

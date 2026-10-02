@@ -4,9 +4,20 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.16.1 -- Ενοποιημένη Αρχιτεκτονική Προφίλ & Μηχανή Συγχρονισμού Χώρου Εργασίας)
+> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.16.2 -- Ενθέσιμο Μητρώο Παρόχων & Σύμβουλος Μοντέλων με Επίγνωση Υλικού)
 
 ---
+
+## Φάση 69: Ενθέσιμο Μητρώο Παρόχων & Σύμβουλος Μοντέλων με Επίγνωση Υλικού (v5.16.2)
+
+### Κατάσταση: ΟΛΟΚΛΗΡΩΘΗΚΕ (2026-10-02)
+
+- [x] **Ενθέσιμο Μητρώο Παρόχων** -- το `src/core/provider_registry.py` εισάγει `ProviderDescriptor` (dataclass) και `ProviderRegistry` που υλοποιούν την Αρχή Ανοικτού-Κλειστού. Το μητρώο προ-καταχωρίζει το τοπικό Ollama συν εννέα παρόχους νέφους (NVIDIA NIM, DeepSeek, Gemini, Groq, Cerebras, Mistral, Hugging Face, OpenRouter, Anthropic) και εκθέτει `register` / `get` / `list_all` / `list_active`· το `is_active` αξιολογείται δυναμικά από την παρουσία κλειδιού (νέφος) ή την απόκριση θύρας (τοπικό Ollama).
+- [x] **Σύμβουλος Μοντέλων με Επίγνωση Υλικού** -- το `src/core/hardware_advisor.py` εισάγει `HardwareModelAdvisor` με `get_hardware_profile()` (`{has_cuda, device_name, total_vram_gb, system_ram_gb, is_laptop_cpu}`), `calculate_vram_budget()` (τμηματικός τύπος 4-bit: >=11 GB -> 14B, 5.5-11 -> 8B, <5.5/CPU -> 3B), `get_recommendations()` (στοίβα ανά ρόλο) και `scan_sota_models()` (ραντάρ SOTA με ομαλή υποβάθμιση εκτός σύνδεσης για Qwen 3/4 και Llama 4).
+- [x] **Αποσύζευξη AIManager χωρίς παλινδρόμηση** -- ο `AIManager` καταναλώνει το μητρώο μέσω `list_active_providers()` / `get_provider_descriptor()` χωρίς να αγγίζει το `OPENAI_COMPATIBLE_REGISTRY`, τους βρόχους εκκίνησης SDK, τους διακόπτες κυκλώματος ή τα δημόσια συμβόλαια μεθόδων.
+- [x] **CLI & TUI** -- αποστολή `--hardware-advisor` / `--recommend-models` στην `_handle_cli_flags()`· Επιλογή 8 Διαμόρφωσης & Προφίλ· τεκμηρίωση στον Πίνακα 1 του εγχειριδίου.
+- [x] **Συγχρονισμός έκδοσης** -- 6 βασικά αρχεία + docker-compose.yml (`talos:5.16.2`) + CITATION.cff (5.16.2, 2026-10-02) + μεταδεδομένα tray/visualizer/wizard/strategy/diagnostics + docstrings src/prisma/ και src/search/ + 19 κανονικά έγγραφα σε v5.16.2 (2026-10-02).
+- [x] **Πύλες επαλήθευσης πέρασαν** -- compileall, 18 νέες ερμητικές δοκιμές, test_system_integrity, test_talos_version (5.16.2), `--recommend-models` (RTX 4070 -> προϋπολογισμός 14B), verify_dependency_map --ci (έξοδος 0), bash -n, σάρωση UTF-8 (0 U+FFFD).
 
 ## Φάση 68: Ενοποιημένη Αρχιτεκτονική Προφίλ & Συγχρονισμός Χώρου Εργασίας (v5.16.1)
 

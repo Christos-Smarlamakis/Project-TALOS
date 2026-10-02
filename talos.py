@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.16.1
+Project: TALOS v5.16.2
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,17 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.16.2: Pluggable Provider Registry & Hardware-Aware Model Advisor -- a
+    modular adapter-based provider registry (src/core/provider_registry.py)
+    implements the Open-Closed Principle so new inference backends (NVIDIA NIM,
+    Anthropic, custom edge servers) register as data without touching core
+    routing loops; a hardware-aware model advisor
+    (src/core/hardware_advisor.py) reuses VRAM/GPU telemetry to compute a
+    4-bit-quantization parameter budget and recommend a role-based model stack
+    with a best-effort SOTA discovery radar (Qwen 3/4, Llama 4). Exposed via
+    --hardware-advisor / --recommend-models and a Configuration & Profiles menu
+    entry.
 
     v5.16.1: Unified Profile Architecture & Workspace Synchronization Engine --
     ProfileManager is established as the strict single source of truth for all
@@ -996,10 +1007,11 @@ def profile_settings_menu(python_exe):
             "5. Research Goal (Query Translator / Cognitive Query Compiler)",
             "6. AI Model Management (2D Matrix)",
             "7. Model Discovery (Quality Scoring)",
-            "8. Model Provisioning CLI",
-            "9. API Keys Management",
-            "10. API Key Diagnostics",
-            "11. Back / Return to Main Menu"
+            "8. Hardware-Aware Model Advisor (VRAM Budget & SOTA)",
+            "9. Model Provisioning CLI",
+            "10. API Keys Management",
+            "11. API Key Diagnostics",
+            "12. Back / Return to Main Menu"
         ])
         if not c or "Back" in c: return
         if c == "1. Research Setup Wizard (Full Onboarding & Reconfiguration)": run_script("research_setup_wizard.py", python_exe)
@@ -1015,9 +1027,10 @@ def profile_settings_menu(python_exe):
             except Exception as e:
                 console.print(f"[red]Error launching Model Manager: {e}[/red]")
         elif c == "7. Model Discovery (Quality Scoring)": _run_model_discovery()
-        elif c == "8. Model Provisioning CLI": run_script("model_provisioner.py", python_exe)
-        elif c == "9. API Keys Management": api_keys_menu(python_exe)
-        elif c == "10. API Key Diagnostics": run_script("api_health_check.py", python_exe)
+        elif c == "8. Hardware-Aware Model Advisor (VRAM Budget & SOTA)": _run_hardware_advisor()
+        elif c == "9. Model Provisioning CLI": run_script("model_provisioner.py", python_exe)
+        elif c == "10. API Keys Management": api_keys_menu(python_exe)
+        elif c == "11. API Key Diagnostics": run_script("api_health_check.py", python_exe)
         safe_pause("\nPress Enter...")
 
 # -- v5.9.15: Silent Fast Boot --
@@ -1677,6 +1690,12 @@ def _show_evaluation_history(limit=30):
         box=box.ROUNDED,
     ))
     safe_pause()
+
+
+def _run_hardware_advisor():
+    """Render the Hardware-Aware Model Advisor in-process (v5.16.2)."""
+    from src.core.hardware_advisor import HardwareModelAdvisor
+    HardwareModelAdvisor().render_recommendations()
 
 
 def _run_model_discovery():
@@ -2379,6 +2398,11 @@ def _handle_cli_flags(argv):
             except ValueError:
                 min_score = 7.0
         PrismaQualityAppraiser().run(min_relevance=min_score)
+        return True
+    # -- v5.16.2: Hardware-Aware Model Advisor (--hardware-advisor / --recommend-models). --
+    if any(flag in argv for flag in ("--hardware-advisor", "--recommend-models")):
+        from src.core.hardware_advisor import HardwareModelAdvisor
+        HardwareModelAdvisor().render_recommendations()
         return True
     # -- v5.15.0: Universal Search Hub fast-dispatch flags. --
     if "--snowball" in argv:

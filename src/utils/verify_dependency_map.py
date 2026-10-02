@@ -55,6 +55,8 @@ IMPORT_TO_DOC_MAP = {
     "src.core.hardware": "src.core.hardware",
     "src.core.profile_manager": "src.core.profile_manager",
     "src.core.notifier": "src.core.notifier",
+    "src.core.provider_registry": "src.core.provider_registry.ProviderRegistry",
+    "src.core.hardware_advisor": "src.core.hardware_advisor.HardwareModelAdvisor",
     # utils
     "src.utils.api_health_check": "src.utils.api_health_check.run_diagnostics",
     # ingestion sources (modular subpackage in v5.15.0)

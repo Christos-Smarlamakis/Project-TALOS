@@ -1,5 +1,5 @@
 {
-  "_comment": "TALOS v5.16.1 Configuration Template. Copy to config.json and customize.",
+  "_comment": "TALOS v5.16.2 Configuration Template. Copy to config.json and customize.",
   "_comment_instruction": "Edit queries and prompts to match your research domain.",
 
   "ai_models": {

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.16.1
+Project: TALOS v5.16.2
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -115,7 +115,7 @@ async def lifespan(app: FastAPI):
         None: Control returns to the server for the duration of its lifetime.
     """
     # -- Startup --
-    logger.info("TALOS FastAPI v5.16.1 starting up (PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine, port 8001)...")
+    logger.info("TALOS FastAPI v5.16.2 starting up (Pluggable Provider Registry & Hardware-Aware Model Advisor, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")
@@ -128,8 +128,8 @@ async def lifespan(app: FastAPI):
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-    description="Facade REST API for the TALOS autonomous research platform (v5.16.1 -- PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine)",
-    version="5.16.1",
+    description="Facade REST API for the TALOS autonomous research platform (v5.16.2 -- Pluggable Provider Registry & Hardware-Aware Model Advisor)",
+    version="5.16.2",
     lifespan=lifespan,
 )
 app.add_middleware(
@@ -1315,11 +1315,11 @@ async def get_capabilities():
     raise HTTPException(status_code=404, detail="Capabilities document not found.")
 
 
-# -- GET /help & /manual (Dual-Surface Web Manual, v5.16.1) ---------------------
+# -- GET /help & /manual (Dual-Surface Web Manual, v5.16.2) ---------------------
 
 @app.get("/help", response_class=HTMLResponse, tags=["System"])
 async def serve_help_manual():
-    """Serve the interactive Web Command Reference Manual (v5.16.1).
+    """Serve the interactive Web Command Reference Manual (v5.16.2).
 
     Reads templates/help_manual.html from the project root and returns it as a
     self-contained HTML page. The manual features live search, click-to-copy

@@ -1,4 +1,4 @@
-# Project TALOS (v5.16.1)
+# Project TALOS (v5.16.2)
 
 ### Tactical Agentic Literature Orchestration System
 
@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/License-AGPLv3-red?style=flat-square)](LICENSE)
 [![DOI](https://zenodo.org/badge/1191928488.svg)](https://doi.org/10.5281/zenodo.19224912)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker)](docs/DOCKER.md)
-![Version](https://img.shields.io/badge/Version-v5.16.1-006699?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v5.16.2-006699?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square)
 [![FastAPI](https://img.shields.io/badge/FastAPI-25_REST_Endpoints-009688?style=flat-square&logo=fastapi&logoColor=white)](src/api/main_api.py)
 [![Architecture](https://img.shields.io/badge/Architecture-100%25_Air--Gapped_%26_Local--First-111827?style=flat-square)](config/settings.py)
@@ -196,6 +196,7 @@ hub and a glassmorphism telemetry HUD console (`src/utils/tray_icon.py`).
 | `--doctor` / `--diagnostics` | Run the 8-point ISO/IEC 25010 healthcheck. |
 | `--export-bib [min_score]` | Export the curated library to BibTeX / LaTeX. |
 | `--strategy [mode]` | Switch the AI execution strategy. |
+| `--hardware-advisor` / `--recommend-models` | Hardware-aware model advisor: VRAM parameter budgeting and SOTA discovery radar. |
 | `--snowball [seed]` | Autonomous citation snowballing from a seed DOI / title / DB ID. |
 | `--vector-search [query]` | Neural vector semantic search over `nomic-embed-text`. |
 | `--code-search [query]` | Reproducible code-first search. |

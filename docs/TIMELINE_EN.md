@@ -4,9 +4,20 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-02 (v5.16.1 -- Unified Profile Architecture & Workspace Synchronization Engine)
+> **Last Updated:** 2026-10-02 (v5.16.2 -- Pluggable Provider Registry & Hardware-Aware Model Advisor)
 
 ---
+
+## Phase 69: Pluggable Provider Registry & Hardware-Aware Model Advisor (v5.16.2)
+
+### Status: COMPLETED (2026-10-02)
+
+- [x] **Pluggable Provider Registry** -- `src/core/provider_registry.py` introduces `ProviderDescriptor` (dataclass) and `ProviderRegistry` implementing the Open-Closed Principle. The registry pre-registers local Ollama plus nine cloud providers (NVIDIA NIM, DeepSeek, Gemini, Groq, Cerebras, Mistral, Hugging Face, OpenRouter, Anthropic) and exposes `register` / `get` / `list_all` / `list_active`; `is_active` is dynamically evaluated from key presence (cloud) or port responsiveness (local Ollama).
+- [x] **Hardware-Aware Model Advisor** -- `src/core/hardware_advisor.py` introduces `HardwareModelAdvisor` with `get_hardware_profile()` (`{has_cuda, device_name, total_vram_gb, system_ram_gb, is_laptop_cpu}`), `calculate_vram_budget()` (4-bit piecewise formula: >=11 GB -> 14B, 5.5-11 -> 8B, <5.5/CPU -> 3B), `get_recommendations()` (role-based stack), and `scan_sota_models()` (offline-graceful SOTA radar for Qwen 3/4 and Llama 4).
+- [x] **Zero-regression AIManager decoupling** -- `AIManager` consumes the registry via `list_active_providers()` / `get_provider_descriptor()` without touching `OPENAI_COMPATIBLE_REGISTRY`, SDK init loops, circuit breakers, or public method contracts.
+- [x] **CLI & TUI** -- `--hardware-advisor` / `--recommend-models` dispatch in `_handle_cli_flags()`; Configuration & Profiles Option 8; Panel 1 help-manual documentation.
+- [x] **Version synced** -- 6 core files + docker-compose.yml (`talos:5.16.2`) + CITATION.cff (5.16.2, 2026-10-02) + tray/visualizer/wizard/strategy/diagnostics metadata + src/prisma/ and src/search/ docstrings + 19 canonical docs to v5.16.2 (2026-10-02).
+- [x] **Verification gates passed** -- compileall, 18 new hermetic unit tests, test_system_integrity, test_talos_version (5.16.2), `--recommend-models` (RTX 4070 -> 14B budget), verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 68: Unified Profile Architecture & Workspace Synchronization (v5.16.1)
 
