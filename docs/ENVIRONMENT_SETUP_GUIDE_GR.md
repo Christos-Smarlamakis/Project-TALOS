@@ -58,8 +58,8 @@
 
 | Τερματικό | Θύρα | Ρόλος | Κλειδί env | Προεπιλεγμένο μοντέλο |
 |-----------|------|-------|------------|------------------------|
-| Ollama (GPU) | `11434` | Βαριά βαθμίδα συλλογισμού | `OLLAMA_BASE_URL` | `qwen2.5:14b` (`HEAVY_REASONING_MODEL`) |
-| CPU Edge | `11435` | Γρήγορη βαθμίδα προδιαλογής | `FAST_EDGE_BASE_URL` | `fermionresearch/Neutrino-8B` (`FAST_EDGE_MODEL`) |
+| Ollama (GPU/CPU) | `11434` | Καθολικό τοπικό runtime ΤΝ (βαριά + γρήγορη βαθμίδα) | `OLLAMA_BASE_URL` | `qwen2.5:14b` (`HEAVY_REASONING_MODEL`) |
+| Fast Edge | `11434` | Γρήγορη βαθμίδα προδιαλογής | `FAST_EDGE_URL` | `fermionresearch/Neutrino-8B` (`FAST_EDGE_MODEL`) |
 
 **Επαληθευμένα τοπικά μοντέλα:**
 
@@ -84,8 +84,8 @@ ollama pull nomic-embed-text
 | `LOCAL_MODEL_NAME` | `gemma3:12b` | Ψευδώνυμο παλαιού τύπου που καταναλώνει το `ai_manager` |
 | `LOCAL_MODEL_BASE_URL` | `http://127.0.0.1:11434/v1` | Τοπικό τερματικό συμβατό με OpenAI (παράγεται από `OLLAMA_BASE_URL` + `/v1`) |
 | `HEAVY_REASONING_MODEL` | `qwen2.5:14b` | Μοντέλο βαριάς βαθμίδας |
-| `FAST_EDGE_MODEL` | `fermionresearch/Neutrino-8B` | Γρήγορο μοντέλο CPU edge |
-| `FAST_EDGE_BASE_URL` | `http://127.0.0.1:11435/v1` | Τερματικό CPU edge |
+| `FAST_EDGE_MODEL` | `fermionresearch/Neutrino-8B` | Γρήγορο μοντέλο προδιαλογής |
+| `FAST_EDGE_URL` | `http://127.0.0.1:11434/v1` | Καθολικό τοπικό τερματικό γρήγορης βαθμίδας |
 | `OLLAMA_BASE_URL` | `http://127.0.0.1:11434` | Τυπικό τερματικό Ollama (χωρίς τελικό `/v1`) |
 | `LOCAL_EMBEDDING_MODEL` | `nomic-embed-text` | Μοντέλο ενσωμάτωσης σημασιολογικής αναζήτησης |
 | `TALOS_USE_LOCAL` | `1` | Διακόπτης απομονωμένης λειτουργίας (το `1` απενεργοποιεί το cloud) |
@@ -207,8 +207,8 @@ HuggingFace, NVIDIA NIM, Groq, Cerebras, GitHub Models, Mistral και OpenRoute
 | `auto_dynamic` | Αυτόνομος Πίνακας Εκτέλεσης (v5.10.14): επιλύεται κατά την εκτέλεση σε `strict_local` / `local_first` / `cloud_first` βάσει συνδεσιμότητας, VRAM, τύπου εργασίας και συναίνεσης Privacy Guardrail. Το `strict_local` δεν παρακάμπτεται ποτέ. |
 
 **Τιμές `TALOS_HARDWARE_STRATEGY`:** `cpu_only` (όλα τα τοπικά αιτήματα στη
-θύρα `11435`), `gpu_only` (όλα τα τοπικά αιτήματα στη θύρα `11434`),
-`cpu_gpu_split` (προεπιλογή: γρήγορα σε CPU, βαριά σε GPU).
+θύρα `11434`), `gpu_only` (όλα τα τοπικά αιτήματα στη θύρα `11434`),
+`cpu_gpu_split` (προεπιλογή: γρήγορα και βαριά στην ενιαία τοπική θύρα `11434`).
 
 ### Γιατί το `strict_cloud` διατηρεί τη VRAM της GPU
 
@@ -226,8 +226,7 @@ HuggingFace, NVIDIA NIM, Groq, Cerebras, GitHub Models, Mistral και OpenRoute
 |------|----------|
 | `8001` | Backend FastAPI του TALOS και επιφάνεια API του TUI |
 | `8000` | Δίαυλος συμβάντων SYNAPSE (αδελφή μικροϋπηρεσία) |
-| `11434` | Ollama GPU (βαριά βαθμίδα συλλογισμού) |
-| `11435` | Ollama CPU Edge (γρήγορη βαθμίδα) |
+| `11434` | Ollama Καθολικό Τοπικό Runtime ΤΝ (GPU/CPU, βαριά + γρήγορη βαθμίδα) |
 | `8002` | Γέφυρα OPTICA (μικροϋπηρεσία οπτικοποίησης) |
 | `5002` | Παλαιό τερματικό κατάστασης `talos_service_api` |
 

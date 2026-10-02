@@ -2,6 +2,24 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.16.1] - 2026-10-02 -- Unified Profile Architecture & Workspace Synchronization Engine
+
+### Added
+
+- **Unified Profile Manager Single Source of Truth** (`src/core/profile_manager.py`): the legacy module-level path logic is replaced by a canonical `ProfileManager` class anchored strictly to the repository-root `_profiles/` directory via `Path(__file__).resolve().parents[2]`. The class exposes the complete profile state machine -- `get_profiles_dir()`, `get_active_profile_name()`, `set_active_profile(name)` (validate, scaffold, write the active marker, and synchronize config), `list_profiles()`, `create_profile(name, seed_config)`, `get_active_db_path()`, and `get_active_config_path()` -- eliminating every relative-path resolution bug that previously produced phantom databases and stale active-profile markers. A module-level singleton plus thin backward-compatible aliases (`get_active_profile_name`, `set_active_profile_name`, `save_current_state_to_profile`, `load_profile_to_root`) preserve all existing callers.
+- **DatabaseManager delegation** (`src/core/database_manager.py`): `get_active_profile_db_path()` now delegates directly to `ProfileManager.get_active_db_path()` so the daemon, the offline DRL environment, the OPTICA bridge, and the daily digest share one canonical path resolver.
+- **Research wizard & TUI profile helpers** (`src/utils/research_setup_wizard.py`, `talos.py`): every profile-path helper (`_profiles_dir`, `_active_profile_file`, `_list_profiles`, `_get_active_profile`, `_set_active_profile`, `_validate_profile_name`) now consumes `ProfileManager` directly, and the `analysis_visualization_menu()` database path resolves through `ProfileManager().get_active_db_path()`.
+
+### Changed
+
+- **Canonical PhD workspace migration**: the populated research corpus (5,472 papers, 114 elite papers with `overall_score > 7`, 325 quality-appraised papers) is consolidated into the canonical `uav_mission_planning` profile under `_profiles/uav_mission_planning/`, and `_profiles/active_profile.txt` now points to it. Root `config.json` and the profile config lock in `research_topic: "Drone Mission Planning (Task Allocation-Path Planning) with DRL and ST-GAT"`, which the TUI banner renders as `Profile: [uav_mission_planning]` / `Active Research Focus: ...`.
+- **Local AI runtime unification (retire phantom port 11435)**: `config/settings.py` introduces `FAST_EDGE_URL` defaulting to `http://127.0.0.1:11434/v1` (with `FAST_EDGE_BASE_URL` retained as a backward-compatible alias), `src/core/ai_manager.py` routes the fast edge tier directly to the verified Ollama runtime on 11434, and `src/utils/system_diagnostics.py` / `src/utils/help_system.py` / `templates/help_manual.html` document port 11434 as the Universal Local AI Runtime (GPU/CPU). All phantom 11435 warning paths and port probes are removed.
+- **TUI banner** (`talos.py`): the dashboard header now renders both the active profile and the active research focus line.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.16.1); `ProfileManager` get/set/switch/list smoke test; `python talos.py --diagnostics` renders cleanly without 11435; `verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.16.0] - 2026-10-01 -- PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine (Kitchenham 2007 Standard)
 
 ### Added

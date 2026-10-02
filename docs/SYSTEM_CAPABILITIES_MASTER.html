@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.16.0</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.16.1</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.16.0</h1>
+<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.16.1</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -302,8 +302,8 @@
   <strong>Document ID:</strong> TALOS-SYS-CAP-001 &nbsp;|&nbsp;
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
-  <strong>Last Updated:</strong> 2026-10-01 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.16.0 -- PRISMA Quality Appraisal &amp; Dual-Axis Scientific Rigor Engine
+  <strong>Last Updated:</strong> 2026-10-02 &nbsp;|&nbsp;
+  <strong>Version:</strong> v5.16.1 -- Unified Profile Architecture &amp; Workspace Synchronization Engine
 </div>
 
 <!-- ===================================================================== -->
@@ -357,7 +357,7 @@
 <table>
   <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
   <tbody>
-    <tr><td>TALOS_VERSION</td><td>"5.16.0"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_VERSION</td><td>"5.16.1"</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
@@ -1399,8 +1399,18 @@
 </ul>
 <p><strong>Verification surface:</strong> release gates include <code>compileall</code>, <code>pytest tests/test_quality_appraisal.py -q</code> (17 hermetic), system integrity, version assertion (5.16.0), <code>talos.py --appraise-quality --min-score 7.0</code>, BibTeX <code>min_quality=7.5</code> export, <code>talos.py --help</code> / <code>GET /help</code>, <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
 
+<h3 id="s15-41">15.41 Unified Multi-Profile Architecture, Workspace State Synchronization, and Canonical Research Partitioning (v5.16.1)</h3>
+<p><strong>Overview:</strong> v5.16.1 unifies the multi-profile workspace under a strict Single Source of Truth (SSOT) and migrates the active PhD corpus into a canonical research partition. The release establishes <code>src/core/profile_manager.py</code> as the sole authority for profile path resolution, eliminates every legacy relative-path bug, consolidates the 5,472-paper corpus (114 elite, 325 quality-appraised) into the <code>uav_mission_planning</code> profile, and unifies local AI inference on port 11434 (retiring the phantom 11435 fast-edge warning path).</p>
+<ul>
+  <li><strong>ProfileManager SSOT</strong> (<code>src/core/profile_manager.py</code>): canonical class anchored to repo-root <code>_profiles/</code>, exposing <code>get_profiles_dir()</code>, <code>get_active_profile_name()</code>, <code>set_active_profile()</code>, <code>list_profiles()</code>, <code>create_profile()</code>, <code>get_active_db_path()</code>, and <code>get_active_config_path()</code>.</li>
+  <li><strong>DatabaseManager delegation</strong> (<code>src/core/database_manager.py</code>): <code>get_active_profile_db_path()</code> delegates to <code>ProfileManager.get_active_db_path()</code>.</li>
+  <li><strong>Canonical workspace migration</strong>: <code>_profiles/uav_mission_planning/</code> holds the populated database and a config locking <code>research_topic: "Drone Mission Planning (Task Allocation-Path Planning) with DRL and ST-GAT"</code>; the TUI banner renders <code>Profile: [uav_mission_planning]</code> / <code>Active Research Focus: ...</code>.</li>
+  <li><strong>Local AI runtime unification</strong>: <code>FAST_EDGE_URL</code> defaults to <code>http://127.0.0.1:11434/v1</code>; diagnostics, help, and manual document 11434 as the Universal Local AI Runtime (GPU/CPU).</li>
+</ul>
+<p><strong>Verification surface:</strong> release gates include <code>compileall</code>, system integrity, version assertion (5.16.1), Profile SSOT smoke test, <code>talos.py --diagnostics</code> (no 11435), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (zero U+FFFD glyphs).</p>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.16.0</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.16.1</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

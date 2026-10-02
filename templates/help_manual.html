@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Project TALOS Interactive Command Reference and Architecture Guide. Self-contained, air-gapped web manual.">
-<title>TALOS v5.16.0 -- Interactive Command Reference &amp; Architecture Guide</title>
+<title>TALOS v5.16.1 -- Interactive Command Reference &amp; Architecture Guide</title>
 <style>
   :root {
     --bg: #0f1117;
@@ -129,7 +129,7 @@
 </head>
 <body>
 <header>
-  <h1>Project TALOS v5.16.0 -- Interactive Command Reference &amp; Architecture Guide</h1>
+  <h1>Project TALOS v5.16.1 -- Interactive Command Reference &amp; Architecture Guide</h1>
   <p class="subtitle">Dual-Surface User Assistance System. Fully air-gapped, local-first, zero external CDN.</p>
 </header>
 
@@ -250,15 +250,14 @@
   </section>
 
   <!-- Card 4: Ports & Services -->
-  <section class="card wide" data-search="ports services architecture fastapi synapse optica ollama gpu cpu edge 8001 8000 8002 11434 11435">
+  <section class="card wide" data-search="ports services architecture fastapi synapse optica ollama gpu cpu 8001 8000 8002 11434">
     <h2>Ports &amp; Services Architecture</h2>
     <table>
       <tr><th>Port</th><th>Service</th><th>Role</th></tr>
       <tr><td class="port">8001</td><td>TALOS FastAPI</td><td>REST API, Web Manual (/help), 3D Knowledge Constellation Visualizer.</td></tr>
       <tr><td class="port">8000</td><td>SYNAPSE Event Bus</td><td>Event-driven interoperability mesh for the ALEXANDRIA ecosystem.</td></tr>
       <tr><td class="port">8002</td><td>OPTICA Bridge</td><td>Visualization offload microservice (cnsplots / PyVis).</td></tr>
-      <tr><td class="port">11434</td><td>Ollama GPU</td><td>Heavy reasoning tier (large local models on GPU).</td></tr>
-      <tr><td class="port">11435</td><td>Fast Edge CPU</td><td>Lightweight low-latency edge tier (dedicated local endpoint).</td></tr>
+      <tr><td class="port">11434</td><td>Ollama Universal Local AI Runtime</td><td>GPU/CPU local inference for both the fast edge and heavy reasoning tiers.</td></tr>
     </table>
   </section>
 

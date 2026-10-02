@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.16.0
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.16.1
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-10-01 (v5.16.0 -- PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine)
+> **Last Updated:** 2026-10-02 (v5.16.1 -- Unified Profile Architecture & Workspace Synchronization Engine)
 
 ---
 
@@ -145,6 +145,8 @@ Alerts: `DISCORD_WEBHOOK_URL`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `SMTP_*
 
 `_profiles/<name>/` holds an isolated `config.json` and `talos_research.db` per research topic. `active_profile.txt` tracks the active profile.
 
+**v5.16.1:** `src/core/profile_manager.py` is the strict single source of truth. The `ProfileManager` class (anchored to repo-root `_profiles/`) exposes `get_profiles_dir()`, `get_active_profile_name()`, `set_active_profile()`, `list_profiles()`, `create_profile()`, `get_active_db_path()`, and `get_active_config_path()`. `database_manager.get_active_profile_db_path()` and the wizard/TUI helpers delegate to it.
+
 ## 7. Dependency Graph
 
 ```text
@@ -227,6 +229,7 @@ scripts/migrate_d3qn_checkpoint.py
 | **Universal TUI (v5.10.15)** | `talos.py` | Unified 6-group hierarchical menu -- 45/45 executable modules, dead sub-menu revival, GWO Swarm suite |
 | **Desktop Control Hub (v5.10.13)** | `src/utils/tray_icon.py` | `launch_tray_icon_async()` -- 7-item pystray menu (3D Visualizer, Reports Folder, System Log, Swagger, Instant Search, Console, Terminate) with `_is_api_alive()` / `_ensure_api_server()` self-healing |
 | **DatabaseManager Persistence (v5.10.13)** | `src/core/database_manager.py` | Default `db_path=None` -> `get_active_profile_db_path()` (active profile DB `_profiles/<active>/talos_research.db`) |
+| **Profile Manager SSOT (v5.16.1)** | `src/core/profile_manager.py` | Canonical `ProfileManager` class (repo-root `_profiles/`), exposing `get_profiles_dir()` / `get_active_profile_name()` / `set_active_profile()` / `list_profiles()` / `create_profile()` / `get_active_db_path()` / `get_active_config_path()`; canonical `uav_mission_planning` workspace |
 | **3D Visualizer (v5.10.12)** | `templates/live_foraging_visualizer.html` | Three.js constellation with 60 FPS laser beams, photon pulses, raycaster, snapshot |
 | **OPTICA Bridge (v5.10.7)** | `src/integration/optica_client.py` | REST client to Project OPTICA (port 8002) offloading heavy graphics |
 | **Daemon OS Autostart (v5.10.6)** | `src/utils/daemon_autostart.py` | Windows Startup shortcut + boot batch generator |
@@ -294,8 +297,8 @@ scripts/migrate_d3qn_checkpoint.py
 
 ---
 
-> **Last Updated:** 2026-10-01 (v5.16.0 -- PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine)
-> **Project Version:** v5.16.0
+> **Last Updated:** 2026-10-02 (v5.16.1 -- Unified Profile Architecture & Workspace Synchronization Engine)
+> **Project Version:** v5.16.1
 > **Total .py modules under src/:** 99 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
 
 

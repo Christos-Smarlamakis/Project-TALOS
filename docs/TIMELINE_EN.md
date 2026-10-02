@@ -4,9 +4,21 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-01 (v5.16.0 -- PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine)
+> **Last Updated:** 2026-10-02 (v5.16.1 -- Unified Profile Architecture & Workspace Synchronization Engine)
 
 ---
+
+## Phase 68: Unified Profile Architecture & Workspace Synchronization (v5.16.1)
+
+### Status: COMPLETED (2026-10-02)
+
+- [x] **ProfileManager as the single source of truth** -- `src/core/profile_manager.py` is refactored into a canonical `ProfileManager` class anchored to repo-root `_profiles/` (`Path(__file__).resolve().parents[2]`), exposing `get_profiles_dir()`, `get_active_profile_name()`, `set_active_profile()`, `list_profiles()`, `create_profile()`, `get_active_db_path()`, and `get_active_config_path()`, with backward-compatible module aliases for `talos.py`.
+- [x] **DatabaseManager delegation** -- `get_active_profile_db_path()` delegates to `ProfileManager.get_active_db_path()`, collapsing every duplicate path resolver into one.
+- [x] **Canonical PhD workspace migration** -- the 5,472-paper corpus (114 elite, 325 quality-appraised) is consolidated into `_profiles/uav_mission_planning/`; `active_profile.txt` points to it; root config locks `research_topic: "Drone Mission Planning (Task Allocation-Path Planning) with DRL and ST-GAT"`.
+- [x] **Local AI runtime unification** -- `FAST_EDGE_URL` defaults to 11434, retiring the phantom 11435 fast-edge port; diagnostics/help/manual document 11434 as the Universal Local AI Runtime (GPU/CPU).
+- [x] **TUI banner** -- the dashboard header renders `Profile: [uav_mission_planning]` and `Active Research Focus: ...`.
+- [x] **Version synced** -- 6 core files + docker-compose.yml (`talos:5.16.1`) + CITATION.cff (5.16.1, 2026-10-02) + tray/visualizer/wizard/strategy/diagnostics metadata + src/prisma/ and src/search/ docstrings + 19 canonical docs to v5.16.1 (2026-10-02).
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.16.1), Profile SSOT, `--diagnostics` (no 11435), verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 67: PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine (v5.16.0)
 

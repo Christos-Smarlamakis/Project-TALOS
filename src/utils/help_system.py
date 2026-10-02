@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: help_system.py
-Project: TALOS v5.16.0
+Project: TALOS v5.16.1
 Description:
     Dual-Surface User Assistance System. This module renders a rich, four-panel
     interactive command reference for the TALOS terminal UI and provides the
@@ -176,10 +176,9 @@ def _panel_3_ports() -> Panel:
                   "Event-driven interoperability mesh for the ALEXANDRIA ecosystem.")
     table.add_row("8002", "OPTICA Bridge",
                   "Visualization offload microservice (cnsplots / PyVis).")
-    table.add_row("11434", "Ollama GPU",
-                  "Heavy reasoning tier (large local models on GPU).")
-    table.add_row("11435", "Fast Edge CPU",
-                  "Lightweight low-latency edge tier (dedicated local endpoint).")
+    table.add_row("11434", "Ollama Universal Local AI Runtime",
+                  "GPU/CPU local inference for both the fast edge and heavy "
+                  "reasoning tiers.")
 
     return Panel(
         Align.left(table),

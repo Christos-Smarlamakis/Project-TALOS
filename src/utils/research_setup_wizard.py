@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: research_setup_wizard.py
-Project: TALOS v5.16.0
+Project: TALOS v5.16.1
 Description:
     Structured, step-by-step research onboarding wizard for TALOS. Guides the
     researcher through four plain-English steps: (1) research topic capture
@@ -23,11 +23,10 @@ Description:
     - English-First Scientific Standard: every prompt, panel, and generated
       boolean query is produced in professional academic English so the output
       is 100% compatible with the 18 academic ingestion APIs.
-    - Air-gapped failsafe: the wizard probes the local Ollama (port 11434) and
-      Fast Edge (port 11435) runtimes, silently attempts to auto-spawn them,
-      then performs a bounded 2-second wait. If no runtime is reachable, every
-      cognitive step degrades to deterministic rule-based heuristics without
-      blocking or crashing.
+    - Air-gapped failsafe: the wizard probes the unified local AI runtime
+      (port 11434), silently attempts to auto-spawn it, then performs a bounded
+      2-second wait. If no runtime is reachable, every cognitive step degrades
+      to deterministic rule-based heuristics without blocking or crashing.
     - A sentinel file (data/.talos_onboarded) is written only after successful
       completion so the TUI can fast-boot on subsequent launches.
     - Query transparency (v5.12.1): after compilation, a rounded Rich table
@@ -95,8 +94,8 @@ logger = get_logger("research_setup_wizard")
 console = Console()
 
 # -- Runtime probing constants -------------------------------------------------
-OLLAMA_PORT = 11434          # Standard Ollama (GPU heavy tier)
-EDGE_PORT = 11435            # Fast Edge CPU endpoint (Llama-3.1-8B / Neutrino)
+OLLAMA_PORT = 11434          # Universal local AI runtime (GPU/CPU)
+EDGE_PORT = 11434            # Unified fast tier endpoint (v5.16.1: retired 11435)
 PROBE_TIMEOUT = 0.8          # seconds per port probe
 BOOTSTRAP_WAIT = 2.0         # seconds of bounded polling after spawn attempt
 LLM_SCOPE_TIMEOUT = 2.0      # seconds for the Fast Edge scope validation
@@ -275,9 +274,9 @@ def _save_config(config, path):
 def _profiles_dir(project_root=None):
     """Return the absolute canonical _profiles directory for a project root.
 
-    Anchored to the repository root (the directory containing talos.py) so the
-    wizard operates on the same profile namespace as the database manager's
-    get_active_profile_db_path() resolver.
+    Delegates to the ProfileManager single source of truth so the wizard, the
+    database resolver, and every other consumer share one path-resolution
+    implementation anchored to the repository root.
 
     Args:
         project_root (str, optional): Project root override for testing.
@@ -285,8 +284,8 @@ def _profiles_dir(project_root=None):
     Returns:
         str: Absolute path to the _profiles directory.
     """
-    root = project_root or _project_root()
-    return os.path.join(root, PROFILES_DIRNAME)
+    from src.core.profile_manager import ProfileManager
+    return str(ProfileManager(project_root).get_profiles_dir())
 
 
 def _active_profile_file(project_root=None):
@@ -298,7 +297,8 @@ def _active_profile_file(project_root=None):
     Returns:
         str: Absolute path to _profiles/active_profile.txt.
     """
-    return os.path.join(_profiles_dir(project_root), ACTIVE_PROFILE_FILENAME)
+    from src.core.profile_manager import ProfileManager
+    return str(ProfileManager(project_root).active_file)
 
 
 def _list_profiles(project_root=None):
@@ -313,21 +313,15 @@ def _list_profiles(project_root=None):
     Returns:
         list[str]: Sorted profile directory names (may be empty).
     """
-    profiles_dir = _profiles_dir(project_root)
-    if not os.path.isdir(profiles_dir):
-        return []
-    names = []
-    for entry in os.listdir(profiles_dir):
-        if os.path.isdir(os.path.join(profiles_dir, entry)):
-            names.append(entry)
-    return sorted(names)
+    from src.core.profile_manager import ProfileManager
+    return ProfileManager(project_root).list_profiles()
 
 
 def _get_active_profile(project_root=None):
     """Return the currently active profile name, defaulting to 'default'.
 
-    Creates the _profiles directory and the marker file on first run so the
-    return value is always a concrete, usable profile name.
+    Delegates to the ProfileManager marker reader, which creates the _profiles
+    directory on first run and returns a concrete, usable profile name.
 
     Args:
         project_root (str, optional): Project root override for testing.
@@ -335,32 +329,23 @@ def _get_active_profile(project_root=None):
     Returns:
         str: The active profile name (never empty).
     """
-    profiles_dir = _profiles_dir(project_root)
-    os.makedirs(profiles_dir, exist_ok=True)
-    marker = _active_profile_file(project_root)
-    if os.path.exists(marker):
-        try:
-            with open(marker, "r", encoding="utf-8") as f:
-                name = f.read().strip()
-            if name:
-                return name
-        except OSError:
-            pass
-    _set_active_profile(project_root, "default")
-    return "default"
+    from src.core.profile_manager import ProfileManager
+    return ProfileManager(project_root).get_active_profile_name()
 
 
 def _set_active_profile(project_root, name):
-    """Persist the given profile name as the active profile.
+    """Persist and activate the given profile name.
+
+    Delegates to ProfileManager.set_active_profile, which validates the name,
+    scaffolds the profile directory, writes the active-profile marker, and
+    synchronizes the profile config with the root working copy.
 
     Args:
         project_root (str): Project root (directory containing talos.py).
         name (str): The profile name to activate.
     """
-    profiles_dir = _profiles_dir(project_root)
-    os.makedirs(profiles_dir, exist_ok=True)
-    with open(_active_profile_file(project_root), "w", encoding="utf-8") as f:
-        f.write(name)
+    from src.core.profile_manager import ProfileManager
+    ProfileManager(project_root).set_active_profile(name)
 
 
 def _validate_profile_name(name):
@@ -375,7 +360,8 @@ def _validate_profile_name(name):
     Returns:
         bool: True when the name is a safe single path component.
     """
-    return bool(name) and bool(PROFILE_NAME_RE.match((name or "").strip()))
+    from src.core.profile_manager import _validate_profile_name as _pm_validate
+    return _pm_validate(name)
 
 
 def _seed_profile_config(project_root, name):
@@ -495,7 +481,7 @@ def _spawn_local_ai():
 def _ensure_local_ai_runtime():
     """Probe and, if necessary, auto-spawn the local AI runtime.
 
-    The probe order is: Fast Edge (11435) first, then standard Ollama (11434).
+    The probe targets the unified local AI runtime (11434).
     When both are offline, a silent spawn is attempted and a bounded 2-second
     wait begins. The function returns True as soon as any local endpoint is
     reachable, otherwise it logs the heuristic-bypass notice and returns False.
@@ -505,7 +491,7 @@ def _ensure_local_ai_runtime():
     """
     # -- Fast probe of both local endpoints --
     if _port_reachable("127.0.0.1", EDGE_PORT, PROBE_TIMEOUT):
-        logger.info("Fast Edge runtime reachable on port %s.", EDGE_PORT)
+        logger.info("Local AI runtime reachable on port %s.", EDGE_PORT)
         return True
     if _port_reachable("127.0.0.1", OLLAMA_PORT, PROBE_TIMEOUT):
         logger.info("Ollama runtime reachable on port %s.", OLLAMA_PORT)
@@ -518,7 +504,7 @@ def _ensure_local_ai_runtime():
     deadline = time.monotonic() + BOOTSTRAP_WAIT
     while time.monotonic() < deadline:
         if _port_reachable("127.0.0.1", EDGE_PORT, PROBE_TIMEOUT):
-            logger.info("Fast Edge runtime came online after spawn.")
+            logger.info("Local AI runtime came online after spawn.")
             return True
         if _port_reachable("127.0.0.1", OLLAMA_PORT, PROBE_TIMEOUT):
             logger.info("Ollama runtime came online after spawn.")
@@ -894,7 +880,7 @@ def _create_sentinel(project_root=None):
     path = _sentinel_path(project_root)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
-        f.write("TALOS onboarding complete (v5.16.0)\n")
+        f.write("TALOS onboarding complete (v5.16.1)\n")
     logger.info("Onboarding sentinel created: %s", path)
 
 # ---------------------------------------------------------------------------
@@ -1094,7 +1080,7 @@ def _render_header(target_profile=None):
         body.append(f"[{target_profile}]", style="bold green")
     console.print(Panel(
         Align.center(body),
-        title="[bold]TALOS v5.16.0[/bold]",
+        title="[bold]TALOS v5.16.1[/bold]",
         border_style="#006699",
         padding=(1, 2),
     ))

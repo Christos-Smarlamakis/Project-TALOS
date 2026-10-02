@@ -5,7 +5,7 @@
 #  This program is free software...
 """
 Module: database_manager.py (v5.0 - Multi-Provider Hybrid Embeddings)
-Project: TALOS v5.15.4
+Project: TALOS v5.16.1
 """
 import sqlite3
 import os
@@ -20,28 +20,18 @@ def get_active_profile_db_path():
     """
     Resolve the database path for the currently active research profile.
 
-    Returns the per-profile database at _profiles/<active>/talos_research.db,
-    creating the profile directory if it does not exist yet. This is the
-    single source of truth used by the daemon, the offline DRL environment,
-    and the daily digest so they all read and write the same database.
+    Delegates directly to ProfileManager.get_active_db_path() so there is a
+    single canonical path-resolution implementation (the profile SSOT). The
+    per-profile database lives at _profiles/<active>/talos_research.db, with the
+    profile directory created on demand. This is the single source of truth used
+    by the daemon, the offline DRL environment, and the daily digest so they all
+    read and write the same database.
 
     Returns:
         str: Absolute path to the active profile's database file.
     """
-    project_root = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), '..', '..'))
-    profile_dir = os.path.join(project_root, "_profiles")
-    active_file = os.path.join(profile_dir, "active_profile.txt")
-    active_profile = "default"
-    if os.path.exists(active_file):
-        try:
-            with open(active_file, "r", encoding="utf-8") as f:
-                active_profile = f.read().strip() or "default"
-        except Exception:
-            active_profile = "default"
-    profile_db_dir = os.path.join(profile_dir, active_profile)
-    os.makedirs(profile_db_dir, exist_ok=True)
-    return os.path.join(profile_db_dir, "talos_research.db")
+    from src.core.profile_manager import ProfileManager
+    return ProfileManager().get_active_db_path()
 
 
 class DatabaseManager:

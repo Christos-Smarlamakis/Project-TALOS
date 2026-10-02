@@ -45,8 +45,8 @@ Description:
     receive native thinking/reasoning injection in the OpenAI-compatible path.
 
     v5.11.3: Ecosystem Integrity hardening -- adds the Fast-Edge batch circuit
-    breaker (_fast_edge_offline_memo) so a failed CPU edge endpoint (port
-    11435) is skipped for the remainder of the batch, and suppresses the
+    breaker (_fast_edge_offline_memo) so a failed local endpoint (port 11434)
+    is skipped for the remainder of the batch, and suppresses the
     google.generativeai end-of-support FutureWarning at lazy-import time.
 
     v5.12.2: Self-Healing AI Manager & Heuristic Search Optimizer -- adds a
@@ -65,11 +65,11 @@ Description:
 
     v5.15.3: Session-Level Circuit Breaker & Fast-Fail Routing -- replaces the
     per-batch fast-edge memo with a process-lifetime latch
-    (`fast_tier_offline`). The first connection failure on the CPU edge
-    endpoint (port 11435) latches the tier offline and emits a single one-time
-    notice; every subsequent fast-tier request bypasses port 11435 with ZERO
-    network attempts, ZERO timeout latency, and ZERO warning logs, routing
-    directly to local GPU Ollama (LOCAL_GPU_MODEL at port 11434).
+    (`fast_tier_offline`). The first connection failure on the local fast edge
+    endpoint (port 11434) latches the tier offline and emits a single one-time
+    notice; every subsequent fast-tier request bypasses the failed endpoint with
+    ZERO network attempts, ZERO timeout latency, and ZERO warning logs, routing
+    directly to the local heavy tier (LOCAL_GPU_MODEL at port 11434).
 """
 
 import os, json, re, requests, sys, functools, subprocess, time
@@ -410,11 +410,11 @@ class AIManager:
         self.provider_priority = config.get("ai_provider_priority", ["gemini", "deepseek"])
         self.active_embedding_model = None  # set after first successful embedding generation
         self.last_provider_used = None
-        # -- v5.15.3: Session-Level Circuit Breaker -- once the CPU edge --
-        # -- endpoint (port 11435) is observed offline, the fast tier is --
+        # -- v5.15.3: Session-Level Circuit Breaker -- once the local fast edge --
+        # -- endpoint (port 11434) is observed offline, the fast tier is --
         # -- latched offline for the remainder of the process lifetime. --
-        # -- Subsequent fast-tier calls route directly to local GPU (11434) --
-        # -- with ZERO network attempts and ZERO warning logs. --
+        # -- Subsequent fast-tier calls route directly to the local heavy tier --
+        # -- (11434) with ZERO network attempts and ZERO warning logs. --
         self.fast_tier_offline = False
         # -- v5.11.3 legacy per-batch memo retained as a synonym so existing --
         # -- diagnostics and documentation references never break. --
@@ -1305,9 +1305,10 @@ class AIManager:
           - strict_cloud:  Only cloud providers. Never call local.
 
         Hardware Strategy controls HOW local compute is used:
-          - cpu_only:       All local requests -> FAST_EDGE_BASE_URL (11435).
+          - cpu_only:       All local requests -> FAST_EDGE_URL (11434).
           - gpu_only:       All local requests -> OLLAMA_BASE_URL (11434).
-          - cpu_gpu_split:  Fast tier -> CPU (11435), Heavy tier -> GPU (11434).
+          - cpu_gpu_split:  Fast tier and Heavy tier both route to the unified
+                            local AI runtime (11434).
 
         Args:
             prompt: Full prompt text to send.
@@ -1407,7 +1408,7 @@ class AIManager:
                 result = self._execute_ollama_http(prompt, response_format, use_edge=True, allow_prompt=allow_prompt)
                 if result is not None:
                     return result
-                print("  >!> Fast (CPU) tier failed. Trying heavy (GPU) tier...")
+                print("  >!> Fast tier failed. Trying heavy tier...")
                 return self._execute_ollama_http(prompt, response_format, use_edge=False, allow_prompt=allow_prompt)
             else:  # heavy
                 return self._execute_ollama_http(prompt, response_format, use_edge=False, allow_prompt=allow_prompt)
@@ -1421,8 +1422,8 @@ class AIManager:
         Args:
             prompt: Full prompt text.
             response_format: 'json' or 'text'.
-            use_edge: If True, use FAST_EDGE_BASE_URL/FAST_EDGE_MODEL (CPU).
-                      If False, use OLLAMA_BASE_URL/LOCAL_MODEL_BASE_URL (GPU).
+            use_edge: If True, use FAST_EDGE_URL/FAST_EDGE_MODEL (fast edge).
+                      If False, use OLLAMA_BASE_URL/LOCAL_MODEL_BASE_URL (heavy).
             allow_prompt: If False, auto-accepts cloud fallback without user input.
 
         Returns:
@@ -1430,22 +1431,22 @@ class AIManager:
         """
         if use_edge:
             try:
-                from config.settings import FAST_EDGE_BASE_URL, FAST_EDGE_MODEL
+                from config.settings import FAST_EDGE_URL, FAST_EDGE_MODEL
             except ImportError:
-                FAST_EDGE_BASE_URL = os.getenv("FAST_EDGE_BASE_URL", "http://127.0.0.1:11435/v1")
+                FAST_EDGE_URL = os.getenv("FAST_EDGE_URL", "http://127.0.0.1:11434/v1")
                 FAST_EDGE_MODEL = os.getenv("FAST_EDGE_MODEL", "fermionresearch/Neutrino-8B")
-            base_url = FAST_EDGE_BASE_URL
+            base_url = FAST_EDGE_URL
             model = FAST_EDGE_MODEL
-            label = "CPU Edge"
+            label = "Fast Edge"
         else:
             base_url = os.getenv("LOCAL_MODEL_BASE_URL", "http://localhost:11434/v1")
             model = os.getenv("LOCAL_MODEL_NAME", LOCAL_GPU_MODEL)
             label = "GPU Ollama"
 
-        # -- v5.15.3: Session-Level Circuit Breaker -- a known-offline edge --
-        # -- endpoint (port 11435) is bypassed silently for the remainder of --
+        # -- v5.15.3: Session-Level Circuit Breaker -- a known-offline fast edge --
+        # -- endpoint (port 11434) is bypassed silently for the remainder of --
         # -- the process lifetime: ZERO probe attempts, ZERO timeout latency, --
-        # -- and ZERO warning logs. Direct local GPU routing (11434) active. --
+        # -- and ZERO warning logs. Direct local heavy-tier routing active. --
         if use_edge and self.fast_tier_offline:
             return self._execute_ollama_http(
                 prompt, response_format, use_edge=False, allow_prompt=allow_prompt
@@ -1492,21 +1493,21 @@ class AIManager:
         except requests.exceptions.ConnectionError as e:
             print(f"  [WARNING] {label} ({model}) {_sanitize_connection_error(e)}")
             # -- v5.9.8: Local-to-Local Fast-Tier Fallback --
-            # When the fast edge tier (CPU, port 11435) fails, automatically
-            # fall back to local Ollama GPU (port 11434) FIRST before attempting
-            # cloud fallback. This preserves air-gapped operation and avoids
-            # unnecessary cloud API calls when only the edge endpoint is down.
+            # When the fast edge tier (port 11434) fails, automatically fall
+            # back to the local heavy tier (also port 11434) FIRST before
+            # attempting cloud fallback. This preserves air-gapped operation
+            # and avoids unnecessary cloud API calls when the model is down.
             if use_edge:
                 # -- v5.15.3: session-latching circuit breaker -- the first --
                 # -- connection failure latches the fast tier offline for the --
                 # -- whole process, emits a single one-time notice, then routes --
-                # -- directly to local GPU Ollama (LOCAL_GPU_MODEL @ 11434). --
+                # -- directly to the local heavy tier (LOCAL_GPU_MODEL @ 11434). --
                 if not self.fast_tier_offline:
                     self.fast_tier_offline = True
                     self._fast_edge_offline_memo = True
-                    print("  [INFO] Fast CPU tier (11435) offline. "
-                          "Latching direct local GPU routing for this session.")
-                # -- Route directly to local GPU Ollama (port 11434) --
+                    print("  [INFO] Fast tier (11434) offline. "
+                          "Latching direct local heavy-tier routing for this session.")
+                # -- Route directly to the local heavy tier (port 11434) --
                 gpu_result = self._execute_ollama_http(
                     prompt, response_format, use_edge=False, allow_prompt=allow_prompt
                 )

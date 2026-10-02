@@ -70,7 +70,7 @@ to the host's `data/` directory.
 
 ```bash
 # Build the image
-docker build -t talos:5.16.0 .
+docker build -t talos:5.16.1 .
 
 # Run the API server
 docker run --rm -p 8001:8001 \
@@ -81,7 +81,7 @@ docker run --rm -p 8001:8001 \
   -v "$(pwd)/_profiles:/app/_profiles" \
   --env-file .env \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  talos:5.16.0
+  talos:5.16.1
 
 # Run the interactive TUI instead
 docker run --rm -it \
@@ -92,7 +92,7 @@ docker run --rm -it \
   -v "$(pwd)/_profiles:/app/_profiles" \
   --env-file .env \
   -e OLLAMA_BASE_URL=http://host.docker.internal:11434 \
-  talos:5.16.0 python talos.py
+  talos:5.16.1 python talos.py
 ```
 
 On Windows PowerShell, replace `"$(pwd)/data:/app/data"` with
@@ -107,7 +107,8 @@ The container cannot reach `127.0.0.1` on the host. Use `host.docker.internal`:
 | Variable | Value in container | Purpose |
 |----------|--------------------|---------|
 | `OLLAMA_BASE_URL` | `http://host.docker.internal:11434` | Heavy reasoning tier (e.g. `qwen2.5:14b`) |
-| `FAST_EDGE_BASE_URL` | `http://host.docker.internal:11435/v1` | Fast edge tier (e.g. `Neutrino-8B`) |
+| `FAST_EDGE_URL` | `http://host.docker.internal:11434/v1` | Fast edge tier (e.g. `Neutrino-8B`) -- unified local AI runtime |
+| `FAST_EDGE_BASE_URL` | `http://host.docker.internal:11434/v1` | Backward-compatible alias for `FAST_EDGE_URL` |
 | `LOCAL_MODEL_BASE_URL` | `http://host.docker.internal:11434/v1` | Local provider (OpenAI-compatible) |
 | `TALOS_EXECUTION_MODE` | `local` | `local` / `hybrid` / `cloud` |
 

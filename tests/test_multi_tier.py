@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_multi_tier.py
-Project: TALOS v5.16.0
+Project: TALOS v5.16.1
 Description:
     Unit tests for the multi-tier LLM routing architecture (v5.7.1). Tests cover:
     - Fast tier routing via HTTP POST to FAST_EDGE_BASE_URL with Neutrino-8B.
@@ -319,7 +319,7 @@ class TestSettingsResolution:
     def test_default_fast_edge_base_url(self):
         """Verify the default FAST_EDGE_BASE_URL value."""
         from config.settings import FAST_EDGE_BASE_URL
-        assert FAST_EDGE_BASE_URL == "http://127.0.0.1:11435/v1"
+        assert FAST_EDGE_BASE_URL == "http://127.0.0.1:11434/v1"
 
     def test_default_heavy_reasoning_model(self):
         """Verify the default HEAVY_REASONING_MODEL value."""
@@ -337,9 +337,9 @@ class TestSettingsResolution:
         assert DEFAULT_TIER == "fast"
 
     def test_talos_version(self):
-        """Verify the TALOS_VERSION is v5.16.0."""
+        """Verify the TALOS_VERSION is v5.16.1."""
         from config.settings import TALOS_VERSION
-        assert TALOS_VERSION == "5.16.0"
+        assert TALOS_VERSION == "5.16.1"
 
     def test_talos_api_port(self):
         """Verify the default TALOS_API_PORT is 8001."""
@@ -401,10 +401,10 @@ class TestMailboxPattern:
         from config.settings import OLLAMA_BASE_URL
         assert "11434" in OLLAMA_BASE_URL
 
-    def test_fast_tier_uses_dedicated_port(self):
-        """Verify the fast tier points to dedicated edge (11435)."""
+    def test_fast_tier_uses_unified_local_runtime(self):
+        """Verify the fast tier points to the unified local AI runtime (11434)."""
         from config.settings import FAST_EDGE_BASE_URL
-        assert "11435" in FAST_EDGE_BASE_URL
+        assert "11434" in FAST_EDGE_BASE_URL
 
 
 # ------------------------------------------------------------------

@@ -2,8 +2,8 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.16.0 (PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine)
-> **Last Updated:** 2026-10-01
+> **Current Version:** v5.16.1 (Unified Profile Architecture & Workspace Synchronization Engine)
+> **Last Updated:** 2026-10-02
 
 ---
 
@@ -148,6 +148,7 @@ The v5.10.x series transitions Project TALOS from an aggregator to a fully adapt
 | **v5.14.2** | BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze | `BibTeXExporter` (`src/utils/bibtex_exporter.py`) with `AuthorYearTitleKeyword` cite keys and LaTeX sanitization; NASA NTRS (`nasa_ntrs_source.py`) and HAL/Inria (`hal_inria_source.py`) keyless REST harvesters raising ingestion to 18 sources; persisted `prisma_decision` column; Rule 10 dossier 03. Final Feature Freeze. | Complete |
 | **v5.15.0** | Universal Scientific Search Hub & Neural Graph Discovery Engine | Modular `src/ingestion/sources/` subpackage (18 adapters, unified `SOURCE_REGISTRY`), `CitationSnowballEngine` (`src/search/citation_snowballing.py`), `NeuralVectorSearchEngine` (`src/search/neural_vector_search.py`, local `nomic-embed-text`), `CodeFirstSearchEngine` (`src/search/code_first_search.py`), CLI `--snowball`/`--vector-search`/`--code-search` + Group 2 Universal Search Hub, Rule 10 dossier 04. | Complete |
 | **v5.15.3** | Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening | Session-level `fast_tier_offline` circuit breaker latching the CPU edge (11435) offline after first failure (zero re-probes / fallback spam), multi-key `normalize_authors()` resolver eliminating "Unknown Authors" false positives, clean single-line `[EVAL]` daemon telemetry, and silent standalone SYNAPSE buffering (`synapse_available` + JSONL). | Complete |
+| **v5.16.1** | Unified Profile Architecture & Workspace Synchronization Engine | `ProfileManager` as the strict single source of truth (repo-root `_profiles/` anchoring), canonical `uav_mission_planning` PhD workspace migration (5,472 papers / 114 elite / 325 quality-appraised), and local AI runtime unification on port 11434 (retiring phantom 11435). | Complete |
 | **v5.16.0** | PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine (Kitchenham 2007) | Standardized six-question, three-point Kitchenham quality rubric (`src/prisma/quality_appraisal.py`), decoupling of Semantic Relevance (S_rel) from Methodological Quality (S_qual), 2D Evidence Decision Plane quadrants, batch appraisal (`--appraise-quality`), SQLite schema expansion (`quality_score`/`quality_rubric_json`/`evidence_quadrant`), BibTeX dual-filter export, Rule 10 dossier 05. | Complete |
 | **v5.17.0** | CORTEX & n8n Gateway | Live arXiv RSS & text evaluation Discord Bot (`src/integration/discord_evaluator.py`) and SYNAPSE n8n Workflow Gateway templates (`templates/n8n_workflows/`). | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine. | Future |
@@ -216,6 +217,7 @@ Project ALEXANDRIA marks the full desktop and distributed release of the platfor
 | **v5.14.2** | BibTeX Scientific Exporter, 18-Source Aerospace Ingestion & Feature Freeze | BibTeX exporter, NASA NTRS + HAL/Inria (18 sources), prisma_decision, Rule 10 dossier 03 | Complete |
 | **v5.15.0** | Universal Scientific Search Hub & Neural Graph Discovery Engine | Modular ingestion sources subpackage, citation snowballing, neural vector search (nomic-embed-text), code-first search, CLI + TUI | Complete |
 | **v5.15.3** | Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening | Session circuit breaker, author normalizer, clean [EVAL] telemetry, silent standalone SYNAPSE buffering | Complete |
+| **v5.16.1** | Unified Profile Architecture & Workspace Synchronization Engine | ProfileManager SSOT, uav_mission_planning migration, port 11434 unification | Complete |
 | **v5.16.0** | PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine (Kitchenham 2007) | Six-question Kitchenham rubric, S_rel / S_qual decoupling, 2D quadrants, --appraise-quality, SQLite quality columns, BibTeX dual-filter, Rule 10 dossier 05 | Complete |
 | **v5.17.0** | CORTEX & n8n Gateway | Discord bot, n8n workflow templates, ecosystem integration | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine | Future |

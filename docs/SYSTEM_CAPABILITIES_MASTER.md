@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.16.0
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.16.1
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-10-01
-> **Version:** v5.16.0 -- PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine
+> **Last Updated:** 2026-10-02
+> **Version:** v5.16.1 -- Unified Profile Architecture & Workspace Synchronization Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.16.0" | `config/settings.py` |
+| TALOS_VERSION | "5.16.1" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1138,6 +1138,20 @@ For each evaluated paper, the AI generates:
 - **Integration surfaces**: CLI `--appraise-quality [--min-score 7.0]` in `talos.py:_handle_cli_flags()`; TUI Group 3 Option 15; Panel 1 and Panel 4 of `src/utils/help_system.py`; a new interactive card in `templates/help_manual.html`; Kitchenham IEEE citations [11]-[12] in `README.md` (EN and GR); and Rule 10 academic dossier 05 under `docs/internal/academic/`.
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_quality_appraisal.py -q` (17 hermetic tests), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.16.0), `python talos.py --appraise-quality --min-score 7.0` (Rich quadrant table), BibTeX `min_quality=7.5` dual-filter export, `python talos.py --help` / `GET /help`, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+### 15.41 Unified Multi-Profile Architecture, Workspace State Synchronization, and Canonical Research Partitioning (v5.16.1)
+
+**Overview:** v5.16.1 unifies the multi-profile workspace under a strict Single Source of Truth (SSOT) and migrates the active PhD corpus into a canonical research partition. The release establishes `src/core/profile_manager.py` as the sole authority for profile path resolution, eliminates every legacy relative-path bug that produced phantom databases and stale active-profile markers, consolidates the 5,472-paper corpus (114 elite with `overall_score > 7`, 325 quality-appraised) into the `uav_mission_planning` profile, and unifies local AI inference on port 11434 (retiring the phantom 11435 fast-edge warning path).
+
+- **ProfileManager SSOT** (`src/core/profile_manager.py`): the canonical class is anchored to repo-root `_profiles/` via `Path(__file__).resolve().parents[2]` and exposes `get_profiles_dir()`, `get_active_profile_name()`, `set_active_profile(name)` (validate, scaffold, write `active_profile.txt`, synchronize config), `list_profiles()`, `create_profile(name, seed_config)`, `get_active_db_path()`, and `get_active_config_path()`. Module-level aliases preserve `talos.py` compatibility.
+
+- **DatabaseManager delegation** (`src/core/database_manager.py`): `get_active_profile_db_path()` delegates to `ProfileManager.get_active_db_path()`, so the daemon, offline DRL environment, OPTICA bridge, and daily digest share one resolver.
+
+- **Canonical workspace migration**: `_profiles/uav_mission_planning/` now holds the populated database and a `config.json` locking `research_topic: "Drone Mission Planning (Task Allocation-Path Planning) with DRL and ST-GAT"`; `active_profile.txt` and root `config.json` are synchronized accordingly. The TUI banner renders `Profile: [uav_mission_planning]` and `Active Research Focus: ...`.
+
+- **Local AI runtime unification**: `FAST_EDGE_URL` defaults to `http://127.0.0.1:11434/v1` (with `FAST_EDGE_BASE_URL` as a backward-compatible alias); `src/core/ai_manager.py` routes the fast edge tier directly to the verified Ollama runtime; `system_diagnostics.py`, `help_system.py`, and `help_manual.html` document 11434 as the Universal Local AI Runtime (GPU/CPU), removing every phantom 11435 probe.
+
+**Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.16.1), a `ProfileManager` get/set/switch/list smoke test, `python talos.py --diagnostics` (no 11435), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
 
 ---
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: system_diagnostics.py
-Project: TALOS v5.16.0
+Project: TALOS v5.16.1
 Description:
     System Diagnostics Analyzer for TALOS. Executes an 8-point pre-flight
     health check over the local, air-gapped runtime (Python environment,
@@ -95,7 +95,7 @@ def _status(ok):
 # ----------------------------------------------------------------------
 
 # User-Agent used for all outbound diagnostic HTTP probes.
-USER_AGENT = "TALOS-Research-Diagnostics/5.16.0"
+USER_AGENT = "TALOS-Research-Diagnostics/5.16.1"
 
 # Zero-key (open access) academic repository endpoints probed concurrently.
 # Each entry is a GET endpoint returning a small JSON/XML payload when the
@@ -331,8 +331,7 @@ class SystemDiagnosticsEngine:
         ports = [
             (8001, False, "TALOS FastAPI"),
             (8000, True, "SYNAPSE Event Bus"),
-            (11434, True, "Ollama (GPU)"),
-            (11435, True, "CPU Edge (Neutrino-8B)"),
+            (11434, True, "Ollama (GPU/Universal Local AI Runtime)"),
         ]
         results = {}
         for port, expected_running, label in ports:

@@ -4,9 +4,21 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-01 (v5.16.0 -- Μηχανή Αξιολόγησης Ποιότητας PRISMA & Διαξονικής Επιστημονικής Αυστηρότητας)
+> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.16.1 -- Ενοποιημένη Αρχιτεκτονική Προφίλ & Μηχανή Συγχρονισμού Χώρου Εργασίας)
 
 ---
+
+## Φάση 68: Ενοποιημένη Αρχιτεκτονική Προφίλ & Συγχρονισμός Χώρου Εργασίας (v5.16.1)
+
+### Κατάσταση: ΟΛΟΚΛΗΡΩΘΗΚΕ (2026-10-02)
+
+- [x] **ProfileManager ως μοναδική πηγή αλήθειας** -- το `src/core/profile_manager.py` αναδομείται στην κανονική κλάση `ProfileManager`, αγκυρωμένη στον `_profiles/` της ρίζας (`Path(__file__).resolve().parents[2]`), εκθέτοντας `get_profiles_dir()`, `get_active_profile_name()`, `set_active_profile()`, `list_profiles()`, `create_profile()`, `get_active_db_path()` και `get_active_config_path()`, με συμβατά ψευδώνυμα module για το `talos.py`.
+- [x] **Ανάθεση DatabaseManager** -- η `get_active_profile_db_path()` αναθέτει στην `ProfileManager.get_active_db_path()`, συμπτύσσοντας κάθε διπλό επιλύτη διαδρομών σε έναν.
+- [x] **Μετεγκατάσταση κανονικού χώρου εργασίας PhD** -- το σώμα 5.472 άρθρων (114 elite, 325 αξιολογημένα ως προς την ποιότητα) ενοποιείται στο `_profiles/uav_mission_planning/`· ο `active_profile.txt` δείχνει σε αυτό· το root config κλειδώνει `research_topic: "Drone Mission Planning (Task Allocation-Path Planning) with DRL and ST-GAT"`.
+- [x] **Ενοποίηση τοπικής εκτέλεσης ΤΝ** -- το `FAST_EDGE_URL` ορίζει προεπιλογή 11434, αποσύροντας τη φανταστική θύρα 11435· τα διαγνωστικά/βοήθεια/εγχειρίδιο τεκμηριώνουν τη 11434 ως Καθολικό Τοπικό Runtime ΤΝ (GPU/CPU).
+- [x] **Κεφαλίδα TUI** -- η κεφαλίδα αποδίδει `Profile: [uav_mission_planning]` και `Active Research Focus: ...`.
+- [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose.yml (`talos:5.16.1`) + CITATION.cff (5.16.1, 2026-10-02) + μεταδεδομένα tray/visualizer/wizard/strategy/diagnostics + docstrings src/prisma/ και src/search/ + 19 κανονικά έγγραφα σε v5.16.1 (2026-10-02).
+- [x] **Πύλες επαλήθευσης** -- compileall, test_system_integrity, test_talos_version (5.16.1), Profile SSOT, `--diagnostics` (χωρίς 11435), verify_dependency_map --ci (exit 0), bash -n, σάρωση UTF-8 (0 U+FFFD).
 
 ## Φάση 67: Αξιολόγηση Ποιότητας PRISMA & Μηχανή Διαξονικής Επιστημονικής Αυστηρότητας (v5.16.0)
 

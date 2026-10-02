@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.16.0
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.16.1
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-01 (v5.16.0 -- Μηχανή Αξιολόγησης Ποιότητας PRISMA & Διαξονικής Επιστημονικής Αυστηρότητας)
+> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.16.1 -- Ενοποιημένη Αρχιτεκτονική Προφίλ & Μηχανή Συγχρονισμού Χώρου Εργασίας)
 
 ---
 
@@ -145,6 +145,8 @@ LLM & runtime: `FAST_EDGE_MODEL`, `FAST_EDGE_BASE_URL`, `HEAVY_REASONING_MODEL`,
 
 Ο φάκελος `_profiles/<name>/` περιέχει απομονωμένο `config.json` και `talos_research.db` ανά ερευνητικό θέμα. Το `active_profile.txt` παρακολουθεί το ενεργό profile.
 
+**v5.16.1:** Το `src/core/profile_manager.py` είναι η αυστηρή μοναδική πηγή αλήθειας. Η κλάση `ProfileManager` (αγκυρωμένη στον `_profiles/` της ρίζας) εκθέτει `get_profiles_dir()`, `get_active_profile_name()`, `set_active_profile()`, `list_profiles()`, `create_profile()`, `get_active_db_path()` και `get_active_config_path()`. Η `database_manager.get_active_profile_db_path()` και τα βοηθητικά wizard/TUI αναθέτουν σε αυτήν.
+
 ## 7. Γράφος Εξαρτήσεων
 
 ```text
@@ -227,6 +229,7 @@ scripts/migrate_d3qn_checkpoint.py
 | **Universal TUI (v5.10.15)** | `talos.py` | Ενοποιημένο ιεραρχικό μενού 6 ομάδων -- 45/45 εκτελέσιμα modules, αναβίωση νεκρών υπομενού, σουίτα GWO Swarm |
 | **Desktop Control Hub (v5.10.13)** | `src/utils/tray_icon.py` | `launch_tray_icon_async()` -- pystray εικονίδιο 7 στοιχείων (3D Visualizer, Φάκελος Αναφορών, Καταγραφή Συστήματος, Swagger, Άμεση Αναζήτηση, Κονσόλα, Τερματισμός) με `_is_api_alive()` / `_ensure_api_server()` αυτοθεραπεία |
 | **DatabaseManager Persistence (v5.10.13)** | `src/core/database_manager.py` | Προεπιλογή `db_path=None` -> `get_active_profile_db_path()` (βάση ενεργού προφίλ `_profiles/<active>/talos_research.db`) |
+| **Profile Manager SSOT (v5.16.1)** | `src/core/profile_manager.py` | Κανονική κλάση `ProfileManager` (ριζικός `_profiles/`), εκθέτοντας `get_profiles_dir()` / `get_active_profile_name()` / `set_active_profile()` / `list_profiles()` / `create_profile()` / `get_active_db_path()` / `get_active_config_path()`· κανονικός χώρος `uav_mission_planning` |
 | **3D Visualizer (v5.10.12)** | `templates/live_foraging_visualizer.html` | Αστερισμός Three.js με 60 FPS ακτίνες λέιζερ, παλμούς φωτονίων, raycaster, στιγμιότυπο |
 | **OPTICA Bridge (v5.10.7)** | `src/integration/optica_client.py` | REST client στο Project OPTICA (θύρα 8002) εκφορτώνοντας βαριά γραφικά |
 | **Daemon OS Autostart (v5.10.6)** | `src/utils/daemon_autostart.py` | Συντόμευση Windows Startup + γεννήτρια boot batch |
@@ -294,8 +297,8 @@ scripts/migrate_d3qn_checkpoint.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-10-01 (v5.16.0 -- Μηχανή Αξιολόγησης Ποιότητας PRISMA & Διαξονικής Επιστημονικής Αυστηρότητας)
-> **Έκδοση Project:** v5.16.0
+> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.16.1 -- Ενοποιημένη Αρχιτεκτονική Προφίλ & Μηχανή Συγχρονισμού Χώρου Εργασίας)
+> **Έκδοση Project:** v5.16.1
 > **Συνολικά .py modules στο src/:** 99 (core 5 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
 
 

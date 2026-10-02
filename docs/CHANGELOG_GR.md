@@ -2,6 +2,24 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.16.1] - 2026-10-02 -- Ενοποιημένη Αρχιτεκτονική Προφίλ & Μηχανή Συγχρονισμού Χώρου Εργασίας
+
+### Προστέθηκε
+
+- **Ενιαίος Διαχειριστής Προφίλ ως Μοναδική Πηγή Αλήθειας** (`src/core/profile_manager.py`): η παλαιού τύπου λογική διαδρομών σε επίπεδο συναρτήσεων αντικαθίσταται από την κανονική κλάση `ProfileManager`, αγκυρωμένη αυστηρά στον κατάλογο `_profiles/` της ρίζας του αποθετηρίου μέσω `Path(__file__).resolve().parents[2]`. Η κλάση εκθέτει την πλήρη μηχανή καταστάσεων προφίλ -- `get_profiles_dir()`, `get_active_profile_name()`, `set_active_profile(name)` (επικύρωση, δημιουργία καταλόγου, εγγραφή δείκτη και συγχρονισμός ρυθμίσεων), `list_profiles()`, `create_profile(name, seed_config)`, `get_active_db_path()` και `get_active_config_path()` -- εξαλείφοντας κάθε σφάλμα σχετικής διαδρομής που παρήγαγε φανταστικές βάσεις και απαρχαιωμένους δείκτες. Ένα singleton επιπέδου module και λεπτά ψευδώνυμα συμβατότητας (`get_active_profile_name`, `set_active_profile_name`, `save_current_state_to_profile`, `load_profile_to_root`) διατηρούν όλους τους υφιστάμενους καλούντες.
+- **Ανάθεση DatabaseManager** (`src/core/database_manager.py`): η `get_active_profile_db_path()` αναθέτει πλέον απευθείας στην `ProfileManager.get_active_db_path()`, ώστε ο δαίμονας, το περιβάλλον DRL εκτός σύνδεσης, η γέφυρα OPTICA και η ημερήσια σύνοψη να μοιράζονται έναν κανονικό επιλύτη διαδρομών.
+- **Βοηθητικά προφίλ οδηγού & TUI** (`src/utils/research_setup_wizard.py`, `talos.py`): όλα τα βοηθητικά διαδρομών προφίλ (`_profiles_dir`, `_active_profile_file`, `_list_profiles`, `_get_active_profile`, `_set_active_profile`, `_validate_profile_name`) καταναλώνουν πλέον τον `ProfileManager` απευθείας, και η διαδρομή βάσης του `analysis_visualization_menu()` επιλύεται μέσω `ProfileManager().get_active_db_path()`.
+
+### Άλλαξε
+
+- **Μετεγκατάσταση κανονικού χώρου εργασίας PhD**: το συμπληρωμένο ερευνητικό σώμα (5.472 άρθρα, 114 elite άρθρα με `overall_score > 7`, 325 άρθρα αξιολογημένα ως προς την ποιότητα) ενοποιείται στο κανονικό προφίλ `uav_mission_planning` κάτω από `_profiles/uav_mission_planning/`, και ο `_profiles/active_profile.txt` δείχνει πλέον σε αυτό. Το `config.json` ρίζας και το config του προφίλ κλειδώνουν το `research_topic: "Drone Mission Planning (Task Allocation-Path Planning) with DRL and ST-GAT"`, το οποίο η κεφαλίδα TUI αποδίδει ως `Profile: [uav_mission_planning]` / `Active Research Focus: ...`.
+- **Ενοποίηση τοπικής εκτέλεσης ΤΝ (απόσυρση φανταστικής θύρας 11435)**: το `config/settings.py` εισάγει `FAST_EDGE_URL` με προεπιλογή `http://127.0.0.1:11434/v1` (με το `FAST_EDGE_BASE_URL` να διατηρείται ως συμβατό ψευδώνυμο), το `src/core/ai_manager.py` δρομολογεί το γρήγορο επίπεδο απευθείας στο επαληθευμένο runtime Ollama στη θύρα 11434, και τα `src/utils/system_diagnostics.py` / `src/utils/help_system.py` / `templates/help_manual.html` τεκμηριώνουν τη θύρα 11434 ως Καθολικό Τοπικό Runtime ΤΝ (GPU/CPU). Όλες οι φανταστικές διαδρομές προειδοποίησης 11435 και οι ανιχνεύσεις θύρας αφαιρούνται.
+- **Κεφαλίδα TUI** (`talos.py`): η κεφαλίδα του πίνακα αποδίδει πλέον τόσο το ενεργό προφίλ όσο και τη γραμμή ενεργού ερευνητικού πεδίου.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.16.1)· δοκιμή `ProfileManager` get/set/switch/list· `python talos.py --diagnostics` αποδίδει καθαρά χωρίς 11435· `verify_dependency_map.py --ci` (exit 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.16.0] - 2026-10-01 -- Μηχανή Αξιολόγησης Ποιότητας PRISMA & Διαξονικής Επιστημονικής Αυστηρότητας (Πρότυπο Kitchenham 2007)
 
 ### Προστέθηκε

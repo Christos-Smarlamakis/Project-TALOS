@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.16.0
+Project: TALOS v5.16.1
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,13 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.16.1: Unified Profile Architecture & Workspace Synchronization Engine --
+    ProfileManager is established as the strict single source of truth for all
+    profile operations (anchored to repo-root _profiles/), the active PhD
+    workspace is consolidated into the canonical uav_mission_planning profile,
+    and local AI inference is unified on port 11434 (retiring the phantom 11435
+    fast-edge warning path).
 
     v5.16.0: PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine
     (Kitchenham 2007 Standard) -- a standardized six-question, three-point
@@ -331,6 +338,7 @@ from config.settings import FAST_EDGE_MODEL, HEAVY_REASONING_MODEL
 from config.settings import CLOUD_PROVIDER, GEMINI_FLASH_MODEL, DEEPSEEK_MODEL_CHAT
 from config.settings import SYNAPSE_BUS_URL
 from src.core.profile_manager import (
+    ProfileManager,
     get_active_profile_name, save_current_state_to_profile, set_active_profile_name,
 )
 from src.utils.evaluation_history import read_evaluation_history
@@ -1022,6 +1030,28 @@ def profile_settings_menu(python_exe):
 # -- Rich TUI: Dynamic Status Table Builder --
 # ---------------------------------------------------------------------------
 
+def _read_active_focus():
+    """Return the active research focus string from config.json.
+
+    Resolution order: research_topic, then active_focus_summary, then
+    user_research_goal. Returns an empty string when nothing is configured.
+
+    Returns:
+        str: The active research focus (may be empty).
+    """
+    try:
+        import json as _json
+        with open("config.json", "r", encoding="utf-8") as _f:
+            _cfg = _json.load(_f)
+        return (
+            (_cfg.get("research_topic") or "").strip()
+            or (_cfg.get("active_focus_summary") or "").strip()
+            or (_cfg.get("user_research_goal") or "").strip()
+        )
+    except Exception:
+        return ""
+
+
 def _build_status_table():
     """Build and return a Rich Table with live system status information.
 
@@ -1095,25 +1125,12 @@ def _build_status_table():
     table.add_row("Heavy Reasoning Tier", f"[bright_magenta]{heavy_model}[/bright_magenta]")
     table.add_row("Cloud Provider", f"[bright_blue]{cloud_display}[/bright_blue]")
     table.add_row("", "")
-    # -- Active Research Focus (from config.json, v5.9.1: LLM-summarized title) --
-    focus_display = "[dim]Not configured[/dim]"
-    try:
-        import json as _json
-        with open("config.json", "r", encoding="utf-8") as _f:
-            _cfg = _json.load(_f)
-        # Prefer the LLM-generated summary (clean 6-10 word title)
-        summary = _cfg.get("active_focus_summary", "").strip()
-        if summary:
-            focus_display = f"[bold bright_green]{summary}[/bold bright_green]"
-        else:
-            # Fallback: raw goal truncated
-            goal = _cfg.get("user_research_goal") or _cfg.get("phd_focus_system_prompt", "")
-            if goal.strip():
-                if len(goal) > 65:
-                    goal = goal[:65].rstrip() + "..."
-                focus_display = f"[bright_green]{goal}[/bright_green]"
-    except Exception:
-        pass
+    # -- Active Research Focus (from config.json) --
+    focus = _read_active_focus()
+    focus_display = (
+        f"[bold bright_green]{focus}[/bold bright_green]"
+        if focus else "[dim]Not configured[/dim]"
+    )
     table.add_row("Active Research Focus", focus_display)
 
     return table
@@ -1916,7 +1933,7 @@ def analysis_visualization_menu(python_exe):
     console.print(Panel("[bold cyan]Advanced Analysis & Visualizations[/bold cyan]\n[dim]Explore knowledge constellations, citation graphs, and bibliometrics[/dim]", style="cyan", border_style="cyan"))
     project_root = os.path.dirname(os.path.abspath(__file__))
     ap = get_active_profile_name()
-    pdb = os.path.join(project_root, '_profiles', ap, 'talos_research.db')
+    pdb = ProfileManager().get_active_db_path()
     rdb = os.path.join(project_root, 'data', 'talos_research.db')
     tdb = pdb if os.path.exists(pdb) else rdb
     choice = safe_select("Select analysis tool:", choices=[
@@ -2148,6 +2165,15 @@ def main_menu():
         title_text.append(f" v{TALOS_VERSION}", style="bold cyan")
         title_text.append(f"  |  Profile: [{ap}]", style="bold bright_cyan")
 
+        # -- Active Research Focus line (v5.16.1) --
+        focus_value = _read_active_focus()
+        focus_text = Text()
+        focus_text.append("Active Research Focus: ", style="dim white")
+        focus_text.append(
+            focus_value if focus_value else "Not configured",
+            style="bold bright_green" if focus_value else "dim",
+        )
+
         # -- v5.9.7: IEEE Computer Society WEIGD Fund badge --
         ieee_badge = Text()
         ieee_badge.append(" IEEE CS ", style="bold white on #006699")
@@ -2178,6 +2204,7 @@ def main_menu():
         header_content = Table(show_header=False, box=None, padding=(0, 0))
         header_content.add_column(justify="center")
         header_content.add_row(title_text)
+        header_content.add_row(focus_text)
         header_content.add_row(ieee_badge)
         header_content.add_row("")
         if db_line or vram_line:

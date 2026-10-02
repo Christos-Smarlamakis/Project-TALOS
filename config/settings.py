@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.16.0
+Project: TALOS v5.16.1
 Description:
-    Canonical configuration hub for TALOS v5.16.0. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.16.1. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
 
     Key design decisions:
     - Reads from environment variables with sensible defaults for air-gapped operation.
-    - Supports three-tier LLM architecture: "fast" (edge/lightweight, CPU, port 11435),
-      "heavy" (reasoning/large, GPU, port 11434), and "cloud" (Universal Cloud
-      Mesh, 8 providers).
+    - Supports three-tier LLM architecture: "fast" (edge/lightweight, local,
+      port 11434), "heavy" (reasoning/large, local, port 11434), and "cloud"
+      (Universal Cloud Mesh, 8 providers).
     - v5.9.4: TALOS_EXECUTION_MODE is DEPRECATED and replaced by the 2D Execution
       Matrix: TALOS_NETWORK_STRATEGY (strict_local, local_first, cloud_first,
       strict_cloud) and TALOS_HARDWARE_STRATEGY (cpu_only, gpu_only, cpu_gpu_split).
-    - Fast tier uses Neutrino-8B at a dedicated local endpoint (port 11435).
+    - v5.16.1: Fast tier uses Neutrino-8B at the unified local AI runtime (port 11434).
     - Heavy tier uses qwen2.5:14b at the standard Ollama endpoint (port 11434).
     - Cloud LLM providers (Gemini, NVIDIA NIM, Groq, Cerebras, GitHub Models,
       Mistral, OpenRouter, DeepSeek, HuggingFace) are configured via environment
@@ -41,12 +41,17 @@ FAST_EDGE_MODEL = os.getenv(
     "fermionresearch/Neutrino-8B"
 )
 
-# Base URL for the fast edge inference endpoint.
-# Default: localhost port 11435 (dedicated edge Ollama instance).
-FAST_EDGE_BASE_URL = os.getenv(
-    "FAST_EDGE_BASE_URL",
-    "http://127.0.0.1:11435/v1"
+# Canonical fast edge inference URL (v5.16.1). The fast tier now routes
+# directly to the verified universal local AI runtime on port 11434, retiring
+# the phantom CPU edge port 11435.
+FAST_EDGE_URL = os.getenv(
+    "FAST_EDGE_URL",
+    "http://127.0.0.1:11434/v1"
 )
+
+# Backward-compatible alias for FAST_EDGE_URL. Retained so existing diagnostics,
+# tests, and documentation references keep resolving without breakage.
+FAST_EDGE_BASE_URL = os.getenv("FAST_EDGE_BASE_URL", FAST_EDGE_URL)
 
 # Heavy reasoning model: larger model for deep analysis, complex
 # evaluations, and research synthesis tasks.
@@ -163,14 +168,14 @@ TALOS_NETWORK_STRATEGY = os.getenv("TALOS_NETWORK_STRATEGY", "strict_local")
 
 # Hardware Strategy controls which local compute devices are used when
 # inference is routed locally (via any network strategy that permits local).
-#   "cpu_only"       : Force ALL local requests to the Fast Edge CPU endpoint
-#                      (FAST_EDGE_BASE_URL, port 11435). Even heavy-tier
-#                      requests run on CPU. No GPU utilization.
-#   "gpu_only"       : Force ALL local requests to the standard Ollama GPU
+#   "cpu_only"       : Force ALL local requests to the Fast Edge endpoint
+#                      (FAST_EDGE_URL, port 11434). Even heavy-tier requests
+#                      run on the fast model. No GPU utilization.
+#   "gpu_only"       : Force ALL local requests to the standard Ollama
 #                      endpoint (OLLAMA_BASE_URL, port 11434). Even fast-tier
 #                      requests run on GPU.
-#   "cpu_gpu_split"  : Default split: fast requests on CPU (port 11435),
-#                      heavy requests on GPU (port 11434). Respects the
+#   "cpu_gpu_split"  : Default split. Both fast and heavy requests route to the
+#                      unified local AI runtime (port 11434), respecting the
 #                      tier parameter of each request.
 TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 
@@ -184,7 +189,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.16.0"
+TALOS_VERSION = "5.16.1"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.
