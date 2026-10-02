@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: help_system.py
-Project: TALOS v5.17.0
+Project: TALOS v5.17.1
 Description:
     Dual-Surface User Assistance System. This module renders a rich, four-panel
     interactive command reference for the TALOS terminal UI and provides the
@@ -90,11 +90,12 @@ def _panel_1_cli_flags() -> Panel:
     table.add_row("Exports", "--export-bib [score] [--min-quality Q] [--quadrant Q]",
                   "Export curated papers to a BibTeX / LaTeX library with dual "
                   "relevance/quality filtering (data/exports/talos_library.bib).")
-    table.add_row("Quality Appraisal", "--appraise-quality [--min-score 7.0] [--swarm]",
+    table.add_row("Quality Appraisal", "--appraise-quality [--min-score 7.0] [--swarm] [--force]",
                   "Batch Kitchenham (2007) scientific quality appraisal of "
                   "candidate papers with 2D evidence-quadrant classification; "
                   "--swarm enables the Tier-2 Forensic Quality Swarm (4 "
-                  "specialized auditors + inter-auditor Fleiss kappa).")
+                  "specialized auditors + inter-auditor Fleiss kappa); "
+                  "--force re-appraises already-appraised candidates.")
     table.add_row("Quality Appraisal", "--compile-skills [--force]",
                   "Compile the four domain-specialized auditor skill files "
                   "from the canonical templates into the active profile "

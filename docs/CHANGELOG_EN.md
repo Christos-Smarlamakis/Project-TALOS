@@ -2,6 +2,28 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.17.1] - 2026-10-02 -- PRISMA Quality Appraisal UX Transparency & Force Re-Appraisal Engine
+
+### Added
+
+- **Force re-appraisal engine** (`src/prisma/quality_appraisal.py`): `appraise_candidates_batch()` gains a backward-compatible `force_reappraise: bool = False` parameter. When `True`, the batch selects every candidate paper matching `overall_score >= min_relevance` (ignoring whether `quality_score` is already populated), prints a yellow force-re-appraisal notice, and overwrites `quality_score`, `quality_rubric_json`, and `evidence_quadrant` in SQLite WAL.
+
+- **Idempotent quadrant-distribution fallback**: when `force_reappraise=False` and every candidate already carries a `quality_score`, the appraiser no longer exits silently. It renders an informative Rich panel ("All {n} candidate papers ... have already been appraised. Displaying existing 2D Evidence Quadrant distribution."), re-projects the persisted `evidence_quadrant` values onto the 2D Evidence Decision Plane, and returns without re-computing.
+
+### Changed
+
+- **CLI & TUI integration** (`talos.py`): `--appraise-quality` now accepts `--force` (`python talos.py --appraise-quality [--min-score 7.0] [--swarm] [--force]`); TUI Group 3 Option 15 detects an already-appraised corpus and prompts "All candidate papers are already appraised. Force re-appraise with selected mode?" (default `No`), falling back to a clean quadrant table when declined.
+
+- **Dual-Surface Help** (`src/utils/help_system.py`, `templates/help_manual.html`): Panel 1 and Card 6 now document `--appraise-quality [--swarm] [--force]` with a dedicated force re-appraisal command and a v5.17.1 UX-transparency explanation.
+
+- **Version strings synchronized to 5.17.1** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py` version assertion), `docker-compose.yml` (`talos:5.17.1`), `CITATION.cff` (version 5.17.1, date-released 2026-10-02), `config.template.json`, tray/visualizer/wizard/strategy/diagnostics/bibtex/help metadata, all `src/prisma/` and `src/search/` docstrings, and all 19 canonical documentation files (dated 2026-10-02).
+
+- **ROADMAP.md**: current version advanced to v5.17.1 (Complete, 2026-10-02); CORTEX & n8n orchestration retained at v5.18.0.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_quality_appraisal.py -q` (17 passed -- backward compatible); `pytest tests/test_quality_swarm.py -q` (17 passed); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.17.1); `python talos.py --help` documents `--appraise-quality [--swarm] [--force]`; `python src/utils/verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.17.0] - 2026-10-02 -- Two-Tier Hierarchical Swarm Architecture & Forensic Quality Engine
 
 ### Added

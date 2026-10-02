@@ -179,8 +179,8 @@
       <button class="copy" type="button">Copy</button>
     </div>
     <div class="cmd-row">
-      <code>python talos.py --appraise-quality [--min-score 7.0] [--swarm]</code>
-      <span class="desc">Batch Kitchenham (2007) scientific quality appraisal with 2D evidence-quadrant classification; <code>--swarm</code> enables the Tier-2 Forensic Quality Swarm (4 auditors + Fleiss kappa). <small>(Quality Appraisal)</small></span>
+      <code>python talos.py --appraise-quality [--min-score 7.0] [--swarm] [--force]</code>
+      <span class="desc">Batch Kitchenham (2007) scientific quality appraisal with 2D evidence-quadrant classification; <code>--swarm</code> enables the Tier-2 Forensic Quality Swarm (4 auditors + Fleiss kappa); <code>--force</code> re-appraises already-appraised candidates. <small>(Quality Appraisal)</small></span>
       <button class="copy" type="button">Copy</button>
     </div>
     <div class="cmd-row">
@@ -301,6 +301,13 @@
     and inclusion/exclusion criteria injected. The swarm aggregates the six
     ternary scores into S_qual, reports the inter-auditor Fleiss kappa
     (kappa_qual), and persists the full critique payload to SQLite.</p>
+    <p><strong>v5.17.1 -- UX Transparency &amp; Force Re-Appraisal.</strong> Appraisal no
+    longer exits silently when every candidate already carries a quality score:
+    the engine renders an informational panel and re-displays the persisted 2D
+    Evidence Quadrant distribution. The <code>--force</code> flag (or the TUI
+    confirmation prompt) deliberately re-audits the entire candidate set and
+    overwrites <code>quality_score</code>, <code>quality_rubric_json</code>, and
+    <code>evidence_quadrant</code> in SQLite WAL.</p>
     <div class="cmd-row">
       <code>python talos.py --appraise-quality --min-score 7.0</code>
       <span class="desc">Appraise candidate papers (overall_score &gt;= 7.0) and classify them into quadrants.</span>
@@ -309,6 +316,11 @@
     <div class="cmd-row">
       <code>python talos.py --appraise-quality --min-score 7.0 --swarm</code>
       <span class="desc">Forensic four-auditor swarm appraisal with consensus synthesis and kappa_qual.</span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --appraise-quality --min-score 7.0 --force</code>
+      <span class="desc">Force re-appraisal of already-appraised candidates (overwrites quality_score / evidence_quadrant).</span>
       <button class="copy" type="button">Copy</button>
     </div>
     <div class="cmd-row">

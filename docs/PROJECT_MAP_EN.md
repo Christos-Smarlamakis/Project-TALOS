@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.17.0
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.17.1
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-10-02 (v5.17.0 -- Two-Tier Hierarchical Swarm Architecture & Forensic Quality Engine)
+> **Last Updated:** 2026-10-02 (v5.17.1 -- PRISMA Quality Appraisal UX Transparency & Force Re-Appraisal Engine)
 
 ---
 
@@ -282,7 +282,7 @@ src/core/ai_manager.py
 | **Session Circuit Breaker, Robust Author Extraction & Daemon Lifecycle Hardening (v5.15.3)** | `src/core/ai_manager.py`, `src/utils/evaluation_history.py`, `src/ai/drl/talos_service.py`, `src/ai/drl/live_agent_orchestrator.py`, `src/integration/synapse_client.py` | `AIManager.fast_tier_offline` (latches CPU Edge 11435 offline after first failure, zero re-probes/logs); `normalize_authors(paper)` (resolves `authors_str`/`authors`/`author`); clean `[EVAL]` daemon telemetry; silent SYNAPSE buffering (`synapse_available` + JSONL) |
 | **DRL Action-Space Expansion to 18 Sources & Net2Net Checkpoint Migration (v5.15.4)** | `src/ai/drl/talos_env.py`, `scripts/migrate_d3qn_checkpoint.py`, `config.json`, `config.template.json`, `_profiles/default_drones/config.json` | `ALL_KNOWN_SOURCES` 16 -> 18 (adds `nasa_ntrs`, `hal_inria`); action space `Discrete(17) -> Discrete(19)`, observation 23 -> 25 dims; Net2Net surgery (`migrate_d3qn_checkpoint.py`) widens the DuelingLSTM advantage head (15 -> 19) + LSTM input (21 -> 25) preserving all trained weights; 18-source profile/daemon sync; Scopus `$`/`@name`/`@surname` author normalization locked in |
 | **Dual-Surface Interactive Help System & Scientific Foundations Canon (v5.15.5)** | `src/utils/help_system.py`, `templates/help_manual.html`, `src/api/main_api.py`, `README.md` | `render_help_manual()` 4-panel Rich manual (`--help` + TUI Option 7); `GET /help` + `GET /manual` (307 redirect) serve the zero-CDN `help_manual.html` (live search, click-to-copy, dark/print-mode toggle); README Section 5 IEEE references [1]-[10] (EN + GR) |
-| **PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine (v5.16.0)** | `src/prisma/quality_appraisal.py`, `src/core/database_manager.py`, `src/utils/bibtex_exporter.py` | `KitchenhamRubric` / `QualityAppraisalResult` / `PrismaQualityAppraiser`; `map_evidence_quadrant()` (2D quadrants, tau_rel=7.0 / tau_qual=7.5); `appraise_paper()` / `appraise_candidates_batch()` (ThreadPoolExecutor + `Semaphore(2)`); `update_paper_quality()` (`quality_score`/`quality_rubric_json`/`evidence_quadrant`); `export_library(min_quality, quadrant)` (BibTeX dual-filter + `note` field); CLI `--appraise-quality` + TUI Group 3 Option 15 |
+| **PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine (v5.16.0)** | `src/prisma/quality_appraisal.py`, `src/core/database_manager.py`, `src/utils/bibtex_exporter.py` | `KitchenhamRubric` / `QualityAppraisalResult` / `PrismaQualityAppraiser`; `map_evidence_quadrant()` (2D quadrants, tau_rel=7.0 / tau_qual=7.5); `appraise_paper()` / `appraise_candidates_batch(force_reappraise)` (ThreadPoolExecutor + `Semaphore(2)`); `update_paper_quality()` (`quality_score`/`quality_rubric_json`/`evidence_quadrant`); `export_library(min_quality, quadrant)` (BibTeX dual-filter + `note` field); CLI `--appraise-quality [--force]` + TUI Group 3 Option 15 (force re-appraisal prompt, v5.17.1) |
 | **Pluggable Provider Registry & Hardware-Aware Model Advisor (v5.16.2)** | `src/core/provider_registry.py`, `src/core/hardware_advisor.py`, `src/core/ai_manager.py`, `talos.py`, `src/utils/help_system.py` | `ProviderRegistry` (Open-Closed Principle, 10 providers); `HardwareModelAdvisor` (hardware profile, 4-bit VRAM budget, role-based stack, SOTA radar); `AIManager.list_active_providers()` / `get_provider_descriptor()` (zero regression); CLI `--hardware-advisor` / `--recommend-models` + TUI Option 8 |
 
 ## 9. Auxiliary Files
@@ -323,8 +323,8 @@ src/core/ai_manager.py
 
 ---
 
-> **Last Updated:** 2026-10-02 (v5.17.0 -- Two-Tier Hierarchical Swarm Architecture & Forensic Quality Engine)
-> **Project Version:** v5.17.0
+> **Last Updated:** 2026-10-02 (v5.17.1 -- PRISMA Quality Appraisal UX Transparency & Force Re-Appraisal Engine)
+> **Project Version:** v5.17.1
 > **Total .py modules under src/:** 103 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 8 + mcp_server 1)
 
 

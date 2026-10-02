@@ -2,6 +2,28 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.17.1] - 2026-10-02 -- Διαφάνεια UX Αξιολόγησης Ποιότητας PRISMA & Μηχανή Αναγκαστικής Επαναξιολόγησης
+
+### Προστέθηκε
+
+- **Μηχανή αναγκαστικής επαναξιολόγησης** (`src/prisma/quality_appraisal.py`): η `appraise_candidates_batch()` αποκτά μια προς-τα-πίσω-συμβατή παράμετρο `force_reappraise: bool = False`. Όταν είναι `True`, η παρτίδα επιλέγει κάθε υποψήφιο άρθρο που ικανοποιεί `overall_score >= min_relevance` (αγνοώντας αν το `quality_score` είναι ήδη συμπληρωμένο), εκτυπώνει κίτρινη ειδοποίηση αναγκαστικής επαναξιολόγησης και αντικαθιστά τα `quality_score`, `quality_rubric_json` και `evidence_quadrant` στο WAL της SQLite.
+
+- **Εφεδρική εμφάνιση ιδιοδύναμης κατανομής τεταρτημορίων**: όταν `force_reappraise=False` και κάθε υποψήφιος φέρει ήδη `quality_score`, ο εκτιμητής δεν εξέρχεται πλέον σιωπηλά. Αποδίδει ένα ενημερωτικό πλαίσιο Rich ("Όλα τα {n} υποψήφια άρθρα ... έχουν ήδη αξιολογηθεί. Εμφάνιση υπάρχουσας κατανομής 2D Τεταρτημορίων Τεκμηρίων."), επαναπροβάλλει τις αποθηκευμένες τιμές `evidence_quadrant` στο Δισδιάστατο Επίπεδο Απόφασης Τεκμηρίων και επιστρέφει χωρίς επανυπολογισμό.
+
+### Άλλαξε
+
+- **Ενσωμάτωση CLI & TUI** (`talos.py`): η `--appraise-quality` δέχεται πλέον `--force` (`python talos.py --appraise-quality [--min-score 7.0] [--swarm] [--force]`)· η Επιλογή 15 της Ομάδας 3 του TUI εντοπίζει ένα ήδη αξιολογημένο σώμα και ρωτά "Όλα τα υποψήφια άρθρα έχουν ήδη αξιολογηθεί. Αναγκαστική επαναξιολόγηση με τον επιλεγμένο τρόπο;" (προεπιλογή Όχι), με εφεδρική εμφάνιση καθαρού πίνακα τεταρτημορίων σε άρνηση.
+
+- **Βοήθεια Διπλής Επιφάνειας** (`src/utils/help_system.py`, `templates/help_manual.html`): ο Πίνακας 1 και η Κάρτα 6 τεκμηριώνουν πλέον το `--appraise-quality [--swarm] [--force]` με ειδική εντολή αναγκαστικής επαναξιολόγησης και εξήγηση διαφάνειας UX v5.17.1.
+
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.17.1** στα 6 βασικά αρχεία κώδικα, `docker-compose.yml` (`talos:5.17.1`), `CITATION.cff` (5.17.1, 2026-10-02), `config.template.json`, μεταδεδομένα tray/visualizer/wizard/strategy/diagnostics/bibtex/help, όλα τα docstrings `src/prisma/` και `src/search/`, και τα 19 κανονικά αρχεία τεκμηρίωσης (ημερομηνία 2026-10-02).
+
+- **ROADMAP.md**: η τρέχουσα έκδοση προχώρησε σε v5.17.1 (Πλήρης, 2026-10-02)· η ενορχήστρωση CORTEX & n8n παραμένει σε v5.18.0.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_quality_appraisal.py -q` (17 επιτυχίες)· `pytest tests/test_quality_swarm.py -q` (17 επιτυχίες)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.17.1)· `python talos.py --help` τεκμηριώνει το `--appraise-quality [--swarm] [--force]`· `python src/utils/verify_dependency_map.py --ci` (έξοδος 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.17.0] - 2026-10-02 -- Αρχιτεκτονική Ιεραρχικού Σμήνους Δύο Επιπέδων & Μηχανή Εγκληματολογικής Ποιότητας
 
 ### Προστέθηκε

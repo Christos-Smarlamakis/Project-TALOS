@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: quality_appraisal.py
-Project: TALOS v5.17.0
+Project: TALOS v5.17.1
 Description:
     Standardized PRISMA Quality Appraisal engine implementing the Kitchenham et
     al. (2007) guidelines for systematic literature reviews in software
@@ -19,6 +19,14 @@ Description:
     returns the merged rubric, the inter-auditor Fleiss ``kappa_qual``, and
     per-auditor forensic critiques. Profile skill files are auto-compiled by
     ``SkillCompiler`` before the batch when missing.
+
+    v5.17.1 eliminates the silent-exit anti-pattern and adds a force
+    re-appraisal engine: ``appraise_candidates_batch(force_reappraise=True)``
+    re-audits every candidate regardless of prior ``quality_score``, while the
+    default path renders an informative panel and re-displays the persisted 2D
+    Evidence Quadrant distribution when no uncached candidates remain. The CLI
+    and TUI expose this via the ``--force`` flag and an interactive re-appraisal
+    confirmation prompt.
 
     ``PrismaQualityAppraiser`` evaluates a single paper or an entire candidate
     batch. Each appraisal prompts the multi-tier ``AIManager`` with a structured
@@ -544,19 +552,29 @@ class PrismaQualityAppraiser:
         min_relevance: float = 7.0,
         active_profile: Optional[str] = None,
         render: bool = True,
+        force_reappraise: bool = False,
     ) -> List[Dict[str, Any]]:
-        """Appraise every uncached candidate paper in the active database.
+        """Appraise candidate papers in the active database.
 
-        Queries the active-profile SQLite database for papers whose
-        ``overall_score`` meets ``min_relevance`` and whose ``quality_score`` is
-        still ``NULL``, then appraises them concurrently via ``ThreadPoolExecutor``
-        with the VRAM-bounded concurrency budget. Each successful appraisal is
-        persisted immediately through ``update_paper_quality``.
+        Default (``force_reappraise=False``) behaviour selects only uncached
+        candidates -- papers whose ``overall_score`` meets ``min_relevance`` and
+        whose ``quality_score`` is still ``NULL``. When every candidate has
+        already been appraised, the method does not silently exit: it renders an
+        informative panel and re-displays the existing 2D Evidence Quadrant
+        distribution, so the caller always receives actionable feedback.
+
+        ``force_reappraise=True`` selects every candidate regardless of prior
+        appraisal and overwrites ``quality_score``, ``quality_rubric_json``, and
+        ``evidence_quadrant`` in SQLite WAL, enabling a deliberate re-audit.
 
         Args:
             min_relevance (float): Minimum ``overall_score`` threshold (default 7.0).
             active_profile (Optional[str]): Optional explicit profile name.
             render (bool): When True, render the quadrant summary table.
+            force_reappraise (bool): When True, re-appraise every candidate
+                (ignoring existing ``quality_score``). When False (default),
+                appraise only uncached candidates and fall back to displaying
+                the existing distribution when none remain.
 
         Returns:
             List[Dict[str, Any]]: One summary dict per successfully appraised
@@ -586,25 +604,53 @@ class PrismaQualityAppraiser:
                 # -- Auditors degrade to canonical templates / keywords. --
                 pass
 
-        rows = db.execute_query(
-            "SELECT id, title, abstract, overall_score FROM papers "
-            "WHERE overall_score >= ? AND quality_score IS NULL "
-            "ORDER BY overall_score DESC",
-            (float(min_relevance),),
-            fetch_all=True,
-        ) or []
-
-        papers = [
-            {
-                "id": row[0],
-                "title": row[1],
-                "abstract": row[2],
-                "overall_score": row[3],
-            }
-            for row in rows
-        ]
-        if not papers:
-            return []
+        # -- v5.17.1: UX transparency & force re-appraisal. The default path
+        # selects only uncached candidates; the force path re-selects every
+        # candidate and overwrites the persisted quality columns in WAL. --
+        if force_reappraise:
+            rows = db.execute_query(
+                "SELECT id, title, abstract, overall_score FROM papers "
+                "WHERE overall_score >= ? "
+                "ORDER BY overall_score DESC",
+                (float(min_relevance),),
+                fetch_all=True,
+            ) or []
+            papers = [
+                {
+                    "id": row[0],
+                    "title": row[1],
+                    "abstract": row[2],
+                    "overall_score": row[3],
+                }
+                for row in rows
+            ]
+            if not papers:
+                return []
+            self._get_console().print(
+                "[bold yellow]Notice:[/bold yellow] Force re-appraising all "
+                f"{len(papers)} candidate papers with {self.appraisal_mode} mode..."
+            )
+        else:
+            rows = db.execute_query(
+                "SELECT id, title, abstract, overall_score FROM papers "
+                "WHERE overall_score >= ? AND quality_score IS NULL "
+                "ORDER BY overall_score DESC",
+                (float(min_relevance),),
+                fetch_all=True,
+            ) or []
+            papers = [
+                {
+                    "id": row[0],
+                    "title": row[1],
+                    "abstract": row[2],
+                    "overall_score": row[3],
+                }
+                for row in rows
+            ]
+            if not papers:
+                return self._render_existing_quadrant_distribution(
+                    db, min_relevance, render
+                )
 
         max_workers, semaphore = _resolve_batch_concurrency()
         max_workers = max(1, min(max_workers, len(papers)))
@@ -662,6 +708,74 @@ class PrismaQualityAppraiser:
         if render and results:
             self.render_quadrant_summary(results)
         return results
+
+    def _get_console(self) -> Any:
+        """Return a lazily-created Rich console for user-facing messages.
+
+        Returns:
+            Any: A ``rich.console.Console`` instance.
+        """
+        if self._console is None:
+            from rich.console import Console
+            self._console = Console()
+        return self._console
+
+    def _render_existing_quadrant_distribution(
+        self,
+        db: Any,
+        min_relevance: float,
+        render: bool = True,
+    ) -> List[Dict[str, Any]]:
+        """Render the persisted quadrant distribution when nothing is uncached.
+
+        Invoked when ``force_reappraise=False`` and every candidate already
+        carries a ``quality_score``. Instead of silently exiting, this renders an
+        informative Rich panel and re-projects the persisted ``evidence_quadrant``
+        values onto the 2D Evidence Decision Plane, guaranteeing idempotent,
+        deterministic feedback for repeated appraisal invocations.
+
+        Args:
+            db (Any): The active-profile ``DatabaseManager``.
+            min_relevance (float): Minimum ``overall_score`` threshold.
+            render (bool): When True, render the quadrant summary table.
+
+        Returns:
+            List[Dict[str, Any]]: Summary dicts reconstructed from persisted
+                quadrant values (``swarm_kappa`` is absent because it is not
+                recoverable from the stored columns).
+        """
+        rows = db.execute_query(
+            "SELECT id, evidence_quadrant, overall_score, quality_score "
+            "FROM papers WHERE overall_score >= ? "
+            "ORDER BY overall_score DESC",
+            (float(min_relevance),),
+            fetch_all=True,
+        ) or []
+        total_candidates = len(rows)
+        summaries: List[Dict[str, Any]] = []
+        for row in rows:
+            summaries.append({
+                "paper_id": int(row[0]),
+                "evidence_quadrant": str(row[1] or "METHODOLOGICAL_NOISE"),
+                "relevance": float(row[2] or 0.0),
+                "quality_score": float(row[3] or 0.0),
+            })
+
+        from rich.panel import Panel
+
+        info = (
+            "[bold cyan]Information:[/bold cyan] All "
+            f"{total_candidates} candidate papers "
+            f"(overall_score >= {min_relevance}) have already been appraised. "
+            "Displaying existing 2D Evidence Quadrant distribution."
+        )
+        self._get_console().print(
+            Panel(info, border_style="cyan", title="[bold]Quality Appraisal[/bold]")
+        )
+
+        if render and summaries:
+            self.render_quadrant_summary(summaries)
+        return summaries
 
     def render_quadrant_summary(self, results: List[Dict[str, Any]]):
         """Render the 2D quadrant distribution as a Rich table.
@@ -723,12 +837,15 @@ class PrismaQualityAppraiser:
         return table
 
     def run(self, min_relevance: float = 7.0,
-            active_profile: Optional[str] = None) -> List[Dict[str, Any]]:
+            active_profile: Optional[str] = None,
+            force_reappraise: bool = False) -> List[Dict[str, Any]]:
         """Convenience wrapper that runs the batch appraisal and renders it.
 
         Args:
             min_relevance (float): Minimum ``overall_score`` threshold.
             active_profile (Optional[str]): Optional explicit profile name.
+            force_reappraise (bool): When True, re-appraise every candidate
+                regardless of prior ``quality_score`` (v5.17.1).
 
         Returns:
             List[Dict[str, Any]]: The appraisal summary dictionaries.
@@ -737,6 +854,7 @@ class PrismaQualityAppraiser:
             min_relevance=min_relevance,
             active_profile=active_profile,
             render=True,
+            force_reappraise=force_reappraise,
         )
 
 
@@ -770,7 +888,9 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="Compile the domain-specialized auditor skills "
                              "for the profile and exit (v5.17.0).")
     parser.add_argument("--force", action="store_true",
-                        help="Force skill recompilation with --compile-skills.")
+                        help="Force re-appraisal of already-appraised "
+                             "candidates, or force skill recompilation with "
+                             "--compile-skills.")
     args = parser.parse_args(argv)
 
     if args.compile_skills:
@@ -787,6 +907,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     results = appraiser.run(
         min_relevance=args.min_score,
         active_profile=args.profile,
+        force_reappraise=bool(args.force),
     )
     if not results:
         print("No uncached candidate papers matched the appraisal threshold.")

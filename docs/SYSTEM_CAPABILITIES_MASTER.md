@@ -4,7 +4,7 @@
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-02
-> **Version:** v5.17.0 -- Two-Tier Hierarchical Swarm Architecture & Forensic Quality Engine
+> **Version:** v5.17.1 -- PRISMA Quality Appraisal UX Transparency & Force Re-Appraisal Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -1184,6 +1184,20 @@ For each evaluated paper, the AI generates:
 - **Integration surfaces**: CLI `--appraise-quality [--min-score 7.0] [--swarm]` and `--compile-skills [--force] [--profile name]`; TUI Group 3 Option 15 mode prompt; Panel 1 and web manual Card 6 documentation; Rule 10 dossier 06.
 
 **Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_quality_swarm.py -q` (17 hermetic), `pytest tests/test_quality_appraisal.py -q` (17 -- backward compatible), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.17.0), `python talos.py --compile-skills` (UAV profile), `python talos.py --help`, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
+
+### 15.44 Quality Appraisal UX Transparency, Idempotent Quadrant Rendering, and Force Re-Appraisal Mechanics (v5.17.1)
+
+**Overview:** v5.17.1 eliminates the silent-exit anti-pattern in the PRISMA Quality Appraisal engine. `PrismaQualityAppraiser.appraise_candidates_batch()` previously returned an empty list whenever every candidate paper already carried a `quality_score`, leaving CLI and TUI users with no feedback. The method now accepts `force_reappraise: bool = False` and routes through two deterministic paths: the default uncached-only path and an explicit force path that re-audits the entire candidate set.
+
+- **Force re-appraisal mechanics**: when `force_reappraise=True`, the batch queries `overall_score >= min_relevance` with no `quality_score IS NULL` predicate, prints a yellow notice ("Force re-appraising all {n} candidate papers with {mode} mode..."), and runs the same `ThreadPoolExecutor` (bounded by `VRAM_SEMAPHORE = threading.Semaphore(2)` locally, 8 workers Cloud Mesh), overwriting `quality_score`, `quality_rubric_json`, and `evidence_quadrant` through `DatabaseManager.update_paper_quality()` in SQLite WAL.
+
+- **Idempotent quadrant-distribution fallback**: when `force_reappraise=False` and zero uncached candidates remain, the engine invokes `_render_existing_quadrant_distribution()`, which re-reads the persisted `evidence_quadrant` / `overall_score` / `quality_score` columns, renders an informational Rich panel ("All {n} candidate papers ... have already been appraised. Displaying existing 2D Evidence Quadrant distribution."), and re-projects the distribution via `render_quadrant_summary()` -- no LLM calls, no re-computation, deterministic output.
+
+- **CLI & TUI surfaces**: `--appraise-quality [--min-score 7.0] [--swarm] [--force]`; TUI Group 3 Option 15 queries `SELECT COUNT(*) ... quality_score IS NULL`, and when the corpus is fully appraised prompts "All candidate papers are already appraised. Force re-appraise with selected mode?" (default `No`), falling back to the quadrant table when declined.
+
+- **Dual-Surface Help**: Panel 1 (`help_system.py`) and web manual Card 6 (`help_manual.html`) document `--appraise-quality [--swarm] [--force]` with a dedicated force re-appraisal command.
+
+**Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_quality_appraisal.py -q` (17 -- backward compatible), `pytest tests/test_quality_swarm.py -q` (17), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.17.1), `python talos.py --help`, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
 
 ---
 

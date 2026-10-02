@@ -4,9 +4,20 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-02 (v5.16.2 -- Pluggable Provider Registry & Hardware-Aware Model Advisor)
+> **Last Updated:** 2026-10-02 (v5.17.1 -- PRISMA Quality Appraisal UX Transparency & Force Re-Appraisal Engine)
 
 ---
+
+## Phase 71: PRISMA Quality Appraisal UX Transparency & Force Re-Appraisal (v5.17.1)
+
+### Status: COMPLETED (2026-10-02)
+
+- [x] **Silent-exit elimination** -- `src/prisma/quality_appraisal.py`: `appraise_candidates_batch()` no longer returns empty when every candidate already carries a `quality_score`. The default path renders an informative Rich panel and re-displays the persisted 2D Evidence Quadrant distribution (`_render_existing_quadrant_distribution`), guaranteeing idempotent, deterministic feedback.
+- [x] **Force re-appraisal engine** -- new `force_reappraise: bool = False` parameter selects every candidate (`overall_score >= min_relevance`, ignoring prior `quality_score`), emits a yellow notice, and overwrites `quality_score` / `quality_rubric_json` / `evidence_quadrant` in SQLite WAL.
+- [x] **CLI & TUI integration** -- `--appraise-quality [--min-score 7.0] [--swarm] [--force]`; TUI Group 3 Option 15 detects an already-appraised corpus and prompts before a deliberate re-audit, falling back to the quadrant table when declined.
+- [x] **Dual-Surface Help sync** -- Panel 1 and web manual Card 6 document `--force` plus the UX-transparency fallback.
+- [x] **Version synced** -- 6 core files + docker-compose.yml (`talos:5.17.1`) + CITATION.cff (5.17.1, 2026-10-02) + config.template.json + tray/visualizer/wizard/strategy/diagnostics/bibtex/help metadata + src/prisma/ and src/search/ docstrings + 19 canonical docs to v5.17.1 (2026-10-02).
+- [x] **Verification gates passed** -- compileall (0 errors), test_quality_appraisal (17), test_quality_swarm (17), test_system_integrity, test_talos_version (5.17.1), `--help` documents `--force`, verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 70: Two-Tier Hierarchical Swarm Architecture & Forensic Quality Engine (v5.17.0)
 

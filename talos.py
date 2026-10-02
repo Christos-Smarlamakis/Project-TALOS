@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.17.0
+Project: TALOS v5.17.1
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -29,6 +29,13 @@ Description:
     load profile-compiled, domain-specialized skills and synthesize the
     Kitchenham S_qual consensus with inter-auditor Fleiss kappa. CLI gains
     --appraise-quality [--swarm] and --compile-skills.
+
+    v5.17.1: PRISMA Quality Appraisal UX Transparency & Force Re-Appraisal
+    Engine -- appraise_candidates_batch gains force_reappraise and eliminates
+    the silent exit when every candidate is already appraised, re-displaying the
+    persisted 2D Evidence Quadrant distribution instead; CLI gains
+    --appraise-quality [--swarm] [--force] and TUI Option 15 prompts before a
+    deliberate re-audit.
 
     v5.16.2: Pluggable Provider Registry & Hardware-Aware Model Advisor -- a
     modular adapter-based provider registry (src/core/provider_registry.py)
@@ -2053,7 +2060,9 @@ def analysis_visualization_menu(python_exe):
             "(Elite Foundational, Idea Mine, Methodological Exemplar, Noise).\n"
             "v5.17.0: the Forensic Multi-Skill Quality Swarm dispatches four\n"
             "specialized auditors (Theory, Operational, Benchmarks, Open Science)\n"
-            "over profile-compiled skills and reports inter-auditor Fleiss kappa.",
+            "over profile-compiled skills and reports inter-auditor Fleiss kappa.\n"
+            "v5.17.1: --force re-appraises already-appraised candidates; "
+            "otherwise the existing quadrant distribution is re-displayed.",
             border_style="cyan",
         ))
         # -- v5.17.0: Two-Tier appraisal mode selection. --
@@ -2079,8 +2088,36 @@ def analysis_visualization_menu(python_exe):
             min_score = 7.0
         try:
             from src.prisma.quality_appraisal import PrismaQualityAppraiser
-            PrismaQualityAppraiser(appraisal_mode=appraisal_mode).run(
-                min_relevance=min_score)
+            from src.core.database_manager import DatabaseManager
+            appraiser = PrismaQualityAppraiser(appraisal_mode=appraisal_mode)
+            # -- v5.17.1: UX transparency -- detect whether any uncached
+            # candidates remain so an already-appraised corpus prompts instead
+            # of silently exiting. --
+            db = DatabaseManager()
+            total_row = db.execute_query(
+                "SELECT COUNT(*) FROM papers WHERE overall_score >= ?",
+                (min_score,), fetch_one=True,
+            )
+            total_candidates = int((total_row or (0,))[0])
+            unappraised_row = db.execute_query(
+                "SELECT COUNT(*) FROM papers WHERE overall_score >= ? "
+                "AND quality_score IS NULL",
+                (min_score,), fetch_one=True,
+            )
+            unappraised = int((unappraised_row or (0,))[0])
+            force_reappraise = False
+            if total_candidates > 0 and unappraised == 0:
+                force_reappraise = bool(questionary.confirm(
+                    "All candidate papers are already appraised. "
+                    "Force re-appraise with selected mode?",
+                    default=False,
+                    style=TALOS_QUESTIONARY_STYLE,
+                    instruction=NAV_TEXT,
+                ).ask())
+            appraiser.run(
+                min_relevance=min_score,
+                force_reappraise=force_reappraise,
+            )
         except Exception as e:
             console.print(f"[red]Quality appraisal error: {e}[/red]")
         safe_pause()
@@ -2421,8 +2458,8 @@ def _handle_cli_flags(argv):
         )
         console.print(f"[green][OK] Profile auditor skills compiled under: {path}[/green]")
         return True
-    # -- v5.16.0/v5.17.0: PRISMA Quality Appraisal
-    # (--appraise-quality [--min-score] [--swarm]). --
+    # -- v5.16.0/v5.17.0/v5.17.1: PRISMA Quality Appraisal
+    # (--appraise-quality [--min-score] [--swarm] [--force]). --
     if "--appraise-quality" in argv:
         from src.prisma.quality_appraisal import PrismaQualityAppraiser
         min_score = 7.0
@@ -2433,7 +2470,10 @@ def _handle_cli_flags(argv):
             except ValueError:
                 min_score = 7.0
         mode = "swarm" if "--swarm" in argv else "single"
-        PrismaQualityAppraiser(appraisal_mode=mode).run(min_relevance=min_score)
+        PrismaQualityAppraiser(appraisal_mode=mode).run(
+            min_relevance=min_score,
+            force_reappraise="--force" in argv,
+        )
         return True
     # -- v5.16.2: Hardware-Aware Model Advisor (--hardware-advisor / --recommend-models). --
     if any(flag in argv for flag in ("--hardware-advisor", "--recommend-models")):

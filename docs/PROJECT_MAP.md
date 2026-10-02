@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.17.0
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.17.1
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.17.0 -- Αρχιτεκτονική Ιεραρχικού Σμήνους Δύο Επιπέδων & Μηχανή Εγκληματολογικής Ποιότητας)
+> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.17.1 -- Διαφάνεια UX Αξιολόγησης Ποιότητας PRISMA & Μηχανή Αναγκαστικής Επαναξιολόγησης)
 
 ---
 
@@ -282,7 +282,7 @@ src/core/ai_manager.py
 | **Διακόπτης Κυκλώματος Συνόδου, Ισχυρή Εξαγωγή Συγγραφέων & Ενίσχυση Κύκλου Ζωής Δαίμονα (v5.15.3)** | `src/core/ai_manager.py`, `src/utils/evaluation_history.py`, `src/ai/drl/talos_service.py`, `src/ai/drl/live_agent_orchestrator.py`, `src/integration/synapse_client.py` | `AIManager.fast_tier_offline` (κλείδωμα CPU Edge 11435 εκτός σύνδεσης μετά την πρώτη αποτυχία, μηδενικές επανελεγχές/καταγραφές)· `normalize_authors(paper)` (επίλυση `authors_str`/`authors`/`author`)· καθαρό `[EVAL]` τηλεμετρία δαίμονα· σιωπηλή αποθήκευση SYNAPSE (`synapse_available` + JSONL) |
 | **Επέκταση Χώρου Δράσεων DRL σε 18 Πηγές & Μετανάστευση Checkpoint Net2Net (v5.15.4)** | `src/ai/drl/talos_env.py`, `scripts/migrate_d3qn_checkpoint.py`, `config.json`, `config.template.json`, `_profiles/default_drones/config.json` | `ALL_KNOWN_SOURCES` 16 -> 18 (προσθήκη `nasa_ntrs`, `hal_inria`)· χώρος δράσεων `Discrete(17) -> Discrete(19)`, καταστάσεις 23 -> 25 διαστάσεις· χειρουργική Net2Net (`migrate_d3qn_checkpoint.py`) διευρύνει την κεφαλή πλεονεκτήματος DuelingLSTM (15 -> 19) + είσοδο LSTM (21 -> 25) διατηρώντας όλα τα εκπαιδευμένα βάρη· συγχρονισμός προφίλ/δαίμονα 18 πηγών· κλείδωμα κανονικοποίησης συγγραφέων Scopus `$`/`@name`/`@surname` |
 | **Σύστημα Βοήθειας Διπλής Επιφάνειας & Κανόνας Επιστημονικών Θεμελίων (v5.15.5)** | `src/utils/help_system.py`, `templates/help_manual.html`, `src/api/main_api.py`, `README.md` | `render_help_manual()` εγχειρίδιο Rich 4 πινάκων (`--help` + TUI Επιλογή 7)· `GET /help` + `GET /manual` (ανακατεύθυνση 307) εξυπηρετούν το zero-CDN `help_manual.html` (ζωντανή αναζήτηση, αντιγραφή με κλικ, εναλλαγή σκοτεινής/εκτυπώσιμης λειτουργίας)· Ενότητα 5 IEEE αναφορών [1]-[10] στο README (EN + GR) |
-| **Μηχανή Αξιολόγησης Ποιότητας PRISMA & Διαξονικής Επιστημονικής Αυστηρότητας (v5.16.0)** | `src/prisma/quality_appraisal.py`, `src/core/database_manager.py`, `src/utils/bibtex_exporter.py` | `KitchenhamRubric` / `QualityAppraisalResult` / `PrismaQualityAppraiser`· `map_evidence_quadrant()` (2D τεταρτημόρια, τ_rel=7.0 / τ_qual=7.5)· `appraise_paper()` / `appraise_candidates_batch()` (ThreadPoolExecutor + `Semaphore(2)`)· `update_paper_quality()` (στήλες `quality_score`/`quality_rubric_json`/`evidence_quadrant`)· `export_library(min_quality, quadrant)` (διπλό φίλτρο BibTeX + πεδίο `note`)· CLI `--appraise-quality` + TUI Ομάδα 3 Επιλογή 15 |
+| **Μηχανή Αξιολόγησης Ποιότητας PRISMA & Διαξονικής Επιστημονικής Αυστηρότητας (v5.16.0)** | `src/prisma/quality_appraisal.py`, `src/core/database_manager.py`, `src/utils/bibtex_exporter.py` | `KitchenhamRubric` / `QualityAppraisalResult` / `PrismaQualityAppraiser`· `map_evidence_quadrant()` (2D τεταρτημόρια, τ_rel=7.0 / τ_qual=7.5)· `appraise_paper()` / `appraise_candidates_batch(force_reappraise)` (ThreadPoolExecutor + `Semaphore(2)`)· `update_paper_quality()` (στήλες `quality_score`/`quality_rubric_json`/`evidence_quadrant`)· `export_library(min_quality, quadrant)` (διπλό φίλτρο BibTeX + πεδίο `note`)· CLI `--appraise-quality [--force]` + TUI Ομάδα 3 Επιλογή 15 (ερώτηση επαναξιολόγησης v5.17.1) |
 | **Ενθέσιμο Μητρώο Παρόχων & Σύμβουλος Μοντέλων με Επίγνωση Υλικού (v5.16.2)** | `src/core/provider_registry.py`, `src/core/hardware_advisor.py`, `src/core/ai_manager.py`, `talos.py`, `src/utils/help_system.py` | `ProviderRegistry` (Αρχή Ανοικτού-Κλειστού, 10 πάροχοι)· `HardwareModelAdvisor` (προφίλ υλικού, τμηματικός προϋπολογισμός VRAM 4-bit, στοίβα ανά ρόλο, ραντάρ SOTA)· `AIManager.list_active_providers()` / `get_provider_descriptor()` (μηδενική παλινδρόμηση)· CLI `--hardware-advisor` / `--recommend-models` + TUI Επιλογή 8 |
 
 ## 9. Βοηθητικά Αρχεία
@@ -323,8 +323,8 @@ src/core/ai_manager.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.17.0 -- Αρχιτεκτονική Ιεραρχικού Σμήνους Δύο Επιπέδων & Μηχανή Εγκληματολογικής Ποιότητας)
-> **Έκδοση Project:** v5.17.0
+> **Τελευταία Ενημέρωση:** 2026-10-02 (v5.17.1 -- Διαφάνεια UX Αξιολόγησης Ποιότητας PRISMA & Μηχανή Αναγκαστικής Επαναξιολόγησης)
+> **Έκδοση Project:** v5.17.1
 > **Συνολικά .py modules στο src/:** 103 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 8 + mcp_server 1)
 
 

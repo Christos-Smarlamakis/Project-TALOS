@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: system_diagnostics.py
-Project: TALOS v5.17.0
+Project: TALOS v5.17.1
 Description:
     System Diagnostics Analyzer for TALOS. Executes an 8-point pre-flight
     health check over the local, air-gapped runtime (Python environment,

@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-10-02 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.17.0 -- Two-Tier Hierarchical Swarm Architecture &amp; Forensic Quality Engine
+  <strong>Version:</strong> v5.17.1 -- PRISMA Quality Appraisal UX Transparency &amp; Force Re-Appraisal Engine
 </div>
 
 <!-- ===================================================================== -->
@@ -1431,8 +1431,18 @@
 </ul>
 <p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_quality_swarm.py -q</code> (17 hermetic), <code>test_quality_appraisal.py -q</code> (17 backward compatible), system integrity, version assertion (5.17.0), <code>talos.py --compile-skills</code> (UAV profile), <code>talos.py --help</code>, <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (0 U+FFFD).</p>
 
+<h3 id="s15-44">15.44 Quality Appraisal UX Transparency, Idempotent Quadrant Rendering, and Force Re-Appraisal Mechanics (v5.17.1)</h3>
+<p><strong>Overview:</strong> v5.17.1 eliminates the silent-exit anti-pattern in the PRISMA Quality Appraisal engine. <code>PrismaQualityAppraiser.appraise_candidates_batch()</code> previously returned an empty list whenever every candidate already carried a <code>quality_score</code>. It now accepts <code>force_reappraise: bool = False</code> and routes through two deterministic paths: the default uncached-only path and an explicit force path that re-audits the entire candidate set.</p>
+<ul>
+  <li><strong>Force re-appraisal mechanics</strong>: when <code>force_reappraise=True</code>, the batch queries <code>overall_score &gt;= min_relevance</code> with no <code>quality_score IS NULL</code> predicate, prints a yellow notice, and runs the same <code>ThreadPoolExecutor</code> (bounded by <code>VRAM_SEMAPHORE = threading.Semaphore(2)</code> locally, 8 workers Cloud Mesh), overwriting <code>quality_score</code> / <code>quality_rubric_json</code> / <code>evidence_quadrant</code> via <code>update_paper_quality()</code> in SQLite WAL.</li>
+  <li><strong>Idempotent quadrant-distribution fallback</strong>: when <code>force_reappraise=False</code> and zero uncached candidates remain, <code>_render_existing_quadrant_distribution()</code> re-reads the persisted <code>evidence_quadrant</code> / <code>overall_score</code> / <code>quality_score</code> columns, renders an informational Rich panel, and re-projects the distribution via <code>render_quadrant_summary()</code> -- no LLM calls, deterministic output.</li>
+  <li><strong>CLI &amp; TUI surfaces</strong>: <code>--appraise-quality [--min-score 7.0] [--swarm] [--force]</code>; TUI Group 3 Option 15 queries the unappraised count and, when the corpus is fully appraised, prompts "All candidate papers are already appraised. Force re-appraise with selected mode?" (default No).</li>
+  <li><strong>Dual-Surface Help</strong>: Panel 1 (<code>help_system.py</code>) and web manual Card 6 (<code>help_manual.html</code>) document <code>--appraise-quality [--swarm] [--force]</code>.</li>
+</ul>
+<p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_quality_appraisal.py -q</code> (17 backward compatible), <code>test_quality_swarm.py -q</code> (17), system integrity, version assertion (5.17.1), <code>talos.py --help</code>, <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (0 U+FFFD).</p>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.17.0</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.17.1</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

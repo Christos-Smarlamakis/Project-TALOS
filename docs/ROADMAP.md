@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.17.0 (Two-Tier Hierarchical Swarm Architecture & Forensic Quality Engine)
+> **Current Version:** v5.17.1 (PRISMA Quality Appraisal UX Transparency & Force Re-Appraisal Engine)
 > **Last Updated:** 2026-10-02
 
 ---
