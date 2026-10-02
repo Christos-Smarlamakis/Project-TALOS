@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.16.2
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.17.0
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-02
-> **Version:** v5.16.2 -- Pluggable Provider Registry & Hardware-Aware Model Advisor
+> **Version:** v5.17.0 -- Two-Tier Hierarchical Swarm Architecture & Forensic Quality Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.16.2" | `config/settings.py` |
+| TALOS_VERSION | "5.17.0" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1166,6 +1166,24 @@ For each evaluated paper, the AI generates:
 - **Integration surfaces**: CLI `--hardware-advisor` / `--recommend-models` in `talos.py:_handle_cli_flags()`; TUI Configuration & Profiles Option 8; Panel 1 of `src/utils/help_system.py`.
 
 **Verification surface:** release gates include `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_provider_registry.py tests/test_hardware_advisor.py -q` (18 hermetic tests), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.16.2), `python talos.py --recommend-models` (RTX 4070 -> 14B budget), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (zero U+FFFD glyphs).
+
+### 15.43 Two-Tier Hierarchical Swarm Architecture, Forensic Quality Auditing, and Profile Skill Compilation (v5.17.0)
+
+**Overview:** v5.17.0 introduces the Two-Tier Hierarchical Swarm Architecture, formally decoupling thematic screening from forensic quality auditing. Tier-1 (`swarm_evaluators.py`) remains the three-agent peer-review screening swarm answering "is this study on-topic?"; the new Tier-2 (`quality_swarm.py`) is a Forensic Quality Swarm of four specialized skill auditors answering "is this study methodologically trustworthy?", each scoring a disjoint block of the Kitchenham 2007 rubric over a targeted text slice. A `SkillCompiler` compiles four domain-agnostic master templates into profile-bound auditor skills, and a `KitchenhamQualitySynthesizer` merges the six ternary scores into the canonical `S_qual`, computes the inter-auditor Fleiss `kappa_qual`, maps the 2D evidence quadrant, and synthesizes a unified forensic narrative -- all bounded by the Constitution III VRAM semaphore.
+
+- **Four specialized forensic auditors** (`src/prisma/quality_swarm.py`): `TheoryAuditor` (Q1: formal problem formulation, hypotheses, scope), `OperationalAuditor` (Q2: environmental realism, physical disturbances, communication latency, operational rules/safety bounds), `BenchmarkAuditor` (Q3-Q4: 2-3 modern SOTA baselines under identical conditions, >= 5 random seeds, confidence intervals, p-values, ablations), and `OpenScienceAuditor` (Q5-Q6: public code repository, open benchmark simulator, explicit limitations and failure boundaries). Each emits a typed Pydantic-v2 result with ternary scores snapped onto {0.0, 0.5, 1.0} and a named forensic critique.
+
+- **Domain-agnostic templates & profile-compiled skills**: `src/prisma/skills/templates/` holds four invariant templates using only `{{RESEARCH_DOMAIN}}` / `{{DOMAIN_CONSTRAINTS}}` placeholders. `SkillCompiler.compile_profile_skills(profile_name, force_recompile)` injects the profile's `research_topic`, `inclusion_criteria`, and `exclusion_criteria`, optionally refines each skill with the hardware-advised heavy model (`HardwareModelAdvisor.get_recommendations()`: `qwen2.5:14b` local / `deepseek-reasoner` / `gemini-2.5-flash` cloud, with a length-and-schema guard), and persists `_profiles/<name>/skills/*.md` behind a zero-cost fast path.
+
+- **SmartSectionSlicer**: heading-regex extraction of Code/Data Availability, Methodology, Experiments, and Discussion/Limitations with per-auditor target maps, ~300-500 word caps, and a title-plus-abstract fallback -- minimizing token overhead while quadrupling evidential focus.
+
+- **KitchenhamQualitySynthesizer**: dispatches the four auditors concurrently (`threading.Semaphore(2)` local / `max_workers=4` cloud), auto-compiles missing skills, merges scores into `KitchenhamRubric` (invariant `S_qual = (10/6) * sum(Q_i)`), computes `kappa_qual` over banded LOW/MID/HIGH ratings (reusing `swarm_evaluators.calculate_cohens_kappa`), maps ELITE_FOUNDATIONAL / IDEA_MINE / METHODOLOGICAL_EXEMPLAR / METHODOLOGICAL_NOISE, and returns a `SwarmQualityVerdict`.
+
+- **Appraiser swarm mode & persistence**: `PrismaQualityAppraiser(appraisal_mode='single'|'swarm')`; `QualityAppraisalResult` gains `appraisal_mode`, `swarm_kappa`, `auditor_critiques`; the extended payload persists into the existing `quality_score` / `quality_rubric_json` / `evidence_quadrant` SQLite columns with zero schema changes.
+
+- **Integration surfaces**: CLI `--appraise-quality [--min-score 7.0] [--swarm]` and `--compile-skills [--force] [--profile name]`; TUI Group 3 Option 15 mode prompt; Panel 1 and web manual Card 6 documentation; Rule 10 dossier 06.
+
+**Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_quality_swarm.py -q` (17 hermetic), `pytest tests/test_quality_appraisal.py -q` (17 -- backward compatible), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.17.0), `python talos.py --compile-skills` (UAV profile), `python talos.py --help`, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
 
 ---
 

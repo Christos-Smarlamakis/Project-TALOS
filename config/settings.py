@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.16.2
+Project: TALOS v5.17.0
 Description:
-    Canonical configuration hub for TALOS v5.16.2. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.17.0. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
@@ -21,6 +21,9 @@ Description:
     - v5.16.2: Pluggable Provider Registry & Hardware-Aware Model Advisor --
       canonical provider base URLs and default models feed the modular
       registry (src/core/provider_registry.py), and the hardware advisor
+    - v5.17.0: Two-Tier Hierarchical Swarm Architecture & Forensic Quality
+      Engine -- Tier-2 quality swarm (src/prisma/quality_swarm.py) with
+      profile-compiled auditor skills under _profiles/<name>/skills/.
       (src/core/hardware_advisor.py) consumes VRAM telemetry for budgeting.
     - Cloud LLM providers (Gemini, NVIDIA NIM, Groq, Cerebras, GitHub Models,
       Mistral, OpenRouter, DeepSeek, HuggingFace) are configured via environment
@@ -193,7 +196,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.16.2"
+TALOS_VERSION = "5.17.0"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.

@@ -179,8 +179,13 @@
       <button class="copy" type="button">Copy</button>
     </div>
     <div class="cmd-row">
-      <code>python talos.py --appraise-quality [--min-score 7.0]</code>
-      <span class="desc">Batch Kitchenham (2007) scientific quality appraisal with 2D evidence-quadrant classification. <small>(Quality Appraisal)</small></span>
+      <code>python talos.py --appraise-quality [--min-score 7.0] [--swarm]</code>
+      <span class="desc">Batch Kitchenham (2007) scientific quality appraisal with 2D evidence-quadrant classification; <code>--swarm</code> enables the Tier-2 Forensic Quality Swarm (4 auditors + Fleiss kappa). <small>(Quality Appraisal)</small></span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --compile-skills [--force]</code>
+      <span class="desc">Compile the four domain-specialized auditor skill files into the active profile workspace. <small>(Quality Appraisal)</small></span>
       <button class="copy" type="button">Copy</button>
     </div>
     <div class="cmd-row">
@@ -278,15 +283,37 @@
   </section>
 
   <!-- Card 6: PRISMA Quality Appraisal & 2D Quadrants -->
-  <section class="card wide" data-search="prisma quality appraisal kitchenham scientific rigor quadrant evidence decision plane relevance elite foundational idea mine methodological exemplar noise">
+  <section class="card wide" data-search="prisma quality appraisal kitchenham scientific rigor quadrant evidence decision plane relevance elite foundational idea mine methodological exemplar noise two-tier swarm forensic auditors skill compiler fleiss kappa">
     <h2>PRISMA Scientific Quality Appraisal &amp; 2D Quadrants (Kitchenham 2007)</h2>
     <p>The Kitchenham et al. (2007) standardized rubric decouples semantic
     relevance (S_rel) from methodological rigor (S_qual). Each study is scored on
     six three-point questions and mapped onto the 2D Evidence Decision Plane
     below.</p>
+    <p><strong>v5.17.0 -- Two-Tier Hierarchical Swarm Architecture.</strong> The
+    fast single screener remains the default. The forensic <code>--swarm</code>
+    mode dispatches four specialized skill auditors over smartly sliced paper
+    sections: <em>TheoryAuditor</em> (Q1: formal formulation), <em>OperationalAuditor</em>
+    (Q2: context realism), <em>BenchmarkAuditor</em> (Q3-Q4: baselines and
+    statistical validity), and <em>OpenScienceAuditor</em> (Q5-Q6: reproducibility
+    and limitations). Domain-agnostic canonical templates under
+    <code>src/prisma/skills/templates/</code> are compiled once per profile into
+    <code>_profiles/&lt;name&gt;/skills/</code> with the profile's research topic
+    and inclusion/exclusion criteria injected. The swarm aggregates the six
+    ternary scores into S_qual, reports the inter-auditor Fleiss kappa
+    (kappa_qual), and persists the full critique payload to SQLite.</p>
     <div class="cmd-row">
       <code>python talos.py --appraise-quality --min-score 7.0</code>
       <span class="desc">Appraise candidate papers (overall_score &gt;= 7.0) and classify them into quadrants.</span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --appraise-quality --min-score 7.0 --swarm</code>
+      <span class="desc">Forensic four-auditor swarm appraisal with consensus synthesis and kappa_qual.</span>
+      <button class="copy" type="button">Copy</button>
+    </div>
+    <div class="cmd-row">
+      <code>python talos.py --compile-skills --force</code>
+      <span class="desc">Recompile the domain-specialized auditor skills for the active profile.</span>
       <button class="copy" type="button">Copy</button>
     </div>
     <div class="cmd-row">

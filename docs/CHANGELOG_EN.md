@@ -2,6 +2,38 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.17.0] - 2026-10-02 -- Two-Tier Hierarchical Swarm Architecture & Forensic Quality Engine
+
+### Added
+
+- **Two-Tier Hierarchical Swarm Architecture** (`src/prisma/quality_swarm.py`, 1,261 lines): formal decoupling of Tier-1 Thematic Screening (`swarm_evaluators.py`: three reviewer personas emitting INCLUDE/EXCLUDE/UNCERTAIN votes for study selection) from Tier-2 Forensic Quality Auditing (new: four specialized skill auditors scoring the Kitchenham 2007 rubric on admitted candidates). Tier-1 answers "is this study on-topic?"; Tier-2 answers "is this study methodologically trustworthy?".
+
+- **Four specialized forensic skill auditors**: `TheoryAuditor` (Q1: formal problem formulation, hypotheses, scope), `OperationalAuditor` (Q2: environmental realism, physical disturbances, communication latency, operational rules/safety bounds), `BenchmarkAuditor` (Q3-Q4: 2-3 modern SOTA baselines under identical conditions, >= 5 random seeds, confidence intervals, p-values, ablations), and `OpenScienceAuditor` (Q5-Q6: public code repository, open benchmark simulator/dataset, explicit limitations and failure boundaries). Each auditor emits typed Pydantic-v2 results with ternary scores snapped onto the strict {0.0, 0.5, 1.0} grid via the shared `_normalize_ternary` invariant, plus a named forensic critique (`theory_critique`, `operational_critique`, `benchmark_critique`, `openscience_critique`).
+
+- **Domain-Agnostic Core Templates & Profile-Compiled Skills pattern** (`src/prisma/skills/templates/` + `SkillCompiler`): four canonical invariant templates (`theory_auditor.template.md`, `empirical_auditor.template.md`, `openscience_auditor.template.md`, `operational_auditor.template.md`) containing zero domain-specific criteria -- only `{{RESEARCH_DOMAIN}}` and `{{DOMAIN_CONSTRAINTS}}` placeholders. `SkillCompiler.compile_profile_skills(profile_name, force_recompile)` injects the active profile's `research_topic`, `inclusion_criteria`, and `exclusion_criteria`, optionally refines each skill with the hardware-advised heavy model (`HardwareModelAdvisor.get_recommendations()`: `qwen2.5:14b` locally, `deepseek-reasoner` / `gemini-2.5-flash` on the Cloud Mesh, guarded by a minimum-length and schema-retention check), and writes the compiled `.md` files into `_profiles/<profile>/skills/`. A zero-cost fast path returns immediately when compiled skills already exist; deterministic placeholder injection is the guaranteed air-gapped lower bound.
+
+- **SmartSectionSlicer**: heading-regex extraction of canonical paper sections (Code/Data Availability, Methodology, Experiments/Results, Discussion/Limitations) with per-auditor target maps (OpenScience receives Code Availability + Limitations; Benchmark receives Experiments + Methodology; etc.), word-capped to ~300-500 words per auditor, with a title-plus-abstract fallback when no full text is available -- minimizing the per-auditor token footprint while quadrupling evidential focus.
+
+- **KitchenhamQualitySynthesizer**: dispatches the four auditors concurrently via `ThreadPoolExecutor` bounded by `QUALITY_SWARM_SEMAPHORE = threading.Semaphore(2)` locally (Constitution III, `llama3.1:8b` 2GB headroom) or `max_workers=4` on `cloud_first`/`strict_cloud`; auto-compiles missing profile skills; merges the six ternary scores into the canonical `KitchenhamRubric` (invariant `S_qual = (10/6) * sum(Q_i)`); computes the inter-auditor Fleiss agreement `kappa_qual` over banded auditor ratings (LOW/MID/HIGH at 0.375/0.75 thresholds, reusing `swarm_evaluators.calculate_cohens_kappa`); maps the 2D Decision Quadrant (ELITE_FOUNDATIONAL, IDEA_MINE, METHODOLOGICAL_EXEMPLAR, METHODOLOGICAL_NOISE); and synthesizes the unified forensic audit narrative in a `SwarmQualityVerdict` dataclass.
+
+- **Appraiser swarm mode** (`src/prisma/quality_appraisal.py`): `PrismaQualityAppraiser(appraisal_mode='single'|'swarm')`; `QualityAppraisalResult` gains backward-compatible fields `appraisal_mode` (default `'single'`), `swarm_kappa`, `auditor_critiques`. In swarm mode the batch auto-compiles profile skills first, delegates each paper to `KitchenhamQualitySynthesizer`, and persists the extended payload (rubric + mode + kappa + critiques) into the existing `quality_score` / `quality_rubric_json` / `evidence_quadrant` SQLite columns -- zero schema changes. The Rich quadrant summary reports the mean inter-auditor kappa in swarm mode.
+
+- **CLI & TUI integration** (`talos.py`, `src/utils/help_system.py`, `templates/help_manual.html`): new fast-dispatch flags `--appraise-quality [--min-score 7.0] [--swarm]` and `--compile-skills [--force] [--profile name]`; TUI Group 3 Option 15 gains the interactive "Select Appraisal Mode: 1. Fast Single Screener | 2. Forensic Multi-Skill Quality Swarm (4 Auditors + S_qual)" prompt; Panel 1 of the help manual and the web manual Card 6 document the Two-Tier architecture with click-to-copy commands.
+
+- **Rule 10 private academic dossier 06** (`docs/internal/academic/06_TWO_TIER_HIERARCHICAL_SWARM_QUALITY.md`): seven-section confidential dossier with metadata and BibTeX (Du et al. ICML 2024 multi-agent debate; Chan et al. ICLR 2024 ChatEval; Kitchenham & Charters 2007 EBSE-2007-01; Page et al. BMJ 2021 PRISMA 2020), the formal two-tier/task-decomposition/Fleiss-kappa mathematical framework with an attention-dilution bound theorem, an ELI5 section, a 1:1 code traceability matrix, engineering adaptations, version lineage, and pre-compiled PhD Chapter 2/3 and HOU ICBE 2026 excerpts.
+
+- **Hermetic test suite** (`tests/test_quality_swarm.py`, 17 tests): ternary audit-model coercion, slicer section targeting and word caps, compiler injection/idempotency/force-recompile gates, end-to-end swarm consensus on mocked backends (Q1-Q6, S_qual = 8.3333, quadrant, kappa, narrative), deterministic no-backend degradation, worker-budget resolution, and appraiser swarm-mode integration.
+
+### Changed
+
+- **Version strings synchronized to 5.17.0** across the 6 core code files (`config/settings.py` TALOS_VERSION, `src/api/main_api.py` FastAPI metadata/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py` version assertion), `docker-compose.yml` (`talos:5.17.0`), `CITATION.cff` (version 5.17.0, date-released 2026-10-02), `config.template.json`, tray/visualizer/wizard/strategy/diagnostics/bibtex/help metadata, all `src/prisma/` and `src/search/` docstrings, and all 19 canonical documentation files (dated 2026-10-02).
+
+- **ROADMAP.md**: current version advanced to v5.17.0 (Complete, 2026-10-02); CORTEX & n8n orchestration re-scoped to v5.18.0.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_quality_swarm.py -q` (17 passed, hermetic); `pytest tests/test_quality_appraisal.py -q` (17 passed -- full backward compatibility of the single mode); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.17.0); `python talos.py --compile-skills` compiles `_profiles/uav_mission_planning/skills/*.md` with the UAV/DRL/ST-GAT domain injected; `python talos.py --help` documents `--appraise-quality [--swarm]` and `--compile-skills`; dossier 06 conforms to the 7-section standard with 0 U+FFFD glyphs; `python src/utils/verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.16.2] - 2026-10-02 -- Pluggable Provider Registry & Hardware-Aware Model Advisor
 
 ### Added

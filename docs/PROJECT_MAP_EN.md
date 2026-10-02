@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.16.2
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.17.0
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-10-02 (v5.16.2 -- Pluggable Provider Registry & Hardware-Aware Model Advisor)
+> **Last Updated:** 2026-10-02 (v5.17.0 -- Two-Tier Hierarchical Swarm Architecture & Forensic Quality Engine)
 
 ---
 
@@ -31,7 +31,7 @@ SRC PACKAGES
   src/integration/   (3 files)  synapse_client, optica_client, visualizer_bridge
   src/utils/        (21 files)  db_stats, logger, tray_icon, help_system, model_provisioner, daemon_autostart, http_client, snapshot_manager, academic_export, evaluation_history, research_setup_wizard, etc.
   src/api/           (4 files)  main_api, synapse_routes, red_tester_routes, talos_service_api
-  src/prisma/        (7 files)  dspy_signatures, dspy_modules, swarm_evaluators, mermaid_generator, scoping_review_synthesizer, quality_appraisal
+  src/prisma/        (8 files + skills/)  dspy_signatures, dspy_modules, swarm_evaluators (Tier-1), quality_swarm (Tier-2: SkillCompiler, SmartSectionSlicer, 4 auditors, KitchenhamQualitySynthesizer), mermaid_generator, scoping_review_synthesizer, quality_appraisal
   src/mcp_server.py             MCP stdio server (4 tools)
 
         | import
@@ -107,7 +107,7 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 | `src/analysis/` | 10 | `citation_analyzer.py`, `author_profiler.py`, `recommender.py`, `knowledge_path_generator.py`, `trend_analyzer.py`, `graphify_adapter.py`, `generate_baseline_report.py`, etc. |
 | `src/ingestion/` | 25 | 18 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `pdf_downloader.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
 | `src/utils/` | 18 | `db_stats.py`, `logger.py`, `tray_icon.py`, `help_system.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, `http_client.py`, `snapshot_manager.py`, `academic_export.py`, etc. |
-| `src/prisma/` | 7 | `dspy_signatures.py` (typed declarative Pydantic-v2 signatures), `dspy_modules.py` (PlanEval: Planner/Evaluator/EligibilityJudge/Executor), `swarm_evaluators.py` (3-agent peer-review swarm + Cohen's Kappa + consensus arbiter), `mermaid_generator.py`, `scoping_review_synthesizer.py`, `quality_appraisal.py` (Kitchenham 2007 rubric + 2D quadrants) |
+| `src/prisma/` | 8 | `dspy_signatures.py` (typed declarative Pydantic-v2 signatures), `dspy_modules.py` (PlanEval: Planner/Evaluator/EligibilityJudge/Executor), `swarm_evaluators.py` (Tier-1 3-agent peer-review swarm + Cohen's Kappa + consensus arbiter), `quality_swarm.py` (Tier-2 Forensic Quality Swarm: `SkillCompiler`, `SmartSectionSlicer`, `TheoryAuditor`/`OperationalAuditor`/`BenchmarkAuditor`/`OpenScienceAuditor`, `KitchenhamQualitySynthesizer`, `SwarmQualityVerdict`), `mermaid_generator.py`, `scoping_review_synthesizer.py`, `quality_appraisal.py` (Kitchenham 2007 rubric + 2D quadrants), plus `skills/` package with 4 domain-agnostic templates |
 
 ## 5. Sources (18 APIs)
 
@@ -217,8 +217,17 @@ src/prisma/swarm_evaluators.py
 
 src/prisma/quality_appraisal.py
   +-- src/prisma/dspy_signatures.py
+  +-- src/prisma/quality_swarm.py (lazy, swarm mode)
   +-- src/core/ai_manager.py
   +-- src/core/database_manager.py
+
+src/prisma/quality_swarm.py
+  +-- src/prisma/dspy_signatures.py
+  +-- src/prisma/quality_appraisal.py
+  +-- src/prisma/swarm_evaluators.py
+  +-- src/core/hardware_advisor.py (lazy)
+  +-- src/core/profile_manager.py (lazy)
+  +-- src/core/ai_manager.py (lazy)
 
 scripts/migrate_d3qn_checkpoint.py
   +-- torch
@@ -245,6 +254,7 @@ src/core/ai_manager.py
 | **Profile Manager SSOT (v5.16.1)** | `src/core/profile_manager.py` | Canonical `ProfileManager` class (repo-root `_profiles/`), exposing `get_profiles_dir()` / `get_active_profile_name()` / `set_active_profile()` / `list_profiles()` / `create_profile()` / `get_active_db_path()` / `get_active_config_path()`; canonical `uav_mission_planning` workspace |
 | **Pluggable Provider Registry (v5.16.2)** | `src/core/provider_registry.py` | `ProviderDescriptor` (dataclass) + `ProviderRegistry` with `register` / `get` / `list_all` / `list_active` -- 10 providers (Ollama + NVIDIA NIM, DeepSeek, Gemini, Groq, Cerebras, Mistral, Hugging Face, OpenRouter, Anthropic); dynamic `is_active` evaluation |
 | **Hardware-Aware Model Advisor (v5.16.2)** | `src/core/hardware_advisor.py` | `HardwareModelAdvisor` -- `get_hardware_profile()` (`{has_cuda, device_name, total_vram_gb, system_ram_gb, is_laptop_cpu}`), `calculate_vram_budget()` (4-bit piecewise), `get_recommendations()`, `scan_sota_models()` (SOTA radar) |
+| **Two-Tier Forensic Quality Swarm (v5.17.0)** | `src/prisma/quality_swarm.py` | Tier-2 swarm: `SkillCompiler.compile_profile_skills()` (domain-agnostic templates -> `_profiles/<name>/skills/*.md`), `SmartSectionSlicer.slice_for_auditor()`, four specialized auditors (`TheoryAuditor` Q1 / `OperationalAuditor` Q2 / `BenchmarkAuditor` Q3-Q4 / `OpenScienceAuditor` Q5-Q6), `KitchenhamQualitySynthesizer.synthesize()` (`S_qual` + Fleiss `kappa_qual` + quadrant + narrative), and `SwarmQualityVerdict` |
 | **3D Visualizer (v5.10.12)** | `templates/live_foraging_visualizer.html` | Three.js constellation with 60 FPS laser beams, photon pulses, raycaster, snapshot |
 | **OPTICA Bridge (v5.10.7)** | `src/integration/optica_client.py` | REST client to Project OPTICA (port 8002) offloading heavy graphics |
 | **Daemon OS Autostart (v5.10.6)** | `src/utils/daemon_autostart.py` | Windows Startup shortcut + boot batch generator |
@@ -313,8 +323,8 @@ src/core/ai_manager.py
 
 ---
 
-> **Last Updated:** 2026-10-02 (v5.16.2 -- Pluggable Provider Registry & Hardware-Aware Model Advisor)
-> **Project Version:** v5.16.2
-> **Total .py modules under src/:** 101 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 6 + mcp_server 1)
+> **Last Updated:** 2026-10-02 (v5.17.0 -- Two-Tier Hierarchical Swarm Architecture & Forensic Quality Engine)
+> **Project Version:** v5.17.0
+> **Total .py modules under src/:** 103 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 8 + mcp_server 1)
 
 

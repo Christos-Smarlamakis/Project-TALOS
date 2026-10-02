@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: quality_appraisal.py
-Project: TALOS v5.16.2
+Project: TALOS v5.17.0
 Description:
     Standardized PRISMA Quality Appraisal engine implementing the Kitchenham et
     al. (2007) guidelines for systematic literature reviews in software
@@ -9,6 +9,16 @@ Description:
     rubric ({0.0, 0.5, 1.0}) and decouples Semantic Relevance (``S_rel``, the
     existing four-layer ``overall_score``) from Methodological Quality
     (``S_qual``, computed here) onto a two-dimensional Evidence Decision Plane.
+
+    v5.17.0 introduces the Two-Tier Hierarchical Swarm Architecture: the
+    appraiser now supports an ``appraisal_mode`` parameter -- ``'single'``
+    (fast single-prompt baseline) or ``'swarm'`` (Tier-2 Forensic Quality
+    Swarm). In swarm mode, appraisal is delegated to
+    ``KitchenhamQualitySynthesizer`` (``src/prisma/quality_swarm.py``), which
+    dispatches four specialized skill auditors over targeted text slices and
+    returns the merged rubric, the inter-auditor Fleiss ``kappa_qual``, and
+    per-auditor forensic critiques. Profile skill files are auto-compiled by
+    ``SkillCompiler`` before the batch when missing.
 
     ``PrismaQualityAppraiser`` evaluates a single paper or an entire candidate
     batch. Each appraisal prompts the multi-tier ``AIManager`` with a structured
@@ -277,11 +287,19 @@ class QualityAppraisalResult(BaseModel):
         quality_score (float): Normalized ``S_qual`` in [0.0, 10.0].
         rubric (KitchenhamRubric): The validated six-question rubric.
         evidence_quadrant (QUADRANTS): The 2D decision-plane quadrant.
+        appraisal_mode (str): ``'single'`` or ``'swarm'`` (v5.17.0).
+        swarm_kappa (Optional[float]): Inter-auditor Fleiss agreement in
+            swarm mode; ``None`` for the single-prompt baseline.
+        auditor_critiques (Dict[str, str]): Per-auditor forensic critiques in
+            swarm mode; empty for the single-prompt baseline.
     """
 
     quality_score: float = Field(ge=0.0, le=10.0)
     rubric: KitchenhamRubric
     evidence_quadrant: QUADRANTS
+    appraisal_mode: str = "single"
+    swarm_kappa: Optional[float] = None
+    auditor_critiques: Dict[str, str] = Field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -326,18 +344,27 @@ class PrismaQualityAppraiser:
     Attributes:
         ai_manager (Optional[Any]): The multi-tier LLM backend, lazily built.
         db_manager (Optional[Any]): The active-profile database manager.
+        appraisal_mode (str): ``'single'`` (fast baseline) or ``'swarm'``
+            (Tier-2 Forensic Quality Swarm, v5.17.0).
     """
 
     def __init__(self, ai_manager: Optional[Any] = None,
-                 db_manager: Optional[Any] = None) -> None:
+                 db_manager: Optional[Any] = None,
+                 appraisal_mode: str = "single") -> None:
         """Initialize the appraiser with optional pre-built dependencies.
 
         Args:
             ai_manager (Optional[Any]): Pre-built ``AIManager`` or ``None``.
             db_manager (Optional[Any]): Pre-built ``DatabaseManager`` or ``None``.
+            appraisal_mode (str): ``'single'`` or ``'swarm'`` (default
+                ``'single'``). Unknown values fall back to ``'single'``.
         """
         self.ai_manager = ai_manager
         self.db_manager = db_manager
+        self.appraisal_mode = ("swarm" if str(appraisal_mode).strip().lower()
+                               == "swarm" else "single")
+        self._swarm_synthesizer = None
+        self._active_profile: Optional[str] = None
         self._console = None
 
     def _ensure_ai_manager(self) -> Optional[Any]:
@@ -438,6 +465,9 @@ class PrismaQualityAppraiser:
         Returns:
             Optional[QualityAppraisalResult]: The validated result, or ``None``.
         """
+        # -- v5.17.0: Tier-2 Forensic Quality Swarm delegation. --
+        if self.appraisal_mode == "swarm":
+            return self._appraise_paper_swarm(paper_dict, relevance_score)
         ai = self._ensure_ai_manager()
         if ai is None:
             return None
@@ -455,6 +485,56 @@ class PrismaQualityAppraiser:
                 quality_score=round(quality, 4),
                 rubric=rubric,
                 evidence_quadrant=quadrant,
+            )
+        except (ValidationError, TypeError, ValueError):
+            return None
+
+    def _appraise_paper_swarm(
+        self,
+        paper_dict: Dict[str, Any],
+        relevance_score: float = 0.0,
+    ) -> Optional[QualityAppraisalResult]:
+        """Delegate one paper to the Tier-2 Forensic Quality Swarm.
+
+        Lazily constructs the ``KitchenhamQualitySynthesizer``, runs the four
+        specialized skill auditors concurrently, and adapts the swarm verdict
+        onto the canonical ``QualityAppraisalResult`` contract so persistence
+        and downstream consumers remain unchanged.
+
+        Args:
+            paper_dict (Dict[str, Any]): Paper record with ``title`` and
+                ``abstract`` keys (plus optional ``full_text``).
+            relevance_score (float): Semantic relevance ``S_rel``.
+
+        Returns:
+            Optional[QualityAppraisalResult]: The swarm appraisal result, or
+                ``None`` when the swarm module is unavailable.
+        """
+        try:
+            from src.prisma.quality_swarm import KitchenhamQualitySynthesizer
+        except Exception:
+            return None
+        if self._swarm_synthesizer is None:
+            self._swarm_synthesizer = KitchenhamQualitySynthesizer(
+                ai_manager=self._ensure_ai_manager(),
+                profile_name=self._active_profile,
+            )
+        try:
+            verdict = self._swarm_synthesizer.synthesize(
+                paper_dict,
+                relevance_score=float(relevance_score),
+                active_profile=self._active_profile,
+            )
+        except Exception:
+            return None
+        try:
+            return QualityAppraisalResult(
+                quality_score=float(verdict.quality_score),
+                rubric=verdict.rubric,
+                evidence_quadrant=verdict.evidence_quadrant,
+                appraisal_mode="swarm",
+                swarm_kappa=float(verdict.kappa_qual),
+                auditor_critiques=dict(verdict.auditor_critiques),
             )
         except (ValidationError, TypeError, ValueError):
             return None
@@ -492,6 +572,20 @@ class PrismaQualityAppraiser:
         if db is None:
             return []
 
+        # -- v5.17.0: track the active profile and auto-compile the
+        # domain-specialized auditor skills before a swarm batch. --
+        self._active_profile = active_profile
+        if self.appraisal_mode == "swarm":
+            try:
+                from src.prisma.quality_swarm import SkillCompiler
+                SkillCompiler(
+                    ai_manager=self._ensure_ai_manager(),
+                    profile_name=active_profile,
+                ).compile_profile_skills(active_profile)
+            except Exception:
+                # -- Auditors degrade to canonical templates / keywords. --
+                pass
+
         rows = db.execute_query(
             "SELECT id, title, abstract, overall_score FROM papers "
             "WHERE overall_score >= ? AND quality_score IS NULL "
@@ -527,20 +621,32 @@ class PrismaQualityAppraiser:
                     paper, relevance_score=float(paper.get("overall_score") or 0.0)
                 )
             if result is not None:
-                rubric_json = result.rubric.model_dump_json()
+                # -- v5.17.0: persist the extended swarm payload (rubric plus
+                # appraisal mode, inter-auditor kappa, and critiques). --
+                payload = result.rubric.model_dump()
+                payload["appraisal_mode"] = result.appraisal_mode
+                if result.swarm_kappa is not None:
+                    payload["swarm_kappa"] = float(result.swarm_kappa)
+                if result.auditor_critiques:
+                    payload["auditor_critiques"] = dict(result.auditor_critiques)
+                rubric_json = json.dumps(payload, ensure_ascii=False)
                 db.update_paper_quality(
                     int(paper["id"]),
                     float(result.quality_score),
                     rubric_json,
                     str(result.evidence_quadrant),
                 )
-                return {
+                summary = {
                     "paper_id": int(paper["id"]),
                     "title": paper.get("title") or "(untitled study)",
                     "relevance": float(paper.get("overall_score") or 0.0),
                     "quality_score": float(result.quality_score),
                     "evidence_quadrant": str(result.evidence_quadrant),
+                    "appraisal_mode": result.appraisal_mode,
                 }
+                if result.swarm_kappa is not None:
+                    summary["swarm_kappa"] = float(result.swarm_kappa)
+                return summary
             return None
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -594,6 +700,10 @@ class PrismaQualityAppraiser:
         table.add_column("Studies", style="bold cyan", justify="right")
         table.add_column("Interpretation", style="white")
 
+        # -- v5.17.0: report mean inter-auditor agreement in swarm mode. --
+        kappas = [float(r["swarm_kappa"]) for r in results
+                  if r.get("swarm_kappa") is not None]
+
         descriptions = {
             "ELITE_FOUNDATIONAL": "High relevance and high rigor (S_rel >= 7.0, S_qual >= 7.5).",
             "IDEA_MINE": "High relevance but weak rigor (S_rel >= 7.0, S_qual < 7.5).",
@@ -604,6 +714,12 @@ class PrismaQualityAppraiser:
             table.add_row(quadrant, str(counts[quadrant]), description)
 
         self._console.print(table)
+        if kappas:
+            self._console.print(
+                "[bright_cyan]Mean inter-auditor agreement "
+                f"(Fleiss kappa_qual): {sum(kappas) / len(kappas):.3f} "
+                f"across {len(kappas)} swarm-appraised studies.[/bright_cyan]"
+            )
         return table
 
     def run(self, min_relevance: float = 7.0,
@@ -646,9 +762,28 @@ def main(argv: Optional[List[str]] = None) -> int:
                         help="Minimum overall_score threshold (default: 7.0).")
     parser.add_argument("--profile", default=None,
                         help="Optional explicit profile name.")
+    parser.add_argument("--swarm", action="store_true",
+                        help="Forensic mode: run the Tier-2 four-auditor "
+                             "quality swarm instead of the fast single "
+                             "screener (v5.17.0).")
+    parser.add_argument("--compile-skills", action="store_true",
+                        help="Compile the domain-specialized auditor skills "
+                             "for the profile and exit (v5.17.0).")
+    parser.add_argument("--force", action="store_true",
+                        help="Force skill recompilation with --compile-skills.")
     args = parser.parse_args(argv)
 
-    appraiser = PrismaQualityAppraiser()
+    if args.compile_skills:
+        from src.prisma.quality_swarm import SkillCompiler
+        path = SkillCompiler().compile_profile_skills(
+            profile_name=args.profile,
+            force_recompile=bool(args.force),
+        )
+        print(f"[OK] Profile auditor skills compiled under: {path}")
+        return 0
+
+    mode = "swarm" if args.swarm else "single"
+    appraiser = PrismaQualityAppraiser(appraisal_mode=mode)
     results = appraiser.run(
         min_relevance=args.min_score,
         active_profile=args.profile,

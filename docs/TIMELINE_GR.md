@@ -8,6 +8,20 @@
 
 ---
 
+## Φάση 70: Αρχιτεκτονική Ιεραρχικού Σμήνους Δύο Επιπέδων & Μηχανή Εγκληματολογικής Ποιότητας (v5.17.0)
+
+### Κατάσταση: ΟΛΟΚΛΗΡΩΜΕΝΗ (2026-10-02)
+
+- [x] **Αρχιτεκτονική Ιεραρχικού Σμήνους Δύο Επιπέδων** -- το `src/prisma/quality_swarm.py` (1.261 γραμμές) διαχωρίζει τυπικά τη Θεματική Διαλογή Επιπέδου-1 (`swarm_evaluators.py`: τρεις προσωπικότητες κριτών με ψήφους INCLUDE/EXCLUDE/UNCERTAIN) από την Εγκληματολογική Ποιοτική Επιθεώρηση Επιπέδου-2 (τέσσερις εξειδικευμένοι ελεγκτές δεξιοτήτων που βαθμολογούν τη ρουμπρίκα Kitchenham 2007 σε εισαχθείσες μελέτες). Το Επίπεδο-1 απαντά "είναι εντός θέματος;", το Επίπεδο-2 "είναι μεθοδολογικά αξιόπιστη;".
+- [x] **Τέσσερις εξειδικευμένοι εγκληματολογικοί ελεγκτές δεξιοτήτων** -- `TheoryAuditor` (Q1), `OperationalAuditor` (Q2), `BenchmarkAuditor` (Q3-Q4), `OpenScienceAuditor` (Q5-Q6)· τυποποιημένα αποτελέσματα Pydantic-v2 με τριαδικές βαθμολογίες στο πλέγμα {0.0, 0.5, 1.0} και ονοματισμένες κριτικές.
+- [x] **Πρότυπα Αγνωστικισμού Πεδίου & Δεξιότητες ανά Προφίλ** -- το `src/prisma/skills/templates/` φιλοξενεί τέσσερα αμετάβλητα πρότυπα με μόνο τα placeholder `{{RESEARCH_DOMAIN}}` / `{{DOMAIN_CONSTRAINTS}}`· η `SkillCompiler.compile_profile_skills()` εγχέει το `research_topic` / `inclusion_criteria` / `exclusion_criteria`, προαιρετικά βελτιώνει με το βαρύ μοντέλο (`qwen2.5:14b` τοπικά, `deepseek-reasoner` / `gemini-2.5-flash` cloud) και εγγράφει τα `_profiles/<name>/skills/*.md`.
+- [x] **SmartSectionSlicer & σύνθεση συναίνεσης** -- εξαγωγή ενοτήτων με κανονικές εκφράσεις, όρια ~300-500 λέξεων, εφεδρική περίληψη· ο `KitchenhamQualitySynthesizer` υπολογίζει `S_qual = (10/6) * sum(Q_i)`, τη συμφωνία Fleiss `kappa_qual`, το τεταρτημόριο και την ενοποιημένη αφήγηση.
+- [x] **Λειτουργία swarm & αποθήκευση** -- `PrismaQualityAppraiser(appraisal_mode='single'|'swarm')`· εκτεταμένο φορτίο στις υπάρχουσες στήλες SQLite χωρίς αλλαγές σχήματος.
+- [x] **CLI, TUI & διπλή βοήθεια** -- `--appraise-quality [--swarm]` και `--compile-skills [--force]`· Επιλογή 15 Ομάδας 3· Πίνακας 1 + Κάρτα 6.
+- [x] **Φάκελος Κανόνα 10, αρ. 06** -- `docs/internal/academic/06_TWO_TIER_HIERARCHICAL_SWARM_QUALITY.md` (7 ενότητες).
+- [x] **Συγχρονισμός έκδοσης** -- 6 βασικά αρχεία + docker-compose.yml (`talos:5.17.0`) + CITATION.cff (5.17.0, 2026-10-02) + config.template.json + μεταδεδομένα + docstrings src/prisma/ και src/search/ + 19 κανονικά έγγραφα σε v5.17.0 (2026-10-02).
+- [x] **Πύλες επαλήθευσης πέρασαν** -- compileall (0 σφάλματα), test_quality_swarm (17 ερμητικές), test_quality_appraisal (17 -- συμβατές), test_system_integrity, test_talos_version (5.17.0), `--compile-skills` (προφίλ UAV), `--help`, φάκελος 06 (0 U+FFFD), verify_dependency_map --ci (έξοδος 0), bash -n, σάρωση UTF-8 (0 U+FFFD).
+
 ## Φάση 69: Ενθέσιμο Μητρώο Παρόχων & Σύμβουλος Μοντέλων με Επίγνωση Υλικού (v5.16.2)
 
 ### Κατάσταση: ΟΛΟΚΛΗΡΩΘΗΚΕ (2026-10-02)

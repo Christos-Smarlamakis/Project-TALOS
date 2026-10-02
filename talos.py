@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.16.2
+Project: TALOS v5.17.0
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -21,6 +21,14 @@ Description:
     Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
     Database Maintenance & Data Tools, and System Health, Diagnostics &
     CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+
+    v5.17.0: Two-Tier Hierarchical Swarm Architecture & Forensic Quality
+    Engine -- the Tier-2 Forensic Quality Swarm (src/prisma/quality_swarm.py)
+    decouples thematic screening (Tier-1) from forensic quality auditing:
+    four specialized skill auditors (Theory/Operational/Benchmark/OpenScience)
+    load profile-compiled, domain-specialized skills and synthesize the
+    Kitchenham S_qual consensus with inter-auditor Fleiss kappa. CLI gains
+    --appraise-quality [--swarm] and --compile-skills.
 
     v5.16.2: Pluggable Provider Registry & Hardware-Aware Model Advisor -- a
     modular adapter-based provider registry (src/core/provider_registry.py)
@@ -1693,7 +1701,7 @@ def _show_evaluation_history(limit=30):
 
 
 def _run_hardware_advisor():
-    """Render the Hardware-Aware Model Advisor in-process (v5.16.2)."""
+    """Render the Hardware-Aware Model Advisor in-process (v5.17.0)."""
     from src.core.hardware_advisor import HardwareModelAdvisor
     HardwareModelAdvisor().render_recommendations()
 
@@ -2042,9 +2050,24 @@ def analysis_visualization_menu(python_exe):
             "appraisal on candidate papers (overall_score >= 7.0 by default),\n"
             "decouples semantic relevance (S_rel) from methodological rigor\n"
             "(S_qual), and maps every study onto the 2D Evidence Decision Plane\n"
-            "(Elite Foundational, Idea Mine, Methodological Exemplar, Noise).",
+            "(Elite Foundational, Idea Mine, Methodological Exemplar, Noise).\n"
+            "v5.17.0: the Forensic Multi-Skill Quality Swarm dispatches four\n"
+            "specialized auditors (Theory, Operational, Benchmarks, Open Science)\n"
+            "over profile-compiled skills and reports inter-auditor Fleiss kappa.",
             border_style="cyan",
         ))
+        # -- v5.17.0: Two-Tier appraisal mode selection. --
+        mode_choice = questionary.select(
+            "Select Appraisal Mode:",
+            choices=[
+                "1. Fast Single Screener (one structured prompt per paper)",
+                "2. Forensic Multi-Skill Quality Swarm (4 Auditors + S_qual)",
+            ],
+            style=TALOS_QUESTIONARY_STYLE, instruction=NAV_TEXT,
+        ).ask()
+        if not mode_choice:
+            return
+        appraisal_mode = "swarm" if mode_choice.startswith("2.") else "single"
         min_raw = questionary.text(
             "Minimum relevance threshold (overall_score, default 7.0):",
             default="7.0",
@@ -2056,7 +2079,8 @@ def analysis_visualization_menu(python_exe):
             min_score = 7.0
         try:
             from src.prisma.quality_appraisal import PrismaQualityAppraiser
-            PrismaQualityAppraiser().run(min_relevance=min_score)
+            PrismaQualityAppraiser(appraisal_mode=appraisal_mode).run(
+                min_relevance=min_score)
         except Exception as e:
             console.print(f"[red]Quality appraisal error: {e}[/red]")
         safe_pause()
@@ -2387,7 +2411,18 @@ def _handle_cli_flags(argv):
                 break
         BibTeXExporter().export_and_render(min_score=threshold)
         return True
-    # -- v5.16.0: PRISMA Quality Appraisal (--appraise-quality [--min-score]). --
+    # -- v5.17.0: Profile Skill Compiler (--compile-skills [--force]). --
+    if "--compile-skills" in argv:
+        from src.prisma.quality_swarm import SkillCompiler
+        profile = _flag_value(argv, "--profile")
+        path = SkillCompiler().compile_profile_skills(
+            profile_name=profile,
+            force_recompile="--force" in argv,
+        )
+        console.print(f"[green][OK] Profile auditor skills compiled under: {path}[/green]")
+        return True
+    # -- v5.16.0/v5.17.0: PRISMA Quality Appraisal
+    # (--appraise-quality [--min-score] [--swarm]). --
     if "--appraise-quality" in argv:
         from src.prisma.quality_appraisal import PrismaQualityAppraiser
         min_score = 7.0
@@ -2397,7 +2432,8 @@ def _handle_cli_flags(argv):
                 min_score = float(raw)
             except ValueError:
                 min_score = 7.0
-        PrismaQualityAppraiser().run(min_relevance=min_score)
+        mode = "swarm" if "--swarm" in argv else "single"
+        PrismaQualityAppraiser(appraisal_mode=mode).run(min_relevance=min_score)
         return True
     # -- v5.16.2: Hardware-Aware Model Advisor (--hardware-advisor / --recommend-models). --
     if any(flag in argv for flag in ("--hardware-advisor", "--recommend-models")):

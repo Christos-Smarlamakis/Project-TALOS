@@ -8,6 +8,20 @@
 
 ---
 
+## Phase 70: Two-Tier Hierarchical Swarm Architecture & Forensic Quality Engine (v5.17.0)
+
+### Status: COMPLETED (2026-10-02)
+
+- [x] **Two-Tier Hierarchical Swarm Architecture** -- `src/prisma/quality_swarm.py` (1,261 lines) formally decouples Tier-1 Thematic Screening (`swarm_evaluators.py`: three reviewer personas emitting INCLUDE/EXCLUDE/UNCERTAIN votes) from Tier-2 Forensic Quality Auditing (four specialized skill auditors scoring the Kitchenham 2007 rubric on admitted candidates). Tier-1 answers "is this study on-topic?"; Tier-2 answers "is this study methodologically trustworthy?".
+- [x] **Four specialized forensic skill auditors** -- `TheoryAuditor` (Q1: formal problem formulation, hypotheses, scope), `OperationalAuditor` (Q2: environmental realism, physical disturbances, communication latency, operational rules/safety bounds), `BenchmarkAuditor` (Q3-Q4: 2-3 modern SOTA baselines, >= 5 seeds, confidence intervals, p-values, ablations), `OpenScienceAuditor` (Q5-Q6: public code repository, open benchmark simulator, explicit limitations). Each emits typed Pydantic-v2 results with ternary scores snapped onto the {0.0, 0.5, 1.0} grid plus a named forensic critique.
+- [x] **Domain-Agnostic Core Templates & Profile-Compiled Skills** -- `src/prisma/skills/templates/` holds four invariant templates using only `{{RESEARCH_DOMAIN}}` / `{{DOMAIN_CONSTRAINTS}}` placeholders; `SkillCompiler.compile_profile_skills(profile_name, force_recompile)` injects the active profile's `research_topic` / `inclusion_criteria` / `exclusion_criteria`, optionally refines with the hardware-advised heavy model (`qwen2.5:14b` local, `deepseek-reasoner` / `gemini-2.5-flash` cloud), and writes `_profiles/<name>/skills/*.md` behind a zero-cost fast path.
+- [x] **SmartSectionSlicer & consensus synthesis** -- heading-regex section extraction with per-auditor target maps, ~300-500 word caps, and abstract fallback; `KitchenhamQualitySynthesizer` dispatches the four auditors concurrently (Semaphore(2) local / 4 workers cloud), computes `S_qual = (10/6) * sum(Q_i)`, the inter-auditor Fleiss `kappa_qual` over banded ratings, the 2D quadrant, and the unified forensic narrative.
+- [x] **Appraiser swarm mode & persistence** -- `PrismaQualityAppraiser(appraisal_mode='single'|'swarm')`; `QualityAppraisalResult` gains `appraisal_mode`, `swarm_kappa`, `auditor_critiques`; the extended payload persists into the existing `quality_score` / `quality_rubric_json` / `evidence_quadrant` SQLite columns (zero schema changes).
+- [x] **CLI, TUI & dual help** -- `--appraise-quality [--min-score 7.0] [--swarm]` and `--compile-skills [--force]` flags; TUI Group 3 Option 15 mode prompt; Panel 1 + web manual Card 6 updated.
+- [x] **Rule 10 dossier 06** -- `docs/internal/academic/06_TWO_TIER_HIERARCHICAL_SWARM_QUALITY.md` (7 sections, 1:1 code traceability, PhD/ICBE 2026 excerpts).
+- [x] **Version synced** -- 6 core files + docker-compose.yml (`talos:5.17.0`) + CITATION.cff (5.17.0, 2026-10-02) + config.template.json + tray/visualizer/wizard/strategy/diagnostics/bibtex/help metadata + src/prisma/ and src/search/ docstrings + 19 canonical docs to v5.17.0 (2026-10-02).
+- [x] **Verification gates passed** -- compileall (0 errors), test_quality_swarm (17 hermetic), test_quality_appraisal (17 -- backward compatible), test_system_integrity, test_talos_version (5.17.0), `--compile-skills` (UAV profile), `--help`, dossier 06 (0 U+FFFD), verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
+
 ## Phase 69: Pluggable Provider Registry & Hardware-Aware Model Advisor (v5.16.2)
 
 ### Status: COMPLETED (2026-10-02)

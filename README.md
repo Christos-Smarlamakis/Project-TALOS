@@ -1,4 +1,4 @@
-# Project TALOS (v5.16.2)
+# Project TALOS (v5.17.0)
 
 ### Tactical Agentic Literature Orchestration System
 
@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/License-AGPLv3-red?style=flat-square)](LICENSE)
 [![DOI](https://zenodo.org/badge/1191928488.svg)](https://doi.org/10.5281/zenodo.19224912)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker)](docs/DOCKER.md)
-![Version](https://img.shields.io/badge/Version-v5.16.2-006699?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v5.17.0-006699?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square)
 [![FastAPI](https://img.shields.io/badge/FastAPI-25_REST_Endpoints-009688?style=flat-square&logo=fastapi&logoColor=white)](src/api/main_api.py)
 [![Architecture](https://img.shields.io/badge/Architecture-100%25_Air--Gapped_%26_Local--First-111827?style=flat-square)](config/settings.py)
@@ -95,6 +95,20 @@ The swarm computes automated inter-rater agreement via both Cohen's Kappa and
 its Fleiss multi-rater generalisation ($\kappa$), and a Chain-of-Thought
 `SwarmConsensusArbiter` adjudicates split verdicts into a single consensus
 decision.
+
+**Two-Tier Hierarchical Swarm & Forensic Quality Engine (v5.17.0):** the
+screening swarm is now the first tier of a two-tier architecture. The second
+tier (`src/prisma/quality_swarm.py`) is a Forensic Quality Swarm of four
+specialized skill auditors -- `TheoryAuditor` (Kitchenham Q1), `OperationalAuditor`
+(Q2), `BenchmarkAuditor` (Q3-Q4), and `OpenScienceAuditor` (Q5-Q6) -- each
+loading a domain-specialized skill compiled from four domain-agnostic master
+templates (`src/prisma/skills/templates/`) into `_profiles/<name>/skills/`. A
+`SmartSectionSlicer` extracts targeted paper sections to minimize token
+overhead, and the `KitchenhamQualitySynthesizer` merges the six ternary scores
+into `S_qual = (10/6) * sum(Q_i)`, computes the inter-auditor Fleiss
+`kappa_qual`, maps the 2D evidence quadrant, and synthesizes a unified
+forensic narrative. CLI: `--appraise-quality [--swarm]` and
+`--compile-skills [--force]`.
 
 ### Pillar C -- Full-Stack Concurrent Ingestion & Evaluation Mesh
 
@@ -244,6 +258,8 @@ The architecture and algorithmic pipelines of Project TALOS are grounded in the 
 [10] H. van Hasselt, A. Guez, and D. Silver, "Deep reinforcement learning with double Q-learning," in *Proc. 30th AAAI Conf. Artif. Intell. (AAAI)*, Phoenix, AZ, USA, Feb. 2016, pp. 2094–2100.
 [11] B. Kitchenham and S. Charters, "Guidelines for performing Systematic Literature Reviews in Software Engineering," Keele Univ. and Durham Univ., Joint Tech. Rep. EBSE-2007-01, Jul. 2007.
 [12] B. Kitchenham et al., "Systematic literature reviews in software engineering -- a systematic literature review," *Inf. Softw. Technol.*, vol. 51, no. 1, pp. 7--15, Jan. 2009, doi: 10.1016/j.infsof.2008.09.009.
+[13] Y. Du, S. Li, A. Torralba, J. B. Tenenbaum, and I. Mordatch, "Improving factuality and reasoning in language models through multiagent debate," in *Proc. 41st Int. Conf. Mach. Learn. (ICML)*, PMLR vol. 235, 2024, arXiv:2305.14325.
+[14] C.-M. Chan et al., "ChatEval: Towards better LLM-based evaluators through multi-agent debate," in *Proc. Int. Conf. Learn. Represent. (ICLR)*, 2024, arXiv:2308.07201.
 
 ---
 
@@ -417,6 +433,8 @@ https://github.com/Christos-Smarlamakis/Project-TALOS, doi: 10.5281/zenodo.19224
 [10] H. van Hasselt, A. Guez, and D. Silver, "Deep reinforcement learning with double Q-learning," in *Proc. 30th AAAI Conf. Artif. Intell. (AAAI)*, Phoenix, AZ, USA, Feb. 2016, pp. 2094–2100.
 [11] B. Kitchenham and S. Charters, "Guidelines for performing Systematic Literature Reviews in Software Engineering," Keele Univ. and Durham Univ., Joint Tech. Rep. EBSE-2007-01, Jul. 2007.
 [12] B. Kitchenham et al., "Systematic literature reviews in software engineering -- a systematic literature review," *Inf. Softw. Technol.*, vol. 51, no. 1, pp. 7--15, Jan. 2009, doi: 10.1016/j.infsof.2008.09.009.
+[13] Y. Du, S. Li, A. Torralba, J. B. Tenenbaum, and I. Mordatch, "Improving factuality and reasoning in language models through multiagent debate," in *Proc. 41st Int. Conf. Mach. Learn. (ICML)*, PMLR vol. 235, 2024, arXiv:2305.14325.
+[14] C.-M. Chan et al., "ChatEval: Towards better LLM-based evaluators through multi-agent debate," in *Proc. Int. Conf. Learn. Represent. (ICLR)*, 2024, arXiv:2308.07201.
 
 ---
 
