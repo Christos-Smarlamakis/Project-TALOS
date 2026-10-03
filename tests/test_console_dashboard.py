@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_console_dashboard.py
-Project: TALOS v5.22.0
+Project: TALOS v5.22.1
 Description:
     Unit tests for the modular console dashboard subsystem
     (src/utils/console_dashboard/). Verifies HUD panel generation, the

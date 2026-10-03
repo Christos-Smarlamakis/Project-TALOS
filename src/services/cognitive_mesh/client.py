@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: client.py
-Project: TALOS v5.21.1
+Project: TALOS v5.22.1
 Description:
     High-level client facade for the Cognitive Mesh in-tree microservice. It
     provides a single entry point (CognitiveMeshClient) that is usable
@@ -146,6 +146,6 @@ class CognitiveMeshClient:
                 return MarketIntelligenceReport(**resp.json())
             except Exception:
                 return MarketIntelligenceReport(window_days=window_days)
-        from src.services.cognitive_mesh.scavenger import ModelScavengerAgent
+        from src.services.cognitive_mesh.scavenger import ModelScoutAgent
 
-        return ModelScavengerAgent().scavenge_market(window_days=window_days)
+        return ModelScoutAgent().scavenge_market(window_days=window_days)

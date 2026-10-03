@@ -1,6 +1,6 @@
 # TALOS Functional Architecture Map
 
-> **Project:** TALOS v5.22.0 -- Full-Spectrum Rich Terminal Dashboard 2.0 & Scientific Console Architecture (ISO/IEC 25010 Compliant)
+> **Project:** TALOS v5.22.1 -- Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization (ISO/IEC 25010 Compliant)
 > **Classification:** Public Technical Reference
 > **Last Updated:** 2026-10-03
 > **Standard:** ISO/IEC 25010 (Functional Suitability, Performance Efficiency, Maintainability)

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: layout_builder.py
-Project: TALOS v5.22.0
+Project: TALOS v5.22.1
 Description:
     Builds the responsive two-column, four-panel terminal grid for the TALOS
     Scientific Terminal Dashboard using rich.layout.Layout. The layout is
@@ -23,6 +23,17 @@ from rich.align import Align
 from rich.layout import Layout
 from rich.panel import Panel
 from rich.text import Text
+
+
+# -- v5.22.1: central tool-count badges (single source of truth). The four
+# -- main-cockpit panels render these counts in their titles so the operator
+# -- sees the tool surface at a glance. Edit here once to update all panels. --
+_PANEL_TOOL_COUNTS = {
+    "cognitive": 16,
+    "discovery": 11,
+    "prisma": 16,
+    "drl_gwo": 10,
+}
 
 
 class DashboardLayoutBuilder:
@@ -102,7 +113,7 @@ class DashboardLayoutBuilder:
         return Panel(
             Align.center(
                 Text(
-                    "TALOS v5.22.0 -- Scientific Terminal Dashboard",
+                    "TALOS v5.22.1 -- Scientific Terminal Dashboard",
                     style="bold bright_cyan",
                 )
             ),
@@ -131,11 +142,14 @@ class DashboardLayoutBuilder:
         body = (
             "[bold bright_cyan]Cognitive Mesh & FinOps[/bold bright_cyan]\n"
             "[dim]AI Strategy Configurator (Auto-Pilot FinOps)[/dim]\n"
-            "[dim]Scavenge Models (full catalog)[/dim]\n"
-            "[dim]Discover Top LLMs[/dim]\n"
+            "[dim]Model Scout (full multi-source catalog)[/dim]\n"
+            "[dim]Discover Top LLMs & Live Benchmarks[/dim]\n"
             "[dim]Hardware SOTA Advisor[/dim]"
         )
-        return self._panel("[1] Cognitive Mesh & FinOps", body, "cyan")
+        return self._panel(
+            "[1] Cognitive Mesh & FinOps ({} Tools)".format(_PANEL_TOOL_COUNTS["cognitive"]),
+            body, "cyan",
+        )
 
     def _panel_discovery(self) -> Panel:
         """Panel 2 -- Discovery & Harvesting Mesh.
@@ -145,42 +159,51 @@ class DashboardLayoutBuilder:
         """
         body = (
             "[bold bright_cyan]Discovery & Harvesting Mesh[/bold bright_cyan]\n"
-            "[dim]Daily Ingestion[/dim]\n"
+            "[dim]Daily Ingestion (18 APIs)[/dim]\n"
             "[dim]Historical Deep-Days Harvest[/dim]\n"
             "[dim]Forward/Backward Citation Snowballing[/dim]\n"
             "[dim]Neural Vector & Code-First Retrieval[/dim]"
         )
-        return self._panel("[2] Discovery & Harvesting", body, "bright_blue")
+        return self._panel(
+            "[2] Discovery & Harvesting Mesh ({} Tools)".format(_PANEL_TOOL_COUNTS["discovery"]),
+            body, "bright_blue",
+        )
 
     def _panel_prisma(self) -> Panel:
-        """Panel 3 -- PRISMA Swarm & Full-Text Engine.
+        """Panel 3 -- Advanced Analysis & PRISMA.
 
         Returns:
-            Panel: The PRISMA Swarm & Full-Text Engine panel.
+            Panel: The Advanced Analysis & PRISMA panel.
         """
         body = (
-            "[bold bright_cyan]PRISMA Swarm & Full-Text Engine[/bold bright_cyan]\n"
-            "[dim]Two-Tier Kitchenham Audit[/dim]\n"
-            "[dim]12-Source OA PDF Harvester[/dim]\n"
-            "[dim]SQLite FTS5 Search[/dim]\n"
-            "[dim]Generate PRISMA Synthesis[/dim]"
+            "[bold bright_cyan]Advanced Analysis & PRISMA[/bold bright_cyan]\n"
+            "[dim]Knowledge Constellation & Graphify[/dim]\n"
+            "[dim]PRISMA-ScR Declarative Synthesis[/dim]\n"
+            "[dim]Two-Tier Kitchenham Quality Appraisal[/dim]\n"
+            "[dim]BibTeX / LaTeX Academic Export[/dim]"
         )
-        return self._panel("[3] PRISMA Swarm & Full-Text", body, "bright_magenta")
+        return self._panel(
+            "[3] Advanced Analysis & PRISMA ({} Tools)".format(_PANEL_TOOL_COUNTS["prisma"]),
+            body, "bright_magenta",
+        )
 
     def _panel_system(self) -> Panel:
-        """Panel 4 -- System, Export & Diagnostics.
+        """Panel 4 -- DRL Agents & GWO Swarm.
 
         Returns:
-            Panel: The System, Export & Diagnostics panel.
+            Panel: The DRL Agents & GWO Swarm panel.
         """
         body = (
-            "[bold bright_cyan]System, Export & Diagnostics[/bold bright_cyan]\n"
-            "[dim]Export Filtered BibTeX[/dim]\n"
-            "[dim]Launch FastAPI Server (:8001)[/dim]\n"
-            "[dim]Visual Scientific Trees[/dim]\n"
-            "[dim]Help Manual & SOP Runbooks[/dim]"
+            "[bold bright_cyan]DRL Agents & GWO Swarm[/bold bright_cyan]\n"
+            "[dim]24/7 Autonomous Daemon[/dim]\n"
+            "[dim]Live DRL Agent (API Fetching)[/dim]\n"
+            "[dim]Train DRL Agent / Offline Training[/dim]\n"
+            "[dim]GWO Hyperparameter & Router Swarm[/dim]"
         )
-        return self._panel("[4] System, Export & Diagnostics", body, "green")
+        return self._panel(
+            "[4] DRL Agents & GWO Swarm ({} Tools)".format(_PANEL_TOOL_COUNTS["drl_gwo"]),
+            body, "green",
+        )
 
     def _footer(self) -> Panel:
         """Return the footer command-palette legend.
@@ -190,7 +213,7 @@ class DashboardLayoutBuilder:
         """
         body = (
             "[bold bright_cyan]Command Palette[/bold bright_cyan]  "
-            "[dim]/scavenge  /audit  /fts <q>  /config  /tree <arch|phd|mesh>  "
+            "[dim]/scavenge|/scout  /audit  /fts <q>  /config  /tree <arch|phd|mesh>  "
             "/view <path>  /help  /quit[/dim]"
         )
         return Panel(body, title="[bold]Console HMI[/bold]", border_style="yellow", padding=(0, 1))

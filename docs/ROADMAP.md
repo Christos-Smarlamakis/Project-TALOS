@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.22.0 (Full-Spectrum Rich Terminal Dashboard 2.0 & Scientific Console Architecture) — Complete, 2026-10-03
+> **Current Version:** v5.22.1 (Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization) — Complete, 2026-10-03
 > **Last Updated:** 2026-10-03
 
 ---

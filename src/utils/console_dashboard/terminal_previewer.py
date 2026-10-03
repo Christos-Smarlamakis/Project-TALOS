@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: terminal_previewer.py
-Project: TALOS v5.22.0
+Project: TALOS v5.22.1
 Description:
     In-terminal previewer for the TALOS Scientific Terminal Dashboard. Renders
     Markdown reports (LLM market intelligence, PRISMA syntheses) inside a styled

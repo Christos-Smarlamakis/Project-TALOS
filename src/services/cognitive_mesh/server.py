@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: server.py
-Project: TALOS v5.21.1
+Project: TALOS v5.22.1
 Description:
     FastAPI mini-application for the Cognitive Mesh in-tree microservice. It
     exposes the cognitive router dispatch, the sixteen-provider registry
@@ -50,7 +50,7 @@ from src.services.cognitive_mesh.registry import (  # noqa: E402
     get_provider_registry,
 )
 from src.services.cognitive_mesh.router import CognitiveMetaRouter  # noqa: E402
-from src.services.cognitive_mesh.scavenger import ModelScavengerAgent  # noqa: E402
+from src.services.cognitive_mesh.scavenger import ModelScoutAgent  # noqa: E402
 
 cognitive_router_app = APIRouter()
 
@@ -118,7 +118,7 @@ def scavenge(request: ScavengeRequest) -> MarketIntelligenceReport:
     Returns:
         MarketIntelligenceReport: The aggregate scavenging result.
     """
-    return ModelScavengerAgent().scavenge_market(window_days=request.window_days)
+    return ModelScoutAgent().scavenge_market(window_days=request.window_days)
 
 
 @cognitive_router_app.get("/health")
@@ -132,7 +132,7 @@ def health() -> dict:
     return {
         "status": "ok",
         "service": "cognitive_mesh",
-        "version": "5.21.1",
+        "version": "5.22.1",
         "local_gpu": {"name": "RTX 4070", "vram_gb": 12.0},
         "active_provider_count": len(active),
         "active_providers": [d.name for d in active],
@@ -146,7 +146,7 @@ app = FastAPI(
         "Extraction-ready in-tree cognitive microservice: meta-routing, "
         "provider registry, benchmark matrix, and autonomous model scavenging."
     ),
-    version="5.21.1",
+    version="5.22.1",
 )
 app.include_router(cognitive_router_app)
 

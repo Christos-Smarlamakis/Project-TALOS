@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: reporter.py
-Project: TALOS v5.21.1
+Project: TALOS v5.22.1
 Description:
     Dual Intelligence Reporter for the Cognitive Mesh in-tree microservice. It
     renders a MarketIntelligenceReport into two deliverables under
@@ -67,7 +67,7 @@ class IntelligenceReporter:
 
     def _render_markdown(self, report: MarketIntelligenceReport) -> str:
         lines: List[str] = []
-        lines.append("# LLM Market Intelligence Report")
+        lines.append("# TALOS Model Scout Intelligence Report")
         lines.append("")
         lines.append(f"- Generated: {report.generated_at}")
         lines.append(f"- Discovery window: {report.window_days} days")
@@ -302,13 +302,13 @@ class IntelligenceReporter:
             "<head>\n"
             '<meta charset="utf-8">\n'
             '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
-            "<title>LLM Market Intelligence</title>\n"
+            "<title>TALOS Model Scout Intelligence</title>\n"
             f"<style>{_HTML_CSS}</style>\n"
             "</head>\n"
             "<body>\n"
             '<header class="hero">\n'
-            "<h1>LLM Market Intelligence</h1>\n"
-            f'<p class="subtitle">Autonomous Model Scavenger Report &middot; '
+            "<h1>TALOS Model Scout Intelligence</h1>\n"
+            f'<p class="subtitle">Autonomous Model Scout Report &middot; '
             f"{_html.escape(timestamp)}</p>\n"
             "</header>\n"
             '<section class="stats">\n'

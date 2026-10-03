@@ -98,14 +98,15 @@ def _section_a_sop_runbooks() -> Panel:
     body.append("     synthesized mission-planning report.\n")
     body.append("\n")
 
-    body.append("Runbook A4 -- Autonomous Model Scavenger & Market Intelligence\n",
+    body.append("Runbook A4 -- Autonomous Model Scout & Market Intelligence\n",
                 style="bold bright_green")
     body.append("  1. Forage the full multi-source catalog (150+ models):\n")
-    body.append("     python talos.py --scavenge-models --all\n")
+    body.append("     python talos.py --scout-models --all\n")
+    body.append("     (alias: --scavenge-models --all)\n")
     body.append("  2. Limit discovery to a recent window:\n")
-    body.append("     python talos.py --scavenge-models --days 30\n")
+    body.append("     python talos.py --scout-models --days 30\n")
     body.append("  3. Generate reports without the console summary:\n")
-    body.append("     python talos.py --scavenge-models --all --report-only\n")
+    body.append("     python talos.py --scout-models --all --report-only\n")
     body.append("  4. Configure the hybrid FinOps strategy (auto-pilot):\n")
     body.append("     python talos.py --configure-ai-strategy\n")
     body.append("  5. Adopt champion models with one click:\n")
@@ -167,8 +168,9 @@ def _section_b_command_matrix() -> Panel:
                   "Persist the recommended model stack.")
     table.add_row("System Management", "--discover-llms",
                   "Live SOTA benchmark discovery matrix.")
-    table.add_row("System Management", "--scavenge-models [--all] [--days N] [--report-only]",
-                  "Autonomous model scavenger + dual MD/HTML intelligence reports.")
+    table.add_row("System Management", "--scout-models [--all] [--days N] [--report-only]",
+                  "Autonomous Model Scout + dual MD/HTML intelligence reports "
+                  "(alias: --scavenge-models).")
     table.add_row("System Management", "--configure-ai-strategy",
                   "Interactive Cognitive FinOps & Strategy Configurator (auto-pilot).")
     table.add_row("System Management", "--apply-optimal-models [--strategy ...]",

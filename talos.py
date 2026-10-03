@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.22.0
+Project: TALOS v5.22.1
 Description:
     Main entry point for the TALOS Scientific Terminal Dashboard (HMI).
     Provides a Rich-powered, two-column, four-panel interactive console
@@ -23,6 +23,13 @@ Description:
     Search & Ingestion, Advanced Analysis & Visualizations, DRL
     Agents/Daemons & GWO Swarm, Database Maintenance & Data Tools, and
     System Health, Diagnostics & CI/CD.
+
+    v5.22.1: Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout
+    Terminology Formalization -- a unified RichSubmenuRenderer upgrades the
+    primary sub-menus into two-column Rich tables, orphan databases are
+    consolidated into the active profile via merge_orphan_databases(), the
+    daemon binds strictly to the SSOT profile database, and ModelScoutAgent is
+    formalized (aliasing ModelScavengerAgent) with --scout-models and /scout.
 
     v5.22.0: Full-Spectrum Rich Terminal Dashboard 2.0 & Scientific Console
     Architecture -- modular console renderers under
@@ -876,7 +883,30 @@ def database_data_menu(python_exe):
     """Database maintenance, embeddings, scoring and enrichment sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
     sys.stdout.flush()
-    console.print(Panel("[bold cyan]Database Maintenance & Data Tools[/bold cyan]\n[dim]Database optimization, enrichment, and persistent storage utilities[/dim]", style="cyan", border_style="cyan"))
+    from src.utils.console_dashboard import render_submenu
+    console.print(render_submenu(
+        "Database Maintenance & Data Tools",
+        "Database optimization, enrichment, and persistent storage utilities",
+        entries=[
+            "Integrity & Scoring",
+            ("Database Health & VACUUM Optimizer", None),
+            ("Database Schema Migration", None),
+            ("Recalculate Overall Scores", None),
+            ("Re-evaluate Database with LLM", None),
+            "Embeddings & Enrichment",
+            ("Batch Vector Embedding Generation", None),
+            ("Vector Embedding Schema Migration", None),
+            ("Metadata Enrichment", None),
+            ("Unpaywall Data Enricher", None),
+            "Storage & Export",
+            ("Zotero Cloud Connector", None),
+            ("View Recent Evaluation History", None),
+            ("Export Curated Papers to BibTeX / LaTeX (.bib)", None),
+            "PRISMA & PDF Tools",
+            ("Harvest Open Access Full-Text PDFs (12 Cascading Sources)", None),
+        ],
+        border_style="cyan",
+    ))
     choice = safe_select("Select database utility:", choices=[
         "1. Database Health & VACUUM Optimizer",
         "2. Database Schema Migration",
@@ -1102,8 +1132,34 @@ def profile_settings_menu(python_exe):
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
         sys.stdout.flush()
-        console.print(Panel("[bold cyan]Configuration & Profiles[/bold cyan]\n[dim]Manage research profiles, API keys, and model parameters[/dim]", style="cyan", border_style="cyan"))
-        strategy_entry = f"3. AI Execution Strategy Switcher (Current: {_current_strategy_key()})"
+        from src.utils.console_dashboard import render_submenu
+        strategy_key = _current_strategy_key()
+        strategy_entry = f"3. AI Execution Strategy Switcher (Current: {strategy_key})"
+        console.print(render_submenu(
+            "Configuration & Profiles",
+            "Manage research profiles, API keys, and model parameters",
+            entries=[
+                "Profiles & Research Focus",
+                ("Research Setup Wizard (Full Onboarding & Reconfiguration)", None),
+                ("Manage Profiles", None),
+                ("AI Execution Strategy Switcher", "Current: " + strategy_key),
+                ("Research Pivot Wizard", None),
+                ("Research Goal (Query Translator / Cognitive Query Compiler)", None),
+                "AI Models, Discovery & FinOps",
+                ("AI Model Management (2D Matrix)", None),
+                ("Model Discovery (Quality Scoring)", None),
+                ("Hardware-Aware Model Advisor (VRAM Budget & SOTA)", None),
+                ("Discover Top LLMs & Live Benchmarks", None),
+                ("Cognitive FinOps & Strategy Configurator (Auto-Pilot)", None),
+                ("Model Provisioning CLI", None),
+                "Access, Diagnostics & Tooling",
+                ("API Keys Management", None),
+                ("API Key Diagnostics", None),
+                ("Create Desktop Shortcut (1-Click Launcher)", None),
+                ("Autonomous Model Scout & Market Intelligence (MD/HTML)", None),
+            ],
+            border_style="cyan",
+        ))
         c = safe_select("Select profile setting:", choices=[
             "1. Research Setup Wizard (Full Onboarding & Reconfiguration)",
             "2. Manage Profiles",
@@ -1119,7 +1175,7 @@ def profile_settings_menu(python_exe):
             "12. API Keys Management",
             "13. API Key Diagnostics",
             "14. Create Desktop Shortcut (1-Click Launcher)",
-            "15. Autonomous Model Scavenger & Market Intelligence (MD/HTML)",
+            "15. Autonomous Model Scout & Market Intelligence (MD/HTML)",
             "16. Back / Return to Main Menu"
         ])
         if not c or "Back" in c: return
@@ -1139,7 +1195,7 @@ def profile_settings_menu(python_exe):
         elif c == "8. Hardware-Aware Model Advisor (VRAM Budget & SOTA)": _run_hardware_advisor()
         elif c == "9. Discover Top LLMs & Live Benchmarks": _run_discover_llms()
         elif "Cognitive FinOps" in c: _run_ai_strategy_configurator()
-        elif "Autonomous Model Scavenger" in c: _run_scavenge_models()
+        elif "Autonomous Model Scout" in c or "Autonomous Model Scavenger" in c: _run_scavenge_models()
         elif c == "11. Model Provisioning CLI": run_script("model_provisioner.py", python_exe)
         elif c == "12. API Keys Management": api_keys_menu(python_exe)
         elif c == "13. API Key Diagnostics": run_script("api_health_check.py", python_exe)
@@ -1842,7 +1898,7 @@ def _run_discover_llms():
 
 
 def _render_scavenge_summary(report):
-    """Render a Rich summary table for the Autonomous Model Scavenger result.
+    """Render a Rich summary table for the Autonomous Model Scout result.
 
     Args:
         report (MarketIntelligenceReport): The aggregate scavenging report.
@@ -1854,7 +1910,7 @@ def _render_scavenge_summary(report):
         else f"window {report.window_days} days"
     )
     table = Table(
-        title=f"Autonomous Model Scavenger Summary ({window_label})",
+        title=f"Autonomous Model Scout Summary ({window_label})",
         box=box.ROUNDED,
         border_style="bright_cyan",
         header_style="bold bright_cyan",
@@ -1874,7 +1930,7 @@ def _render_scavenge_summary(report):
 
 
 def _run_scavenge_models(days: int = 0, fetch_all: bool = False, report_only: bool = False):
-    """Run the Autonomous Model Scavenger and emit dual market intelligence reports.
+    """Run the Autonomous Model Scout and emit dual market intelligence reports.
 
     Args:
         days (int): Discovery window in days (0 or negative for full catalog).
@@ -1884,17 +1940,17 @@ def _run_scavenge_models(days: int = 0, fetch_all: bool = False, report_only: bo
     Returns:
         int: Process exit code (0 on success).
     """
-    from src.services.cognitive_mesh.scavenger import ModelScavengerAgent
+    from src.services.cognitive_mesh.scavenger import ModelScoutAgent
     from src.services.cognitive_mesh.reporter import IntelligenceReporter
     fetch_all = bool(fetch_all or days <= 0)
     window_label = "full catalog" if fetch_all else f"window: {days} days"
     console.print(_build_info_panel(
-        "Autonomous Model Scavenger & Market Intelligence",
+        "Autonomous Model Scout & Market Intelligence",
         f"Foraging Hugging Face, OpenRouter, and Ollama ({window_label})...\n"
         "[dim]Air-gapped offline fallback to cached benchmarks is guaranteed.[/dim]",
         border_style="bright_cyan",
     ))
-    report = ModelScavengerAgent().scavenge_market(window_days=days, fetch_all=fetch_all)
+    report = ModelScoutAgent().scavenge_market(window_days=days, fetch_all=fetch_all)
     if not report_only:
         _render_scavenge_summary(report)
     md_path, html_path = IntelligenceReporter().generate_reports(report)
@@ -2067,7 +2123,27 @@ def search_ingestion_menu(python_exe):
     """Research search and ingestion sub-menu (Universal Search Hub)."""
     os.system('cls' if os.name == 'nt' else 'clear')
     sys.stdout.flush()
-    console.print(Panel("[bold cyan]Universal Search Hub[/bold cyan]\n[dim]Daily harvesting, deep archives, citation graphs, dense retrieval, and reproducible code[/dim]", style="cyan", border_style="cyan"))
+    from src.utils.console_dashboard import render_submenu
+    console.print(render_submenu(
+        "Universal Search Hub",
+        "Daily harvesting, deep archives, citation graphs, dense retrieval, and reproducible code",
+        entries=[
+            "Discovery Pipelines",
+            ("Daily Concurrent Harvester (18 APIs in Parallel)", None),
+            ("Historical Deep Window Search (Days Window)", None),
+            ("Autonomous Citation Snowballing Search (Graph Traversal)", None),
+            "Retrieval & Code",
+            ("Neural Vector Semantic Search (Local nomic-embed-text)", None),
+            ("Reproducible Code-First Search (GitHub / Benchmark Linked)", None),
+            ("PRISMA-ScR Swarm Declarative Pipeline (Stanford DSPy)", None),
+            "Literature & Full-Text",
+            ("Grey Literature Miner", None),
+            ("Zotero Cloud Sync", None),
+            ("Interactive Dashboard (Flask)", None),
+            ("SQLite FTS5 Full-Text Search (Search Inside PDF Bodies)", None),
+        ],
+        border_style="cyan",
+    ))
     choice = safe_select("Select search operation:", choices=[
         "1. Daily Concurrent Harvester (18 APIs in Parallel)",
         "2. Historical Deep Window Search (Days Window)",
@@ -2164,7 +2240,33 @@ def analysis_visualization_menu(python_exe):
     """Advanced analysis and visualization sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
     sys.stdout.flush()
-    console.print(Panel("[bold cyan]Advanced Analysis & Visualizations[/bold cyan]\n[dim]Explore knowledge constellations, citation graphs, and bibliometrics[/dim]", style="cyan", border_style="cyan"))
+    from src.utils.console_dashboard import render_submenu
+    console.print(render_submenu(
+        "Advanced Analysis & Visualizations",
+        "Explore knowledge constellations, citation graphs, and bibliometrics",
+        entries=[
+            "Visualization & Graphs",
+            ("3D Knowledge Constellation Visualizer", None),
+            ("Graphify AST Knowledge Graph", None),
+            ("Dynamic D3 Architecture Graph", None),
+            ("OPTICA Scientific Visualizations", None),
+            ("Knowledge Path Generator", None),
+            "Bibliometrics & Intelligence",
+            ("Citation Network Analyzer", None),
+            ("Strategic Reading Recommender", None),
+            ("Author Profiler & ORCID Trajectory", None),
+            ("Scientometrics & Trend Analyzer", None),
+            ("Architecture Intelligence Report", None),
+            "Reports & Export",
+            ("Baseline Report (Standard)", None),
+            ("Baseline Report (Academic -- 600 DPI)", None),
+            ("Academic Export (BibTeX & LaTeX Tables)", None),
+            "PRISMA Engine",
+            ("PRISMA-ScR Declarative Synthesis Pipeline (Stanford DSPy Engine)", None),
+            ("PRISMA Scientific Quality Appraisal & 2D Quadrant Analysis (Kitchenham 2007)", None),
+        ],
+        border_style="cyan",
+    ))
     project_root = os.path.dirname(os.path.abspath(__file__))
     ap = get_active_profile_name()
     pdb = ProfileManager().get_active_db_path()
@@ -2327,7 +2429,27 @@ def drl_gwo_menu(python_exe):
     """DRL agents, daemons and GWO swarm sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
     sys.stdout.flush()
-    console.print(Panel("[bold cyan]DRL Agents, Daemons & GWO Swarm[/bold cyan]\n[dim]Autonomous foraging, reinforcement learning, and swarm optimization[/dim]", style="cyan", border_style="cyan"))
+    from src.utils.console_dashboard import render_submenu
+    console.print(render_submenu(
+        "DRL Agents, Daemons & GWO Swarm",
+        "Autonomous foraging, reinforcement learning, and swarm optimization",
+        entries=[
+            "Autonomous Service",
+            ("24/7 Autonomous Daemon (new console)", None),
+            ("Live DRL Agent (API Fetching)", None),
+            ("Configure Daemon Autostart", None),
+            "Reinforcement Learning",
+            ("Train DRL Agent (Simulated)", None),
+            ("Offline DRL Training (Real DB Scores)", None),
+            "GWO Swarm",
+            ("GWO Hyperparameter Tuner", None),
+            ("GWO LLM Router Reward Shaper", None),
+            ("GWO 3D Swarm Live Dashboard", None),
+            "Status",
+            ("DRL Agent Status", None),
+        ],
+        border_style="cyan",
+    ))
     project_root = os.path.dirname(os.path.abspath(__file__))
     choice = safe_select("Select DRL/GWO operation:", choices=[
         "1. 24/7 Autonomous Daemon (new console)",
@@ -2643,7 +2765,7 @@ def _dispatch_slash_command(raw, python_exe):
     op = parts[0].lower()
     arg = parts[1].strip() if len(parts) > 1 else ""
 
-    if op == "/scavenge":
+    if op in ("/scavenge", "/scout"):
         _run_scavenge_models(days=0, fetch_all=True, report_only=False)
         return "handled"
     if op == "/audit":
@@ -2804,9 +2926,9 @@ def _handle_cli_flags(argv):
         from src.core.model_benchmark_client import run_discover_llms
         run_discover_llms(online="--offline" not in argv)
         return True
-    # -- v5.21.1: Autonomous Model Scavenger
-    # -- (--scavenge-models [--all] [--days N] [--report-only]). --
-    if "--scavenge-models" in argv:
+    # -- v5.21.1: Autonomous Model Scout (v5.22.1: --scout-models alias).
+    # -- (--scavenge-models | --scout-models [--all] [--days N] [--report-only]). --
+    if "--scavenge-models" in argv or "--scout-models" in argv:
         days = 0
         raw = _flag_value(argv, "--days")
         if raw:

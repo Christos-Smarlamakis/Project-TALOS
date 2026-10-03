@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: talos_service.py (v2.1 — Profile-Aware, Dynamic N Sources)
-Project: TALOS v5.21.1
+Project: TALOS v5.22.1
 Description:
     24/7 autonomous research service. Runs continuously on weak hardware
     (Raspberry Pi, old laptop, etc.) using the trained DRL agent to
@@ -732,6 +732,13 @@ def main():
     except Exception:
         active_profile = "default"
 
+    # -- v5.22.1: strict daemon profile binding banner. Zero emojis; pure ASCII
+    # -- so every background daemon reports its SSOT database target. --
+    console.print(
+        f"[bold bright_cyan][DAEMON][/bold bright_cyan] Operating exclusively "
+        f"on profile: [bold]{active_profile}[/bold]"
+    )
+
     # -- v5.18.5: Official dynamic console window title. Zero emojis; pure
     # -- ASCII title with the active profile interpolated so the daemon
     # -- console is unambiguously identifiable in the Windows taskbar. --
@@ -739,7 +746,7 @@ def main():
         try:
             import ctypes
             ctypes.windll.kernel32.SetConsoleTitleW(
-                f"TALOS v5.21.1 | Autonomous Research Service [{active_profile}]"
+                f"TALOS v5.22.1 | Autonomous Research Service [{active_profile}]"
             )
         except Exception:
             pass
@@ -792,13 +799,15 @@ def main():
     # This removes the dependency on external .bat launchers.
     _hardware_strategy = os.environ.get("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
     _spawn_fermion_cpu_server(_hardware_strategy)
-    # -- Resolve active-profile DB and ensure the schema exists --
+    # -- v5.22.1: resolve the active-profile DB and ensure the schema exists. --
+    # The daemon binds STRICTLY to the SSOT active-profile database; there is no
+    # silent fallback to the legacy data/talos_research.db path. --
     try:
         from src.core.database_manager import DatabaseManager, get_active_profile_db_path
         _db_path = get_active_profile_db_path()
         _db = DatabaseManager(db_path=_db_path)
         _db.create_table()
-        print(f"  [INIT] Database ready: {_db_path}")
+        print(f"  [INIT] Database bound strictly to active profile: {_db_path}")
     except Exception as e:
         print(f"  [INIT] Database init skipped: {e}")
 

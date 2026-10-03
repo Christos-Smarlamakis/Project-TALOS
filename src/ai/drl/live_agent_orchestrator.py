@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: live_agent_orchestrator.py (v1.4 — 18-Source Scaling)
-Project: TALOS v5.20.0
+Project: TALOS v5.22.1
 Description:
     Main orchestration loop for the TALOS Live DRL Agent. Handles the
     full cycle: state calculation → action selection → API fetch →
@@ -393,6 +393,17 @@ def run_live_loop(agent, action_map, working_source_names, config,
     high_score_count = 0
     episode_reward = 0.0
 
+    # -- v5.22.1: strict daemon profile binding. Resolve the SSOT active profile
+    # -- and emit a banner so the operator knows the exact database target. --
+    try:
+        from src.core.profile_manager import ProfileManager
+        _active_profile = ProfileManager().get_active_profile_name()
+    except Exception:
+        _active_profile = "default"
+    console.print(
+        f"  [bold bright_cyan][DAEMON][/bold bright_cyan] Operating exclusively "
+        f"on profile: [bold]{_active_profile}[/bold]"
+    )
     console.print("  [bold cyan][INIT][/bold cyan] Live agent ready. Starting main loop.\n")
     console.print("[dim]" + "-" * 65 + "[/dim]")
 

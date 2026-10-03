@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: hud_renderer.py
-Project: TALOS v5.22.0
+Project: TALOS v5.22.1
 Description:
     Persistent telemetry HUD renderer for the TALOS Scientific Terminal
     Dashboard. Builds a compact two-row Rich Panel summarising the active
@@ -24,6 +24,7 @@ Dependencies:
 
 import json
 import os
+import re
 import socket
 import subprocess
 from pathlib import Path
@@ -37,6 +38,25 @@ from rich.text import Text
 
 # -- Project root (canonical _P walk-up pattern shared across src/*.py) ---------
 _P = Path(__file__).resolve().parents[3]
+
+
+def _re_first_int(pattern: str, text: str) -> Optional[int]:
+    """Return the first captured integer from a regex match, or ``None``.
+
+    Args:
+        pattern (str): Regex pattern containing a single capture group.
+        text (str): Text to search.
+
+    Returns:
+        Optional[int]: The captured integer, or ``None`` when unmatched.
+    """
+    match = re.search(pattern, text)
+    if not match:
+        return None
+    try:
+        return int(match.group(1))
+    except (ValueError, IndexError):
+        return None
 
 
 class HudRenderer:
@@ -72,7 +92,7 @@ class HudRenderer:
         vram = self._vram_gb()
         ollama = self._ollama_status()
         strategy = self._strategy_label()
-        scavenged = self._scavenged_count()
+        models = self._model_metrics()
 
         # -- Row 1: profile and paper corpus metrics --
         row1 = Text(no_wrap=True)
@@ -101,11 +121,18 @@ class HudRenderer:
         )
         row2.append("  |  Strategy: ", style="dim white")
         row2.append(strategy, style="bold yellow")
-        row2.append("  |  Scavenged Models: ", style="dim white")
-        row2.append(
-            str(scavenged) if scavenged is not None else "-",
-            style="bold cyan",
-        )
+        row2.append("  |  Models: ", style="dim white")
+        if models.get("total") is not None:
+            row2.append(str(models["total"]), style="bold cyan")
+            local = models.get("local")
+            frontier = models.get("frontier")
+            if local is not None and frontier is not None:
+                row2.append(
+                    f" ({local} Local | {frontier} Frontier)",
+                    style="bold bright_cyan",
+                )
+        else:
+            row2.append("-", style="bold cyan")
 
         table = Table(show_header=False, box=None, padding=(0, 1), expand=False)
         table.add_column(justify="left", no_wrap=True)
@@ -233,24 +260,64 @@ class HudRenderer:
         except Exception:
             return "UNKNOWN"
 
-    def _scavenged_count(self) -> Optional[int]:
-        """Count cached scavenged models from the benchmark cache.
+    def _model_metrics(self) -> Dict[str, Optional[int]]:
+        """Return the model-catalog telemetry (total, local, frontier).
+
+        The authoritative counts come from the most recent Model Scout
+        intelligence report (``data/reports/llm_intelligence/``). When no report
+        exists yet, the benchmark cache (``data/cache/llm_benchmarks.json``) is
+        parsed as a best-effort fallback so the HUD never renders an empty
+        "Models" line.
 
         Returns:
-            Optional[int]: The number of cached models, or ``None``.
+            dict: Keys ``total``, ``local``, and ``frontier`` (each ``None``
+                when unavailable).
         """
+        metrics: Dict[str, Optional[int]] = {"total": None, "local": None, "frontier": None}
+        report_dir = _P / "data" / "reports" / "llm_intelligence"
+        try:
+            if report_dir.is_dir():
+                reports = sorted(
+                    report_dir.glob("llm_market_intelligence_*.md"),
+                    key=lambda p: p.stat().st_mtime,
+                    reverse=True,
+                )
+                if reports:
+                    text = reports[0].read_text(encoding="utf-8")
+                    total = _re_first_int(r"\|\s*Total Models Scanned\s*\|\s*(\d+)", text)
+                    if total is not None:
+                        metrics["total"] = total
+                        metrics["local"] = _re_first_int(
+                            r"\|\s*Local Optimal[^\n|]*\|\s*(\d+)", text)
+                        metrics["frontier"] = _re_first_int(
+                            r"\|\s*Frontier Reasoning\s*\|\s*(\d+)", text)
+                        return metrics
+        except Exception:
+            pass
+        # -- Fallback: parse the benchmark cache records. --
         cache = _P / "data" / "cache" / "llm_benchmarks.json"
         try:
-            if not cache.exists():
-                return None
-            data = json.loads(cache.read_text(encoding="utf-8"))
-            if isinstance(data, list):
-                return len(data)
-            if isinstance(data, dict):
-                for key in ("models", "benchmarks", "entries"):
-                    if isinstance(data.get(key), list):
-                        return len(data[key])
-                return len(data)
+            if cache.exists():
+                data = json.loads(cache.read_text(encoding="utf-8"))
+                records = None
+                if isinstance(data, list):
+                    records = data
+                elif isinstance(data, dict):
+                    records = data.get("records") or data.get("models") \
+                        or data.get("benchmarks") or data.get("entries")
+                if isinstance(records, list) and records:
+                    metrics["total"] = len(records)
+                    metrics["local"] = sum(
+                        1 for r in records
+                        if isinstance(r, dict)
+                        and str(r.get("provider", "")).lower() == "ollama"
+                    )
+                    metrics["frontier"] = sum(
+                        1 for r in records
+                        if isinstance(r, dict)
+                        and str(r.get("provider", "")).lower() != "ollama"
+                        and (r.get("mmlu_pro") or 0) >= 80
+                    )
         except Exception:
-            return None
-        return None
+            pass
+        return metrics

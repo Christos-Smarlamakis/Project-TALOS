@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: router.py
-Project: TALOS v5.21.1
+Project: TALOS v5.22.1
 Description:
     Decoupled, extraction-ready Cognitive Meta-Router. This module selects an
     inference provider for a scientific task using one of four named routing

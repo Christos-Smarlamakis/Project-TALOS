@@ -4,7 +4,27 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.22.0 -- Πλήρες Φάσμα Rich Τερματικού Πίνακα Ελέγχου 2.0 & Αρχιτεκτονική Επιστημονικής Κονσόλας)
+> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.22.1 -- Εκσυγχρονισμός Πλούσιων Υπομενού, Δέσμευση Προφίλ Δαίμονα & Τυποποίηση Ορολογίας Model Scout)
+
+---
+
+## Φάση 83: Εκσυγχρονισμός Πλούσιων Υπομενού, Δέσμευση Προφίλ Δαίμονα & Τυποποίηση Ορολογίας Model Scout (v5.22.1)
+
+- [x] **Κατάσταση:** ΟΛΟΚΛΗΡΩΘΗΚΕ (2026-10-03).
+
+- [x] **Συγχώνευση Ορφανών Βάσεων** -- η `merge_orphan_databases()` στο `src/core/database_manager.py` ενοποιεί τη βάση `data/talos_research.db` και κάθε μη ενεργό `_profiles/*/` στο `_profiles/uav_mission_planning/talos_research.db` με αφαίρεση διπλοτύπων DOI/SHA-256· εκτελείται μία φορά ανά διεργασία.
+
+- [x] **Αυστηρή Δέσμευση Προφίλ Δαίμονα** -- τα `talos_service.py` και `live_agent_orchestrator.py` δεσμεύονται αυστηρά στο `get_active_profile_db_path()` και εκπέμπουν banner `[DAEMON]`.
+
+- [x] **HUD & Σήματα Cockpit** -- το `hud_renderer.py` εμφανίζει `Models: 576 (74 Local | 188 Frontier)`· το `layout_builder.py` προσθέτει τα τέσσερα δυναμικά σήματα πλήθους εργαλείων.
+
+- [x] **Μηχανή Πλούσιων Υπομενού** -- το `submenu_renderer.py` (`RichSubmenuRenderer` / `render_submenu`) αναβαθμίζει τα πέντε κύρια υπομενού σε δίστηλους Rich πίνακες.
+
+- [x] **Τυποποίηση Model Scout** -- `ModelScoutAgent` (κύριο) με ψευδώνυμο `ModelScavengerAgent`· CLI `--scout-models`· παλέτα `/scout`· τίτλοι "TALOS Model Scout Intelligence Report".
+
+- [x] **Συγχρονισμός έκδοσης** -- `config/settings.py` (`TALOS_VERSION = "5.22.1"`), `main_api.py`, `talos.py`, εκκινητές, `docker-compose.yml` (`talos:5.22.1`), `CITATION.cff` (5.22.1, 2026-10-03), `tests/test_multi_tier.py` και όλα τα 21 κανονικά έγγραφα σε v5.22.1 (2026-10-03).
+
+- [x] **Πέρασαν οι πύλες επαλήθευσης** -- compileall (0 σφάλματα), test_system_integrity, test_talos_version (5.22.1), test_model_scavenger + test_intelligence_reporter + test_console_dashboard (42), `--scout-models --all --report-only` (έξοδος 0), verify_dependency_map --ci (0/0/0), bash -n, σάρωση UTF-8 (0 U+FFFD).
 
 ---
 

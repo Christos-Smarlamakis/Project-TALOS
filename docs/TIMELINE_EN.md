@@ -4,7 +4,27 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-03 (v5.22.0 -- Full-Spectrum Rich Terminal Dashboard 2.0 & Scientific Console Architecture)
+> **Last Updated:** 2026-10-03 (v5.22.1 -- Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization)
+
+---
+
+## Phase 83: Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization (v5.22.1)
+
+- [x] **Status:** COMPLETED (2026-10-03).
+
+- [x] **Orphan Database Merge** -- `merge_orphan_databases()` in `src/core/database_manager.py` consolidates the legacy `data/talos_research.db` and every non-active `_profiles/*/` database into `_profiles/uav_mission_planning/talos_research.db` with lowercased-DOI first and normalized-title SHA-256 deduplication; auto-runs once per process via `DatabaseManager.__init__`.
+
+- [x] **Strict Daemon Profile Binding** -- `talos_service.py` and `live_agent_orchestrator.py` bind strictly to `get_active_profile_db_path()` and emit the `[DAEMON] Operating exclusively on profile: {active_profile}` banner.
+
+- [x] **HUD & Cockpit Badges** -- `hud_renderer.py` renders `Models: 576 (74 Local | 188 Frontier)`; `layout_builder.py` adds the four dynamic tool-count panel badges.
+
+- [x] **Rich Sub-Menu Engine** -- `submenu_renderer.py` (`RichSubmenuRenderer` / `render_submenu`) upgrades the five primary sub-menus to two-column Rich tables with `[01]`/`[02]` badges and `[00] Back`.
+
+- [x] **Model Scout Formalization** -- `ModelScoutAgent` (primary) with `ModelScavengerAgent` alias; `--scout-models` CLI flag; `/scout` command-palette shortcut; "TALOS Model Scout Intelligence Report" titles.
+
+- [x] **Version sync** -- `config/settings.py` (`TALOS_VERSION = "5.22.1"`), `main_api.py`, `talos.py`, launchers, `docker-compose.yml` (`talos:5.22.1`), `CITATION.cff` (5.22.1, 2026-10-03), `tests/test_multi_tier.py`, and all 21 canonical docs to v5.22.1 (2026-10-03).
+
+- [x] **Verification gates passed** -- compileall (0 errors), test_system_integrity, test_talos_version (5.22.1), test_model_scavenger + test_intelligence_reporter + test_console_dashboard (42), `--scout-models --all --report-only` (exit 0), verify_dependency_map --ci (0/0/0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ---
 

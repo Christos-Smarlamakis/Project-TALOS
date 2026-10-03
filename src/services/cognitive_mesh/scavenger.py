@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: scavenger.py
-Project: TALOS v5.21.1
+Project: TALOS v5.22.1
 Description:
     Autonomous Model Scavenger Agent for the Cognitive Mesh in-tree
     microservice. The agent forages three public catalogues -- the Hugging Face
@@ -147,8 +147,13 @@ _EMBED_SUBSTRINGS = ("embed", "bge-", "nomic-embed", "text-embedding")
 _FAST_TOKENS = ("flash", "haiku", "mini", "3b", "7b", "8b", "9b", "12b", "14b")
 
 
-class ModelScavengerAgent:
-    """Autonomous forager reconciling LLM catalogues against the RTX 4070 budget.
+class ModelScoutAgent:
+    """Autonomous Model Scout reconciling LLM catalogues against the RTX 4070 budget.
+
+    This is the canonical (primary) class name for the autonomous model
+    discovery agent (v5.22.1 terminology formalization). The historical name
+    ``ModelScavengerAgent`` is retained as a module-level alias for 100 percent
+    backward compatibility with existing callers and the test suite.
 
     Attributes:
         vram_gb (float): Detected local VRAM budget in gigabytes (default 12.0).
@@ -691,4 +696,11 @@ class ModelScavengerAgent:
         if numeric < 0.01:
             return round(numeric * 1_000_000.0, 4)
         return round(numeric, 4)
+
+
+# -- v5.22.1: backward-compatible alias. The historical name is preserved so
+# -- every pre-existing importer (talos.py, client.py, server.py, and the test
+# -- suite) continues to work unchanged while ModelScoutAgent is the primary
+# -- canonical class definition. --
+ModelScavengerAgent = ModelScoutAgent
 

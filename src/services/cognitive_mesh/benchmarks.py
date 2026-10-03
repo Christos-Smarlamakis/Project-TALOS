@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: benchmarks.py
-Project: TALOS v5.21.1
+Project: TALOS v5.22.1
 Description:
     Scientific model benchmark client. Maintains a local, air-gapped cache of
     SOTA inference-model benchmark metrics (MMLU-Pro, HumanEval, cost per 1M
@@ -400,7 +400,7 @@ class ModelBenchmarkClient:
 
         console = Console()
         table = Table(
-            title="TALOS SOTA Model Discovery Matrix (v5.21.1)",
+            title="TALOS SOTA Model Discovery Matrix (v5.22.1)",
             header_style="bold bright_cyan",
             border_style="cyan",
         )

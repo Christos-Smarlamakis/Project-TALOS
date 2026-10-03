@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: registry.py
-Project: TALOS v5.21.1
+Project: TALOS v5.22.1
 Description:
     Pluggable, adapter-based LLM provider registry implementing the
     Open-Closed Principle (software entities should be open for extension

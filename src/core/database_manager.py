@@ -5,11 +5,13 @@
 #  This program is free software...
 """
 Module: database_manager.py (v5.0 - Multi-Provider Hybrid Embeddings)
-Project: TALOS v5.20.0
+Project: TALOS v5.22.1
 """
 import sqlite3
 import os
+import hashlib
 from datetime import date, datetime, timedelta
+from pathlib import Path
 import pickle
 import numpy as np
 import pandas as pd
@@ -34,6 +36,215 @@ def get_active_profile_db_path():
     return ProfileManager().get_active_db_path()
 
 
+# -- Orphan database consolidation (v5.22.1) ----------------------------------
+# A process-wide sentinel ensures the orphan merge runs exactly once per
+# interpreter lifetime, regardless of how many DatabaseManager instances are
+# constructed (the daemon, the API server, and the CLI all share it).
+_ORPHAN_MERGE_DONE = False
+
+# Minimal base schema used to guarantee a valid ``papers`` table exists in the
+# merge target before any rows are copied. The full schema is created lazily by
+# ``DatabaseManager.create_table()``; this DDL is a defensive subset so the
+# merge never depends on prior instantiation order.
+_PAPERS_BASE_DDL = """
+    CREATE TABLE IF NOT EXISTS papers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, doi TEXT UNIQUE, url TEXT,
+        title TEXT, authors TEXT, publication_year INTEGER, abstract TEXT, source TEXT,
+        strategic_score INTEGER DEFAULT 0, operational_score INTEGER DEFAULT 0,
+        tactical_score INTEGER DEFAULT 0, playground_score INTEGER DEFAULT 0,
+        overall_score REAL DEFAULT 0.0,
+        evaluation_reasoning TEXT, evaluation_contribution TEXT, evaluation_utilization TEXT,
+        suggested_tags TEXT, suggested_folder TEXT, suggested_discord_channel TEXT,
+        in_zotero INTEGER DEFAULT 0, embedding BLOB, embedding_model TEXT DEFAULT 'gemini',
+        processed_at DATE, last_evaluated_at DATETIME,
+        oa_pdf_url TEXT, openalex_id TEXT, pmid TEXT, pmcid TEXT,
+        oa_status TEXT, journal_issn TEXT, publisher TEXT,
+        enrichment_status INTEGER DEFAULT 0,
+        prisma_decision TEXT DEFAULT NULL
+    )
+"""
+
+
+def _paper_columns(conn):
+    """Return the ordered column names of the ``papers`` table.
+
+    Args:
+        conn (sqlite3.Connection): Open connection to inspect.
+
+    Returns:
+        list[str]: Column names in table definition order.
+    """
+    try:
+        return [col[1] for col in conn.execute("PRAGMA table_info(papers)")]
+    except sqlite3.Error:
+        return []
+
+
+def _has_papers_table(conn):
+    """Return True when the connection exposes a ``papers`` table.
+
+    Args:
+        conn (sqlite3.Connection): Open connection to inspect.
+
+    Returns:
+        bool: True when the ``papers`` table exists.
+    """
+    row = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='papers'"
+    ).fetchone()
+    return row is not None
+
+
+def _normalized_title(title):
+    """Normalize a paper title for stable SHA-256 hashing.
+
+    Args:
+        title (object): Raw title value (may be None).
+
+    Returns:
+        str: Lowercased, whitespace-collapsed title, or empty string.
+    """
+    if not title:
+        return ""
+    return " ".join(str(title).strip().lower().split())
+
+
+def _dedup_keys(row):
+    """Return the deduplication keys for a single paper row.
+
+    A row is identified by its lowercased DOI (when present) and by the
+    SHA-256 digest of its normalized title. The two keys are emitted together
+    so a duplicate is detected whether it shares a DOI, a title, or both.
+
+    Args:
+        row (sqlite3.Row): Paper row.
+
+    Returns:
+        list[str]: Zero, one, or two stable deduplication keys.
+    """
+    keys = []
+    if "doi" in row.keys():
+        doi = (row["doi"] or "").strip().lower()
+        if doi:
+            keys.append("doi:" + doi)
+    if "title" in row.keys():
+        title = _normalized_title(row["title"])
+        if title:
+            digest = hashlib.sha256(title.encode("utf-8")).hexdigest()
+            keys.append("sha256:" + digest)
+    return keys
+
+
+def merge_orphan_databases(target_profile_name="uav_mission_planning"):
+    """Merge orphan paper databases into the canonical active profile.
+
+    Scans the legacy root database (``data/talos_research.db`` and, for
+    historical compatibility, ``data/papers.db``) plus every non-active
+    ``_profiles/<name>/`` database and migrates all non-duplicate papers into
+    ``_profiles/<target_profile_name>/talos_research.db``. Deduplication matches
+    on lowercased DOI first and falls back to the SHA-256 digest of the
+    normalized title. The operation is insert-only (zero data loss), idempotent,
+    and best-effort: any unreadable source is skipped without raising.
+
+    Args:
+        target_profile_name (str): Canonical profile receiving the papers.
+
+    Returns:
+        int: Number of papers merged into the target database.
+    """
+    repo_root = Path(__file__).resolve().parents[2]
+    target_dir = repo_root / "_profiles" / target_profile_name
+    target_dir.mkdir(parents=True, exist_ok=True)
+    target_db = target_dir / "talos_research.db"
+
+    # -- Candidate orphan sources: legacy root DBs + every non-active profile. --
+    sources = []
+    for legacy in (repo_root / "data" / "talos_research.db",
+                   repo_root / "data" / "papers.db"):
+        if legacy.exists() and legacy.resolve() != target_db.resolve():
+            sources.append(legacy)
+    profiles_dir = repo_root / "_profiles"
+    if profiles_dir.is_dir():
+        for profile_dir in profiles_dir.iterdir():
+            if not profile_dir.is_dir() or profile_dir.name == target_profile_name:
+                continue
+            for candidate in ("talos_research.db", "papers.db"):
+                path = profile_dir / candidate
+                if path.exists():
+                    sources.append(path)
+
+    # -- Guarantee a valid target schema before writing. --
+    try:
+        with sqlite3.connect(str(target_db)) as conn:
+            conn.execute(_PAPERS_BASE_DDL)
+            conn.commit()
+    except sqlite3.Error as exc:
+        print("[MERGE] Could not prepare target database: {}".format(exc))
+        return 0
+
+    merged = 0
+    try:
+        with sqlite3.connect(str(target_db)) as conn:
+            conn.row_factory = sqlite3.Row
+            target_cols = _paper_columns(conn)
+            existing = set()
+            for row in conn.execute("SELECT * FROM papers"):
+                existing.update(_dedup_keys(row))
+            for source in sources:
+                try:
+                    with sqlite3.connect(str(source)) as src:
+                        src.row_factory = sqlite3.Row
+                        if not _has_papers_table(src):
+                            continue
+                        src_cols = _paper_columns(src)
+                        insert_cols = [c for c in target_cols
+                                       if c != "id" and c in src_cols]
+                        if not insert_cols:
+                            continue
+                        cols_sql = ",".join(insert_cols)
+                        placeholders = ",".join("?" * len(insert_cols))
+                        for row in src.execute("SELECT * FROM papers"):
+                            keys = _dedup_keys(row)
+                            if any(k in existing for k in keys):
+                                continue
+                            values = [row[c] for c in insert_cols]
+                            conn.execute(
+                                "INSERT INTO papers ({}) VALUES ({})".format(
+                                    cols_sql, placeholders),
+                                values,
+                            )
+                            merged += 1
+                            existing.update(keys)
+                    conn.commit()
+                except sqlite3.Error as exc:
+                    print("[MERGE] Skipping orphan database {}: {}".format(source, exc))
+    except sqlite3.Error as exc:
+        print("[MERGE] Orphan merge failed: {}".format(exc))
+    return merged
+
+
+def _run_orphan_merge_once():
+    """Invoke the orphan merge exactly once per process.
+
+    Called from the default-path branch of ``DatabaseManager.__init__`` so every
+    subsystem that boots on the active profile automatically consolidates any
+    orphan papers. Failures are non-fatal by design (never-crash guarantee).
+    """
+    global _ORPHAN_MERGE_DONE
+    if _ORPHAN_MERGE_DONE:
+        return
+    _ORPHAN_MERGE_DONE = True
+    try:
+        merged = merge_orphan_databases()
+        if merged:
+            print(
+                "[MERGE] Orphan database consolidation: {} papers merged into "
+                "the active profile.".format(merged)
+            )
+    except Exception as exc:  # noqa: BLE001 - never-crash guard
+        print("[MERGE] Orphan database merge skipped: {}".format(exc))
+
+
 class DatabaseManager:
     def __init__(self, db_path=None, db_name="talos_research.db"):
         # -- v5.10.13: single point of truth database persistence --
@@ -44,6 +255,9 @@ class DatabaseManager:
         # longer consulted in the default path.
         if db_path is None:
             self.db_path = get_active_profile_db_path()
+            # -- v5.22.1: consolidate orphan databases into the active profile
+            #    once per process (see merge_orphan_databases). --
+            _run_orphan_merge_once()
         else:
             self.db_path = db_path
 

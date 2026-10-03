@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: progress_monitors.py
-Project: TALOS v5.22.0
+Project: TALOS v5.22.1
 Description:
     Unified multi-metric progress monitor for the TALOS Scientific Terminal
     Dashboard. Builds a Rich Progress instance whose columns expose a spinner,

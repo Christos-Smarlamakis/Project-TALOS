@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: __init__.py
-Project: TALOS v5.22.0
+Project: TALOS v5.22.1
 Description:
     Public entry point for the modular console dashboard subsystem that powers
     the TALOS Scientific Terminal Dashboard (HMI). Re-exports the five
@@ -23,6 +23,7 @@ Dependencies:
 
 from .hud_renderer import HudRenderer
 from .layout_builder import DashboardLayoutBuilder
+from .submenu_renderer import RichSubmenuRenderer, render_submenu
 from .tree_views import ScientificTreeViewer
 from .progress_monitors import MultiMetricProgress, create_scientific_progress
 from .terminal_previewer import TerminalPreviewer
@@ -30,6 +31,8 @@ from .terminal_previewer import TerminalPreviewer
 __all__ = [
     "HudRenderer",
     "DashboardLayoutBuilder",
+    "RichSubmenuRenderer",
+    "render_submenu",
     "ScientificTreeViewer",
     "MultiMetricProgress",
     "create_scientific_progress",

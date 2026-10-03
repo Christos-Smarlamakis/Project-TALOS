@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: tree_views.py
-Project: TALOS v5.22.0
+Project: TALOS v5.22.1
 Description:
     Scientific tree renderer for the TALOS console dashboard. Produces three
     Rich Tree renderables: the six-zone ISO/IEC 25010 architecture map, the

@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.22.0
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.22.1
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-03
-> **Version:** v5.22.0 -- Full-Spectrum Rich Terminal Dashboard 2.0 & Scientific Console Architecture
+> **Version:** v5.22.1 -- Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.22.0" | `config/settings.py` |
+| TALOS_VERSION | "5.22.1" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1378,6 +1378,24 @@ For each evaluated paper, the AI generates:
 - **Command palette**: `rich.prompt.Prompt.ask()` + `_dispatch_slash_command()` (`/scavenge`, `/audit`, `/fts`, `/config`, `/tree`, `/view`, `/help`, `/quit`); CLI flags `--show-dashboard`, `--show-tree`, `--preview-report`.
 
 **Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.22.0), `pytest tests/test_console_dashboard.py -q` (16 hermetic), `python talos.py --show-dashboard` / `--show-tree arch|phd|mesh` / `--preview-report` (exit 0), `python src/utils/verify_dependency_map.py --ci` (0/0/0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD).
+
+### 15.56 Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization (v5.22.1)
+
+**Overview:** v5.22.1 modernizes the Scientific Terminal Dashboard sub-menus, enforces strict SSOT daemon profile binding, consolidates orphan databases, and formalizes the Model Scout terminology across the Cognitive Mesh.
+
+- **Orphan database consolidation** (`src/core/database_manager.py`): `merge_orphan_databases(target_profile_name="uav_mission_planning")` scans `data/talos_research.db` (and `data/papers.db`) plus every non-active `_profiles/<name>/` database, migrating non-duplicate papers into the active profile with lowercased-DOI-first and normalized-title SHA-256 deduplication; insert-only, idempotent, auto-runs once per process.
+
+- **Strict daemon profile binding** (`src/ai/drl/talos_service.py`, `src/ai/drl/live_agent_orchestrator.py`): the 24/7 daemon and live DRL loop bind strictly to `get_active_profile_db_path()` and emit `[DAEMON] Operating exclusively on profile: {active_profile}`.
+
+- **Rich sub-menu engine** (`src/utils/console_dashboard/submenu_renderer.py`): `RichSubmenuRenderer` / `render_submenu` render two-column Rich tables with category headers, `[01]`/`[02]` badges, status tags, and `[00] Back`.
+
+- **Dynamic tool-count badges** (`src/utils/console_dashboard/layout_builder.py`): Panels 1-4 titled with centralized tool counts (16 / 11 / 16 / 10 Tools).
+
+- **HUD telemetry precision** (`src/utils/console_dashboard/hud_renderer.py`): `Models: 576 (74 Local | 188 Frontier)` parsed from the latest Model Scout report with `llm_benchmarks.json` fallback.
+
+- **Model Scout terminology** (`src/services/cognitive_mesh/scavenger.py`, `reporter.py`): `ModelScoutAgent` primary (alias `ModelScavengerAgent`); "TALOS Model Scout Intelligence Report" titles; `--scout-models` CLI flag and `/scout` palette shortcut.
+
+**Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.22.1), `pytest tests/test_model_scavenger.py tests/test_intelligence_reporter.py tests/test_console_dashboard.py -q` (42 hermetic), `python talos.py --scout-models --all --report-only` (exit 0), `python src/utils/verify_dependency_map.py --ci` (0/0/0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD).
 
 ---
 

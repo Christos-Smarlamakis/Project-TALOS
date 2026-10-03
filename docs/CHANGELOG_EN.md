@@ -2,6 +2,28 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.22.1] - 2026-10-03 -- Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization
+
+### Added
+
+- **Orphan Database Consolidation** (`src/core/database_manager.py`): `merge_orphan_databases(target_profile_name="uav_mission_planning")` scans the legacy root database (`data/talos_research.db` and, for historical compatibility, `data/papers.db`) plus every non-active `_profiles/<name>/` database, and migrates all non-duplicate papers into the canonical active profile. Deduplication matches on lowercased DOI first and falls back to the SHA-256 digest of the normalized title. The merge is insert-only (zero data loss), idempotent, and auto-runs exactly once per process via the default-path branch of `DatabaseManager.__init__`.
+
+- **Unified Rich Sub-Menu Engine** (`src/utils/console_dashboard/submenu_renderer.py`): `RichSubmenuRenderer` / `render_submenu()` upgrade the primary sub-menus (Universal Search Hub, Configuration & Profiles, Advanced Analysis & Visualizations, DRL Agents & GWO Swarm, and Database Maintenance with PRISMA/PDF Tools) from plain monochrome `questionary` lists into structured two-column Rich tables with category headers, zero-padded numbered badges (`[01]`, `[02]`), optional status tags, and a `[00] Back` row.
+
+- **Dynamic Tool-Count Badges** (`src/utils/console_dashboard/layout_builder.py`): the four main-cockpit panels render centralized tool-count badges -- `[1] Cognitive Mesh & FinOps (16 Tools)`, `[2] Discovery & Harvesting Mesh (11 Tools)`, `[3] Advanced Analysis & PRISMA (16 Tools)`, `[4] DRL Agents & GWO Swarm (10 Tools)`.
+
+### Changed
+
+- **Strict Daemon Profile Binding** (`src/ai/drl/talos_service.py`, `src/ai/drl/live_agent_orchestrator.py`): all background daemons and DRL harvesters bind strictly to `ProfileManager().get_active_profile_db_path()` and emit a `[DAEMON] Operating exclusively on profile: {active_profile}` banner, eliminating any silent fallback to the legacy `data/talos_research.db` path.
+
+- **HUD Telemetry Precision** (`src/utils/console_dashboard/hud_renderer.py`): the telemetry HUD now parses the most recent Model Scout intelligence report (`data/reports/llm_intelligence/llm_market_intelligence_*.md`), with a `data/cache/llm_benchmarks.json` fallback, and renders `Models: 576 (74 Local | 188 Frontier)` in place of the former single-count "Scavenged Models" figure.
+
+- **Model Scout Terminology Formalization** (`src/services/cognitive_mesh/scavenger.py`, `reporter.py`, `talos.py`, `client.py`, `server.py`): `ModelScoutAgent` is now the primary class definition (with `ModelScavengerAgent` retained as a 100 percent backward-compatible module alias); reports are titled "TALOS Model Scout Intelligence Report"; CLI gains `--scout-models` (alias of `--scavenge-models`) and the command palette gains `/scout` (alias of `/scavenge`).
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.22.1); `pytest tests/test_model_scavenger.py tests/test_intelligence_reporter.py tests/test_console_dashboard.py -q` (42 hermetic); `python talos.py --scout-models --all --report-only` (exit 0, dual reports emitted); `python src/utils/verify_dependency_map.py --ci` (0 matched / 0 stale / 0 missing); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.22.0] - 2026-10-03 -- Full-Spectrum Rich Terminal Dashboard 2.0 & Scientific Console Architecture (ISO/IEC 25010 Compliant)
 
 ### Added

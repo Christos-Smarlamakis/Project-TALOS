@@ -2,6 +2,28 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.22.1] - 2026-10-03 -- Εκσυγχρονισμός Πλούσιων Υπομενού, Δέσμευση Προφίλ Δαίμονα & Τυποποίηση Ορολογίας Model Scout
+
+### Προστέθηκε
+
+- **Ενοποίηση Ορφανών Βάσεων Δεδομένων** (`src/core/database_manager.py`): η `merge_orphan_databases(target_profile_name="uav_mission_planning")` σαρώνει τη βάση root (`data/talos_research.db` και, για ιστορική συμβατότητα, `data/papers.db`) και κάθε μη ενεργό προφίλ `_profiles/<name>/`, και μεταφέρει όλα τα μη διπλότυπα papers στο κανονικό ενεργό προφίλ. Η αφαίρεση διπλοτύπων γίνεται πρώτα με DOI (πεζά) και κατόπιν με SHA-256 του κανονικοποιημένου τίτλου. Η συγχώνευση είναι μόνο-εισαγωγής (μηδενική απώλεια δεδομένων), ιδεμποτεντική και εκτελείται αυτόματα μία φορά ανά διεργασία.
+
+- **Ενοποιημένη Μηχανή Πλούσιων Υπομενού** (`src/utils/console_dashboard/submenu_renderer.py`): τα `RichSubmenuRenderer` / `render_submenu()` αναβαθμίζουν τα κύρια υπομενού (Universal Search Hub, Configuration & Profiles, Advanced Analysis & Visualizations, DRL Agents & GWO Swarm, και Database Maintenance με PRISMA/PDF Tools) από απλές μονόχρωμες λίστες `questionary` σε δομημένους δίστηλους Rich πίνακες με κεφαλίδες κατηγοριών, αριθμημένα σήματα (`[01]`, `[02]`), ετικέτες κατάστασης και γραμμή `[00] Back`.
+
+- **Δυναμικά Σήματα Πλήθους Εργαλείων** (`src/utils/console_dashboard/layout_builder.py`): τα τέσσερα πάνελ του κύριου cockpit εμφανίζουν κεντρικοποιημένα σήματα πλήθους εργαλείων -- `[1] Cognitive Mesh & FinOps (16 Tools)`, `[2] Discovery & Harvesting Mesh (11 Tools)`, `[3] Advanced Analysis & PRISMA (16 Tools)`, `[4] DRL Agents & GWO Swarm (10 Tools)`.
+
+### Άλλαξε
+
+- **Αυστηρή Δέσμευση Προφίλ Δαίμονα** (`src/ai/drl/talos_service.py`, `src/ai/drl/live_agent_orchestrator.py`): όλοι οι δαίμονες φόντου και οι συλλέκτες DRL δεσμεύονται αυστηρά στο `ProfileManager().get_active_profile_db_path()` και εκπέμπουν banner `[DAEMON] Operating exclusively on profile: {active_profile}`, εξαλείφοντας κάθε σιωπηλή μετάπτωση στη βάση `data/`.
+
+- **Ακρίβεια Τηλεμετρίας HUD** (`src/utils/console_dashboard/hud_renderer.py`): το HUD αναλύει πλέον την πιο πρόσφατη αναφορά Model Scout (με εφεδρικό το `data/cache/llm_benchmarks.json`) και εμφανίζει `Models: 576 (74 Local | 188 Frontier)`.
+
+- **Τυποποίηση Ορολογίας Model Scout** (`scavenger.py`, `reporter.py`, `talos.py`, `client.py`, `server.py`): το `ModelScoutAgent` είναι πλέον ο κύριος ορισμός κλάσης (το `ModelScavengerAgent` διατηρείται ως 100 τοις εκατό συμβατό ψευδώνυμο)· οι αναφορές τιτλοφορούνται "TALOS Model Scout Intelligence Report"· το CLI αποκτά `--scout-models` (ψευδώνυμο του `--scavenge-models`) και η παλέτα εντολών `/scout`.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.22.1)· `pytest tests/test_model_scavenger.py tests/test_intelligence_reporter.py tests/test_console_dashboard.py -q` (42 ερμητικά)· `python talos.py --scout-models --all --report-only` (έξοδος 0)· `python src/utils/verify_dependency_map.py --ci` (0/0/0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.22.0] - 2026-10-03 -- Πλήρες Φάσμα Rich Τερματικού Πίνακα Ελέγχου 2.0 & Αρχιτεκτονική Επιστημονικής Κονσόλας (Συμμορφούμενο με ISO/IEC 25010)
 
 ### Προστέθηκε

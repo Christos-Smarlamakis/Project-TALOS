@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: dto.py
-Project: TALOS v5.21.1
+Project: TALOS v5.22.1
 Description:
     Standalone Pydantic v2 data-transfer objects for the Cognitive Mesh in-tree
     microservice. This module is the single interchange surface consumed by the
