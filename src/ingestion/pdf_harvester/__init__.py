@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: __init__.py (src/ingestion/pdf_harvester)
-Project: TALOS v5.18.2
+Project: TALOS v5.18.4
 Description:
     Package marker for the Ethical Academic PDF Harvester subsystem. This package
     houses the three modular layers of legal, air-gapped full-text acquisition:

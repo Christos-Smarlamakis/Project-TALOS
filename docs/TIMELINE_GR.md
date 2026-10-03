@@ -4,9 +4,33 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.18.2 -- Επισκευή Checkpoint DRL Net2Net, Hook Close-to-Tray Win32 & Πάροχος Συντόμευσης Επιφάνειας Εργασίας)
+> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.18.4 -- Αυτοθεραπευόμενη Πύλη Εισαγωγής & Επιλογέας Προφίλ Autostart)
 
 ---
+
+## Φάση 76: Αυτοθεραπευόμενη Πύλη Εισαγωγής & Επιλογέας Προφίλ Autostart (v5.18.4)
+
+- [x] **Κατάσταση:** ΟΛΟΚΛΗΡΩΜΕΝΟ (2026-10-03).
+
+- [x] **Υπερκείμενη Αυτοθεραπευόμενη Πύλη Εισαγωγής** -- το `src/ingestion/resilient_gateway.py` εισάγει την `ResilientIngestionGateway`, υπερκείμενο στρώμα αυτοθεραπείας για και τους 18 προσαρμογείς ακαδημαϊκών πηγών. Η `harvest_source()` ταξινομεί αποτυχίες 401/403/«Developer Inactive»/«Quota Exceeded» από εξαιρέσεις ή από συλληφθέν stdout, αποτυγχάνει άμεσα χωρίς καθυστερημένες επαναπροσπάθειες και αντικατοπτρίζει IEEE/Elsevier/Springer μέσω OpenAlex (`primary_location.source.publisher_lineage`), κανονικοποιώντας τα αποτελέσματα με διατήρηση `source=<source_key>`. Τα `daily_search.py` και `historic_search.py` δρομολογούν την `_harvest_single_source()` μέσω της πύλης ώστε κάθε πηγή να κληρονομεί την αυτοθεραπεία.
+
+- [x] **Υποχρεωτική επιλογή προφίλ autostart** -- η `daemon_autostart.py:main()` καθιστά την επιλογή προφίλ Questionary το πρώτο υποχρεωτικό ερώτημα, ακυρώνει καθαρά σε Ctrl+C, αποθηκεύει `daemon_profile` / `daemon_autostart` στο `_profiles/<profile>/config.json` και ενσωματώνει `--profile <target>` στο `talos_daemon_boot.bat` και στη συντόμευση Startup.
+
+- [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose.yml (`talos:5.18.4`) + CITATION.cff (5.18.4, 2026-10-03) + μεταδεδομένα + κανονικά έγγραφα σε v5.18.4 (2026-10-03).
+
+- [x] **Πέρασαν οι πύλες επαλήθευσης** -- compileall, test_system_integrity, test_talos_version (5.18.4), test_resilient_gateway (11 ερμητικές), verify_dependency_map --ci (έξοδος 0), bash -n, σάρωση UTF-8 (0 U+FFFD).
+
+## Φάση 75: Χειρουργική Net2Net Διπλού Checkpoint DRL & Διάθεση Προφίλ Δαίμονα (v5.18.3)
+
+- [x] **Κατάσταση:** ΟΛΟΚΛΗΡΩΜΕΝΟ (2026-10-03).
+
+- [x] **Γνήσια χειρουργική τανυστών εισόδου Net2Net διπλού checkpoint** -- το `scripts/migrate_d3qn_checkpoint.py` πλέον επεξεργάζεται ΚΑΙ ΤΑ ΔΥΟ `models/dddqn_trained.pth` και `src/ai/models/dddqn_trained.pth`, επεκτείνοντας το `lstm1.weight_ih_l0` σε `[512, 25]` και την κεφαλή πλεονεκτήματος σε `[19, 32]` / `[19]` (ονομαστική επαναχαρτογράφηση, σπορά μέσης τιμής στηλών, επαναδεικτοδότηση της ενέργειας Sleep στο 18), εξαλείφοντας οριστικά το `RuntimeError: Expected 23, got 25`· το απαρχαιωμένο αντίγραφο `src/ai/models/` μετανάστευσε 16 -> 18 πηγές / 23 -> 25 διαστάσεις / 17 -> 19 ενέργειες, ενώ το `models/` επαληθεύτηκε idempotent.
+
+- [x] **Διάθεση προφίλ δαίμονα** -- η `daemon_autostart.py:select_daemon_profile()` (διαδραστικός επιλογέας Questionary, προεπιλογή ενεργό προφίλ `uav_mission_planning`) ενσωματώνει `--profile <name>` στο boot batch και στη συντόμευση Startup· το `talos_service.py --profile <name>` ενεργοποιεί το SSOT και εκτυπώνει δυναμικό banner `Version: v5.18.3 | Profile: {active_profile} | Device: {device}`.
+
+- [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose.yml (`talos:5.18.3`) + CITATION.cff (5.18.3, 2026-10-03) + μεταδεδομένα + 19 κανονικά έγγραφα σε v5.18.3 (2026-10-03).
+
+- [x] **Πέρασαν οι πύλες επαλήθευσης** -- compileall, test_system_integrity, test_talos_version (5.18.3), forward pass διπλού checkpoint, banner δαίμονα `--profile`, verify_dependency_map --ci (έξοδος 0), bash -n, σάρωση UTF-8 (0 U+FFFD).
 
 ## Φάση 74: Επισκευή Checkpoint DRL Net2Net, Close-to-Tray Win32 & Πάροχος Επιφάνειας Εργασίας (v5.18.2)
 

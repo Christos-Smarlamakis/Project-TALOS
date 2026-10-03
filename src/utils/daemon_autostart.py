@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: daemon_autostart.py
-Project: TALOS v5.18.2
+Project: TALOS v5.18.4
 Description:
     Windows OS autostart orchestrator for the TALOS 24/7 autonomous daemon.
     Generates a self-contained boot batch script (talos_daemon_boot.bat) that
@@ -16,6 +16,16 @@ Description:
     batch script and the Startup shortcut so the daemon boots into the correct
     isolated workspace SSOT.
 
+    v5.18.3 confirms this selector as the canonical daemon-profile provisioning
+    path: the selected profile is embedded into the generated boot batch and
+    Startup shortcut, and the daemon banner and execution dynamically
+    synchronize to it via ``talos_service.py --profile <name>``.
+
+    v5.18.4 promotes profile selection to the first mandatory prompt of a new
+    ``main()`` provisioning flow, adopts the canonical ``TALOS_QUESTIONARY_STYLE``
+    theme, cancels cleanly on Ctrl+C without mutating autostart state, and
+    persists the selected daemon target into ``_profiles/<profile>/config.json``.
+
     Key design decisions:
     - The generated .bat is human-auditable and lives at the project root.
     - pywin32 (win32com.client) is imported lazily inside the installer so
@@ -27,6 +37,7 @@ Dependencies:
     - os, pathlib: Filesystem and path resolution.
     - win32com.client (pywin32): Windows Shell COM shortcut creation (lazy).
 """
+import json
 import os
 import sys
 from pathlib import Path
@@ -94,12 +105,14 @@ def select_daemon_profile():
     """Prompt the operator to choose the target research profile for the daemon.
 
     Queries ``ProfileManager().list_profiles()`` and renders a questionary
-    select prompt defaulting to the current active profile. When no profiles
-    exist, the active profile is used; when questionary is unavailable (for
-    example a headless boot), the active profile is returned as-is.
+    select prompt (canonical ``TALOS_QUESTIONARY_STYLE``) defaulting to the
+    current active profile. When no profiles exist, the active profile is
+    returned; when questionary is unavailable (for example a headless boot),
+    the active profile is returned as-is. A Ctrl+C cancel returns ``None`` so
+    callers can exit without mutating autostart state.
 
     Returns:
-        str: The selected profile name (never None).
+        str | None: The selected profile name, or None when cancelled.
     """
     try:
         from src.core.profile_manager import ProfileManager
@@ -110,20 +123,31 @@ def select_daemon_profile():
         return "default"
 
     if not profiles:
-        return active
-    if active and active not in profiles:
-        profiles.insert(0, active)
+        return active or "default"
 
     try:
         import questionary
-        choice = questionary.select(
-            "Select the target research profile for the 24/7 background daemon:",
-            choices=profiles,
-            default=active,
-        ).ask()
-        return choice or active
+        from src.utils.ui_theme import TALOS_QUESTIONARY_STYLE
     except Exception:
-        return active
+        return active or "default"
+
+    if active and active not in profiles:
+        profiles.insert(0, active)
+    default_choice = active if active in profiles else (profiles[0] if profiles else "default")
+
+    try:
+        choice = questionary.select(
+            "Select target research profile for the 24/7 background daemon:",
+            choices=profiles,
+            default=default_choice,
+            style=TALOS_QUESTIONARY_STYLE,
+        ).ask()
+    except KeyboardInterrupt:
+        return None
+    except Exception:
+        return active or "default"
+
+    return choice or None
 
 
 def install_windows_autostart(profile_name=None):
@@ -177,6 +201,68 @@ def install_windows_autostart(profile_name=None):
     return shortcut_path
 
 
+def _persist_daemon_config(profile_name):
+    """Persist the selected daemon target into its isolated profile config.
+
+    Scaffolds ``_profiles/<profile_name>/config.json`` from the root working
+    copy when missing and records ``daemon_profile`` / ``daemon_autostart`` so
+    the boot-time daemon resolves the same single source of truth.
+
+    Args:
+        profile_name (str): Target research profile for the daemon.
+
+    Returns:
+        str | None: Absolute path to the persisted config, or None on failure.
+    """
+    try:
+        from src.core.profile_manager import ProfileManager
+        pm = ProfileManager()
+        profile_dir = pm.get_profiles_dir() / profile_name
+        profile_dir.mkdir(parents=True, exist_ok=True)
+        cfg_path = profile_dir / "config.json"
+        if not cfg_path.exists():
+            src = pm.root / "config.json"
+            if not src.exists():
+                src = pm.root / "config.template.json"
+            if src.exists():
+                import shutil
+                shutil.copy2(str(src), str(cfg_path))
+        cfg = {}
+        if cfg_path.exists():
+            try:
+                cfg = json.loads(cfg_path.read_text(encoding="utf-8"))
+            except Exception:
+                cfg = {}
+        cfg["daemon_profile"] = profile_name
+        cfg["daemon_autostart"] = True
+        cfg_path.write_text(
+            json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"  [OK] Daemon configuration persisted: {cfg_path}")
+        return str(cfg_path)
+    except Exception as e:
+        print(f"  [WARN] Could not persist daemon config into '{profile_name}': {e}")
+        return None
+
+
+def main():
+    """Interactive autostart provisioning entry point.
+
+    Profile selection is the FIRST mandatory prompt. On cancel the function
+    exits cleanly without modifying any autostart state; otherwise it persists
+    the selected target and installs the Windows Startup shortcut.
+
+    Returns:
+        str | None: Shortcut path, boot batch path, or None when cancelled.
+    """
+    target_profile = select_daemon_profile()
+    if target_profile is None:
+        print("  [CANCELLED] No profile selected -- autostart left unchanged.")
+        return None
+    _persist_daemon_config(target_profile)
+    result = install_windows_autostart(profile_name=target_profile)
+    print(f"  [OK] TALOS daemon autostart configured for profile: {target_profile}")
+    return result
+
+
 if __name__ == "__main__":
-    profile_name = select_daemon_profile()
-    install_windows_autostart(profile_name=profile_name)
+    main()

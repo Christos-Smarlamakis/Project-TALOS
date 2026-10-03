@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.18.2
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.18.4
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-03
-> **Version:** v5.18.2 -- Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray Hook & Desktop Provisioner
+> **Version:** v5.18.4 -- Self-Healing Ingestion Gateway & Autostart Profile Provisioning
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.18.0" | `config/settings.py` |
+| TALOS_VERSION | "5.18.4" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1244,6 +1244,32 @@ For each evaluated paper, the AI generates:
 - **Autostart profile-target selector** (`src/utils/daemon_autostart.py` + `src/ai/drl/talos_service.py`): `select_daemon_profile()` queries `ProfileManager().list_profiles()` and embeds `--profile <name>` in the generated `talos_daemon_boot.bat` and Startup `.lnk`; `talos_service.py` accepts `--profile <name>` and activates the SSOT via `ProfileManager().set_active_profile()` before loading config/env/model.
 
 **Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.2), `scripts/migrate_d3qn_checkpoint.py` (strict `DuelingLSTM(25, 19)` load), `TalosDRLAgent(25, 19).act(...)` forward pass (exit 0), `python talos.py --create-shortcut` (exit 0), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
+
+### 15.48 Dual-Checkpoint Net2Net Input Surgery, Dynamic Daemon Profile Provisioning, and Zero-Mismatch Execution (v5.18.3)
+
+**Overview:** v5.18.3 performs a genuine dual-checkpoint Net2Net input tensor surgery across BOTH canonical checkpoint locations (`models/dddqn_trained.pth` and `src/ai/models/dddqn_trained.pth`), permanently eliminating the PyTorch forward-pass shape mismatch `RuntimeError: Expected 23, got 25`, and formalises the interactive Questionary daemon-profile provisioning path with dynamic banner synchronisation to the active profile (`uav_mission_planning`).
+
+- **Dual-checkpoint Net2Net input tensor surgery** (`scripts/migrate_d3qn_checkpoint.py`): the migration utility now iterates over both checkpoint paths in a single deterministic pass. For each checkpoint it backs up to `.pth.bak` (created once), inspects `lstm1.weight_ih_l0` (`[512, in_dim]`), and -- when `in_dim != 25` -- builds a `[512, 25]` tensor via name-based column remapping (hour column invariant; existing source columns copied bit-for-bit; newly introduced source columns seeded with the column-mean prior; streak and provider columns shifted). The advantage head `A.weight` is widened to `[19, 32]` / `A.bias` to `[19]` (surviving rows copied, new rows seeded with the top-5 L2-norm mean + 0.05 exploratory bias, Sleep re-indexed to 18), and metadata is updated (`state_dim=25`, `action_dim=19`, 18 `source_names`). The stale `src/ai/models/dddqn_trained.pth` (16 sources / 23 dims / 17 actions) is migrated 16 -> 18 sources / 23 -> 25 dims / 17 -> 19 actions, while the canonical `models/dddqn_trained.pth` is strict-loaded and skipped idempotently.
+
+- **Dynamic daemon profile provisioning** (`src/utils/daemon_autostart.py` + `src/ai/drl/talos_service.py`): `select_daemon_profile()` is the canonical interactive Questionary target-profile selector (querying `ProfileManager().list_profiles()`, defaulting to the active profile `uav_mission_planning`), embedding `--profile <name>` into `talos_daemon_boot.bat` and the Startup `.lnk`. `talos_service.py` parses `--profile <name>` at the head of `main()`, invokes `ProfileManager().set_active_profile(name)` immediately, resolves `active_profile` from the SSOT, and prints a dynamic `Version: v5.18.3 | Profile: {active_profile} | Device: {device}` banner. Every search, evaluation, and database insertion operates exclusively inside `_profiles/{active_profile}/`.
+
+- **Zero-mismatch execution**: `TalosDRLAgent(25, 19)` is constructed with the canonical 25-dim observation and 19-action space (both via dynamic default resolution from the 18-source config and via explicit construction), and `load()` + `act(np.zeros((1, 25)), eps=0.0)` execute with zero shape errors on BOTH checkpoints.
+
+**Verification surface:** `python -m compileall src config tests talos.py scripts` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.3), dual-checkpoint `TalosDRLAgent(25, 19).act(np.zeros((1, 25)))` forward pass (exit 0), daemon `--profile uav_mission_planning` banner confirmation, `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
+
+### 15.49 Overarching Ingestion Gateway, Universal Publisher Mirroring, and Autostart Profile Target Provisioning (v5.18.4)
+
+**Overview:** v5.18.4 introduces a top-level self-healing ingestion gateway (`src/ingestion/resilient_gateway.py`) that wraps all 18 academic source adapters as a single resilient layer, eliminating the futile 5s/10s sleep-retry loops that previously preceded a terminal 401/403/quota failure. The gateway classifies authentication and quota errors from either a raised exception or the source agent's captured stdout, then transparently mirrors failed publishers (IEEE, Elsevier, Springer) through OpenAlex via `primary_location.source.publisher_lineage` filtering, normalizing recovered records to the canonical paper schema with the original source key preserved. The release also promotes the daemon profile selector to the first mandatory prompt of the autostart provisioning flow.
+
+- **ResilientIngestionGateway** (`src/ingestion/resilient_gateway.py`): `harvest_source(source_instance, query, criteria, date_limit, source_key, days_to_search, mailto)` invokes `fetch_new_papers()` under `redirect_stdout`, then runs `_detect_auth_error()` over a marker set (`401`, `403`, `unauthorized`, `forbidden`, `developer inactive`, `quota exceeded`, `quota`, `rate limit`). On a hit it fast-fails with zero additional retries and consults the canonical `PUBLISHER_FALLBACK_MAP`.
+
+- **Universal publisher-mirroring fallback matrix**: `ieee -> "Institute of Electrical and Electronics Engineers"`, `elsevier -> "Elsevier"`, `springer -> "Springer Nature"`. `_mirror_via_openalex()` GETs `https://api.openalex.org/works` with `search=<query>` and `filter=primary_location.source.publisher_lineage:"<publisher>"`, reconstructs abstracts from the inverted index, and `_normalize_openalex_work()` emits the canonical schema with `source=<source_key>`. Per-call `last_recovered` / `last_error` / `last_status` state keeps the COMPLETED / FAILED / recovered telemetry intact.
+
+- **Orchestrator integration**: `daily_search.py` and `historic_search.py` route `_harvest_single_source()` through the gateway, so all 18 sources inherit self-healing without any per-source patching.
+
+- **Mandatory autostart profile selection** (`src/utils/daemon_autostart.py`): `main()` makes the Questionary profile list the first prompt (canonical `TALOS_QUESTIONARY_STYLE`), cancels cleanly on Ctrl+C, persists `daemon_profile` / `daemon_autostart` into `_profiles/<profile>/config.json`, and embeds `--profile <target>` in `talos_daemon_boot.bat` and the Startup shortcut.
+
+**Verification surface:** `python -m compileall src config tests talos.py scripts` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.4), `pytest tests/test_resilient_gateway.py -q` (11 hermetic -- simulated 403 / "Developer Inactive" triggers the OpenAlex mirror cleanly), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
 
 ---
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: citation_snowballing.py
-Project: TALOS v5.18.2
+Project: TALOS v5.18.4
 Description:
     Autonomous citation snowballing engine. Starting from a seed paper (DOI, title,
     or database ID), it traverses the academic citation graph in two directions:

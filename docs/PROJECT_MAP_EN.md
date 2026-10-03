@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.18.2
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.18.4
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-10-03 (v5.18.2 -- Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray Hook & Desktop Provisioner)
+> **Last Updated:** 2026-10-03 (v5.18.4 -- Self-Healing Ingestion Gateway & Autostart Profile Provisioning)
 
 ---
 
@@ -176,6 +176,10 @@ src/ingestion/*.py
   +-- src/core/database_manager.py
   +-- src/integration/synapse_client.py
   +-- src/integration/visualizer_bridge.py
+  +-- src/ingestion/resilient_gateway.py
+
+src/ingestion/resilient_gateway.py
+  +-- src/utils/http_client.py
 
 src/ingestion/sources/*.py
   +-- src/utils/http_client.py
@@ -292,6 +296,8 @@ src/core/ai_manager.py
 | **PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine (v5.16.0)** | `src/prisma/quality_appraisal.py`, `src/core/database_manager.py`, `src/utils/bibtex_exporter.py` | `KitchenhamRubric` / `QualityAppraisalResult` / `PrismaQualityAppraiser`; `map_evidence_quadrant()` (2D quadrants, tau_rel=7.0 / tau_qual=7.5); `appraise_paper()` / `appraise_candidates_batch(force_reappraise)` (ThreadPoolExecutor + `Semaphore(2)`); `update_paper_quality()` (`quality_score`/`quality_rubric_json`/`evidence_quadrant`); `export_library(min_quality, quadrant)` (BibTeX dual-filter + `note` field); CLI `--appraise-quality [--force]` + TUI Group 3 Option 15 (force re-appraisal prompt, v5.17.1) |
 | **Pluggable Provider Registry & Hardware-Aware Model Advisor (v5.16.2)** | `src/core/provider_registry.py`, `src/core/hardware_advisor.py`, `src/core/ai_manager.py`, `talos.py`, `src/utils/help_system.py` | `ProviderRegistry` (Open-Closed Principle, 10 providers); `HardwareModelAdvisor` (hardware profile, 4-bit VRAM budget, role-based stack, SOTA radar); `AIManager.list_active_providers()` / `get_provider_descriptor()` (zero regression); CLI `--hardware-advisor` / `--recommend-models` + TUI Option 8 |
 
+| **Self-Healing Ingestion Gateway & Autostart Profile Selector (v5.18.4)** | `src/ingestion/resilient_gateway.py`, `src/ingestion/daily_search.py`, `src/ingestion/historic_search.py`, `src/utils/daemon_autostart.py` | `ResilientIngestionGateway` (fast-fail 401/403/Quota, OpenAlex mirroring for IEEE/Elsevier/Springer, `source=<source_key>`) · `main()` Questionary profile selector (Step 1) + `daemon_profile` persistence into `_profiles/<profile>/config.json` |
+| **Dual-Checkpoint Net2Net Surgery & Daemon Profile Provisioning (v5.18.3)** | `scripts/migrate_d3qn_checkpoint.py`, `src/utils/daemon_autostart.py`, `src/ai/drl/talos_service.py` | Genuine Net2Net input tensor surgery on BOTH checkpoints (`models/` + `src/ai/models/`, `lstm1.weight_ih_l0` [512, 25], `A.weight` [19, 32], eliminating `RuntimeError: Expected 23, got 25`); `select_daemon_profile()` (Questionary) + `--profile <name>` with dynamic banner synced to `uav_mission_planning` |
 | **Net2Net Checkpoint Repair, Win32 Close-to-Tray, Desktop Shortcut & Autostart Profile Selector (v5.18.2)** | `scripts/migrate_d3qn_checkpoint.py`, `src/utils/tray_icon.py`, `src/utils/desktop_shortcut.py`, `src/utils/daemon_autostart.py`, `src/ai/drl/talos_service.py`, `talos.py` | Idempotent Net2Net migration confirmation/seal (18 sources / 25 dims, zero-error forward pass); `enable_close_to_tray()` (WNDPROC, SW_HIDE + `[TRAY]` notice); `create_desktop_shortcut()` (`TALOS Research Hub.lnk` via `WScript.Shell` COM); `select_daemon_profile()` + `--profile <name>` |
 
 ## 9. Auxiliary Files
@@ -332,8 +338,8 @@ src/core/ai_manager.py
 
 ---
 
-> **Last Updated:** 2026-10-03 (v5.18.2 -- Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray Hook & Desktop Provisioner)
-> **Project Version:** v5.18.2
+> **Last Updated:** 2026-10-03 (v5.18.4 -- Self-Healing Ingestion Gateway & Autostart Profile Provisioning)
+> **Project Version:** v5.18.4
 > **Total .py modules under src/:** 103 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 6 + ingestion/sources 18 + search 3 + integration 3 + utils 23 + api 4 + prisma 8 + mcp_server 1)
 
 

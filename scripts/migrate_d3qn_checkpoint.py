@@ -1,23 +1,28 @@
 # -*- coding: utf-8 -*-
 """
 Module: migrate_d3qn_checkpoint.py
-Project: TALOS v5.18.2
+Project: TALOS v5.18.4
 Description:
     One-shot Net2Net tensor-surgery utility that migrates the trained DDDQN
-    checkpoint ``models/dddqn_trained.pth`` from the legacy 14-source action
-    space to the 18-source action space introduced in v5.15.4, preserving all
-    previously trained weights exactly.
+    checkpoints in BOTH canonical locations (``models/dddqn_trained.pth`` and
+    ``src/ai/models/dddqn_trained.pth``) to the canonical 18-source / 25-dim
+    action and observation spaces, preserving all previously trained weights
+    exactly. This permanently eliminates the PyTorch forward-pass shape
+    mismatch ``RuntimeError: Expected 23, got 25`` by expanding the stale
+    ``lstm1.weight_ih_l0`` from ``[512, 23]`` to ``[512, 25]`` and the
+    advantage head from ``[17, 32]`` to ``[19, 32]``.
 
     The migration performs two complementary Net2WiderNet expansions:
 
     1. Output (advantage) head -- ``A.weight`` and ``A.bias`` are widened from
        ``[old_action_dim, 32]`` / ``[old_action_dim]`` to ``[19, 32]`` / ``[19]``
        (18 academic sources + 1 sleep action). Rows for sources that already
-       exist in the legacy checkpoint are copied bit-for-bit. Rows for the four
-       newly introduced sources (``openaire``, ``openreview``, ``nasa_ntrs``,
-       ``hal_inria``) are initialised optimistically: the mean of the top-5
-       existing source rows (ranked by L2 norm) plus a +0.05 exploratory bias.
-       The sleep row is re-indexed from its legacy position to index 18.
+       exist in the legacy checkpoint are copied bit-for-bit. Rows for newly
+       introduced sources (for the stale 16-source checkpoint these are
+       ``nasa_ntrs`` and ``hal_inria``) are initialised optimistically: the
+       mean of the top-5 existing source rows (ranked by L2 norm) plus a +0.05
+       exploratory bias. The sleep row is re-indexed from its legacy position
+       to index 18.
 
     2. Input (feature) head -- ``lstm1.weight_ih_l0`` is widened from
        ``[512, old_state_dim]`` to ``[512, 25]``. Columns are remapped by
@@ -31,9 +36,11 @@ Description:
     verified by instantiating ``DuelingLSTM(input_dim=25, output_dim=19)`` and
     running ``load_state_dict(strict=True)``.
 
-    v5.18.2: this utility is confirmed as the canonical Net2Net repair tool and
-    is now idempotent -- re-running it against an already-migrated 18-source
-    checkpoint verifies the strict load and exits without rewriting the file.
+    v5.18.3: this utility now operates over BOTH checkpoint locations in a
+    single linear pass. It remains idempotent -- re-running it against an
+    already-migrated 18-source checkpoint verifies the strict load and exits
+    without rewriting that file, while the stale ``src/ai/models/`` copy is
+    surgically expanded to 18 sources / 25 dims / 19 actions.
 
 Dependencies:
     - torch: tensor loading, surgical expansion, and re-serialisation.
@@ -52,8 +59,10 @@ while _PROJECT_ROOT and not os.path.exists(os.path.join(_PROJECT_ROOT, "talos.py
 if _PROJECT_ROOT:
     sys.path.insert(0, _PROJECT_ROOT)
 
-CHECKPOINT_PATH = os.path.join(_PROJECT_ROOT, "models", "dddqn_trained.pth")
-BACKUP_PATH = CHECKPOINT_PATH + ".bak"
+CHECKPOINT_PATHS = [
+    os.path.join(_PROJECT_ROOT, "models", "dddqn_trained.pth"),
+    os.path.join(_PROJECT_ROOT, "src", "ai", "models", "dddqn_trained.pth"),
+]
 
 # -- Canonical 18-source academic mesh. The runtime observation order produced
 #    by talos_env._load_source_list() is ALPHABETICAL (it sorts the config keys
@@ -99,21 +108,26 @@ def _locate_advantage_head(weights):
     return weight_key, bias_key, action_dim, hidden_dim
 
 
-def migrate():
-    """Execute the Net2Net checkpoint surgery and write the migrated file."""
-    if not os.path.exists(CHECKPOINT_PATH):
+def _migrate_one(checkpoint_path):
+    """Execute the Net2Net checkpoint surgery and write one migrated file.
+
+    Args:
+        checkpoint_path (str): Absolute path to the checkpoint to migrate.
+    """
+    backup_path = checkpoint_path + ".bak"
+    if not os.path.exists(checkpoint_path):
         raise FileNotFoundError(
-            "Checkpoint not found: {}. Run training first.".format(CHECKPOINT_PATH))
+            "Checkpoint not found: {}. Run training first.".format(checkpoint_path))
 
     # -- Safety backup (created exactly once, preserving the true original). --
-    if not os.path.exists(BACKUP_PATH):
-        shutil.copy2(CHECKPOINT_PATH, BACKUP_PATH)
-        print("[BACKUP] Created safety backup: {}".format(BACKUP_PATH))
+    if not os.path.exists(backup_path):
+        shutil.copy2(checkpoint_path, backup_path)
+        print("[BACKUP] Created safety backup: {}".format(backup_path))
     else:
-        print("[BACKUP] Existing backup found ({}); preserving original.".format(BACKUP_PATH))
+        print("[BACKUP] Existing backup found ({}); preserving original.".format(backup_path))
 
     # -- Load the checkpoint dict (metadata + weights). --
-    checkpoint = torch.load(CHECKPOINT_PATH, map_location="cpu", weights_only=False)
+    checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     if not isinstance(checkpoint, dict) or "weights" not in checkpoint:
         raise RuntimeError("Unsupported checkpoint format: expected dict with 'weights' key.")
 
@@ -241,14 +255,14 @@ def migrate():
     checkpoint["source_names"] = list(TARGET_SOURCES)
 
     # -- 4. Save the migrated checkpoint. --
-    torch.save(checkpoint, CHECKPOINT_PATH)
-    print("[SAVE] Migrated checkpoint written: {}".format(CHECKPOINT_PATH))
+    torch.save(checkpoint, checkpoint_path)
+    print("[SAVE] Migrated checkpoint written: {}".format(checkpoint_path))
 
     # -- 5. Verify clean strict load into the canonical 18-source network. --
     from src.ai.drl.drl_networks import DuelingLSTM
 
     model = DuelingLSTM(input_dim=new_state_dim, output_dim=new_action_dim)
-    reloaded = torch.load(CHECKPOINT_PATH, map_location="cpu", weights_only=True)
+    reloaded = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
     model.load_state_dict(reloaded["weights"])  # strict=True by default
 
     assert reloaded["state_dim"] == new_state_dim
@@ -259,6 +273,21 @@ def migrate():
         new_state_dim, new_action_dim))
     print("[DONE] Net2Net migration complete: {} -> {} sources, {} -> {} actions, {} -> {} state dims.".format(
         num_old_sources, len(TARGET_SOURCES), old_action_dim, new_action_dim, old_state_dim, new_state_dim))
+
+
+def migrate():
+    """Execute the dual-checkpoint Net2Net surgery across both canonical paths.
+
+    Iterates over ``models/dddqn_trained.pth`` and
+    ``src/ai/models/dddqn_trained.pth`` in a single deterministic pass. Each
+    path is migrated independently (backup -> expand -> save -> strict verify),
+    so an already-canonical checkpoint is verified and skipped while a stale
+    checkpoint is surgically expanded to 18 sources / 25 dims / 19 actions.
+    """
+    for checkpoint_path in CHECKPOINT_PATHS:
+        print("\n[===] Processing checkpoint: {}".format(checkpoint_path))
+        _migrate_one(checkpoint_path)
+    print("\n[ALL] Dual-checkpoint Net2Net surgery complete.")
 
 
 if __name__ == "__main__":

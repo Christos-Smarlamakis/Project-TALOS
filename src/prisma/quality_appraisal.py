@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: quality_appraisal.py
-Project: TALOS v5.18.2
+Project: TALOS v5.18.4
 Description:
     Standardized PRISMA Quality Appraisal engine implementing the Kitchenham et
     al. (2007) guidelines for systematic literature reviews in software

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_fulltext_search.py
-Project: TALOS v5.18.2
+Project: TALOS v5.18.4
 Description:
     Hermetic unit tests for the SQLite FTS5 full-text search engine. Verifies
     that the ``papers_fts`` virtual table is created, that ``index_paper``

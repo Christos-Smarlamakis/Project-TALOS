@@ -44,6 +44,7 @@ from contextlib import redirect_stdout
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from src.ingestion.sources import SOURCE_REGISTRY, ALL_SOURCE_NAMES
+from src.ingestion.resilient_gateway import ResilientIngestionGateway
 
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
@@ -146,10 +147,12 @@ def _deduplicate_papers(papers):
 def _harvest_single_source(source, source_key, query, criteria, date_limit):
     """Harvest one source agent in a dedicated worker thread.
 
-    Captures the agent's stdout in-process so interleaved prints do not corrupt
-    the Rich Live telemetry table, and wraps the fetch in a full exception
-    guard so a timeout or HTTP error in any single provider can never abort the
-    overall ingestion run.
+    Routes the fetch through ``ResilientIngestionGateway`` so every one of the
+    18 sources inherits self-healing: authentication / quota errors fast-fail
+    without delayed retries and -- for IEEE, Elsevier, and Springer -- are
+    transparently mirrored through OpenAlex. The gateway also captures stdout
+    in-process so interleaved prints do not corrupt the Rich Live telemetry
+    table.
 
     Args:
         source (object): Instantiated source agent exposing fetch_new_papers().
@@ -163,34 +166,43 @@ def _harvest_single_source(source, source_key, query, criteria, date_limit):
     """
     started = time.time()
     _emit_visualizer_event("source_searching", {"source": source_key, "query": query})
-    try:
-        buf = io.StringIO()
-        with redirect_stdout(buf):
-            papers = source.fetch_new_papers() or []
-        elapsed = time.time() - started
-        if papers:
-            _emit_visualizer_event("source_status", {
-                "source": source_key, "status": "healthy", "count": len(papers),
-            })
-        else:
-            logger.info("No new papers from %s", type(source).__name__)
+    gateway = ResilientIngestionGateway()
+    papers = gateway.harvest_source(
+        source, query=query, criteria=criteria, date_limit=date_limit,
+        source_key=source_key)
+    elapsed = time.time() - started
+
+    if gateway.last_recovered:
+        _emit_visualizer_event("source_status", {
+            "source": source_key, "status": "recovered", "count": len(papers),
+        })
         return {
             "source": source_key, "status": "COMPLETED",
             "papers": papers, "error": None, "elapsed": elapsed,
         }
-    except Exception as exc:  # noqa: BLE001 - per-source isolation
-        elapsed = time.time() - started
-        logger.error("Error fetching from %s: %s. Skipping source.", type(source).__name__, exc)
-        message = str(exc)
-        if "403" in message or "forbidden" in message.lower():
-            message = "403 Forbidden / Rate Limited"
+    if papers:
         _emit_visualizer_event("source_status", {
-            "source": source_key, "status": "error", "message": message,
+            "source": source_key, "status": "healthy", "count": len(papers),
+        })
+        return {
+            "source": source_key, "status": "COMPLETED",
+            "papers": papers, "error": None, "elapsed": elapsed,
+        }
+    if gateway.last_error:
+        logger.error("Error fetching from %s: %s. Skipping source.",
+                     type(source).__name__, gateway.last_error)
+        _emit_visualizer_event("source_status", {
+            "source": source_key, "status": "error", "message": gateway.last_error,
         })
         return {
             "source": source_key, "status": "FAILED",
-            "papers": [], "error": message, "elapsed": elapsed,
+            "papers": [], "error": gateway.last_error, "elapsed": elapsed,
         }
+    logger.info("No new papers from %s", type(source).__name__)
+    return {
+        "source": source_key, "status": "COMPLETED",
+        "papers": [], "error": None, "elapsed": elapsed,
+    }
 
 
 def _emit_visualizer_event(event_type: str, payload: dict) -> None:

@@ -2,6 +2,44 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.18.4] - 2026-10-03 -- Self-Healing Ingestion Gateway & Autostart Profile Provisioning
+
+### Added
+
+- **Overarching Resilient Ingestion Gateway** (`src/ingestion/resilient_gateway.py`): a top-level `ResilientIngestionGateway` class now wraps all 18 academic source adapters as a single self-healing layer. `harvest_source(source_instance, query, criteria, date_limit, source_key=...)` invokes the primary `fetch_new_papers()` under in-process stdout capture and classifies authentication / quota failures (HTTP 401/403, "Developer Inactive", "Quota Exceeded") from either a raised exception or the printed error markers. On a terminal auth failure the gateway fast-fails immediately with zero delayed sleep retries, then consults the canonical `PUBLISHER_FALLBACK_MAP` (`ieee`, `elsevier`, `springer`) and transparently mirrors the failed publisher through OpenAlex using `filter=primary_location.source.publisher_lineage:"<publisher>"`, normalizing recovered records to the canonical paper schema with `source=<source_key>` preserved. Unmapped sources and failed mirrors return `[]` cleanly without ever raising.
+
+- **Universal publisher-mirroring fallback matrix**: IEEE -> "Institute of Electrical and Electronics Engineers", Elsevier -> "Elsevier", Springer -> "Springer Nature". The gateway reconstructs abstracts from OpenAlex's inverted index, preserves the original source slug, and exposes per-call `last_recovered` / `last_error` / `last_status` state so the harvest envelope keeps its COMPLETED / FAILED / recovered telemetry.
+
+- **Autostart profile selector as Step 1** (`src/utils/daemon_autostart.py`): a new `main()` provisioning flow makes profile selection the FIRST mandatory prompt (canonical `TALOS_QUESTIONARY_STYLE`, defaulting to the active profile), cancels cleanly on Ctrl+C without mutating autostart state, and persists the selected target (`daemon_profile` / `daemon_autostart`) into `_profiles/<profile>/config.json` before generating `talos_daemon_boot.bat` (with `--profile <target>`) and installing the Startup shortcut.
+
+### Changed
+
+- **Version strings synchronized to 5.18.4** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py` version assertion), `docker-compose.yml` (`talos:5.18.4`), `CITATION.cff` (version 5.18.4, date-released 2026-10-03), `config.template.json`, tray/visualizer/wizard/strategy/diagnostics/bibtex/help metadata, `src/core/`, `src/prisma/`, `src/search/`, `src/ingestion/pdf_harvester/` docstrings, and all canonical documentation files (dated 2026-10-03).
+
+- **ROADMAP.md**: current version advanced to v5.18.4 (Complete, 2026-10-03); CORTEX & n8n orchestration retained at v5.19.0.
+
+### Verification
+
+- `python -m compileall src config tests talos.py scripts` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.4); `pytest tests/test_resilient_gateway.py -q` (11 hermetic tests -- simulated 403 / "Developer Inactive" triggers the OpenAlex mirror fallback cleanly); `python src/utils/verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
+## [v5.18.3] - 2026-10-03 -- DRL Dual-Checkpoint Net2Net Surgery & Daemon Profile Provisioning Engine
+
+### Added
+
+- **Genuine dual-checkpoint Net2Net input tensor surgery** (`scripts/migrate_d3qn_checkpoint.py`): the migration utility now iterates over BOTH canonical checkpoint locations (`models/dddqn_trained.pth` and `src/ai/models/dddqn_trained.pth`) in a single deterministic pass. For each checkpoint it backs up to `.pth.bak` (created once), inspects `lstm1.weight_ih_l0` (`[512, in_dim]`), and -- when `in_dim != 25` -- builds a `[512, 25]` tensor via name-based column remapping (hour column invariant; existing source columns copied bit-for-bit; newly introduced source columns seeded with the column-mean prior; streak and provider columns shifted to their trailing positions). The advantage head `A.weight` is widened to `[19, 32]` / `A.bias` to `[19]` (surviving source rows copied, new source rows seeded with the mean of the top-5 L2-norm rows + 0.05 exploratory bias, the Sleep action re-indexed to 18), and metadata is updated (`state_dim=25`, `action_dim=19`, 18 `source_names`). This permanently eliminates the PyTorch forward-pass shape mismatch `RuntimeError: Expected 23, got 25`: the stale `src/ai/models/dddqn_trained.pth` (16 sources / 23 dims / 17 actions) is surgically expanded to 18 sources / 25 dims / 19 actions, while the already-canonical `models/dddqn_trained.pth` is strict-loaded and skipped idempotently.
+
+- **Daemon profile provisioning confirmation** (`src/utils/daemon_autostart.py` + `src/ai/drl/talos_service.py`): `select_daemon_profile()` is confirmed as the canonical interactive Questionary target-profile selector (defaulting to the active profile, e.g. `uav_mission_planning`), embedding `--profile <name>` into `talos_daemon_boot.bat` and the Startup `.lnk`. `talos_service.py` parses `--profile <name>` at the head of `main()`, invokes `ProfileManager().set_active_profile(name)` immediately, resolves `active_profile` from the SSOT, and dynamically prints `Version: v5.18.3 | Profile: {active_profile} | Device: {device}` -- every search, evaluation, and database insertion operates exclusively inside `_profiles/{active_profile}/`.
+
+### Changed
+
+- **Version strings synchronized to 5.18.3** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py` version assertion), `docker-compose.yml` (`talos:5.18.3`), `CITATION.cff` (version 5.18.3, date-released 2026-10-03), `config.template.json`, tray/visualizer/wizard/strategy/diagnostics/bibtex/help metadata, `src/core/`, `src/prisma/`, `src/search/`, `src/ingestion/pdf_harvester/` docstrings, and all 19 canonical documentation files (dated 2026-10-03).
+
+- **ROADMAP.md**: current version advanced to v5.18.3 (Complete, 2026-10-03); CORTEX & n8n orchestration retained at v5.19.0.
+
+### Verification
+
+- `python -m compileall src config tests talos.py scripts` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.3); dual-checkpoint forward pass `TalosDRLAgent(25, 19).act(np.zeros((1, 25)))` on both checkpoints (exit 0); daemon `--profile uav_mission_planning` banner confirmation; `python src/utils/verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.18.2] - 2026-10-03 -- Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray Hook & Desktop Provisioner
 
 ### Added

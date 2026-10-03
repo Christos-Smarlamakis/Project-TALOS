@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_provider_registry.py
-Project: TALOS v5.18.2
+Project: TALOS v5.18.4
 Description:
     Unit tests for the pluggable ProviderRegistry and ProviderDescriptor
     value object (v5.16.2). Verifies the Open-Closed Principle contract:
