@@ -810,6 +810,10 @@ def main():
 
     # ── Load the trained model if available (profile-aware path) ────────────
     # Check profile-specific model first, then global
+    # -- v5.18.2: canonical repository root. The module-level _P walks up the
+    #    tree from src/ai/drl until talos.py is found, so the resolved path is
+    #    independent of the current working directory. --
+    project_root = _P
     model_paths = [
         os.path.join(project_root, '_profiles', active_profile, 'models', 'dddqn_trained.pth'),
         os.path.join(os.path.dirname(__file__), '..', 'models', 'dddqn_trained.pth'),
