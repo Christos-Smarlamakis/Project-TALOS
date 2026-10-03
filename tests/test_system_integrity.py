@@ -154,7 +154,6 @@ SCRIPTS_TO_SKIP = {
     "zotero_connector.py": "requires pyzotero + Zotero keys",
     "data_enricher.py": "requires .env UNPAYWALL_EMAIL",
     "metadata_enricher.py": "requires runtime configuration",
-    "pdf_downloader.py": "requires runtime PDF download setup",
     "talos_service.py": "pre-existing import path issue (imports scripts.* not src.*)",
     "train_agent.py": "pre-existing import path issue (imports core.* not src.core.*)",
 }

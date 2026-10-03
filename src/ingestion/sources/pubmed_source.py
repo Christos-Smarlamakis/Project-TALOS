@@ -17,7 +17,13 @@ Description:
     library. Fetches papers matching the configured query with date filtering.
     Does not require an API key but needs a valid email address in config.
 """
-from pymed import PubMed
+try:
+    from pymed import PubMed
+    PYMED_AVAILABLE = True
+except ImportError:
+    PubMed = None
+    PYMED_AVAILABLE = False
+
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
@@ -30,10 +36,17 @@ class PubMedSource:
         self.mailto = config.get("mailto", "a@b.com")
         if self.mailto == "a@b.com":
             print("WARNING: Using default email for PubMed. Please set 'mailto' in config.json.")
-        self.pubmed = PubMed(tool="ProjectTALOS", email=self.mailto)
-        print("INFO: PubMedSource initialized.")
+        if PYMED_AVAILABLE:
+            self.pubmed = PubMed(tool="ProjectTALOS", email=self.mailto)
+            print("INFO: PubMedSource initialized.")
+        else:
+            self.pubmed = None
+            print("[WARNING] pymed library not installed. PubMed source disabled.")
 
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
+        if not PYMED_AVAILABLE:
+            print("[WARNING] pymed library not installed. PubMed source disabled.")
+            return []
         print(f"-> Searching PubMed...")
         cutoff_date = (datetime.now() - timedelta(days=self.days_to_search)).strftime('%Y/%m/%d')
         full_query = f'({self.query}) AND ("{cutoff_date}"[Date - Publication] : "3000"[Date - Publication])'

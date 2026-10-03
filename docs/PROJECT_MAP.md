@@ -105,7 +105,7 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 | `src/ai/embeddings/` | 2 | `embedding_generator.py`, `db_embedding_upgrade.py` |
 | `src/ai/llm/` | 4 | `model_manager.py`, `query_translator.py`, `research_pivot.py`, `model_discovery.py` |
 | `src/analysis/` | 10 | `citation_analyzer.py`, `author_profiler.py`, `recommender.py`, `knowledge_path_generator.py`, `trend_analyzer.py`, `graphify_adapter.py`, `generate_baseline_report.py`, κ.ά. |
-| `src/ingestion/` | 23 | 16 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `pdf_downloader.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
+| `src/ingestion/` | 22 | 16 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
 | `src/utils/` | 18 | `db_stats.py`, `logger.py`, `tray_icon.py`, `help_system.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, `http_client.py`, `snapshot_manager.py`, `academic_export.py`, κ.ά. |
 | `src/prisma/` | 8 | `dspy_signatures.py` (τυπικές δηλωτικές υπογραφές Pydantic v2), `dspy_modules.py` (PlanEval: Planner/Evaluator/EligibilityJudge/Executor), `swarm_evaluators.py` (Επίπεδο-1 σμήνος ομότιμης αναθεώρησης 3 πρακτόρων + Kappa του Cohen + διαιτητής συναίνεσης), `quality_swarm.py` (Επίπεδο-2 Εγκληματολογικό Σμήνος Ποιότητας: `SkillCompiler`, `SmartSectionSlicer`, `TheoryAuditor`/`OperationalAuditor`/`BenchmarkAuditor`/`OpenScienceAuditor`, `KitchenhamQualitySynthesizer`, `SwarmQualityVerdict`), `mermaid_generator.py`, `scoping_review_synthesizer.py`, `quality_appraisal.py` (ρουμπρίκα Kitchenham 2007 + 2D τεταρτημόρια), συν πακέτο `skills/` με 4 πρότυπα αγνωστικισμού πεδίου |
 
@@ -326,6 +326,6 @@ src/core/ai_manager.py
 
 > **Τελευταία Ενημέρωση:** 2026-10-02 (v5.18.0 -- Ηθικός Συλλέκτης Ακαδημαϊκών PDF, Έξυπνος Τεμαχισμός Ενοτήτων & Μηχανή SQLite FTS5)
 > **Έκδοση Project:** v5.18.0
-> **Συνολικά .py modules στο src/:** 103 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 8 + mcp_server 1)
+> **Συνολικά .py modules στο src/:** 102 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 6 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 8 + mcp_server 1)
 
 

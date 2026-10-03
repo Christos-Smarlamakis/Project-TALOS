@@ -105,7 +105,7 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 | `src/ai/embeddings/` | 2 | `embedding_generator.py`, `db_embedding_upgrade.py` |
 | `src/ai/llm/` | 4 | `model_manager.py`, `query_translator.py`, `research_pivot.py`, `model_discovery.py` |
 | `src/analysis/` | 10 | `citation_analyzer.py`, `author_profiler.py`, `recommender.py`, `knowledge_path_generator.py`, `trend_analyzer.py`, `graphify_adapter.py`, `generate_baseline_report.py`, etc. |
-| `src/ingestion/` | 25 | 18 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `pdf_downloader.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
+| `src/ingestion/` | 24 | 18 source agents + `daily_search.py`, `historic_search.py`, `grey_literature_miner.py`, `zotero_connector.py`, `metadata_enricher.py`, `data_enricher.py` |
 | `src/utils/` | 18 | `db_stats.py`, `logger.py`, `tray_icon.py`, `help_system.py`, `model_provisioner.py`, `daemon_autostart.py`, `ui_theme.py`, `api_health_check.py`, `http_client.py`, `snapshot_manager.py`, `academic_export.py`, etc. |
 | `src/prisma/` | 8 | `dspy_signatures.py` (typed declarative Pydantic-v2 signatures), `dspy_modules.py` (PlanEval: Planner/Evaluator/EligibilityJudge/Executor), `swarm_evaluators.py` (Tier-1 3-agent peer-review swarm + Cohen's Kappa + consensus arbiter), `quality_swarm.py` (Tier-2 Forensic Quality Swarm: `SkillCompiler`, `SmartSectionSlicer`, `TheoryAuditor`/`OperationalAuditor`/`BenchmarkAuditor`/`OpenScienceAuditor`, `KitchenhamQualitySynthesizer`, `SwarmQualityVerdict`), `mermaid_generator.py`, `scoping_review_synthesizer.py`, `quality_appraisal.py` (Kitchenham 2007 rubric + 2D quadrants), plus `skills/` package with 4 domain-agnostic templates |
 
@@ -326,6 +326,6 @@ src/core/ai_manager.py
 
 > **Last Updated:** 2026-10-02 (v5.18.0 -- Ethical Academic PDF Harvester, Smart Section Slicing & SQLite FTS5 Engine)
 > **Project Version:** v5.18.0
-> **Total .py modules under src/:** 103 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 7 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 8 + mcp_server 1)
+> **Total .py modules under src/:** 102 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 6 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 8 + mcp_server 1)
 
 

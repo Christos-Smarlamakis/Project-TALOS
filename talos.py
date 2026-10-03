@@ -498,7 +498,6 @@ _SCRIPT_MAP = {
     "daily_search.py":            "ingestion",
     "historic_search.py":         "ingestion",
     "grey_literature_miner.py":   "ingestion",
-    "pdf_downloader.py":          "ingestion",
     "zotero_connector.py":        "ingestion",
     "metadata_enricher.py":       "ingestion",
     "data_enricher.py":           "ingestion",
@@ -819,13 +818,12 @@ def database_data_menu(python_exe):
         "5. Batch Vector Embedding Generation",
         "6. Vector Embedding Schema Migration",
         "7. Metadata Enrichment",
-        "8. Open Access PDF Downloader",
-        "9. Unpaywall Data Enricher",
-        "10. Zotero Cloud Connector",
-        "11. View Recent Evaluation History",
-        "12. Export Curated Papers to BibTeX / LaTeX (.bib)",
-        "13. Harvest Open Access Full-Text PDFs (12 Cascading Sources)",
-        "14. Back / Return to Main Menu"
+        "8. Unpaywall Data Enricher",
+        "9. Zotero Cloud Connector",
+        "10. View Recent Evaluation History",
+        "11. Export Curated Papers to BibTeX / LaTeX (.bib)",
+        "12. Harvest Open Access Full-Text PDFs (12 Cascading Sources)",
+        "13. Back / Return to Main Menu"
     ])
     if not choice or "Back" in choice: return
     if choice.startswith("1."): run_script("db_stats.py", python_exe, args=["--optimize"])
@@ -835,14 +833,13 @@ def database_data_menu(python_exe):
     elif choice.startswith("5."): run_script("embedding_generator.py", python_exe)
     elif choice.startswith("6."): run_script("db_embedding_upgrade.py", python_exe)
     elif choice.startswith("7."): run_script("metadata_enricher.py", python_exe)
-    elif choice.startswith("8."): run_script("pdf_downloader.py", python_exe)
-    elif choice.startswith("9."): run_script("data_enricher.py", python_exe)
-    elif choice.startswith("10."): run_script("zotero_connector.py", python_exe)
-    elif choice.startswith("11."): _show_evaluation_history()
-    elif choice.startswith("12."):
+    elif choice.startswith("8."): run_script("data_enricher.py", python_exe)
+    elif choice.startswith("9."): run_script("zotero_connector.py", python_exe)
+    elif choice.startswith("10."): _show_evaluation_history()
+    elif choice.startswith("11."):
         from src.utils.bibtex_exporter import BibTeXExporter
         BibTeXExporter().export_and_render()
-    elif choice.startswith("13."):
+    elif choice.startswith("12."):
         try:
             from src.ingestion.pdf_harvester.harvester import AcademicPDFHarvester
             summary = AcademicPDFHarvester().harvest_candidates(min_relevance=7.0)
