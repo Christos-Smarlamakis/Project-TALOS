@@ -4,9 +4,33 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-03 (v5.21.1 -- Decoupled Cognitive Mesh Hardening, Full-Catalog LLM Scavenger, Fuzzy Benchmarks & Auto-Pilot FinOps Configurator)
+> **Last Updated:** 2026-10-03 (v5.22.0 -- Full-Spectrum Rich Terminal Dashboard 2.0 & Scientific Console Architecture)
 
 ---
+
+## Phase 82: Full-Spectrum Rich Terminal Dashboard 2.0 & Scientific Console Architecture (v5.22.0)
+
+- [x] **Status:** COMPLETED (2026-10-03).
+
+- [x] **Modular console dashboard subsystem** -- `src/utils/console_dashboard/` (6 files: `__init__`, `hud_renderer`, `layout_builder`, `tree_views`, `progress_monitors`, `terminal_previewer`); 100% of Rich rendering isolated from `talos.py` (Constitution III).
+
+- [x] **Persistent telemetry HUD** -- `HudRenderer.build_hud()` (profile, total/elite/appraised corpus, NVIDIA GPU + VRAM, Ollama :11434 probe, network/hardware strategy, scavenged count).
+
+- [x] **Two-column / four-panel responsive grid** -- `DashboardLayoutBuilder.build_dashboard()` (header HUD + Panels 1-4 + footer command-palette legend; zero vertical scrolling at 105x32).
+
+- [x] **Scientific tree viewers** -- `ScientificTreeViewer` (architecture 6-zone, ATHENA taxonomy, 18-API/16-provider mesh health).
+
+- [x] **Multi-metric progress monitor** -- `create_scientific_progress()` (Spinner / Bar(35) / progress / ETA / rate papers/s / GPU VRAM GB).
+
+- [x] **Terminal previewers** -- `TerminalPreviewer.preview_markdown()` / `.preview_syntax()`.
+
+- [x] **Type-safe command palette** -- `rich.prompt.Prompt.ask()` + `_dispatch_slash_command()` (`/scavenge`, `/audit`, `/fts`, `/config`, `/tree`, `/view`, `/help`, `/quit`); CLI `--show-dashboard`, `--show-tree`, `--preview-report`.
+
+- [x] **Confidential Academic Dossier 10** -- `docs/internal/academic/10_TERMINAL_DASHBOARD_RICH_HMI_ISO25010.md` (7 sections).
+
+- [x] **Version synced** -- `config/settings.py` (`TALOS_VERSION = "5.22.0"`), `main_api.py`, `talos.py`, launchers, `docker-compose.yml` (`talos:5.22.0`), `CITATION.cff` (5.22.0, 2026-10-03), `tests/test_multi_tier.py`, and all 21 canonical docs to v5.22.0 (2026-10-03).
+
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.22.0), test_console_dashboard (16), talos.py --show-dashboard/--show-tree/--preview-report, verify_dependency_map --ci (0/0/0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 81: Decoupled Cognitive Mesh Hardening, Full-Catalog Scavenger, Fuzzy Benchmarks & Auto-Pilot FinOps Configurator (v5.21.1)
 

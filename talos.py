@@ -10,17 +10,26 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.21.1
+Project: TALOS v5.22.0
 Description:
-    Main entry point for the TALOS TUI (Text User Interface). Provides a
-    Rich-powered terminal dashboard with a dynamic status table showing
-    Conda environment, API port, Synapse bus, execution mode, active
-    LLM tiers, and the current active research focus from config.json.
-    Unified 6-group hierarchical menu covering 100% of the executable
-    codebase: Configuration & Profiles, Research Search & Ingestion,
-    Advanced Analysis & Visualizations, DRL Agents/Daemons & GWO Swarm,
-    Database Maintenance & Data Tools, and System Health, Diagnostics &
-    CI/CD. Every prompt uses the canonical TALOS_QUESTIONARY_STYLE theme.
+    Main entry point for the TALOS Scientific Terminal Dashboard (HMI).
+    Provides a Rich-powered, two-column, four-panel interactive console
+    (ISO/IEC 25010 compliant) built on src/utils/console_dashboard/:
+    a persistent telemetry HUD, a responsive Layout grid, scientific
+    trees, a multi-metric progress monitor, and terminal previewers.
+    A command palette (/scavenge, /audit, /fts, /config, /tree, /view,
+    /help, /quit) augments the retained 6-group hierarchical menu covering
+    100% of the executable codebase: Configuration & Profiles, Research
+    Search & Ingestion, Advanced Analysis & Visualizations, DRL
+    Agents/Daemons & GWO Swarm, Database Maintenance & Data Tools, and
+    System Health, Diagnostics & CI/CD.
+
+    v5.22.0: Full-Spectrum Rich Terminal Dashboard 2.0 & Scientific Console
+    Architecture -- modular console renderers under
+    src/utils/console_dashboard/ (HUD, Layout grid, Tree, Progress,
+    Previewer), a type-safe rich.prompt.Prompt command loop, and slash-command
+    fast dispatch. All rendering stays in the dashboard package; talos.py
+    remains a thin dispatcher (Constitution III).
 
     v5.17.0: Two-Tier Hierarchical Swarm Architecture & Forensic Quality
     Engine -- the Tier-2 Forensic Quality Swarm (src/prisma/quality_swarm.py)
@@ -2424,117 +2433,68 @@ def main_menu():
     if not os.path.exists(sentinel_path):
         run_script("research_setup_wizard.py", python_exe)
 
+    # -- v5.22.0: Modular console dashboard subsystem (Constitution III) --
+    from rich.prompt import Prompt
+    from src.utils.console_dashboard import DashboardLayoutBuilder, HudRenderer
+
+    hud = HudRenderer()
+    builder = DashboardLayoutBuilder()
+
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
 
-        # -- Build the Rich dashboard header --
-        ap = get_active_profile_name()
+        # -- Render the 2-column / 4-panel Scientific Terminal Dashboard --
+        console.print(builder.build_dashboard(hud_panel=hud.build_hud()))
 
-        # -- Title banner --
-        title_text = Text()
-        title_text.append("TALOS", style="bold bright_cyan")
-        title_text.append(f" v{TALOS_VERSION}", style="bold cyan")
-        title_text.append(f"  |  Profile: [{ap}]", style="bold bright_cyan")
-
-        # -- Active Research Focus line (v5.16.1) --
-        focus_value = _read_active_focus()
-        focus_text = Text()
-        focus_text.append("Active Research Focus: ", style="dim white")
-        focus_text.append(
-            focus_value if focus_value else "Not configured",
-            style="bold bright_green" if focus_value else "dim",
-        )
-
-        # -- v5.9.7: IEEE Computer Society WEIGD Fund badge --
-        ieee_badge = Text()
-        ieee_badge.append(" IEEE CS ", style="bold white on #006699")
-        ieee_badge.append(" WEIGD FUND RECIPIENT 2026 ", style="bold white on #002855")
-
-        # -- Database stats line --
-        db_line = ""
+        # -- Type-safe command line with command-palette dispatch --
         try:
-            from src.core.database_manager import DatabaseManager
-            db = DatabaseManager(); s = db.get_database_statistics()
-            db_line = f"Papers: {s['total_papers']}  |  Elite: {s['elite_papers']}"
-        except Exception:
-            pass
+            raw = (Prompt.ask(
+                "[bold bright_cyan]Command[/bold bright_cyan]",
+                default="/help",
+            ) or "").strip()
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[dim]TALOS Closing...[/dim]\n")
+            break
 
-        # -- VRAM line --
-        vram_line = ""
-        try:
-            from src.core.hardware import detect_vram_gb
-            v = detect_vram_gb()
-            if v: vram_line = f"VRAM: {v:.0f} GB"
-        except Exception:
-            pass
+        if not raw:
+            continue
 
-        # Status panel
-        status_table = _build_status_table()
+        # -- Slash command palette (fast dispatch) --
+        if raw.startswith("/") or raw.lower() in ("quit", "exit", "0"):
+            result = _dispatch_slash_command(raw, python_exe)
+            if result == "quit":
+                break
+            if result == "handled":
+                safe_pause()
+            else:
+                console.print("[yellow]Unknown command. Type /help for the command reference.[/yellow]")
+                safe_pause()
+            continue
 
-        # -- Assemble the full header panel --
-        header_content = Table(show_header=False, box=None, padding=(0, 0))
-        header_content.add_column(justify="center")
-        header_content.add_row(title_text)
-        header_content.add_row(focus_text)
-        header_content.add_row(ieee_badge)
-        header_content.add_row("")
-        if db_line or vram_line:
-            stats_parts = []
-            if db_line: stats_parts.append(db_line)
-            if vram_line: stats_parts.append(vram_line)
-            header_content.add_row(Text(" | ".join(stats_parts), style="dim white"))
-        header_content.add_row("")
-        header_content.add_row(status_table)
-
-        header_panel = Panel(
-            Align.center(header_content),
-            border_style="#006699",
-            box=box.ROUNDED,
-            padding=(1, 2),
-        )
-
-        console.print(header_panel)
-
-        # -- v5.10.15: Unified 6-group hierarchical menu (100% coverage) --
-        choice = safe_select("Select operation:", choices=[
-            questionary.Separator("  [ 1. CONFIGURATION & PROFILES ]"),
-            "  1. Configuration & Profiles",
-            questionary.Separator("  [ 2. RESEARCH SEARCH & INGESTION ]"),
-            "  2. Research Search & Ingestion",
-            questionary.Separator("  [ 3. ADVANCED ANALYSIS & VISUALIZATIONS ]"),
-            "  3. Advanced Analysis & Visualizations",
-            questionary.Separator("  [ 4. DRL AGENTS, DAEMONS & GWO SWARM ]"),
-            "  4. DRL Agents, Daemons & GWO Swarm",
-            questionary.Separator("  [ 5. DATABASE MAINTENANCE & DATA TOOLS ]"),
-            "  5. Database Maintenance & Data Tools",
-            questionary.Separator("  [ 6. SYSTEM HEALTH, DIAGNOSTICS & CI/CD ]"),
-            "  6. System Health, Diagnostics & CI/CD",
-            questionary.Separator(),
-            "  7. Help & Command Reference Manual",
-            "  8. Exit",
-        ])
-        if choice is None or "Exit" in choice: break
-        fm = "Press Enter to return..."
-
-        # -- Route to the selected sub-menu (v5.10.15: unified hierarchy) --
-        if " 1." in choice:
-            profile_settings_menu(python_exe)
-        elif " 2." in choice:
-            search_ingestion_menu(python_exe)
-        elif " 3." in choice:
-            analysis_visualization_menu(python_exe)
-        elif " 4." in choice:
-            drl_gwo_menu(python_exe)
-        elif " 5." in choice:
-            database_data_menu(python_exe)
-        elif " 6." in choice:
-            system_health_menu(python_exe)
-        elif " 7." in choice:
+        # -- Legacy numeric group routing (1-6 groups, 7 help, 8 exit) --
+        choice = raw
+        if choice == "8":
+            break
+        if choice == "7":
             from src.utils.help_system import render_help_manual
             render_help_manual(interactive=True)
-
-        if choice and "Exit" not in choice:
-            safe_pause(fm)
+            safe_pause()
+            continue
+        if choice == "1":
+            profile_settings_menu(python_exe)
+        elif choice == "2":
+            search_ingestion_menu(python_exe)
+        elif choice == "3":
+            analysis_visualization_menu(python_exe)
+        elif choice == "4":
+            drl_gwo_menu(python_exe)
+        elif choice == "5":
+            database_data_menu(python_exe)
+        elif choice == "6":
+            system_health_menu(python_exe)
+        else:
+            console.print("[yellow]Unknown command. Type /help for the command reference.[/yellow]")
+        safe_pause()
 
     # -- Exit sequence --
     console.print("\n[dim]TALOS Command Center Closing...[/dim]\n")
@@ -2655,6 +2615,102 @@ def _open_local_pdf(paper_id):
         console.print(f"[green]Opened local PDF: {path}[/green]")
     except OSError as exc:
         console.print(f"[red]Failed to open PDF: {exc}[/red]")
+
+
+# ---------------------------------------------------------------------------
+# -- v5.22.0: Command Palette Dispatcher & Scientific Console Previewers --
+# ---------------------------------------------------------------------------
+
+def _dispatch_slash_command(raw, python_exe):
+    """Dispatch a slash command from the interactive command palette.
+
+    Args:
+        raw (str): The raw command line (e.g. "/fts deep reinforcement learning").
+        python_exe (str): The active Python interpreter path (unused; reserved).
+
+    Returns:
+        str: "quit" to exit, "handled" when executed, or "unknown".
+    """
+    cmd = raw.strip()
+    if cmd.lower() in ("/quit", "/exit", "quit", "exit", "0"):
+        return "quit"
+    if cmd.lower() in ("/help", "/?", "help", "?"):
+        from src.utils.help_system import render_help_manual
+        render_help_manual(interactive=True)
+        return "handled"
+
+    parts = cmd.split(None, 1)
+    op = parts[0].lower()
+    arg = parts[1].strip() if len(parts) > 1 else ""
+
+    if op == "/scavenge":
+        _run_scavenge_models(days=0, fetch_all=True, report_only=False)
+        return "handled"
+    if op == "/audit":
+        from src.prisma.quality_appraisal import PrismaQualityAppraiser
+        PrismaQualityAppraiser(appraisal_mode="swarm").run(
+            min_relevance=7.0, force_reappraise=False
+        )
+        return "handled"
+    if op == "/fts":
+        if not arg:
+            console.print("[yellow]Usage: /fts <query>[/yellow]")
+            return "handled"
+        from src.search.fulltext_search import FullTextSearchEngine
+        FullTextSearchEngine().run(arg)
+        return "handled"
+    if op == "/config":
+        from src.utils.ai_strategy_selector import configure_ai_strategy
+        configure_ai_strategy()
+        return "handled"
+    if op == "/tree":
+        _render_tree(arg or "arch")
+        return "handled"
+    if op == "/view":
+        if not arg:
+            console.print("[yellow]Usage: /view <path>[/yellow]")
+            return "handled"
+        _render_preview(arg)
+        return "handled"
+    return "unknown"
+
+
+def _render_tree(which="arch"):
+    """Render a scientific tree (arch | phd | mesh) to the console.
+
+    Args:
+        which (str): The tree selector.
+    """
+    from src.utils.console_dashboard import ScientificTreeViewer
+    viewer = ScientificTreeViewer()
+    selector = (which or "arch").lower()
+    if selector in ("arch", "architecture"):
+        console.print(viewer.render_architecture_tree())
+    elif selector in ("phd", "athena", "taxonomy"):
+        console.print(viewer.render_research_taxonomy_tree())
+    elif selector in ("mesh", "health"):
+        console.print(viewer.render_mesh_health_tree())
+    else:
+        console.print("[yellow]Unknown tree. Use: arch | phd | mesh[/yellow]")
+
+
+def _render_preview(path):
+    """Preview a Markdown report or source file in the terminal.
+
+    Args:
+        path (str): Filesystem path to the file to preview.
+    """
+    from pathlib import Path
+    from src.utils.console_dashboard import TerminalPreviewer
+    target = Path(path)
+    if not target.exists():
+        console.print(f"[red]File not found: {path}[/red]")
+        return
+    previewer = TerminalPreviewer()
+    if target.suffix.lower() == ".md":
+        previewer.preview_markdown(target)
+    else:
+        previewer.preview_syntax(target)
 
 
 def _handle_cli_flags(argv):
@@ -2836,6 +2892,23 @@ def _handle_cli_flags(argv):
         from src.utils.desktop_shortcut import create_desktop_shortcut
         if not create_desktop_shortcut():
             sys.exit(1)
+        return True
+    # -- v5.22.0: Scientific Terminal Dashboard fast-dispatch flags. --
+    if "--show-dashboard" in argv:
+        from src.utils.console_dashboard import DashboardLayoutBuilder, HudRenderer
+        hud = HudRenderer()
+        console.print(DashboardLayoutBuilder().build_dashboard(hud_panel=hud.build_hud()))
+        return True
+    if "--show-tree" in argv:
+        which = _flag_value(argv, "--show-tree") or "arch"
+        _render_tree(which)
+        return True
+    if "--preview-report" in argv:
+        path = _flag_value(argv, "--preview-report")
+        if not path:
+            console.print("[yellow]Usage: python talos.py --preview-report <path>[/yellow]")
+            return True
+        _render_preview(path)
         return True
     return False
 

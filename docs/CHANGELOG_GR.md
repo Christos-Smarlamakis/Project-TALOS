@@ -2,6 +2,34 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.22.0] - 2026-10-03 -- Πλήρες Φάσμα Rich Τερματικού Πίνακα Ελέγχου 2.0 & Αρχιτεκτονική Επιστημονικής Κονσόλας (Συμμορφούμενο με ISO/IEC 25010)
+
+### Προστέθηκε
+
+- **Αρθρωτό υποσύστημα κονσόλας** (`src/utils/console_dashboard/`): πακέτο έξι αρχείων (`__init__.py`, `hud_renderer.py`, `layout_builder.py`, `tree_views.py`, `progress_monitors.py`, `terminal_previewer.py`) που απομονώνει το 100% της λογικής απόδοσης Rich από το `talos.py` (Σύνταγμα III, αυστηρή αρθρωτότητα).
+
+- **Επίμονος HUD τηλεμετρίας** (`hud_renderer.py`): η `HudRenderer.build_hud()` αποδίδει συμπαγές πάνελ δύο γραμμών με το ενεργό προφίλ, το σώμα άρθρων (σύνολο / ελίτ θεμελιώδη / αξιολογημένα κατά Kitchenham), όνομα GPU NVIDIA + VRAM (`nvidia-smi`), κατάσταση Ollama `:11434` ONLINE/OFFLINE (έλεγχος υποδοχής), την ενεργή `TALOS_NETWORK_STRATEGY/TALOS_HARDWARE_STRATEGY` και το πλήθος ανιχνευμένων μοντέλων. Κάθε έλεγχος είναι βέλτιστης προσπάθειας και απομονωμένος.
+
+- **Αποκριτικό πλέγμα δύο στηλών / τεσσάρων πάνελ** (`layout_builder.py`): η `DashboardLayoutBuilder.build_dashboard()` συνθέτει ονοματισμένο `rich.layout.Layout` (κεφαλίδα HUD + διαχωρισμένη γραμμή σώματος με Πάνελ 1 Γνωστικό Πλέγμα & FinOps, Πάνελ 2 Ανακάλυψη & Συγκομιδή, Πάνελ 3 Σμήνος PRISMA & Πλήρες Κείμενο, Πάνελ 4 Σύστημα/Εξαγωγή/Διαγνωστικά + υποσέλιδο παλέτας εντολών) που χωρά σε τερματικό 105x32 χωρίς κάθετη κύλιση.
+
+- **Επιστημονικοί δενδρικοί απεικονιστές** (`tree_views.py`): `ScientificTreeViewer.render_architecture_tree()` (6 ζώνες ISO/IEC 25010), `.render_research_taxonomy_tree()` (Έργο ATHENA ST-GAT -> Dec-POMDP -> HMADRL -> CJCSI 3160.01A) και `.render_mesh_health_tree()` (18 API κατάποσης + 16 πάροχοι LLM με ζωντανές ετικέτες κατάστασης).
+
+- **Παρακολούθηση προόδου πολλαπλών μετρικών** (`progress_monitors.py`): `create_scientific_progress()` με στήλες Spinner / περιγραφή / Bar(35) / πρόοδος / ETA / `{rate} papers/s` / `GPU: {vram} GB`.
+
+- **Προεπισκοπήσεις τερματικού** (`terminal_previewer.py`): `TerminalPreviewer.preview_markdown()` (Rich Markdown σε Πάνελ) και `.preview_syntax()` (BibTeX/JSON/Python με αρίθμηση γραμμών).
+
+- **Ασφαλής παλέτα εντολών** (`talos.py`): βρόχος `rich.prompt.Prompt.ask()` + `_dispatch_slash_command()` με `/scavenge`, `/audit`, `/fts <q>`, `/config`, `/tree <arch|phd|mesh>`, `/view <path>`, `/help`, `/quit`· νέες σημαίες CLI `--show-dashboard`, `--show-tree`, `--preview-report`.
+
+- **Απόρρητος Ακαδημαϊκός Φάκελος 10** (`docs/internal/academic/10_TERMINAL_DASHBOARD_RICH_HMI_ISO25010.md`): φάκελος 7 ενοτήτων Θεωρία-σε-Κώδικα (διατύπωση HMI/ISO 25010, προδιαγραφή πλέγματος γνωστικού φορτίου, αρχιτεκτονική υποσυστήματος, τηλεμετρία πολλαπλών μετρικών/VRAM, ακεραιότητα PRISMA-ScR, PhD Κεφ.2 + επέκταση HOU ICBE 2026, σημείωση ΠΙ).
+
+### Άλλαξε
+
+- **`talos.py`**: ο διαδραστικός βρόχος αποδίδει πλέον τον πίνακα μέσω `DashboardLayoutBuilder` και αποδέχεται εντολές slash· το διατηρημένο αριθμητικό μενού 6 ομάδων (1-6, 7 βοήθεια, 8 έξοδος) διατηρεί το 100% των υφιστάμενων λειτουργιών.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.22.0)· `pytest tests/test_console_dashboard.py -q` (16 ερμητικά)· `python talos.py --show-dashboard`, `--show-tree arch|phd|mesh`, `--preview-report` (έξοδος 0)· `python src/utils/verify_dependency_map.py --ci` (0 ταιριαστά / 0 παρωχημένα / 0 ελλείποντα)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.21.1] - 2026-10-03 -- Ενίσχυση Αποσυζευγμένου Γνωστικού Πλέγματος, Πλήρης Κατάλογος LLM, Ασαφή Συγκριτικά & Αυτόματος Πιλότος Διαμόρφωσης FinOps
 
 ### Προστέθηκε

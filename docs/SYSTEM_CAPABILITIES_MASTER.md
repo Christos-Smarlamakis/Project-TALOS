@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.21.1
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.22.0
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-03
-> **Version:** v5.21.1 -- Decoupled Cognitive Mesh Hardening, Full-Catalog LLM Scavenger, Fuzzy Benchmarks & Auto-Pilot FinOps Configurator
+> **Version:** v5.22.0 -- Full-Spectrum Rich Terminal Dashboard 2.0 & Scientific Console Architecture
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.21.1" | `config/settings.py` |
+| TALOS_VERSION | "5.22.0" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1362,6 +1362,22 @@ For each evaluated paper, the AI generates:
 - **Auto-Pilot FinOps Configurator** (`ai_strategy_selector.py`, `talos.py`): `configure_ai_strategy()` + `apply_optimal_models()`; CLI `--configure-ai-strategy`, `--apply-optimal-models [--strategy ...]`, `--scavenge-models --all`; TUI Option 10.
 
 **Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.21.1), `pytest tests/test_model_scavenger.py tests/test_intelligence_reporter.py tests/test_model_benchmark_client.py tests/test_cognitive_router.py -q` (45 hermetic), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD), decoupling grep (0 forbidden imports).
+
+### 15.55 Full-Spectrum Rich Terminal Dashboard 2.0 & Scientific Console Architecture (v5.22.0)
+
+**Overview:** v5.22.0 introduces the Scientific Terminal Dashboard (HMI), a full exploitation of the `rich` ecosystem that transforms the CLI into an interactive, multi-panel ISO/IEC 25010-conformant console. A modular renderer subsystem (`src/utils/console_dashboard/`) isolates all Rich rendering from `talos.py`, while a persistent telemetry HUD, a two-column / four-panel responsive grid, scientific tree viewers, a multi-metric progress monitor, terminal previewers, and a type-safe slash-command palette compose the new operator surface.
+
+- **Modular console subsystem** (`src/utils/console_dashboard/`): `HudRenderer` (`hud_renderer.py`), `DashboardLayoutBuilder` (`layout_builder.py`), `ScientificTreeViewer` (`tree_views.py`), `MultiMetricProgress` / `create_scientific_progress` (`progress_monitors.py`), `TerminalPreviewer` (`terminal_previewer.py`).
+
+- **Persistent telemetry HUD**: active profile, total / elite foundational / Kitchenham-appraised corpus, NVIDIA GPU name + VRAM (`nvidia-smi`), Ollama `:11434` probe, `TALOS_NETWORK_STRATEGY/TALOS_HARDWARE_STRATEGY`, scavenged-model count. Every probe is air-gapped and best-effort.
+
+- **Two-column / four-panel responsive grid** (`rich.layout.Layout`): header HUD + Panels 1-4 (Cognitive Mesh & FinOps / Discovery & Harvesting / PRISMA Swarm & Full-Text / System-Export-Diagnostics) + footer command-palette legend; zero vertical scrolling at 105x32.
+
+- **Scientific trees**: architecture (6 ISO/IEC 25010 zones), ATHENA research taxonomy (ST-GAT -> Dec-POMDP -> HMADRL -> CJCSI 3160.01A), and mesh health (18 APIs + 16 providers with live badges).
+
+- **Command palette**: `rich.prompt.Prompt.ask()` + `_dispatch_slash_command()` (`/scavenge`, `/audit`, `/fts`, `/config`, `/tree`, `/view`, `/help`, `/quit`); CLI flags `--show-dashboard`, `--show-tree`, `--preview-report`.
+
+**Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.22.0), `pytest tests/test_console_dashboard.py -q` (16 hermetic), `python talos.py --show-dashboard` / `--show-tree arch|phd|mesh` / `--preview-report` (exit 0), `python src/utils/verify_dependency_map.py --ci` (0/0/0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD).
 
 ---
 

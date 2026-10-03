@@ -2,6 +2,34 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.22.0] - 2026-10-03 -- Full-Spectrum Rich Terminal Dashboard 2.0 & Scientific Console Architecture (ISO/IEC 25010 Compliant)
+
+### Added
+
+- **Modular console dashboard subsystem** (`src/utils/console_dashboard/`): a six-file renderer package (`__init__.py`, `hud_renderer.py`, `layout_builder.py`, `tree_views.py`, `progress_monitors.py`, `terminal_previewer.py`) that isolates 100% of the Rich rendering logic from `talos.py` (Constitution III, strict modularity).
+
+- **Persistent telemetry HUD** (`hud_renderer.py`): `HudRenderer.build_hud()` renders a compact two-row panel with the active profile, paper corpus (total / elite foundational / Kitchenham-appraised), NVIDIA GPU name + VRAM (`nvidia-smi`), Ollama `:11434` ONLINE/OFFLINE (socket probe), the active `TALOS_NETWORK_STRATEGY/TALOS_HARDWARE_STRATEGY`, and the scavenged-model count. Every probe is best-effort and air-gapped.
+
+- **Two-column / four-panel responsive grid** (`layout_builder.py`): `DashboardLayoutBuilder.build_dashboard()` assembles a named-region `rich.layout.Layout` (header HUD + body split-row with Panel 1 Cognitive Mesh & FinOps, Panel 2 Discovery & Harvesting, Panel 3 PRISMA Swarm & Full-Text, Panel 4 System/Export/Diagnostics + footer command-palette legend) that fits a 105x32 terminal with zero vertical scrolling.
+
+- **Scientific tree viewers** (`tree_views.py`): `ScientificTreeViewer.render_architecture_tree()` (6 ISO/IEC 25010 zones), `.render_research_taxonomy_tree()` (Project ATHENA ST-GAT -> Dec-POMDP -> HMADRL -> CJCSI 3160.01A), and `.render_mesh_health_tree()` (18 ingestion APIs + 16 LLM providers with live status badges).
+
+- **Multi-metric progress monitor** (`progress_monitors.py`): `create_scientific_progress()` with columns Spinner / description / Bar(35) / progress / ETA / `{rate} papers/s` / `GPU: {vram} GB`.
+
+- **Terminal previewers** (`terminal_previewer.py`): `TerminalPreviewer.preview_markdown()` (Rich Markdown in a Panel) and `.preview_syntax()` (line-numbered BibTeX/JSON/Python).
+
+- **Type-safe command palette** (`talos.py`): `rich.prompt.Prompt.ask()` loop + `_dispatch_slash_command()` with `/scavenge`, `/audit`, `/fts <q>`, `/config`, `/tree <arch|phd|mesh>`, `/view <path>`, `/help`, `/quit`; new CLI flags `--show-dashboard`, `--show-tree`, `--preview-report`.
+
+- **Confidential Academic Dossier 10** (`docs/internal/academic/10_TERMINAL_DASHBOARD_RICH_HMI_ISO25010.md`): 7-section Theory-to-Code dossier (HMI/ISO 25010 formulation, cognitive-load grid spec, subsystem architecture, multi-metric/VRAM telemetry, PRISMA-ScR integrity, PhD Ch.2 + HOU ICBE 2026 extension, IP notice).
+
+### Changed
+
+- **`talos.py`**: the interactive loop now renders the dashboard via `DashboardLayoutBuilder` and accepts slash commands; the retained 6-group numeric menu (1-6, 7 help, 8 exit) preserves 100% of existing operations.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.22.0); `pytest tests/test_console_dashboard.py -q` (16 hermetic); `python talos.py --show-dashboard`, `--show-tree arch|phd|mesh`, `--preview-report` (exit 0); `python src/utils/verify_dependency_map.py --ci` (0 matched / 0 stale / 0 missing); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.21.1] - 2026-10-03 -- Decoupled Cognitive Mesh Hardening, Full-Catalog LLM Scavenger, Fuzzy Benchmarks & Auto-Pilot FinOps Configurator
 
 ### Added

@@ -4,9 +4,33 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.21.1 -- Ενίσχυση Αποσυζευγμένου Γνωστικού Πλέγματος, Πλήρης Κατάλογος LLM, Ασαφή Συγκριτικά & Αυτόματος Πιλότος FinOps)
+> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.22.0 -- Πλήρες Φάσμα Rich Τερματικού Πίνακα Ελέγχου 2.0 & Αρχιτεκτονική Επιστημονικής Κονσόλας)
 
 ---
+
+## Φάση 82: Πλήρες Φάσμα Rich Τερματικού Πίνακα Ελέγχου 2.0 & Αρχιτεκτονική Επιστημονικής Κονσόλας (v5.22.0)
+
+- [x] **Κατάσταση:** ΟΛΟΚΛΗΡΩΜΕΝΟ (2026-10-03).
+
+- [x] **Αρθρωτό υποσύστημα κονσόλας** -- `src/utils/console_dashboard/` (6 αρχεία: `__init__`, `hud_renderer`, `layout_builder`, `tree_views`, `progress_monitors`, `terminal_previewer`)· το 100% της λογικής Rich απομονώνεται από το `talos.py` (Σύνταγμα III).
+
+- [x] **Επίμονος HUD τηλεμετρίας** -- `HudRenderer.build_hud()` (προφίλ, σώμα σύνολο/ελίτ/αξιολογημένο, NVIDIA GPU + VRAM, έλεγχος Ollama :11434, στρατηγική δικτύου/υλικού, πλήθος ανίχνευσης).
+
+- [x] **Αποκριτικό πλέγμα δύο στηλών / τεσσάρων πάνελ** -- `DashboardLayoutBuilder.build_dashboard()` (κεφαλίδα HUD + Πάνελ 1-4 + υποσέλιδο παλέτας· μηδενική κάθετη κύλιση στα 105x32).
+
+- [x] **Επιστημονικοί δενδρικοί απεικονιστές** -- `ScientificTreeViewer` (6 ζώνες αρχιτεκτονικής, ταξινομία ATHENA, υγεία πλέγματος 18-API/16-παρόχων).
+
+- [x] **Παρακολούθηση προόδου πολλαπλών μετρικών** -- `create_scientific_progress()` (Spinner / Bar(35) / πρόοδος / ETA / ρυθμός papers/s / GPU VRAM GB).
+
+- [x] **Προεπισκοπήσεις τερματικού** -- `TerminalPreviewer.preview_markdown()` / `.preview_syntax()`.
+
+- [x] **Ασφαλής παλέτα εντολών** -- `rich.prompt.Prompt.ask()` + `_dispatch_slash_command()` (`/scavenge`, `/audit`, `/fts`, `/config`, `/tree`, `/view`, `/help`, `/quit`)· CLI `--show-dashboard`, `--show-tree`, `--preview-report`.
+
+- [x] **Απόρρητος Ακαδημαϊκός Φάκελος 10** -- `docs/internal/academic/10_TERMINAL_DASHBOARD_RICH_HMI_ISO25010.md` (7 ενότητες).
+
+- [x] **Συγχρονισμός έκδοσης** -- `config/settings.py` (`TALOS_VERSION = "5.22.0"`), `main_api.py`, `talos.py`, εκκινητές, `docker-compose.yml` (`talos:5.22.0`), `CITATION.cff` (5.22.0, 2026-10-03), `tests/test_multi_tier.py` και όλα τα 21 κανονικά έγγραφα σε v5.22.0 (2026-10-03).
+
+- [x] **Πέρασαν οι πύλες επαλήθευσης** -- compileall, test_system_integrity, test_talos_version (5.22.0), test_console_dashboard (16), talos.py --show-dashboard/--show-tree/--preview-report, verify_dependency_map --ci (0/0/0), bash -n, σάρωση UTF-8 (0 U+FFFD).
 
 ## Φάση 81: Ενίσχυση Αποσυζευγμένου Γνωστικού Πλέγματος, Πλήρης Κατάλογος Ανίχνευσης, Ασαφή Συγκριτικά & Αυτόματος Πιλότος FinOps (v5.21.1)
 
