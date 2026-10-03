@@ -201,15 +201,20 @@ def install_windows_autostart(profile_name=None):
     return shortcut_path
 
 
-def _persist_daemon_config(profile_name):
-    """Persist the selected daemon target into its isolated profile config.
+def persist_daemon_config(profile_name, strategy=None, sources=None):
+    """Persist the daemon target (plus optional strategy and sources) into the
+    isolated profile config.
 
     Scaffolds ``_profiles/<profile_name>/config.json`` from the root working
-    copy when missing and records ``daemon_profile`` / ``daemon_autostart`` so
-    the boot-time daemon resolves the same single source of truth.
+    copy when missing and records ``daemon_profile`` / ``daemon_autostart``,
+    optionally together with ``daemon_network_strategy`` and
+    ``daemon_target_sources``, so the boot-time daemon resolves a single
+    source of truth scoped to the selected profile.
 
     Args:
         profile_name (str): Target research profile for the daemon.
+        strategy (str, optional): Daemon network strategy to record.
+        sources (list of str, optional): Daemon target sources to record.
 
     Returns:
         str | None: Absolute path to the persisted config, or None on failure.
@@ -235,6 +240,10 @@ def _persist_daemon_config(profile_name):
                 cfg = {}
         cfg["daemon_profile"] = profile_name
         cfg["daemon_autostart"] = True
+        if strategy:
+            cfg["daemon_network_strategy"] = strategy
+        if sources is not None:
+            cfg["daemon_target_sources"] = sources
         cfg_path.write_text(
             json.dumps(cfg, indent=2, ensure_ascii=False), encoding="utf-8")
         print(f"  [OK] Daemon configuration persisted: {cfg_path}")
@@ -258,7 +267,7 @@ def main():
     if target_profile is None:
         print("  [CANCELLED] No profile selected -- autostart left unchanged.")
         return None
-    _persist_daemon_config(target_profile)
+    persist_daemon_config(target_profile)
     result = install_windows_autostart(profile_name=target_profile)
     print(f"  [OK] TALOS daemon autostart configured for profile: {target_profile}")
     return result

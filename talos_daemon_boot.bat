@@ -15,4 +15,4 @@ findstr /i "TALOS_HARDWARE_STRATEGY=.*cpu_only" "%~dp0.env" >nul 2>&1
 if %ERRORLEVEL%==0 start /B "" "C:\Users\Chris\.conda\envs\talosenv\python.exe" -m llama_cpp.server --port 11435
 
 REM 2. Launch the 24/7 autonomous research daemon.
-"C:\Users\Chris\.conda\envs\talosenv\python.exe" src/ai/drl/talos_service.py
+"C:\Users\Chris\.conda\envs\talosenv\python.exe" src/ai/drl/talos_service.py --profile uav_mission_planning

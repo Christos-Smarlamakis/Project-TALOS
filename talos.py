@@ -1379,20 +1379,34 @@ def _view_and_pivot_research_focus(python_exe, project_root):
 def _configure_daemon_autostart(project_root):
     """Interactive pre-flight configuration for the 24/7 daemon.
 
-    Prompts for the daemon network strategy, the target sources, and an
-    optional Windows OS autostart hook. Persists the strategy to .env and
-    the sources to config.json under the daemon_target_sources key.
+    Prompts first for the target research profile (mandatory), then the daemon
+    network strategy and target sources, and finally an optional Windows OS
+    autostart hook. Persists the strategy to .env and, together with the
+    sources and the selected profile, into the isolated profile config under
+    ``_profiles/<profile>/config.json``.
 
     Args:
         project_root (str): Absolute path to the project root.
     """
-    import json
     from dotenv import set_key
 
     env_path = os.path.join(project_root, '.env')
     if not os.path.exists(env_path):
         console.print("[yellow]No .env file found -- creating an empty one.[/yellow]")
         open(env_path, 'w', encoding='utf-8').close()
+
+    # -- 0. Target research profile (first mandatory prompt) --
+    profiles = ProfileManager().list_profiles()
+    active = ProfileManager().get_active_profile_name()
+    target_profile = questionary.select(
+        "Select target research profile for the 24/7 background daemon:",
+        choices=profiles,
+        default=active if active in profiles else (profiles[0] if profiles else "default"),
+        style=TALOS_QUESTIONARY_STYLE,
+    ).ask()
+    if not target_profile:
+        console.print("[yellow]Autostart configuration cancelled.[/yellow]")
+        return
 
     # -- 1. Network strategy --
     strategy = questionary.select(
@@ -1415,23 +1429,18 @@ def _configure_daemon_autostart(project_root):
 
     # -- 2. Target sources --
     selected_sources = prompt_source_selection()
-    config_path = os.path.join(project_root, 'config.json')
     if selected_sources is None:
         console.print("[dim]Source selection cancelled.[/dim]")
+        sources = None
     else:
         sources = selected_sources or list(ALL_ACADEMIC_SOURCES)
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                cfg = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
-            cfg = {}
-        cfg["daemon_target_sources"] = sources
-        try:
-            with open(config_path, 'w', encoding='utf-8') as f:
-                json.dump(cfg, f, indent=2, ensure_ascii=False)
-            console.print(f"[green][OK] daemon_target_sources saved ({len(sources)} sources).[/green]")
-        except Exception as e:
-            console.print(f"[red][ERROR] Could not save config.json: {e}[/red]")
+
+    # -- 2b. Persist profile + strategy + sources into the profile config --
+    try:
+        from src.utils.daemon_autostart import persist_daemon_config
+        persist_daemon_config(target_profile, strategy=strategy, sources=sources)
+    except Exception as e:
+        console.print(f"[red][ERROR] Could not persist daemon config into profile: {e}[/red]")
 
     # -- 3. Autostart hook --
     install_hook = questionary.confirm(
@@ -1442,7 +1451,7 @@ def _configure_daemon_autostart(project_root):
     if install_hook:
         try:
             from src.utils.daemon_autostart import install_windows_autostart
-            result = install_windows_autostart()
+            result = install_windows_autostart(profile_name=target_profile)
             if result:
                 console.print(f"[green][OK] Autostart hook installed: {result}[/green]")
             else:
