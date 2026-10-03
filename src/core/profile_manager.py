@@ -11,7 +11,7 @@
 
 """
 Module: profile_manager.py
-Project: TALOS v5.19.0
+Project: TALOS v5.20.0
 Description:
     Single Source of Truth (SSOT) for the TALOS multi-profile workspace. This
     module anchors every profile operation to the repository-root ``_profiles/``

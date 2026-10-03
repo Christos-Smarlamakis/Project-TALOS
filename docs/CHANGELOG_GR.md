@@ -2,6 +2,66 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.21.0] - 2026-10-03 -- Γνωστικό Πλέγμα, Έτοιμη για Εξαγωγή Ενσωματωμένη Μικροϋπηρεσία & Αυτόνομος Πράκτορας Ανίχνευσης LLM (Συμμορφούμενο με ISO/IEC 25010)
+
+### Προστέθηκε
+
+- **Έτοιμο για Εξαγωγή Ενσωματωμένο Πλαίσιο Μικροϋπηρεσίας** (`src/services/cognitive_mesh/`): το αποσυζευγμένο γνωστικό επίπεδο αναδιαρθρώνεται σε αυτόνομο πακέτο μικροϋπηρεσίας σχεδιασμένο για απρόσκοπτη εξαγωγή στον δίαυλο ALEXANDRIA SYNAPSE (:8000) που εξυπηρετεί τόσο το TALOS όσο και το MEMEX. Οκτώ υποενότητες συνθέτουν το πλαίσιο: `dto.py` (αυτόνομα σχήματα Pydantic v2 -- `RoutingStrategy`, `RouterTaskRequest`, `RouterTaskResponse`, `ModelSpec`, `ProviderSpec`, `BenchmarkScorecard`, `ScavengedModel`, `MarketIntelligenceReport`), `registry.py` (το μητρώο δεκαέξι παρόχων μεταφερμένο με μηδενική σύζευξη TALOS), `router.py` (`CognitiveMetaRouter` με `threading.Semaphore(2)` και τον διακόπτη κυκλώματος μανδάλωσης ποσόστωσης), `benchmarks.py` (`ModelBenchmarkClient` επί του `data/cache/llm_benchmarks.json`), `scavenger.py`, `reporter.py`, `server.py` και `client.py`. Το πακέτο εισάγει μόνο την πρότυπη βιβλιοθήκη, το Pydantic, το `config.settings` και (στο `server.py`) FastAPI/uvicorn -- μηδέν εισαγωγές SQLite WAL, PRISMA ή CLI.
+
+- **Αυτόνομος Πράκτορας Ανίχνευσης Μοντέλων** (`src/services/cognitive_mesh/scavenger.py`): η `ModelScavengerAgent.scavenge_market(window_days=30)` ανιχνεύει τρεις καταλόγους -- το Hugging Face Hub API (`pipeline_tag=text-generation`, ταξινόμηση τάσης, φιλτράρισμα επιτρεπτών ανοικτών βαρών για Apache-2.0/MIT/Llama), τον κατάλογο OpenRouter (δέλτα νέων κυκλοφοριών εντός παραθύρου, τιμολόγηση ανά διακριτικό, μεγέθη περιβάλλοντος) και τη βιβλιοθήκη Ollama (κβαντισμένες ετικέτες GGUF <= 14B για την RTX 4070 12 GB VRAM). Ένας ταξινομητής ρόλων με επίγνωση υλικού συμφιλιώνει κάθε μοντέλο σε τρεις κλάσεις VRAM (`LOCAL_OPTIMAL` <= 12 GB, `CLOUD_COST_EFFECTIVE` > 14B-70B, `FRONTIER_REASONING` > 70B ή ιδιόκτητο) και σε έναν από τέσσερις επιστημονικούς ρόλους (Γρήγορη Διαλογή, Αυστηρότητα Kitchenham, Έλεγχος Κώδικα, Διανυσματικές Ενσωματώσεις). Η ανθεκτικότητα εκτός σύνδεσης υποβαθμίζεται ομαλά στην τοπική προσωρινή μνήμη συγκριτικών.
+
+- **Διπλός Συντάκτης Αναφορών Πληροφοριών** (`src/services/cognitive_mesh/reporter.py`): η `IntelligenceReporter.generate_reports()` εγγράφει το `llm_market_intelligence_YYYYMMDD.md` (εκτελεστική σύνοψη, ολοκληρωμένοι πίνακες ανά μοντέλο, συστάσεις RTX 4070) και το `llm_market_intelligence_YYYYMMDD.html` (100 τοις εκατό αυτόνομος, μηδενικών εξαρτήσεων, αποκριτικός πίνακας ελέγχου Σκοτεινού Θέματος με ενσωματωμένο CSS και vanilla JS, κουμπιά φιλτραρίσματος για Όλα τα Μοντέλα / Τοπικό RTX 4070 <12GB / Νέφος Υψηλής Διεκπεραιωτικής Ικανότητας / Βαθιά Λογική και έγχρωμες ετικέτες VRAM πράσινο/κεχριμπαρένιο/μπλε).
+
+- **Μίνι-διακομιστής FastAPI Γνωστικού Πλέγματος** (`src/services/cognitive_mesh/server.py`): εξάγει τον `cognitive_router_app` (προσαρτημένο στο `main_api.py` υπό `/api/v1/cognitive`) που εκθέτει `POST /dispatch`, `GET /providers`, `GET /benchmarks`, `POST /scavenge` και `GET /health`, συν μια αυτόνομη `app` εκτελέσιμη ως `uvicorn src.services.cognitive_mesh.server:app --port 8003`. Ο `CognitiveMeshClient` (`client.py`) καταναλώνει το πλέγμα εναλλακτικά εντός διεργασίας (TALOS) και μέσω HTTP (MEMEX).
+
+- **Στρώμα shim προς-τα-πίσω συμβατότητας** (`src/core/cognitive_router.py`, `src/core/provider_registry.py`, `src/core/model_benchmark_client.py`): λεπτές ενότητες επανεξαγωγής που δείχνουν στον νέο χώρο ονομάτων, διατηρώντας 100 τοις εκατό των διαδρομών εισαγωγής προ-v5.21.0 για τον `AIManager`, το `talos.py` και την υφιστάμενη σουίτα δοκιμών.
+
+- **Επιφάνειες CLI & TUI**: η `--scavenge-models [--days N] [--report-only]` ενεργοποιεί τον ανιχνευτή, εκτυπώνει πίνακα σύνοψης Rich και εκπέμπει τις διπλές αναφορές· η Ομάδα 1 του TUI αποκτά την Επιλογή 10 «Autonomous Model Scavenger & Market Intelligence (MD/HTML)» (οι κατάντη επιλογές αναριθμήθηκαν).
+
+- **Επιχειρησιακή Βοήθεια Κονσόλας** (`src/utils/help_system.py`): το Εγχειρίδιο Λειτουργίας A4 και ο Επιστημονικός Πίνακας Εντολών αποκτούν την καθοδήγηση `--scavenge-models`.
+
+- **Ακαδημαϊκός Φάκελος 09** (`docs/internal/academic/09_AUTONOMOUS_MODEL_SCAVENGING_MICROSERVICE_ARCHITECTURE.md`): εμπιστευτικός φάκελος Θεωρίας-σε-Κώδικα με και τις επτά υποχρεωτικές ενότητες (διατύπωση ποιότητας ISO/IEC 25010, κατάταξη ανακάλυψης Pareto, προδιαγραφή ενσωματωμένης μικροϋπηρεσίας, μηχανισμοί διπλής αναφοράς, ακεραιότητα PRISMA-ScR, οδικός χάρτης εξαγωγής SYNAPSE/MEMEX/OPTICA με ιχνηλασιμότητα Κεφάλαιο 2 PhD και HOU ICBE 2026 +30 τοις εκατό, σημείωση IP).
+
+- **Μοναδιαίες δοκιμές**: `tests/test_model_scavenger.py` (mock ανάλυση Hugging Face/OpenRouter, ταξινομητής VRAM, εφεδρική εκτός σύνδεσης) και `tests/test_intelligence_reporter.py` (δημιουργία διπλού αρχείου, μηδέν εξωτερικά `<script src>` / `<link rel="stylesheet">`, κουμπιά φιλτραρίσματος και ετικέτες).
+
+### Άλλαξε
+
+- **`docs/ARCHITECTURE_MAP.md` + `docs/ARCHITECTURE_MAP_GR.md`**: η Ζώνη 5 ξαναγράφηκε για να τεκμηριώσει την ενοποιημένη αρχιτεκτονική `src/services/cognitive_mesh/` (και τις οκτώ υποενότητες) και επαναχαρακτηρίστηκε ως έτοιμη για εξαγωγή στο SYNAPSE.
+
+- **Συγχρονισμός έκδοσης σε 5.21.0** στα βασικά αρχεία κώδικα, `docker-compose.yml` (`talos:5.21.0`), `CITATION.cff` (έκδοση 5.21.0, ημερομηνία 2026-10-03), στους εκκινητές, στις βοηθητικές ενότητες και σε όλα τα κανονικά έγγραφα (ημερομηνία 2026-10-03).
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.21.0)· `pytest tests/test_model_scavenger.py tests/test_intelligence_reporter.py tests/test_provider_registry.py tests/test_cognitive_router.py tests/test_model_benchmark_client.py -q` (43 ερμητικές)· `python talos.py --scavenge-models --days 7 --report-only` (έξοδος 0, διπλές αναφορές)· `python talos.py --help` (Εγχειρίδιο A4 + `--scavenge-models`)· `python src/utils/verify_dependency_map.py --ci` (έξοδος 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
+## [v5.20.0] - 2026-10-03 -- Γνωστικός Μετα-Δρομολογητής, Δυναμική Ανακάλυψη SOTA LLM & Εγχειρίδια Λειτουργίας Κονσόλας
+
+### Προστέθηκε
+
+- **Αποσυζευγμένος Γνωστικός Μετα-Δρομολογητής** (`src/core/cognitive_router.py`): αυτόνομος, έτοιμος για εξαγωγή `CognitiveMetaRouter` με τέσσερις στρατηγικές δρομολόγησης -- `LOWEST_LATENCY` (κατάταξη EMA χρόνου-πρώτου-διακριτικού σε Groq / Cerebras / SambaNova / Ollama), `REASONING_RIGOR` (DeepSeek / Anthropic / SambaNova 405B για εγκληματολογικούς ελέγχους), `LOWEST_COST` (φθηνότερος πάροχος που πληροί το κατώφλι ποιότητας Q_min >= 0.70) και `LOCAL_AIRGAPPED` (αυστηρό Ollama στη θύρα :11434 με μηδενική εξερχόμενη κίνηση). Ο δρομολογητής δεν εισάγει καμία εξάρτηση SQLite WAL / PRISMA / CLI, επικοινωνεί μέσω αυτόνομων DTO Pydantic v2 (`RouterTaskRequest`, `RouterTaskResponse`, `RoutingStrategy`), επιβάλλει όριο ταυτοχρονισμού `threading.Semaphore(2)` στην τοπική GPU και υλοποιεί διακόπτη κυκλώματος που μανδαλώνει έναν πάροχο εκτός λειτουργίας σε HTTP 401/402/429 με ομαλή ανακατεύθυνση εντός βαθμίδας.
+
+- **Επέκταση μητρώου σε 16 παρόχους** (`src/core/provider_registry.py`): προστέθηκαν έξι μηχανές συμπερασμού υψηλής διεκπεραιωτικής ικανότητας -- SambaNova Cloud (SN40L RDU), Together AI, Fireworks AI, DeepInfra, Cohere (Command R/R+) και Perplexity (Sonar). Μια κανονική απαρίθμηση `LLMProvider` και η συνάρτηση `get_available_providers()` αναφέρουν την ενεργή κατάσταση χωρίς εξαίρεση όταν λείπουν κλειδιά.
+
+- **Πελάτης Δυναμικής Ανακάλυψης SOTA** (`src/core/model_benchmark_client.py`): ο `ModelBenchmarkClient` διατηρεί προσωρινά αποθηκευμένο κατάστημα συγκριτικών στο `data/cache/llm_benchmarks.json` (MMLU-Pro, HumanEval, TTFT, διεκπεραιωτική ικανότητα, κόστος ανά 1M διακριτικά) και εκθέτει τη `get_top_models_by_role()` για τα τέσσερα επιστημονικά φορτία (Γρήγορη Διαλογή, Αυστηρός Έλεγχος, Έλεγχος Κώδικα, Διανυσματικές Ενσωματώσεις), συμφιλιωμένα με τον προϋπολογισμό RTX 4070 (12 GB VRAM) μέσω του `hardware_advisor`.
+
+- **Επιφάνειες CLI & TUI**: η `--discover-llms [--offline]` αποδίδει πίνακα ανακάλυψης SOTA Rich (κωδικός εξόδου 0)· η Ομάδα 1 του TUI αποκτά την Επιλογή 9 «Discover Top LLMs & Live Benchmarks».
+
+- **Επιχειρησιακό Σύστημα Βοήθειας Κονσόλας** (`src/utils/help_system.py`): το εγχειρίδιο αναδιαρθρώνεται σε τέσσερις ενότητες -- Ενότητα A (Εγχειρίδια Λειτουργίας SOP: PRISMA-ScR, Διανυσματική/Κώδικα-Πρώτα, Αυτόνομος Σχεδιασμός Αποστολής), Ενότητα B (Επιστημονικός Πίνακας Εντολών ομαδοποιημένος σε Κατάποση / Αξιολόγηση / Αναζήτηση / Συλλογή PDF / Διαχείριση Συστήματος), Ενότητα C (Λειτουργικά Διαγνωστικά & Αυτοθεραπεία) και Ενότητα D (Προδιαγραφές Περιβάλλοντος & Διαμόρφωσης με θύρες :8000/:8001/:8002/:11434).
+
+- **Χάρτης Λειτουργικής Αρχιτεκτονικής** (`docs/ARCHITECTURE_MAP.md` + `docs/ARCHITECTURE_MAP_GR.md`): πλήρης αποδόμηση ISO/IEC 25010 σε έξι λειτουργικές ζώνες, με τη Ζώνη 5 να επισημαίνεται ως έτοιμη για εξαγωγή στη μικροϋπηρεσία SYNAPSE (:8000) που εξυπηρετεί TALOS και MEMEX.
+
+- **Ακαδημαϊκός Φάκελος 08** (`docs/internal/academic/08_COGNITIVE_META_ROUTING_DYNAMIC_DISCOVERY.md`): εμπιστευτικός φάκελος Θεωρίας-σε-Κώδικα με την υποχρεωτική δομή επτά ενοτήτων (διατύπωση πολυκριτηριακής βελτιστοποίησης Pareto, μηχανή καταστάσεων μανδάλωσης ποσόστωσης, πίνακας ιχνηλασιμότητας κώδικα, συγκριτικά 16 παρόχων, ακεραιότητα PRISMA-ScR, διαδρομή εξαγωγής SYNAPSE, σημείωση IP).
+
+### Άλλαξε
+
+- **`src/core/provider_registry.py`**: ο κατάλογος επεκτάθηκε από δέκα σε δεκαέξι παρόχους· προστέθηκαν η απαρίθμηση `LLMProvider` και η `get_available_providers()`.
+- **`.clinerules`**: κωδικοποιεί τον μόνιμο Κανόνα 10 (Πρωτόκολλο Υποχρεωτικής Παραγωγής Ακαδημαϊκού Φακέλου).
+- **Συγχρονισμός έκδοσης σε 5.20.0** στα 6 βασικά αρχεία κώδικα, `docker-compose.yml` (`talos:5.20.0`), `CITATION.cff` (έκδοση 5.20.0, ημερομηνία 2026-10-03), `config.template.json`, μεταδεδομένα tray/bibtex/diagnostics, docstrings `src/core/`, `src/prisma/`, `src/search/`, `src/ingestion/pdf_harvester/` και στα 19 κανονικά έγγραφα (ημερομηνία 2026-10-03).
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.20.0)· `pytest tests/test_provider_registry.py tests/test_cognitive_router.py tests/test_model_benchmark_client.py -q` (31 ερμητικές)· `python talos.py --discover-llms` (έξοδος 0)· `python talos.py --help` (εγχειρίδιο 4 ενοτήτων, έξοδος 0)· `python src/utils/verify_dependency_map.py --ci` (έξοδος 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.19.0] - 2026-10-03 -- Μηχανή Αποσύζευξης Αυστηρότητας Δύο Σταδίων & Γνωστικός Αντιστοιχιστής Ρόλων SOTA
 
 ### Προστέθηκε

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.19.0
+Project: TALOS v5.21.0
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -94,6 +94,7 @@ from src.core.database_manager import DatabaseManager, get_active_profile_db_pat
 from src.core.ai_manager import AIManager
 from src.api.synapse_routes import router as synapse_router
 from src.api.red_tester_routes import router as red_tester_router
+from src.services.cognitive_mesh.server import cognitive_router_app
 
 # -- Logging (v5.9.17: enterprise logger with Rich + rotating file handlers) --
 from src.utils.logger import get_logger
@@ -115,7 +116,7 @@ async def lifespan(app: FastAPI):
         None: Control returns to the server for the duration of its lifetime.
     """
     # -- Startup --
-    logger.info("TALOS FastAPI v5.19.0 starting up (Two-Stage Rigor Decoupling Engine & Cognitive SOTA Role Matcher, port 8001)...")
+    logger.info("TALOS FastAPI v5.21.0 starting up (Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger Agent, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")
@@ -128,8 +129,8 @@ async def lifespan(app: FastAPI):
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-    description="Facade REST API for the TALOS autonomous research platform (v5.19.0 -- Two-Stage Rigor Decoupling Engine & Cognitive SOTA Role Matcher)",
-    version="5.19.0",
+    description="Facade REST API for the TALOS autonomous research platform (v5.21.0 -- Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger Agent)",
+    version="5.21.0",
     lifespan=lifespan,
 )
 app.add_middleware(
@@ -145,6 +146,13 @@ app.include_router(synapse_router)
 
 # -- Include Autonomous Red Tester router (v5.9.1) --
 app.include_router(red_tester_router)
+
+# -- Include Cognitive Mesh microservice router (v5.21.0) --
+app.include_router(
+    cognitive_router_app,
+    prefix="/api/v1/cognitive",
+    tags=["Cognitive Mesh"],
+)
 
 # -- Mount templates/ as static files for architecture graph assets --
 app.mount("/static/templates", StaticFiles(directory="templates"), name="static_templates")

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: resolvers.py
-Project: TALOS v5.19.0
+Project: TALOS v5.20.0
 Description:
     Cascading Open Access (OA) and preprint URL resolver for the Ethical
     Academic PDF Harvester. Given a paper metadata dictionary, ``resolve_oa_url``

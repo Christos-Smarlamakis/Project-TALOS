@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_provider_registry.py
-Project: TALOS v5.19.0
+Project: TALOS v5.20.0
 Description:
     Unit tests for the pluggable ProviderRegistry and ProviderDescriptor
-    value object (v5.16.2). Verifies the Open-Closed Principle contract:
-    the canonical ten-provider catalogue is pre-registered, arbitrary new
-    descriptors can be registered and retrieved without modifying core
-    routing code, and ``is_active`` is evaluated dynamically from key
-    presence (cloud) or port responsiveness (local Ollama). All tests are
-    hermetic -- no live cloud endpoint is contacted.
+    value object (v5.16.2, expanded v5.20.0). Verifies the Open-Closed
+    Principle contract: the canonical sixteen-provider catalogue is
+    pre-registered, arbitrary new descriptors can be registered and retrieved
+    without modifying core routing code, the six v5.20.0 inference engines
+    (SambaNova, Together, Fireworks, DeepInfra, Cohere, Perplexity) are
+    reported active/inactive strictly from key presence, and
+    ``get_available_providers()`` never raises. All tests are hermetic -- no
+    live cloud endpoint is contacted.
 
 Dependencies:
     - pytest: Test framework.
@@ -23,11 +25,12 @@ from src.core.provider_registry import (
     ProviderRegistry,
     ProviderDescriptor,
     get_provider_registry,
+    get_available_providers,
 )
 
 
 class TestProviderRegistryDefaults:
-    """Verify the canonical ten-provider catalogue is pre-registered."""
+    """Verify the canonical sixteen-provider catalogue is pre-registered."""
 
     def test_defaults_pre_registered(self):
         registry = ProviderRegistry()
@@ -35,6 +38,8 @@ class TestProviderRegistryDefaults:
         expected = {
             "ollama", "nvidia", "deepseek", "gemini", "groq", "cerebras",
             "mistral", "huggingface", "openrouter", "anthropic",
+            "sambanova", "together", "fireworks", "deepinfra",
+            "cohere", "perplexity",
         }
         assert names == expected
 
@@ -51,6 +56,47 @@ class TestProviderRegistryDefaults:
         gemini = registry.get("gemini")
         assert gemini is not None
         assert gemini.is_openai_compatible is False
+
+
+class TestV520ProviderExpansion:
+    """Verify the six v5.20.0 inference engines register with graceful key handling."""
+
+    V520_NAMES = {
+        "sambanova", "together", "fireworks", "deepinfra", "cohere", "perplexity",
+    }
+    V520_KEYS = (
+        "SAMBANOVA_API_KEY", "TOGETHER_API_KEY", "FIREWORKS_API_KEY",
+        "DEEPINFRA_API_KEY", "COHERE_API_KEY", "PERPLEXITY_API_KEY",
+    )
+
+    def test_new_providers_are_registered(self):
+        registry = ProviderRegistry()
+        names = {d.name for d in registry.list_all()}
+        assert self.V520_NAMES <= names
+
+    def test_new_providers_inactive_without_keys(self):
+        env = {k: "" for k in self.V520_KEYS}
+        with patch.dict(os.environ, env, clear=False):
+            registry = ProviderRegistry()
+            active = {d.name for d in registry.list_active()}
+            assert self.V520_NAMES.isdisjoint(active)
+
+    def test_new_providers_active_with_keys(self):
+        env = {k: "test-key" for k in self.V520_KEYS}
+        with patch.dict(os.environ, env, clear=False):
+            registry = ProviderRegistry()
+            active = {d.name for d in registry.list_active()}
+            assert self.V520_NAMES <= active
+
+    def test_get_available_providers_never_raises(self):
+        env = {k: "" for k in self.V520_KEYS}
+        with patch.dict(os.environ, env, clear=False):
+            result = get_available_providers()
+            assert isinstance(result, list)
+
+    def test_llm_provider_enum_has_sixteen_members(self):
+        from src.core.provider_registry import LLMProvider
+        assert len(list(LLMProvider)) == 16
 
 
 class TestProviderRegistryApi:

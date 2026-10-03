@@ -11,7 +11,7 @@
 
 """
 Module: hierarchical_evaluator.py
-Project: TALOS v5.19.0
+Project: TALOS v5.20.0
 Description:
     Two-Stage Rigor Decoupling engine for TALOS. Replaces the fragmented
     multi-tier screening logic with a single deterministic pipeline that

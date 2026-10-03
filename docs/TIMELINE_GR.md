@@ -4,9 +4,51 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.19.0 -- Μηχανή Αποσύζευξης Αυστηρότητας Δύο Σταδίων & Γνωστικός Αντιστοιχιστής Ρόλων SOTA)
+> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.21.0 -- Ενσωματωμένη Μικροϋπηρεσία Γνωστικού Πλέγματος & Αυτόνομος Πράκτορας Ανίχνευσης LLM)
 
 ---
+
+## Φάση 80: Ενσωματωμένη Μικροϋπηρεσία Γνωστικού Πλέγματος & Αυτόνομος Πράκτορας Ανίχνευσης Μοντέλων (v5.21.0)
+
+- [x] **Κατάσταση:** ΟΛΟΚΛΗΡΩΜΕΝΟ (2026-10-03).
+
+- [x] **Ενσωματωμένη Μικροϋπηρεσία Έτοιμη για Εξαγωγή** -- `src/services/cognitive_mesh/` (dto / registry / router / benchmarks / scavenger / reporter / server / client) σχεδιασμένη για απρόσκοπτη εξαγωγή στο SYNAPSE (:8000)· μηδέν εισαγωγές SQLite WAL / PRISMA / CLI.
+
+- [x] **Αυτόνομος Πράκτορας Ανίχνευσης Μοντέλων** -- το `scavenger.py` ανιχνεύει Hugging Face (τάση text-generation, επιτρεπτές άδειες), OpenRouter (δέλτα νέων κυκλοφοριών + τιμολόγηση) και Ollama (GGUF <= 14B)· ταξινομητής VRAM με επίγνωση υλικού (LOCAL_OPTIMAL / CLOUD_COST_EFFECTIVE / FRONTIER_REASONING) + ανάθεση 4 ρόλων· εφεδρική εκτός σύνδεσης στο `llm_benchmarks.json`.
+
+- [x] **Διπλός Συντάκτης Αναφορών** -- το `reporter.py` εκπέμπει `llm_market_intelligence_YYYYMMDD.md` + 100 τοις εκατό αυτόνομο, μηδενικών εξαρτήσεων πίνακα ελέγχου Σκοτεινού Θέματος HTML (ενσωματωμένο CSS/JS, κουμπιά φιλτραρίσματος, ετικέτες VRAM πράσινο/κεχριμπαρένιο/μπλε).
+
+- [x] **Μίνι-διακομιστής FastAPI Γνωστικού Πλέγματος** -- το `server.py` προσαρτά `/api/v1/cognitive` στο `main_api.py` (`/dispatch`, `/providers`, `/benchmarks`, `/scavenge`, `/health`) και εκτελείται αυτόνομα στη θύρα 8003.
+
+- [x] **Shims προς-τα-πίσω συμβατότητας** -- τα `src/core/cognitive_router.py`, `provider_registry.py`, `model_benchmark_client.py` επανεξάγουν τον νέο χώρο ονομάτων (100 τοις εκατό συμβατότητα εισαγωγών).
+
+- [x] **CLI & TUI** -- `--scavenge-models [--days N] [--report-only]`· Επιλογή 10 Ομάδας 1 TUI· Εγχειρίδιο Λειτουργίας A4.
+
+- [x] **Ακαδημαϊκός Φάκελος 09** -- `09_AUTONOMOUS_MODEL_SCAVENGING_MICROSERVICE_ARCHITECTURE.md` (7 ενότητες).
+
+- [x] **Συγχρονισμός έκδοσης** -- 5.21.0 στα βασικά αρχεία + docker-compose (`talos:5.21.0`) + CITATION.cff (5.21.0, 2026-10-03) + εκκινητές + βοηθητικές ενότητες + κανονικά έγγραφα (2026-10-03).
+
+- [x] **Πέρασαν οι πύλες επαλήθευσης** -- compileall (0 σφάλματα), test_system_integrity, test_talos_version (5.21.0), 43 ερμητικές (scavenger + reporter + provider registry + cognitive router + model benchmark), `--scavenge-models --days 7 --report-only` (έξοδος 0), `--help` (Εγχειρίδιο A4), verify_dependency_map --ci (έξοδος 0), bash -n, σάρωση UTF-8 (0 U+FFFD).
+
+## Φάση 79: Γνωστικός Μετα-Δρομολογητής, Μηχανή Ανακάλυψης SOTA LLM & Εγχειρίδια Λειτουργίας Κονσόλας (v5.20.0)
+
+- [x] **Κατάσταση:** ΟΛΟΚΛΗΡΩΜΕΝΟ (2026-10-03).
+
+- [x] **Αποσυζευγμένος Γνωστικός Μετα-Δρομολογητής** -- `src/core/cognitive_router.py` με 4 στρατηγικές (LOWEST_LATENCY / REASONING_RIGOR / LOWEST_COST / LOCAL_AIRGAPPED), DTO Pydantic v2, διακόπτη κυκλώματος + μανδάλωση ποσόστωσης 401/402/429, Semaphore(2).
+
+- [x] **Μητρώο 16 παρόχων** -- SambaNova, Together, Fireworks, DeepInfra, Cohere, Perplexity· απαρίθμηση `LLMProvider` + `get_available_providers()`.
+
+- [x] **Δυναμική ανακάλυψη SOTA** -- `src/core/model_benchmark_client.py` + `--discover-llms` (έξοδος 0) + `data/cache/llm_benchmarks.json`.
+
+- [x] **Επιχειρησιακή Βοήθεια Κονσόλας** -- εγχειρίδιο 4 ενοτήτων (SOP / Πίνακας Εντολών / Διαγνωστικά / Περιβάλλον).
+
+- [x] **ARCHITECTURE_MAP** -- αποδόμηση 6 ζωνών ISO/IEC 25010 (EN + GR)· η Ζώνη 5 έτοιμη για εξαγωγή.
+
+- [x] **Ακαδημαϊκός Φάκελος 08** -- `08_COGNITIVE_META_ROUTING_DYNAMIC_DISCOVERY.md` (7 ενότητες)· Κανόνας 10 στο `.clinerules`.
+
+- [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose (`talos:5.20.0`) + CITATION.cff (5.20.0, 2026-10-03) + μεταδεδομένα + 19 κανονικά έγγραφα σε v5.20.0 (2026-10-03).
+
+- [x] **Πέρασαν οι πύλες επαλήθευσης** -- compileall (0 σφάλματα), test_system_integrity, test_talos_version (5.20.0), 31 ερμητικές, `--discover-llms` (έξοδος 0), `--help` (έξοδος 0), verify_dependency_map --ci (έξοδος 0), bash -n, σάρωση UTF-8 (0 U+FFFD).
 
 ## Φάση 78: Αποσύζευξη Αυστηρότητας Δύο Σταδίων & Γνωστικός Αντιστοιχιστής Ρόλων SOTA (v5.19.0)
 

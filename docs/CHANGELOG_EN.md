@@ -2,6 +2,66 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.21.0] - 2026-10-03 -- Cognitive Mesh Extraction-Ready In-Tree Microservice & Autonomous LLM Scavenger Agent (ISO/IEC 25010 Compliant)
+
+### Added
+
+- **In-Tree Extraction-Ready Microservice Chassis** (`src/services/cognitive_mesh/`): the decoupled cognitive layer is restructured into a self-contained microservice package engineered for frictionless standalone extraction to the ALEXANDRIA SYNAPSE (:8000) bus serving both TALOS and MEMEX. Eight submodules compose the chassis: `dto.py` (standalone Pydantic v2 schemas -- `RoutingStrategy`, `RouterTaskRequest`, `RouterTaskResponse`, `ModelSpec`, `ProviderSpec`, `BenchmarkScorecard`, `ScavengedModel`, `MarketIntelligenceReport`), `registry.py` (the sixteen-provider registry migrated with zero TALOS coupling), `router.py` (`CognitiveMetaRouter` with `threading.Semaphore(2)` and the quota-latching circuit breaker), `benchmarks.py` (`ModelBenchmarkClient` operating on `data/cache/llm_benchmarks.json`), `scavenger.py`, `reporter.py`, `server.py`, and `client.py`. The package imports only the standard library, Pydantic, `config.settings`, and (in `server.py`) FastAPI/uvicorn -- zero SQLite WAL, PRISMA, or CLI imports.
+
+- **Autonomous Model Scavenger Agent** (`src/services/cognitive_mesh/scavenger.py`): `ModelScavengerAgent.scavenge_market(window_days=30)` forages three catalogues -- the Hugging Face Hub API (`pipeline_tag=text-generation`, trending sort, permissive open-weight filtering for Apache-2.0/MIT/Llama), the OpenRouter models catalogue (new-release delta within the window, per-token pricing, context sizes), and the Ollama library (quantized GGUF tags <= 14B for the RTX 4070 12 GB VRAM). A hardware-aware role classifier reconciles each model into three VRAM classes (`LOCAL_OPTIMAL` <= 12 GB, `CLOUD_COST_EFFECTIVE` > 14B-70B, `FRONTIER_REASONING` > 70B or proprietary) and one of four scientific roles (Fast Screening, Kitchenham Rigor, Code Audit, Vector Embeddings). Offline resilience degrades gracefully to the local benchmark cache.
+
+- **Dual Intelligence Reporter** (`src/services/cognitive_mesh/reporter.py`): `IntelligenceReporter.generate_reports()` writes `llm_market_intelligence_YYYYMMDD.md` (executive summary, comprehensive per-model tables, RTX 4070 recommendations) and `llm_market_intelligence_YYYYMMDD.html` (a 100 percent standalone, zero-dependency, responsive Dark Theme dashboard with embedded CSS and vanilla JS, filter buttons for All Models / Local RTX 4070 <12GB / Cloud High-Throughput / Deep Reasoning, and colored VRAM badges green/amber/blue).
+
+- **Cognitive Mesh FastAPI mini-server** (`src/services/cognitive_mesh/server.py`): exports `cognitive_router_app` (mounted in `main_api.py` under `/api/v1/cognitive`) exposing `POST /dispatch`, `GET /providers`, `GET /benchmarks`, `POST /scavenge`, and `GET /health`, plus a standalone `app` runnable as `uvicorn src.services.cognitive_mesh.server:app --port 8003`. The `CognitiveMeshClient` (`client.py`) consumes the mesh interchangeably in-process (TALOS) and over HTTP (MEMEX).
+
+- **Backward-compatible shim layer** (`src/core/cognitive_router.py`, `src/core/provider_registry.py`, `src/core/model_benchmark_client.py`): thin re-export modules pointing at the new namespace, preserving 100 percent of pre-v5.21.0 import paths for `AIManager`, `talos.py`, and the existing test suite.
+
+- **CLI & TUI surfaces**: `--scavenge-models [--days N] [--report-only]` triggers the scavenger, prints a Rich summary table, and emits the dual reports; TUI Group 1 gains Option 10 "Autonomous Model Scavenger & Market Intelligence (MD/HTML)" (downstream options renumbered).
+
+- **Enterprise Console Help** (`src/utils/help_system.py`): Runbook A4 and the Scientific Command Matrix gain the `--scavenge-models` guidance.
+
+- **Academic Dossier 09** (`docs/internal/academic/09_AUTONOMOUS_MODEL_SCAVENGING_MICROSERVICE_ARCHITECTURE.md`): confidential Theory-to-Code dossier with all seven mandatory sections (ISO/IEC 25010 quality formulation, Pareto discovery ranking, in-tree microservice spec, dual reporting mechanics, PRISMA-ScR integrity, SYNAPSE/MEMEX/OPTICA extraction roadmap with PhD Chapter 2 and HOU ICBE 2026 +30 percent traceability, IP notice).
+
+- **Unit tests**: `tests/test_model_scavenger.py` (Hugging Face/OpenRouter mock parsing, VRAM classifier, offline fallback) and `tests/test_intelligence_reporter.py` (dual-file creation, zero external `<script src>` / `<link rel="stylesheet">`, filter controls and badges).
+
+### Changed
+
+- **`docs/ARCHITECTURE_MAP.md` + `docs/ARCHITECTURE_MAP_GR.md`**: Zone 5 rewritten to document the unified `src/services/cognitive_mesh/` architecture (all eight submodules) and re-designated extraction-ready for SYNAPSE.
+
+- **Version strings synchronized to 5.21.0** across the core code files, `docker-compose.yml` (`talos:5.21.0`), `CITATION.cff` (version 5.21.0, date-released 2026-10-03), the launchers, the auxiliary modules, and all canonical documentation files (dated 2026-10-03).
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.21.0); `pytest tests/test_model_scavenger.py tests/test_intelligence_reporter.py tests/test_provider_registry.py tests/test_cognitive_router.py tests/test_model_benchmark_client.py -q` (43 hermetic); `python talos.py --scavenge-models --days 7 --report-only` (exit 0, dual reports emitted); `python talos.py --help` (Runbook A4 + `--scavenge-models`); `python src/utils/verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
+## [v5.20.0] - 2026-10-03 -- Cognitive Meta-Router, SOTA LLM Dynamic Discovery & Enterprise Console Runbooks
+
+### Added
+
+- **Decoupled Cognitive Meta-Router** (`src/core/cognitive_router.py`): a standalone, extraction-ready `CognitiveMetaRouter` with four named routing strategies -- `LOWEST_LATENCY` (EMA time-to-first-token ranking over Groq / Cerebras / SambaNova / Ollama), `REASONING_RIGOR` (DeepSeek / Anthropic / SambaNova 405B for forensic audits), `LOWEST_COST` (cheapest provider meeting the quality floor Q_min >= 0.70), and `LOCAL_AIRGAPPED` (strict Ollama on :11434 with zero egress). The router carries zero SQLite WAL / PRISMA / CLI imports, communicates via standalone Pydantic v2 DTOs (`RouterTaskRequest`, `RouterTaskResponse`, `RoutingStrategy`), enforces a `threading.Semaphore(2)` local-GPU concurrency cap, and implements session-scoped circuit breaking that latches a provider offline on HTTP 401/402/429 with graceful same-tier failover.
+
+- **16-provider registry expansion** (`src/core/provider_registry.py`): six high-throughput inference engines added -- SambaNova Cloud (SN40L RDUs), Together AI, Fireworks AI, DeepInfra, Cohere (Command R/R+), and Perplexity (Sonar). A canonical `LLMProvider` enumeration and a `get_available_providers()` convenience function report active status without throwing on absent keys.
+
+- **Dynamic SOTA discovery client** (`src/core/model_benchmark_client.py`): `ModelBenchmarkClient` maintains a cached benchmark store at `data/cache/llm_benchmarks.json` (MMLU-Pro, HumanEval, TTFT, throughput, cost per 1M tokens) and exposes `get_top_models_by_role()` for the four scientific workloads (Fast Screening, Rigorous Audit, Code Audit, Vector Embeddings), reconciled against the local RTX 4070 (12 GB VRAM) budget via `hardware_advisor`.
+
+- **CLI & TUI surfaces**: `--discover-llms [--offline]` renders a Rich SOTA discovery matrix (exit 0); TUI Group 1 gains Option 9 "Discover Top LLMs & Live Benchmarks".
+
+- **Enterprise Console Help System** (`src/utils/help_system.py`): the manual is restructured into four sections -- Section A (SOP Runbooks: PRISMA-ScR, Neural Vector/Code-First, Autonomous Mission Planning), Section B (Scientific Command Matrix grouped into Ingestion / Evaluation / Search / PDF Harvesting / System Management), Section C (Operational Diagnostics & Self-Healing), and Section D (Environment & Configuration Specs with ports :8000/:8001/:8002/:11434).
+
+- **Functional Architecture Map** (`docs/ARCHITECTURE_MAP.md` + `docs/ARCHITECTURE_MAP_GR.md`): the complete ISO/IEC 25010 decomposition into six functional zones, with Zone 5 flagged as extraction-ready for the SYNAPSE (:8000) microservice serving TALOS and MEMEX.
+
+- **Academic Dossier 08** (`docs/internal/academic/08_COGNITIVE_META_ROUTING_DYNAMIC_DISCOVERY.md`): a confidential Theory-to-Code dossier following the mandatory seven-section structure (Pareto multi-objective formulation, quota-latching state machine, code traceability matrix, 16-provider benchmarks, PRISMA-ScR integrity, SYNAPSE extraction path, IP notice).
+
+### Changed
+
+- **`src/core/provider_registry.py`**: catalogue expanded from ten to sixteen providers; `LLMProvider` enum and `get_available_providers()` added.
+- **`.clinerules`**: codifies permanent Rule 10 (Mandatory Academic Dossier Production Protocol).
+- **Version strings synchronized to 5.20.0** across the 6 core code files, `docker-compose.yml` (`talos:5.20.0`), `CITATION.cff` (version 5.20.0, date-released 2026-10-03), `config.template.json`, tray/bibtex/diagnostics metadata, `src/core/`, `src/prisma/`, `src/search/`, `src/ingestion/pdf_harvester/` docstrings, and all 19 canonical documentation files (dated 2026-10-03).
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.20.0); `pytest tests/test_provider_registry.py tests/test_cognitive_router.py tests/test_model_benchmark_client.py -q` (31 hermetic); `python talos.py --discover-llms` (exit 0); `python talos.py --help` (4-section enterprise manual, exit 0); `python src/utils/verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.19.0] - 2026-10-03 -- Two-Stage Rigor Decoupling Engine & Cognitive SOTA Role Matcher
 
 ### Added

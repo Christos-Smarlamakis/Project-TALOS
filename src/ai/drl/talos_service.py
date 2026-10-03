@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: talos_service.py (v2.1 — Profile-Aware, Dynamic N Sources)
-Project: TALOS v5.19.0
+Project: TALOS v5.21.0
 Description:
     24/7 autonomous research service. Runs continuously on weak hardware
     (Raspberry Pi, old laptop, etc.) using the trained DRL agent to
@@ -739,7 +739,7 @@ def main():
         try:
             import ctypes
             ctypes.windll.kernel32.SetConsoleTitleW(
-                f"TALOS v5.19.0 | Autonomous Research Service [{active_profile}]"
+                f"TALOS v5.21.0 | Autonomous Research Service [{active_profile}]"
             )
         except Exception:
             pass

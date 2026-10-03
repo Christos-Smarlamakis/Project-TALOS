@@ -1,22 +1,31 @@
 # -*- coding: utf-8 -*-
 """
 Module: help_system.py
-Project: TALOS v5.19.0
+Project: TALOS v5.21.0
 Description:
-    Dual-Surface User Assistance System. This module renders a rich, four-panel
-    interactive command reference for the TALOS terminal UI and provides the
-    interactive bridge to the FastAPI Web Manual. The four panels document the
-    CLI fast-dispatch flags, the interactive navigation controls (TUI and the
-    3D WebGL constellation HUD), the service port mapping, and the generated
-    reports and storage artifacts. In non-interactive mode the function returns
-    a Rich renderable Group so callers may print it directly; in interactive
-    mode it prints the panels and then prompts the user to either open the Web
-    Manual in a browser or return to the menu.
+    Enterprise Console Help System. Renders a structured, four-section CLI
+    manual for the TALOS terminal UI and bridges to the interactive FastAPI Web
+    Manual served at GET /help. The four sections are:
+      - Section A: Standard Operating Procedures (SOP Runbooks) -- step-by-step
+        workflows for PRISMA-ScR systematic review, neural vector and code-first
+        retrieval, and autonomous mission planning.
+      - Section B: Scientific Command Matrix -- a categorized cheatsheet of
+        every CLI flag grouped into Ingestion, Evaluation, Search, PDF
+        Harvesting, and System Management.
+      - Section C: Operational Diagnostics & Self-Healing Guide -- recovery
+        procedures for quota depletion, Ollama port conflicts, and model
+        alignment.
+      - Section D: Environment & Configuration Specs -- profile paths, hardware
+        parameters, and port assignments (:8000, :8001, :8002, :11434).
+
+    In non-interactive mode the renderer returns a Rich Group so callers may
+    print it directly; in interactive mode it prints the sections and prompts
+    the user to open the Web Manual or return to the menu.
 
     Key design decisions:
     - Zero emojis and pure formal academic tone in every heading and cell.
-    - Ports and directory paths are derived from config.settings so the manual
-      never drifts from the canonical configuration surface.
+    - Ports and paths are derived from config.settings so the manual never
+      drifts from the canonical configuration surface.
     - The interactive browser prompt optionally bootstraps the FastAPI backend
       (mirroring the capabilities viewer) so /help resolves even on a cold start.
 
@@ -54,195 +63,195 @@ _console = Console()
 _PANEL_STYLES = ("bright_cyan", "bright_blue", "bright_magenta", "bright_green")
 
 
-def _panel_1_cli_flags() -> Panel:
-    """Build Panel 1: categorized CLI fast-dispatch flags.
+def _section_a_sop_runbooks() -> Panel:
+    """Build Section A: Standard Operating Procedures (SOP Runbooks).
 
     Returns:
-        Panel: A Rich Panel containing a categorized flag-reference Table.
+        Panel: A Rich Panel with three guided step-by-step workflows.
     """
-    table = Table(
-        title="CLI Fast-Dispatch Flags",
-        box=box.ROUNDED,
-        border_style="bright_cyan",
-        show_lines=True,
-        header_style="bold bright_cyan",
-        expand=False,
-    )
-    table.add_column("Category", style="bold cyan", no_wrap=True)
-    table.add_column("Flag", style="bold white", no_wrap=True)
-    table.add_column("Description", style="white")
+    body = Text()
+    body.append("Runbook A1 -- PRISMA-ScR Systematic Review Workflow\n",
+                style="bold bright_cyan")
+    body.append("  1. Deep harvest      : python talos.py --daily  "
+                "(18-source ingestion)\n")
+    body.append("  2. Swarm appraisal   : python talos.py --appraise-quality "
+                "--swarm --min-score 7.0\n")
+    body.append("  3. Full-text download: python talos.py --download-pdfs "
+                "--min-score 7.0\n")
+    body.append("  4. LaTeX synthesis   : python talos.py --prisma --swarm\n")
+    body.append("\n")
 
-    table.add_row("Research Setup", "--wizard",
-                  "Launch the 4-step Research Setup Wizard "
-                  "(src/utils/research_setup_wizard.py).")
-    table.add_row("Ingestion", "--daily",
-                  "Trigger the 18-source Daily Search ingestion pipeline "
-                  "(src/ingestion/daily_search.py).")
-    table.add_row("Universal Search Hub", "--snowball [seed]",
-                  "Backward/forward citation snowballing (seed = DOI, DB ID, or title).")
-    table.add_row("Universal Search Hub", "--vector-search [query]",
-                  "Neural vector semantic search over local nomic-embed-text embeddings.")
-    table.add_row("Universal Search Hub", "--code-search [query]",
-                  "Reproducible code-first discovery (GitHub / PapersWithCode / benchmarks).")
-    table.add_row("PRISMA Swarm", "--prisma [--swarm]",
-                  "PRISMA-ScR declarative synthesis pipeline; --swarm enables the "
-                  "3-agent peer-review consensus swarm.")
-    table.add_row("Exports", "--export-bib [score] [--min-quality Q] [--quadrant Q]",
-                  "Export curated papers to a BibTeX / LaTeX library with dual "
-                  "relevance/quality filtering (data/exports/talos_library.bib).")
-    table.add_row("PDF Harvesting", "--download-pdfs [--min-score 7.0]",
-                  "Harvest legal Open Access / preprint full-text PDFs via the "
-                  "12-source cascading resolver (src/ingestion/pdf_harvester/).")
-    table.add_row("Full-Text Search", "--fts \"[query]\"",
-                  "SQLite FTS5 full-text search inside cached PDF bodies "
-                  "(src/search/fulltext_search.py).")
-    table.add_row("PDF Viewer", "--open-pdf [paper_id]",
-                  "Open a downloaded local PDF in the default system viewer.")
-    table.add_row("Quality Appraisal", "--appraise-quality [--min-score 7.0] [--swarm] [--force]",
-                  "Batch Kitchenham (2007) scientific quality appraisal of "
-                  "candidate papers with 2D evidence-quadrant classification; "
-                  "--swarm enables the Tier-2 Forensic Quality Swarm (4 "
-                  "specialized auditors + inter-auditor Fleiss kappa); "
-                  "--force re-appraises already-appraised candidates.")
-    table.add_row("Quality Appraisal", "--compile-skills [--force]",
-                  "Compile the four domain-specialized auditor skill files "
-                  "from the canonical templates into the active profile "
-                  "workspace (_profiles/<name>/skills/).")
-    table.add_row("AI Strategy", "--strategy [mode]",
-                  "Switch the AI execution strategy (strict_local, local_first, "
-                  "cloud_first, strict_cloud, auto_dynamic).")
-    table.add_row("Hardware Advisor", "--hardware-advisor | --recommend-models",
-                  "Hardware-aware model advisor: VRAM parameter budgeting, the "
-                  "4-role SOTA model matcher (fast screening / deep reasoning / "
-                  "code audit / embeddings), and a SOTA discovery radar "
-                  "(src/core/hardware_advisor.py).")
-    table.add_row("Model Adoption", "--apply-models",
-                  "Persist the recommended 4-role SOTA model stack into the "
-                  "active profile config.json in one click.")
-    table.add_row("Diagnostics", "--diagnostics | --doctor, -d",
-                  "Run the 8-point ISO/IEC 25010 System Diagnostics Analyzer.")
-    table.add_row("Diagnostics", "--stats",
-                  "Run the Database Statistics health report (src/utils/db_stats.py).")
-    table.add_row("Diagnostics", "--help, -h",
-                  "Display this four-panel command reference manual.")
+    body.append("Runbook A2 -- Neural Vector & Code-First Retrieval Workflow\n",
+                style="bold bright_blue")
+    body.append("  1. Code mining        : python talos.py --code-search \"<query>\"\n")
+    body.append("  2. Vector embedding   : python talos.py --vector-search \"<query>\"\n")
+    body.append("  3. FTS5 verification  : python talos.py --fts \"<phrase>\"\n")
+    body.append("\n")
+
+    body.append("Runbook A3 -- Autonomous Mission Planning Execution\n",
+                style="bold bright_magenta")
+    body.append("  1. Provision profile and compile auditor skills:\n")
+    body.append("     python talos.py --compile-skills\n")
+    body.append("  2. Launch the PAIR-DRL agent evaluation under CJCSI 3160.01A\n")
+    body.append("     constraints via Group 4 (DRL Agents, Daemons & GWO Swarm).\n")
+    body.append("  3. Review the 3D Knowledge Constellation HUD and export the\n")
+    body.append("     synthesized mission-planning report.\n")
+    body.append("\n")
+
+    body.append("Runbook A4 -- Autonomous Model Scavenger & Market Intelligence\n",
+                style="bold bright_green")
+    body.append("  1. Forage the market (Hugging Face / OpenRouter / Ollama):\n")
+    body.append("     python talos.py --scavenge-models --days 30\n")
+    body.append("  2. Generate reports without the console summary:\n")
+    body.append("     python talos.py --scavenge-models --report-only\n")
+    body.append("  3. Open the standalone Dark Theme dashboard under:\n")
+    body.append("     data/reports/llm_intelligence/llm_market_intelligence_YYYYMMDD.html\n")
 
     return Panel(
-        Align.left(table),
-        title="[bold]Panel 1 -- CLI Fast-Dispatch Flags[/bold]",
+        body,
+        title="[bold]Section A -- Standard Operating Procedures (SOP Runbooks)[/bold]",
         border_style=_PANEL_STYLES[0],
         box=box.ROUNDED,
         padding=(1, 2),
     )
 
 
-def _panel_2_controls() -> Panel:
-    """Build Panel 2: interactive controls and navigation semantics.
+def _section_b_command_matrix() -> Panel:
+    """Build Section B: the categorized Scientific Command Matrix.
 
     Returns:
-        Panel: A Rich Panel documenting TUI and 3D WebGL navigation controls.
+        Panel: A Rich Panel containing a five-category flag-reference Table.
     """
-    body = Text()
-    body.append("Terminal UI (TUI) Navigation\n", style="bold bright_blue")
-    body.append("  Up / Down arrows     Move the selection highlight.\n")
-    body.append("  Enter                Confirm the highlighted operation.\n")
-    body.append("  Esc / Ctrl+C         Cancel safely -- the session returns to the "
-                "menu without corrupting database or profile state.\n")
-    body.append("\n")
+    table = Table(
+        title="Scientific Command Matrix",
+        box=box.ROUNDED,
+        border_style="bright_blue",
+        show_lines=True,
+        header_style="bold bright_blue",
+        expand=False,
+    )
+    table.add_column("Category", style="bold cyan", no_wrap=True)
+    table.add_column("Flag", style="bold white", no_wrap=True)
+    table.add_column("Description", style="white")
 
-    body.append("3D WebGL Constellation HUD (Visualizer Shortcuts)\n",
-                style="bold bright_magenta")
-    body.append("  C / L                Toggle the telemetry console overlay.\n")
-    body.append("  R                    Reset the camera view.\n")
-    body.append("  T                    Toggle the light/dark theme.\n")
-    body.append("  F                    Toggle fullscreen.\n")
-    body.append("  S                    Capture a PNG snapshot.\n")
-    body.append("  Space                Pause / resume live playback.\n")
-    body.append("  1 / 2 / 3            Set replay speed.\n")
-    body.append("\n")
-
-    body.append("3D WebGL Mouse Controls\n", style="bold bright_green")
-    body.append("  Left-drag            Orbit / rotate the constellation.\n")
-    body.append("  Right-drag           Pan the camera.\n")
-    body.append("  Scroll wheel         Zoom in / out.\n")
+    table.add_row("Ingestion", "--daily", "18-source daily search ingestion pipeline.")
+    table.add_row("Ingestion", "--wizard", "4-step research setup wizard.")
+    table.add_row("Evaluation", "--appraise-quality [--swarm] [--force]",
+                  "Kitchenham (2007) quality appraisal with Tier-2 swarm.")
+    table.add_row("Evaluation", "--prisma [--swarm]",
+                  "PRISMA-ScR declarative synthesis pipeline.")
+    table.add_row("Evaluation", "--compile-skills [--force]",
+                  "Compile the four domain-specialized auditor skills.")
+    table.add_row("Evaluation", "--export-bib [score]",
+                  "Export the curated library to BibTeX / LaTeX.")
+    table.add_row("Search", "--snowball [seed]", "Citation snowballing.")
+    table.add_row("Search", "--vector-search [query]",
+                  "Neural vector semantic search.")
+    table.add_row("Search", "--code-search [query]", "Code-first discovery.")
+    table.add_row("Search", "--fts \"[query]\"", "SQLite FTS5 full-text search.")
+    table.add_row("PDF Harvesting", "--download-pdfs [--min-score 7.0]",
+                  "Harvest legal Open Access full-text PDFs.")
+    table.add_row("PDF Harvesting", "--open-pdf [paper_id]",
+                  "Open a downloaded local PDF.")
+    table.add_row("System Management", "--strategy [mode]",
+                  "Switch the AI execution strategy.")
+    table.add_row("System Management", "--hardware-advisor | --recommend-models",
+                  "VRAM budget + 4-role SOTA model matcher.")
+    table.add_row("System Management", "--apply-models",
+                  "Persist the recommended model stack.")
+    table.add_row("System Management", "--discover-llms",
+                  "Live SOTA benchmark discovery matrix.")
+    table.add_row("System Management", "--scavenge-models [--days N] [--report-only]",
+                  "Autonomous model scavenger + dual MD/HTML intelligence reports.")
+    table.add_row("System Management", "--diagnostics | --doctor",
+                  "8-point ISO/IEC 25010 diagnostics analyzer.")
+    table.add_row("System Management", "--stats", "Database statistics report.")
+    table.add_row("System Management", "--help, -h",
+                  "Display this enterprise manual.")
 
     return Panel(
-        body,
-        title="[bold]Panel 2 -- Interactive Controls & Navigation[/bold]",
+        Align.left(table),
+        title="[bold]Section B -- Scientific Command Matrix[/bold]",
         border_style=_PANEL_STYLES[1],
         box=box.ROUNDED,
         padding=(1, 2),
     )
 
 
-def _panel_3_ports() -> Panel:
-    """Build Panel 3: port mapping and services architecture.
+def _section_c_diagnostics() -> Panel:
+    """Build Section C: Operational Diagnostics & Self-Healing Guide.
 
     Returns:
-        Panel: A Rich Panel containing the service port mapping Table.
+        Panel: A Rich Panel with recovery procedures for common failure modes.
     """
-    table = Table(
-        title="Port Mapping & Services Architecture",
-        box=box.ROUNDED,
-        border_style="bright_magenta",
-        show_lines=True,
-        header_style="bold bright_magenta",
-        expand=False,
-    )
-    table.add_column("Port", style="bold cyan", no_wrap=True)
-    table.add_column("Service", style="bold white", no_wrap=True)
-    table.add_column("Role", style="white")
+    body = Text()
+    body.append("C1 -- Quota Depletion Recovery\n", style="bold bright_cyan")
+    body.append("  - The Cognitive Meta-Router latches a provider offline on HTTP\n")
+    body.append("    401 / 402 / 429 and fails over to the next provider in the tier.\n")
+    body.append("  - Rotate the API key in the .env file, then restart the session to\n")
+    body.append("    clear the session-scoped latches.\n")
+    body.append("  - Verify the active provider set: python talos.py --discover-llms\n\n")
 
-    table.add_row(f"{TALOS_API_PORT}", "TALOS FastAPI",
-                  "Headless REST API, interactive Web Manual (/help), and 3D "
-                  "Knowledge Constellation Visualizer.")
-    table.add_row("8000", "SYNAPSE Event Bus",
-                  "Event-driven interoperability mesh for the ALEXANDRIA ecosystem.")
-    table.add_row("8002", "OPTICA Bridge",
-                  "Visualization offload microservice (cnsplots / PyVis).")
-    table.add_row("11434", "Ollama Universal Local AI Runtime",
-                  "GPU/CPU local inference for both the fast edge and heavy "
-                  "reasoning tiers.")
+    body.append("C2 -- Ollama Port Conflict Recovery\n", style="bold bright_blue")
+    body.append("  - Ollama binds :11434; TALOS FastAPI uses :8001 and SYNAPSE uses :8000,\n")
+    body.append("    so the three services never collide.\n")
+    body.append("  - On Windows, identify the holder: netstat -ano | findstr :11434\n")
+    body.append("  - Restart Ollama, then re-probe: python talos.py --diagnostics\n\n")
+
+    body.append("C3 -- Model Alignment Recovery\n", style="bold bright_magenta")
+    body.append("  - Reconcile the local GPU budget (RTX 4070, 12 GB VRAM):\n")
+    body.append("      python talos.py --recommend-models\n")
+    body.append("  - Adopt the recommended 4-role stack: python talos.py --apply-models\n")
+    body.append("  - Re-provision any missing model via the Model Provisioning CLI.\n")
 
     return Panel(
-        Align.left(table),
-        title="[bold]Panel 3 -- Port Mapping & Services Architecture[/bold]",
+        body,
+        title="[bold]Section C -- Operational Diagnostics & Self-Healing Guide[/bold]",
         border_style=_PANEL_STYLES[2],
         box=box.ROUNDED,
         padding=(1, 2),
     )
 
 
-def _panel_4_artifacts() -> Panel:
-    """Build Panel 4: generated reports and storage artifacts directory map.
+def _section_d_environment() -> Panel:
+    """Build Section D: Environment & Configuration Specs.
 
     Returns:
-        Panel: A Rich Panel containing the artifact directory map Table.
+        Panel: A Rich Panel combining the port map with profile and hardware
+            specifications.
     """
-    table = Table(
-        title="Generated Reports & Storage Artifacts",
+    ports = Table(
+        title="Port Assignments",
         box=box.ROUNDED,
         border_style="bright_green",
         show_lines=True,
         header_style="bold bright_green",
         expand=False,
     )
-    table.add_column("Artifact", style="bold cyan", no_wrap=True)
-    table.add_column("Path / Location", style="bold white", no_wrap=True)
+    ports.add_column("Port", style="bold cyan", no_wrap=True)
+    ports.add_column("Service", style="bold white", no_wrap=True)
+    ports.add_column("Role", style="white")
+    ports.add_row("8000", "SYNAPSE Event Bus",
+                  "ALEXANDRIA ecosystem interoperability mesh.")
+    ports.add_row(f"{TALOS_API_PORT}", "TALOS FastAPI",
+                  "REST API, Web Manual (/help), visualizer.")
+    ports.add_row("8002", "OPTICA Bridge", "Visualization offload microservice.")
+    ports.add_row("11434", "Ollama Runtime", "Local GPU/CPU inference (RTX 4070).")
 
-    table.add_row("BibTeX / LaTeX library", "data/exports/talos_library.bib")
-    table.add_row("Neural vector search reports", "data/reports/vector_search/")
-    table.add_row("Code-first search reports", "data/reports/code_search/")
-    table.add_row("Citation snowballing genealogy", "data/reports/snowball/")
-    table.add_row("PRISMA-ScR LaTeX synthesis",
-                  "src/prisma/scoping_review_synthesizer.py output")
-    table.add_row("Active profile database", "data/talos_research.db (default)")
-    table.add_row("Isolated profile databases", "_profiles/<profile>/talos_research.db")
-    table.add_row("Quality appraisal fields",
-                  "papers.quality_score / quality_rubric_json / evidence_quadrant")
+    specs = Text()
+    specs.append("\nProfile Paths\n", style="bold bright_green")
+    specs.append("  Active profile config : _profiles/<name>/config.json\n")
+    specs.append("  Isolated databases    : _profiles/<name>/talos_research.db\n")
+    specs.append("  Default database      : data/talos_research.db\n\n")
+    specs.append("Hardware Parameters\n", style="bold bright_green")
+    specs.append("  GPU budget            : RTX 4070 (12 GB VRAM), 80% training / "
+                "2 GB inference headroom\n")
+    specs.append("  Local concurrency cap : threading.Semaphore(2)\n")
+    specs.append("  Local models          : qwen2.5:14b, llama3.1:8b, nomic-embed-text\n")
 
     return Panel(
-        Align.left(table),
-        title="[bold]Panel 4 -- Generated Reports & Storage Artifacts[/bold]",
+        Group(Align.left(ports), specs),
+        title="[bold]Section D -- Environment & Configuration Specs[/bold]",
         border_style=_PANEL_STYLES[3],
         box=box.ROUNDED,
         padding=(1, 2),
@@ -250,16 +259,16 @@ def _panel_4_artifacts() -> Panel:
 
 
 def _build_manual_group() -> Group:
-    """Assemble the four panels into a single Rich renderable Group.
+    """Assemble the four enterprise sections into a single Rich Group.
 
     Returns:
-        Group: A Rich Group containing all four help panels.
+        Group: A Rich Group containing Sections A through D.
     """
     return Group(
-        _panel_1_cli_flags(),
-        _panel_2_controls(),
-        _panel_3_ports(),
-        _panel_4_artifacts(),
+        _section_a_sop_runbooks(),
+        _section_b_command_matrix(),
+        _section_c_diagnostics(),
+        _section_d_environment(),
     )
 
 
@@ -318,12 +327,12 @@ def _open_web_manual() -> None:
 
 
 def render_help_manual(interactive: bool = False):
-    """Render the four-panel TALOS command reference manual.
+    """Render the four-section enterprise command reference manual.
 
     Args:
         interactive (bool): When False, return a Rich Group renderable for the
             caller to print (used by the --help CLI fast-dispatch path). When
-            True, print the panels and prompt the user to either open the
+            True, print the sections and prompt the user to either open the
             interactive Web Manual in a browser or return to the menu.
 
     Returns:
@@ -368,3 +377,6 @@ def render_help_manual(interactive: bool = False):
         _open_web_manual()
 
     return None
+
+
+

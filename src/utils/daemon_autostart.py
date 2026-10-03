@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: daemon_autostart.py
-Project: TALOS v5.19.0
+Project: TALOS v5.20.0
 Description:
     Windows OS autostart orchestrator for the TALOS 24/7 autonomous daemon.
     Generates a self-contained boot batch script (talos_daemon_boot.bat) that

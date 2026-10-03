@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: research_setup_wizard.py
-Project: TALOS v5.19.0
+Project: TALOS v5.20.0
 Description:
     Structured, step-by-step research onboarding wizard for TALOS. Guides the
     researcher through four plain-English steps: (1) research topic capture

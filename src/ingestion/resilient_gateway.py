@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: resilient_gateway.py
-Project: TALOS v5.19.0
+Project: TALOS v5.20.0
 Description:
     Overarching self-healing ingestion gateway that wraps every one of the 18
     academic source adapters. When a publisher source fast-fails with an

@@ -4,9 +4,51 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-03 (v5.19.0 -- Two-Stage Rigor Decoupling Engine & Cognitive SOTA Role Matcher)
+> **Last Updated:** 2026-10-03 (v5.21.0 -- Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger Agent)
 
 ---
+
+## Phase 80: Cognitive Mesh In-Tree Microservice & Autonomous Model Scavenger Agent (v5.21.0)
+
+- [x] **Status:** COMPLETED (2026-10-03).
+
+- [x] **In-Tree Extraction-Ready Microservice** -- `src/services/cognitive_mesh/` (dto / registry / router / benchmarks / scavenger / reporter / server / client) engineered for frictionless standalone extraction to SYNAPSE (:8000); zero SQLite WAL / PRISMA / CLI imports.
+
+- [x] **Autonomous Model Scavenger Agent** -- `scavenger.py` forages Hugging Face (trending text-generation, permissive licenses), OpenRouter (new-release delta + pricing), and Ollama (GGUF <= 14B); hardware-aware VRAM classifier (LOCAL_OPTIMAL / CLOUD_COST_EFFECTIVE / FRONTIER_REASONING) + 4-role assignment; offline fallback to `llm_benchmarks.json`.
+
+- [x] **Dual Intelligence Reporter** -- `reporter.py` emits `llm_market_intelligence_YYYYMMDD.md` + a 100 percent standalone zero-dependency Dark Theme HTML dashboard (embedded CSS/JS, filter buttons, green/amber/blue VRAM badges).
+
+- [x] **Cognitive Mesh FastAPI mini-server** -- `server.py` mounts `/api/v1/cognitive` in `main_api.py` (`/dispatch`, `/providers`, `/benchmarks`, `/scavenge`, `/health`) and runs standalone on port 8003.
+
+- [x] **Backward-compatible shims** -- `src/core/cognitive_router.py`, `provider_registry.py`, `model_benchmark_client.py` re-export the new namespace (100 percent import compatibility).
+
+- [x] **CLI & TUI** -- `--scavenge-models [--days N] [--report-only]`; TUI Group 1 Option 10; Help Runbook A4.
+
+- [x] **Academic Dossier 09** -- `09_AUTONOMOUS_MODEL_SCAVENGING_MICROSERVICE_ARCHITECTURE.md` (7 sections).
+
+- [x] **Version sync** -- 5.21.0 across core files + docker-compose (`talos:5.21.0`) + CITATION.cff (5.21.0, 2026-10-03) + launchers + auxiliary modules + canonical docs (2026-10-03).
+
+- [x] **Verification gates passed** -- compileall (0 errors), test_system_integrity, test_talos_version (5.21.0), 43 hermetic (scavenger + reporter + provider registry + cognitive router + model benchmark), `--scavenge-models --days 7 --report-only` (exit 0), `--help` (Runbook A4), verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
+
+## Phase 79: Cognitive Meta-Router, SOTA LLM Discovery Engine & Enterprise Console Runbooks (v5.20.0)
+
+- [x] **Status:** COMPLETED (2026-10-03).
+
+- [x] **Decoupled Cognitive Meta-Router** -- `src/core/cognitive_router.py` with 4 strategies (LOWEST_LATENCY / REASONING_RIGOR / LOWEST_COST / LOCAL_AIRGAPPED), Pydantic v2 DTOs, circuit breaker + 401/402/429 quota latching, Semaphore(2).
+
+- [x] **16-provider registry** -- SambaNova, Together, Fireworks, DeepInfra, Cohere, Perplexity added; `LLMProvider` enum + `get_available_providers()`.
+
+- [x] **Dynamic SOTA discovery** -- `src/core/model_benchmark_client.py` + `--discover-llms` (exit 0) + `data/cache/llm_benchmarks.json`.
+
+- [x] **Enterprise Console Help** -- 4-section manual (SOP Runbooks / Command Matrix / Diagnostics / Environment).
+
+- [x] **ARCHITECTURE_MAP** -- 6-zone ISO/IEC 25010 decomposition (EN + GR); Zone 5 extraction-ready.
+
+- [x] **Academic Dossier 08** -- `08_COGNITIVE_META_ROUTING_DYNAMIC_DISCOVERY.md` (7 sections); Rule 10 codified in `.clinerules`.
+
+- [x] **Version sync** -- 6 core files + docker-compose (`talos:5.20.0`) + CITATION.cff (5.20.0, 2026-10-03) + metadata + 19 canonical docs to v5.20.0 (2026-10-03).
+
+- [x] **Verification gates passed** -- compileall (0 errors), test_system_integrity, test_talos_version (5.20.0), 31 hermetic (provider registry + cognitive router + model benchmark), `--discover-llms` (exit 0), `--help` (exit 0), verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 78: Two-Stage Rigor Decoupling & Cognitive SOTA Role Matcher (v5.19.0)
 

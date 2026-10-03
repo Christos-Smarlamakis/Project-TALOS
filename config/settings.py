@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.19.0
+Project: TALOS v5.21.0
 Description:
-    Canonical configuration hub for TALOS v5.19.0. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.21.0. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
@@ -56,6 +56,11 @@ Description:
       scrutiny) in src/core/hierarchical_evaluator.py, latches cloud providers
       returning HTTP 402/401 directly into DeepSeek routing, and hardens the
       Science.gov (DNS isolation) and DBLP (query sanitization) adapters.
+    - v5.20.0: Cognitive Meta-Router, SOTA LLM Dynamic Discovery & Enterprise
+      Console Runbooks -- decoupled src/core/cognitive_router.py (4 strategies,
+      circuit breaker, quota latching, Semaphore(2)), a 16-provider registry,
+      src/core/model_benchmark_client.py + CLI --discover-llms, and the 6-zone
+      docs/ARCHITECTURE_MAP.md.
     - v5.19.0: Two-Stage Rigor Decoupling Engine & Cognitive SOTA Role Matcher --
       upgrades src/core/hierarchical_evaluator.py to a true Stage-2 Dual-Audit
       (Faceted Deep Relevance Calibration S_rel_calibrated + Kitchenham 2007
@@ -191,6 +196,44 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
 OPENROUTER_BASE_URL = os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1")
 OPENROUTER_DEFAULT_MODEL = os.getenv("OPENROUTER_DEFAULT_MODEL", "meta-llama/llama-3.3-70b-instruct:free")
 
+# -- SambaNova Cloud (v5.20.0) --
+# SN40L RDUs provide ultra-fast Llama 3.1 70B / 405B inference through an
+# OpenAI-compatible client.
+SAMBANOVA_API_KEY = os.getenv("SAMBANOVA_API_KEY", "")
+SAMBANOVA_BASE_URL = os.getenv("SAMBANOVA_BASE_URL", "https://api.sambanova.ai/v1")
+SAMBANOVA_DEFAULT_MODEL = os.getenv("SAMBANOVA_DEFAULT_MODEL", "Meta-Llama-3.1-405B-Instruct")
+
+# -- Together AI (v5.20.0) --
+# High-throughput open-weights execution with strict JSON schema support.
+TOGETHER_API_KEY = os.getenv("TOGETHER_API_KEY", "")
+TOGETHER_BASE_URL = os.getenv("TOGETHER_BASE_URL", "https://api.together.xyz/v1")
+TOGETHER_DEFAULT_MODEL = os.getenv("TOGETHER_DEFAULT_MODEL", "meta-llama/Llama-3.3-70B-Instruct-Turbo")
+
+# -- Fireworks AI (v5.20.0) --
+# Speculative-decoding optimized endpoints for high-frequency screening passes.
+FIREWORKS_API_KEY = os.getenv("FIREWORKS_API_KEY", "")
+FIREWORKS_BASE_URL = os.getenv("FIREWORKS_BASE_URL", "https://api.fireworks.ai/inference/v1")
+FIREWORKS_DEFAULT_MODEL = os.getenv("FIREWORKS_DEFAULT_MODEL", "accounts/fireworks/models/llama-v3p1-70b-instruct")
+
+# -- DeepInfra (v5.20.0) --
+# Serverless endpoints for cost-effective batch abstract sieving.
+DEEPINFRA_API_KEY = os.getenv("DEEPINFRA_API_KEY", "")
+DEEPINFRA_BASE_URL = os.getenv("DEEPINFRA_BASE_URL", "https://api.deepinfra.com/v1/openai")
+DEEPINFRA_DEFAULT_MODEL = os.getenv("DEEPINFRA_DEFAULT_MODEL", "meta-llama/Llama-3.3-70B-Instruct")
+
+# -- Cohere (v5.20.0) --
+# Command R / Command R+ for structured citation extraction and PRISMA grounding.
+COHERE_API_KEY = os.getenv("COHERE_API_KEY", "")
+COHERE_BASE_URL = os.getenv("COHERE_BASE_URL", "https://api.cohere.com/v2")
+COHERE_DEFAULT_MODEL = os.getenv("COHERE_DEFAULT_MODEL", "command-r-plus")
+
+# -- Perplexity (v5.20.0) --
+# Sonar Reasoning / Sonar Pro for real-time claim verification and aerospace
+# grey literature grounding.
+PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY", "")
+PERPLEXITY_BASE_URL = os.getenv("PERPLEXITY_BASE_URL", "https://api.perplexity.ai")
+PERPLEXITY_DEFAULT_MODEL = os.getenv("PERPLEXITY_DEFAULT_MODEL", "sonar-pro")
+
 # -- v5.9.18: Canonical cloud provider ordering for the Universal Cloud Mesh --
 # This list is the authoritative enumeration of every cloud provider TALOS can
 # route through. "gemini" uses the Google Generative AI SDK; all others use the
@@ -245,7 +288,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.19.0"
+TALOS_VERSION = "5.21.0"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.

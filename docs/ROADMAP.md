@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.18.5 (Hierarchical Evaluation Engine, Cognitive LLM Router & Clean Ingestion Lifecycle)
+> **Current Version:** v5.21.0 (Cognitive Mesh Extraction-Ready In-Tree Microservice & Autonomous LLM Scavenger Agent) — Complete, 2026-10-03
 > **Last Updated:** 2026-10-03
 
 ---
@@ -159,8 +159,9 @@ The v5.10.x series transitions Project TALOS from an aggregator to a fully adapt
 | **v5.18.2** | Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray Hook & Desktop Provisioner | Net2Net 18-source / 25-dim DDDQN checkpoint repair (`migrate_d3qn_checkpoint.py`, idempotent, forward pass verified), Win32 close-to-tray window-procedure hook (`tray_icon.py`, SW_HIDE + `[TRAY]` notice), 1-click Desktop Shortcut provisioner (`desktop_shortcut.py`), and interactive autostart profile-target selector (`daemon_autostart.py` + `talos_service.py --profile`). | Complete |
 | **v5.18.1** | Autonomous Chaos Hardening, Fault Isolation & Dead Code Decommissioning | Headless/non-interactive TTY hardening (`src/analysis/citation_analyzer.py`), fault-tolerant optional-dependency import guard (`pymed` in `pubmed_source.py`), decommissioning of legacy `pdf_downloader.py` (module inventory 103 -> 102), and an Autonomous Red Tester chaos audit (5 episodes, 95 components, zero unhandled crashes). | Complete |
 | **v5.19.0** | Two-Stage Rigor Decoupling & Cognitive SOTA Role Matcher | Two-stage rigor-decoupling `HierarchicalEvaluationEngine` (Stage-1 fast sieve -> Stage-2 Dual-Audit: Faceted Relevance Calibration S_rel_calibrated + Kitchenham 2007 S_qual via PrismaQualityAppraiser) with 2D Evidence Quadrant real-time persistence; 4-role SOTA model matcher (`get_role_based_matrix` / `render_role_matrix` / `apply_recommended_models`); `historic_search` engine unification; `--apply-models` CLI. | Complete |
-| **v5.20.0** | CORTEX & n8n Gateway | Live arXiv RSS & text evaluation Discord Bot (`src/integration/discord_evaluator.py`) and SYNAPSE n8n Workflow Gateway templates (`templates/n8n_workflows/`). | Upcoming |
-| **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine. | Future |
+| **v5.20.0** | Cognitive Meta-Router, SOTA LLM Discovery & Enterprise Console Runbooks | Decoupled `CognitiveMetaRouter` (`src/core/cognitive_router.py`, 4 strategies + circuit breaker + Semaphore(2)), 16-provider registry, `model_benchmark_client` + `--discover-llms`, 4-section enterprise help, `ARCHITECTURE_MAP` (6 zones), Rule 10 Dossier 08. | Complete |
+| **v5.21.0** | Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger Agent | Extraction-ready `src/services/cognitive_mesh/` (dto/registry/router/benchmarks/scavenger/reporter/server/client) with backward-compatible `src/core/` shims; `ModelScavengerAgent` foraging Hugging Face/OpenRouter/Ollama with hardware-aware VRAM classifier; dual MD/HTML `IntelligenceReporter`; Cognitive Mesh FastAPI mini-server mounted under `/api/v1/cognitive`; `--scavenge-models` CLI + TUI Option 10; Dossier 09. | Complete |
+| **v6.0.0+** | ALEXANDRIA-VII (CORTEX Prime, Standalone Cognitive Microservice & SYNAPSE Event Bus) | Extract the `src/services/cognitive_mesh/` microservice into a standalone SYNAPSE (:8000) service shared between TALOS and MEMEX; Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs. | Future |
 
 ---
 
@@ -232,6 +233,8 @@ Project ALEXANDRIA marks the full desktop and distributed release of the platfor
 | **v5.17.0** | Two-Tier Hierarchical Swarm Architecture & Forensic Quality Engine | Tier-2 four-auditor quality swarm, SkillCompiler, SmartSectionSlicer, S_qual + Fleiss kappa, --swarm / --compile-skills, Rule 10 dossier 06 | Complete |
 | **v5.18.0** | Ethical Academic PDF Harvester, Smart Section Slicing & SQLite FTS5 Engine | 13-source OA cascade, magic-bytes/SHA-256/atomic-write download, section_extractor, FTS5 engine, --download-pdfs/--fts/--open-pdf, Rule 10 dossier 07 | Complete |
 | **v5.19.0** | Two-Stage Rigor Decoupling & Cognitive SOTA Role Matcher | Stage-2 Dual-Audit (S_rel_calibrated + Kitchenham S_qual), 2D Evidence Quadrant persistence, 4-role SOTA matcher, --apply-models | Complete |
+| **v5.20.0** | Cognitive Meta-Router, SOTA LLM Discovery & Enterprise Console Runbooks | Decoupled CognitiveMetaRouter (4 strategies), 16 providers, --discover-llms, enterprise help, ARCHITECTURE_MAP, Dossier 08 | Complete |
+| **v5.21.0** | Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger Agent | Extraction-ready cognitive mesh, ModelScavengerAgent, dual MD/HTML reporter, Cognitive Mesh FastAPI mini-server, --scavenge-models, Dossier 09 | Complete |
 | **v5.20.0** | CORTEX & n8n Gateway | Discord bot, n8n workflow templates, ecosystem integration | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine | Future |
 

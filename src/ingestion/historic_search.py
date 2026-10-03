@@ -11,7 +11,7 @@
 
 """
 Module: historic_search.py (v5.19.0 - Unified Hierarchical Historical Harvester)
-Project: TALOS v5.19.0
+Project: TALOS v5.20.0
 
 Description:
     The deep archive search orchestrator. Fetches papers from all 18 configured

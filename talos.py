@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.19.0
+Project: TALOS v5.21.0
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -80,6 +80,19 @@ Description:
     bypassed with zero network attempts in favor of DeepSeek; the Science.gov
     adapter isolates DNS failures and DBLP sanitizes Boolean queries; and the
     daemon sets an official emoji-free dynamic console title.
+
+    v5.21.0: Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger
+    Agent -- the extraction-ready src/services/cognitive_mesh/ package (dto,
+    registry, router, benchmarks, scavenger, reporter, server, client), the
+    autonomous ModelScavengerAgent foraging Hugging Face / OpenRouter / Ollama,
+    dual MD/HTML market-intelligence reporting, and a Cognitive Mesh FastAPI
+    mini-server mounted in main_api.py under /api/v1/cognitive.
+
+    v5.20.0: Cognitive Meta-Router, SOTA LLM Dynamic Discovery & Enterprise
+    Console Runbooks -- a decoupled src/core/cognitive_router.py (4 strategies,
+    circuit breaker, quota latching, Semaphore(2)), a 16-provider registry,
+    src/core/model_benchmark_client.py + --discover-llms, and the 6-zone
+    docs/ARCHITECTURE_MAP.md.
 
     v5.19.0: Two-Stage Rigor Decoupling Engine & Cognitive SOTA Role Matcher --
     src/core/hierarchical_evaluator.py now executes a Stage-2 Dual-Audit (Faceted
@@ -1082,11 +1095,13 @@ def profile_settings_menu(python_exe):
             "6. AI Model Management (2D Matrix)",
             "7. Model Discovery (Quality Scoring)",
             "8. Hardware-Aware Model Advisor (VRAM Budget & SOTA)",
-            "9. Model Provisioning CLI",
-            "10. API Keys Management",
-            "11. API Key Diagnostics",
-            "12. Create Desktop Shortcut (1-Click Launcher)",
-            "13. Back / Return to Main Menu"
+            "9. Discover Top LLMs & Live Benchmarks",
+            "10. Autonomous Model Scavenger & Market Intelligence (MD/HTML)",
+            "11. Model Provisioning CLI",
+            "12. API Keys Management",
+            "13. API Key Diagnostics",
+            "14. Create Desktop Shortcut (1-Click Launcher)",
+            "15. Back / Return to Main Menu"
         ])
         if not c or "Back" in c: return
         if c == "1. Research Setup Wizard (Full Onboarding & Reconfiguration)": run_script("research_setup_wizard.py", python_exe)
@@ -1103,10 +1118,12 @@ def profile_settings_menu(python_exe):
                 console.print(f"[red]Error launching Model Manager: {e}[/red]")
         elif c == "7. Model Discovery (Quality Scoring)": _run_model_discovery()
         elif c == "8. Hardware-Aware Model Advisor (VRAM Budget & SOTA)": _run_hardware_advisor()
-        elif c == "9. Model Provisioning CLI": run_script("model_provisioner.py", python_exe)
-        elif c == "10. API Keys Management": api_keys_menu(python_exe)
-        elif c == "11. API Key Diagnostics": run_script("api_health_check.py", python_exe)
-        elif c == "12. Create Desktop Shortcut (1-Click Launcher)":
+        elif c == "9. Discover Top LLMs & Live Benchmarks": _run_discover_llms()
+        elif "Autonomous Model Scavenger" in c: _run_scavenge_models()
+        elif c == "11. Model Provisioning CLI": run_script("model_provisioner.py", python_exe)
+        elif c == "12. API Keys Management": api_keys_menu(python_exe)
+        elif c == "13. API Key Diagnostics": run_script("api_health_check.py", python_exe)
+        elif c == "14. Create Desktop Shortcut (1-Click Launcher)":
             from src.utils.desktop_shortcut import create_desktop_shortcut
             create_desktop_shortcut()
         safe_pause("\nPress Enter...")
@@ -1796,6 +1813,67 @@ def _run_hardware_advisor():
             advisor.apply_recommended_models()
     except Exception:
         pass
+
+
+def _run_discover_llms():
+    """Render the SOTA LLM discovery matrix (v5.20.0)."""
+    from src.core.model_benchmark_client import run_discover_llms
+    run_discover_llms(online=True)
+
+
+def _render_scavenge_summary(report):
+    """Render a Rich summary table for the Autonomous Model Scavenger result.
+
+    Args:
+        report (MarketIntelligenceReport): The aggregate scavenging report.
+    """
+    from rich.table import Table
+    from rich import box
+    table = Table(
+        title=f"Autonomous Model Scavenger Summary (window {report.window_days} days)",
+        box=box.ROUNDED,
+        border_style="bright_cyan",
+        header_style="bold bright_cyan",
+        expand=False,
+    )
+    table.add_column("Metric", style="bold cyan", no_wrap=True)
+    table.add_column("Value", style="bold white", no_wrap=True)
+    table.add_row("Total Models Scanned", str(report.total_models_scanned))
+    table.add_row("Active Providers", str(report.active_providers))
+    table.add_row("Average Price /1M Tokens", f"${report.average_price_per_1m_usd:.4f}")
+    table.add_row("Local Optimal (RTX 4070)", str(report.local_optimal_count))
+    table.add_row("Cloud Cost-Effective", str(report.cloud_cost_effective_count))
+    table.add_row("Frontier Reasoning", str(report.frontier_reasoning_count))
+    table.add_row("Sources Queried", ", ".join(report.sources_queried) or "none")
+    table.add_row("Offline Fallback", str(report.offline_fallback))
+    console.print(table)
+
+
+def _run_scavenge_models(days: int = 30, report_only: bool = False):
+    """Run the Autonomous Model Scavenger and emit dual market intelligence reports.
+
+    Args:
+        days (int): Discovery window in days.
+        report_only (bool): When True, skip the Rich console summary table.
+
+    Returns:
+        int: Process exit code (0 on success).
+    """
+    from src.services.cognitive_mesh.scavenger import ModelScavengerAgent
+    from src.services.cognitive_mesh.reporter import IntelligenceReporter
+    console.print(_build_info_panel(
+        "Autonomous Model Scavenger & Market Intelligence",
+        f"Foraging Hugging Face, OpenRouter, and Ollama (window: {days} days)...\n"
+        "[dim]Air-gapped offline fallback to cached benchmarks is guaranteed.[/dim]",
+        border_style="bright_cyan",
+    ))
+    report = ModelScavengerAgent().scavenge_market(window_days=days)
+    if not report_only:
+        _render_scavenge_summary(report)
+    md_path, html_path = IntelligenceReporter().generate_reports(report)
+    console.print(f"[green][OK] Markdown report: {md_path}[/green]")
+    console.print(f"[green][OK] HTML dashboard : {html_path}[/green]")
+    return 0
 
 
 def _run_model_discovery():
@@ -2646,6 +2724,23 @@ def _handle_cli_flags(argv):
     if "--apply-models" in argv:
         from src.core.hardware_advisor import HardwareModelAdvisor
         HardwareModelAdvisor().apply_recommended_models()
+        return True
+    # -- v5.20.0: SOTA LLM discovery (--discover-llms [--offline]). --
+    if "--discover-llms" in argv:
+        from src.core.model_benchmark_client import run_discover_llms
+        run_discover_llms(online="--offline" not in argv)
+        return True
+    # -- v5.21.0: Autonomous Model Scavenger
+    # -- (--scavenge-models [--days N] [--report-only]). --
+    if "--scavenge-models" in argv:
+        days = 30
+        raw = _flag_value(argv, "--days")
+        if raw:
+            try:
+                days = int(raw)
+            except ValueError:
+                days = 30
+        _run_scavenge_models(days=days, report_only="--report-only" in argv)
         return True
     # -- v5.15.0: Universal Search Hub fast-dispatch flags. --
     if "--snowball" in argv:
