@@ -2,6 +2,36 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.21.1] - 2026-10-03 -- Decoupled Cognitive Mesh Hardening, Full-Catalog LLM Scavenger, Fuzzy Benchmarks & Auto-Pilot FinOps Configurator
+
+### Added
+
+- **Hugging Face full-catalog harvester** (`scavenger.py`): the Hub request now sorts by downloads (`sort=downloads&direction=-1&limit=100`) instead of the legacy trending sort, and parses `downloads` / `likes` / `author` / parameter size / license into the `ScavengedModel` DTO. `huggingface` is always appended to `sources_queried` on a non-empty result.
+
+- **OpenRouter full-catalog ingestion** (`scavenger.py`): `scavenge_market(window_days=0, fetch_all=False)` and `_parse_openrouter_payload(..., fetch_all)` skip the release-date cutoff entirely when `fetch_all=True` or `window_days <= 0` (250+ models); `window_days > 0` retains the delta filter.
+
+- **Remote Ollama library catalogue** (`scavenger.py`): `REMOTE_OLLAMA_MODELS` appends 20 canonical remote tags (Qwen 2.5 7B/14B/32B/72B, Llama 3.1 8B/70B/405B, DeepSeek-R1 8B/14B/32B/70B, Gemma 2/3, Mistral NeMo, Phi-4, CodeQwen) alongside locally installed tags; the previous `>14B` drop was removed so large remote models reach the CLOUD/FRONTIER classes.
+
+- **Fuzzy benchmark cross-referencing** (`benchmarks.py`): `fuzzy_enrich_benchmarks(model_id, developer)` matches case-insensitive substrings against a 46-entry `FUZZY_BENCHMARK_PATTERNS` table (Claude, GPT, DeepSeek R1/V3, Qwen 2.5, Llama 3.1, Mistral, Gemma, embeddings) and populates MMLU-Pro / HumanEval / TTFT; unknown derivatives inherit the base-family tier. `scavenger.py` applies it via `_apply_fuzzy_benchmarks()` so benchmark columns are never empty for known families.
+
+- **Hardened heuristic role & VRAM classifier** (`scavenger.py`): a single `_classify_model(model_id, params, price, context, source)` decision tree (Vector Embeddings -> Code Audit -> Frontier Reasoning -> Fast Screening -> General Research) with token-boundary matching (`_has_token`) so `pro` never matches `proprietary`, `mini` never matches `gemini`, and `7b` never matches `37b`/`70b`. Frontier triggers include `sonnet`/`opus`/`r1`/`reasoner`/`pro`/`o1`/`o3`/`gpt-4/5/6`/`405b`/`nemotron-70b`, prompt price >= $3.00/1M, or >= 70B params. `_classify_vram` / `_recommend_role` remain as delegating wrappers.
+
+- **Executive Optimal Selection Matrix & FinOps** (`reporter.py`): `_select_champions()` picks the Local RTX 4070 / Cloud Cost-Optimized / Frontier Rigor champions and `_finops_cost()` estimates USD per 1,000 papers (screening = 2k prompt / 500 completion tokens; audit = 12k prompt / 3k completion tokens). Both reports render the Executive Verdict tables and FinOps breakdown; the HTML adds a live vanilla-JS search bar and three champion cards.
+
+- **Hybrid routing** (`dto.py`, `router.py`): new `RoutingStrategy.LOCAL_FIRST_CLOUD_BACKUP` attempts local Ollama first and fails over to the active cloud tier through the existing latching/fallback loop.
+
+- **Auto-Pilot FinOps Configurator** (`ai_strategy_selector.py`, `talos.py`): `configure_ai_strategy()` (Screen 1 AUTO_PILOT + [1-4] manual, Screen 2 role-slot impact matrix, Screen 3 persist) and `apply_optimal_models(strategy)`. New CLI flags `--configure-ai-strategy` and `--apply-optimal-models [--strategy AUTO|LOCAL_FIRST|CLOUD_BUDGET|FRONTIER]`; `--scavenge-models` gains `--all`; TUI Option 10 launches the configurator.
+
+### Changed
+
+- **`hardware_advisor.py`**: `get_recommendations()` now emits the dual-slot `screening_cloud` alongside `screening_local` / `reasoning_local` / `reasoning_cloud` / `fast_cloud`.
+
+- **Version strings synchronized to 5.21.1** across core code files, `docker-compose.yml` (`talos:5.21.1`), `CITATION.cff` (version 5.21.1, date-released 2026-10-03), the launchers, the auxiliary modules, and all canonical documentation files (dated 2026-10-03).
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.21.1); `pytest tests/test_model_scavenger.py tests/test_intelligence_reporter.py tests/test_model_benchmark_client.py tests/test_cognitive_router.py -q` (45 hermetic); `python src/utils/verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD); decoupling grep (0 forbidden imports in `src/services/cognitive_mesh/`).
+
 ## [v5.21.0] - 2026-10-03 -- Cognitive Mesh Extraction-Ready In-Tree Microservice & Autonomous LLM Scavenger Agent (ISO/IEC 25010 Compliant)
 
 ### Added

@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.21.0
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.21.1
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-03
-> **Version:** v5.21.0 -- Cognitive Mesh Extraction-Ready In-Tree Microservice & Autonomous LLM Scavenger Agent
+> **Version:** v5.21.1 -- Decoupled Cognitive Mesh Hardening, Full-Catalog LLM Scavenger, Fuzzy Benchmarks & Auto-Pilot FinOps Configurator
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.21.0" | `config/settings.py` |
+| TALOS_VERSION | "5.21.1" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1340,6 +1340,28 @@ For each evaluated paper, the AI generates:
 - **Academic Dossier 09** (`docs/internal/academic/09_AUTONOMOUS_MODEL_SCAVENGING_MICROSERVICE_ARCHITECTURE.md`): seven mandatory sections (ISO/IEC 25010, Pareto discovery, microservice spec, dual reporting, PRISMA-ScR, SYNAPSE/MEMEX/OPTICA roadmap, IP notice).
 
 **Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.21.0), `pytest tests/test_model_scavenger.py tests/test_intelligence_reporter.py tests/test_provider_registry.py tests/test_cognitive_router.py tests/test_model_benchmark_client.py -q` (43 hermetic), `python talos.py --scavenge-models --days 7 --report-only` (exit 0), `python talos.py --help` (Runbook A4), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
+
+### 15.54 Decoupled Cognitive Mesh Hardening, Full-Catalog LLM Scavenger, Fuzzy Benchmarks & Auto-Pilot FinOps Configurator (v5.21.1)
+
+**Overview:** v5.21.1 hardens the extraction-ready microservice with full-catalog scavenging (Hugging Face top-100 by downloads, OpenRouter 250+ without date truncation, canonical remote Ollama tags), fuzzy MMLU-Pro/HumanEval/TTFT benchmark cross-referencing, a hardened token-boundary role/VRAM classifier, an Executive Optimal Selection Matrix with FinOps cost estimation, a hybrid `LOCAL_FIRST_CLOUD_BACKUP` routing strategy, and an interactive Auto-Pilot FinOps configurator.
+
+- **Hugging Face full-catalog harvester**: `sort=downloads&direction=-1&limit=100`; parses downloads / likes / author / params / license; `huggingface` always appended to `sources_queried`.
+
+- **OpenRouter full-catalog ingestion**: `fetch_all` / `window_days <= 0` disables the release-date cutoff (250+ models); `window_days > 0` retains the delta.
+
+- **Remote Ollama library catalogue**: 20 canonical remote tags (Qwen 2.5, Llama 3.1, DeepSeek-R1, Gemma 2/3, Mistral NeMo, Phi-4, CodeQwen); `>14B` drop removed.
+
+- **Fuzzy benchmark cross-referencing** (`benchmarks.py`): `fuzzy_enrich_benchmarks()` (46-entry `FUZZY_BENCHMARK_PATTERNS` table) populates MMLU-Pro / HumanEval / TTFT across Claude, GPT, DeepSeek, Qwen, Llama, Mistral, Gemma.
+
+- **Hardened heuristic classifier** (`scavenger.py`): unified `_classify_model()` decision tree (Vector Embeddings -> Code Audit -> Frontier Reasoning -> Fast Screening -> General Research) with token-boundary `_has_token()` (pro / mini / 7b false positives eliminated); frontier = sonnet/opus/r1/reasoner/pro/o1/o3/gpt-4/5/6/405b/nemotron-70b, price >= $3.00/1M, or >= 70B.
+
+- **Executive Decision Matrix & FinOps** (`reporter.py`): `_select_champions()` (Local / Cloud / Frontier) + `_finops_cost()` per 1k papers; MD verdict tables + HTML champion cards + vanilla-JS search bar.
+
+- **Hybrid routing** (`dto.py`, `router.py`): `RoutingStrategy.LOCAL_FIRST_CLOUD_BACKUP` (local-first, cloud failover via latching loop).
+
+- **Auto-Pilot FinOps Configurator** (`ai_strategy_selector.py`, `talos.py`): `configure_ai_strategy()` + `apply_optimal_models()`; CLI `--configure-ai-strategy`, `--apply-optimal-models [--strategy ...]`, `--scavenge-models --all`; TUI Option 10.
+
+**Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.21.1), `pytest tests/test_model_scavenger.py tests/test_intelligence_reporter.py tests/test_model_benchmark_client.py tests/test_cognitive_router.py -q` (45 hermetic), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD), decoupling grep (0 forbidden imports).
 
 ---
 

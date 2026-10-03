@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.21.0
+Project: TALOS v5.21.1
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -81,7 +81,7 @@ Description:
     adapter isolates DNS failures and DBLP sanitizes Boolean queries; and the
     daemon sets an official emoji-free dynamic console title.
 
-    v5.21.0: Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger
+    v5.21.1: Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger
     Agent -- the extraction-ready src/services/cognitive_mesh/ package (dto,
     registry, router, benchmarks, scavenger, reporter, server, client), the
     autonomous ModelScavengerAgent foraging Hugging Face / OpenRouter / Ollama,
@@ -1079,6 +1079,15 @@ def _launch_strategy_selector():
         console.print(f"[red]Error launching strategy switcher: {e}[/red]")
 
 
+def _run_ai_strategy_configurator():
+    """Launch the Interactive Cognitive FinOps & Strategy Configurator."""
+    try:
+        from src.utils.ai_strategy_selector import configure_ai_strategy
+        configure_ai_strategy()
+    except Exception as e:
+        console.print(f"[red]Error launching FinOps configurator: {e}[/red]")
+
+
 def profile_settings_menu(python_exe):
     """Configuration & Profiles sub-menu: profiles, models, and API keys."""
     while True:
@@ -1096,12 +1105,13 @@ def profile_settings_menu(python_exe):
             "7. Model Discovery (Quality Scoring)",
             "8. Hardware-Aware Model Advisor (VRAM Budget & SOTA)",
             "9. Discover Top LLMs & Live Benchmarks",
-            "10. Autonomous Model Scavenger & Market Intelligence (MD/HTML)",
+            "10. Cognitive FinOps & Strategy Configurator (Auto-Pilot)",
             "11. Model Provisioning CLI",
             "12. API Keys Management",
             "13. API Key Diagnostics",
             "14. Create Desktop Shortcut (1-Click Launcher)",
-            "15. Back / Return to Main Menu"
+            "15. Autonomous Model Scavenger & Market Intelligence (MD/HTML)",
+            "16. Back / Return to Main Menu"
         ])
         if not c or "Back" in c: return
         if c == "1. Research Setup Wizard (Full Onboarding & Reconfiguration)": run_script("research_setup_wizard.py", python_exe)
@@ -1119,6 +1129,7 @@ def profile_settings_menu(python_exe):
         elif c == "7. Model Discovery (Quality Scoring)": _run_model_discovery()
         elif c == "8. Hardware-Aware Model Advisor (VRAM Budget & SOTA)": _run_hardware_advisor()
         elif c == "9. Discover Top LLMs & Live Benchmarks": _run_discover_llms()
+        elif "Cognitive FinOps" in c: _run_ai_strategy_configurator()
         elif "Autonomous Model Scavenger" in c: _run_scavenge_models()
         elif c == "11. Model Provisioning CLI": run_script("model_provisioner.py", python_exe)
         elif c == "12. API Keys Management": api_keys_menu(python_exe)
@@ -1829,8 +1840,12 @@ def _render_scavenge_summary(report):
     """
     from rich.table import Table
     from rich import box
+    window_label = (
+        "full catalog" if report.window_days <= 0
+        else f"window {report.window_days} days"
+    )
     table = Table(
-        title=f"Autonomous Model Scavenger Summary (window {report.window_days} days)",
+        title=f"Autonomous Model Scavenger Summary ({window_label})",
         box=box.ROUNDED,
         border_style="bright_cyan",
         header_style="bold bright_cyan",
@@ -1849,11 +1864,12 @@ def _render_scavenge_summary(report):
     console.print(table)
 
 
-def _run_scavenge_models(days: int = 30, report_only: bool = False):
+def _run_scavenge_models(days: int = 0, fetch_all: bool = False, report_only: bool = False):
     """Run the Autonomous Model Scavenger and emit dual market intelligence reports.
 
     Args:
-        days (int): Discovery window in days.
+        days (int): Discovery window in days (0 or negative for full catalog).
+        fetch_all (bool): When True, ingest the entire OpenRouter catalog.
         report_only (bool): When True, skip the Rich console summary table.
 
     Returns:
@@ -1861,13 +1877,15 @@ def _run_scavenge_models(days: int = 30, report_only: bool = False):
     """
     from src.services.cognitive_mesh.scavenger import ModelScavengerAgent
     from src.services.cognitive_mesh.reporter import IntelligenceReporter
+    fetch_all = bool(fetch_all or days <= 0)
+    window_label = "full catalog" if fetch_all else f"window: {days} days"
     console.print(_build_info_panel(
         "Autonomous Model Scavenger & Market Intelligence",
-        f"Foraging Hugging Face, OpenRouter, and Ollama (window: {days} days)...\n"
+        f"Foraging Hugging Face, OpenRouter, and Ollama ({window_label})...\n"
         "[dim]Air-gapped offline fallback to cached benchmarks is guaranteed.[/dim]",
         border_style="bright_cyan",
     ))
-    report = ModelScavengerAgent().scavenge_market(window_days=days)
+    report = ModelScavengerAgent().scavenge_market(window_days=days, fetch_all=fetch_all)
     if not report_only:
         _render_scavenge_summary(report)
     md_path, html_path = IntelligenceReporter().generate_reports(report)
@@ -2730,17 +2748,20 @@ def _handle_cli_flags(argv):
         from src.core.model_benchmark_client import run_discover_llms
         run_discover_llms(online="--offline" not in argv)
         return True
-    # -- v5.21.0: Autonomous Model Scavenger
-    # -- (--scavenge-models [--days N] [--report-only]). --
+    # -- v5.21.1: Autonomous Model Scavenger
+    # -- (--scavenge-models [--all] [--days N] [--report-only]). --
     if "--scavenge-models" in argv:
-        days = 30
+        days = 0
         raw = _flag_value(argv, "--days")
         if raw:
             try:
                 days = int(raw)
             except ValueError:
-                days = 30
-        _run_scavenge_models(days=days, report_only="--report-only" in argv)
+                days = 0
+        fetch_all = ("--all" in argv) or days <= 0
+        _run_scavenge_models(
+            days=days, fetch_all=fetch_all, report_only="--report-only" in argv
+        )
         return True
     # -- v5.15.0: Universal Search Hub fast-dispatch flags. --
     if "--snowball" in argv:
@@ -2763,6 +2784,19 @@ def _handle_cli_flags(argv):
         query = _flag_value(argv, "--code-search") or "reinforcement learning robotics"
         from src.search.code_first_search import CodeFirstSearchEngine
         CodeFirstSearchEngine().run(query.strip())
+        return True
+    # -- v5.21.1: Interactive FinOps configurator (--configure-ai-strategy). --
+    if "--configure-ai-strategy" in argv:
+        from src.utils.ai_strategy_selector import configure_ai_strategy
+        if not configure_ai_strategy():
+            sys.exit(1)
+        return True
+    # -- v5.21.1: 1-click champion adoption (--apply-optimal-models). --
+    if "--apply-optimal-models" in argv:
+        from src.utils.ai_strategy_selector import apply_optimal_models
+        strategy = (_flag_value(argv, "--strategy") or "AUTO").upper()
+        if not apply_optimal_models(strategy):
+            sys.exit(1)
         return True
     # -- v5.12.2: AI execution strategy switcher (--strategy / --mode). --
     flag_present, strategy_target = _parse_strategy_flag(argv)

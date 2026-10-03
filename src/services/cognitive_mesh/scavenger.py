@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 """
 Module: scavenger.py
-Project: TALOS v5.21.0
+Project: TALOS v5.21.1
 Description:
     Autonomous Model Scavenger Agent for the Cognitive Mesh in-tree
     microservice. The agent forages three public catalogues -- the Hugging Face
-    Hub API (trending text-generation models), the OpenRouter models catalogue
-    (new releases and per-token pricing), and the local Ollama library
-    (quantized GGUF tags) -- and reconciles every discovery against the active
-    RTX 4070 (12 GB VRAM) budget through a hardware-aware role classifier.
-    The result is a single MarketIntelligenceReport DTO consumed by the dual
+    Hub API (top-100 text-generation models sorted by downloads), the OpenRouter
+    models catalogue (full catalog ingestion with optional release-window
+    filtering, per-token pricing, and context sizes), and the Ollama library
+    (local tags plus a canonical remote-library catalogue) -- and reconciles
+    every discovery against the active RTX 4070 (12 GB VRAM) budget through a
+    hardened hardware-aware role classifier. Every discovered model is enriched
+    with fuzzy cross-referenced MMLU-Pro / HumanEval / TTFT benchmarks. The
+    result is a single MarketIntelligenceReport DTO consumed by the dual
     IntelligenceReporter (reporter.py) and the FastAPI mini-server (server.py).
 
     Key design decisions:
@@ -18,8 +21,12 @@ Description:
       honouring the 100 percent air-gapped, never-crash guarantee.
     - The hardware-aware role classifier maps each model into one of three VRAM
       classes (LOCAL_OPTIMAL, CLOUD_COST_EFFECTIVE, FRONTIER_REASONING) and one
-      of four scientific workload roles (Fast Screening, Kitchenham Rigor, Code
-      Audit, Vector Embeddings).
+      of five scientific workload roles (Fast Screening, Kitchenham Rigor, Code
+      Audit, Vector Embeddings, General Research) using token-boundary
+      substring heuristics plus a parameter-count and price fallback.
+    - Fuzzy benchmark enrichment cross-references each model identifier against
+      the benchmark database in benchmarks.py so report columns are never empty
+      for known families.
     - When every source fails, the agent degrades to the local benchmark cache
       (data/cache/llm_benchmarks.json) so a report is always produced offline.
 
@@ -27,6 +34,7 @@ Dependencies:
     - os, json, re, time, datetime: filesystem, parsing, and timestamps.
     - typing: type annotations (List, Dict, Optional, Any).
     - src.services.cognitive_mesh.dto: ScavengedModel / MarketIntelligenceReport.
+    - src.services.cognitive_mesh.benchmarks (lazy): fuzzy benchmark enrichment.
 """
 
 import json
@@ -65,6 +73,7 @@ ROLE_FAST_SCREENING = "Fast Screening"
 ROLE_KITCHENHAM_RIGOR = "Kitchenham Rigor"
 ROLE_CODE_AUDIT = "Code Audit"
 ROLE_VECTOR_EMBEDDINGS = "Vector Embeddings"
+ROLE_GENERAL_RESEARCH = "General Research"
 
 # -- Permissive open-weight license allowlist (lower-cased keys) ---------------
 PERMISSIVE_LICENSES = {
@@ -99,7 +108,43 @@ STATIC_OLLAMA_MODELS: List[Dict[str, Any]] = [
     {"id": "nomic-embed-text", "params_b": 0.137, "role": ROLE_VECTOR_EMBEDDINGS},
 ]
 
+# -- Canonical remote Ollama library catalogue (v5.21.1) ------------------------
+# Popular remote models available through the Ollama library are appended to the
+# locally installed set so the market report reflects the full Ollama ecosystem,
+# including models far above the 14B local budget that must be served remotely.
+REMOTE_OLLAMA_MODELS: List[Dict[str, Any]] = [
+    {"id": "qwen2.5:7b", "params_b": 7.0},
+    {"id": "qwen2.5:14b", "params_b": 14.0},
+    {"id": "qwen2.5:32b", "params_b": 32.0},
+    {"id": "qwen2.5:72b", "params_b": 72.0},
+    {"id": "qwen2.5-coder:14b", "params_b": 14.0},
+    {"id": "qwen2.5-coder:32b", "params_b": 32.0},
+    {"id": "llama3.1:8b", "params_b": 8.0},
+    {"id": "llama3.1:70b", "params_b": 70.0},
+    {"id": "llama3.1:405b", "params_b": 405.0},
+    {"id": "deepseek-r1:8b", "params_b": 8.0},
+    {"id": "deepseek-r1:14b", "params_b": 14.0},
+    {"id": "deepseek-r1:32b", "params_b": 32.0},
+    {"id": "deepseek-r1:70b", "params_b": 70.0},
+    {"id": "gemma2:9b", "params_b": 9.0},
+    {"id": "gemma2:27b", "params_b": 27.0},
+    {"id": "gemma3:12b", "params_b": 12.0},
+    {"id": "gemma3:27b", "params_b": 27.0},
+    {"id": "mistral-nemo:12b", "params_b": 12.0},
+    {"id": "phi4:14b", "params_b": 14.0},
+    {"id": "codeqwen:7b", "params_b": 7.0},
+]
+
 _PARAM_RE = re.compile(r"(\d+(?:\.\d+)?)\s*[bB]")
+
+# -- Token-boundary classification keyword tables (v5.21.1) ---------------------
+# Frontier architectures are matched on token boundaries to avoid false positives
+# such as "pro" matching "proprietary" or "mini" matching "gemini".
+_FRONTIER_TOKENS = ("sonnet", "opus", "r1", "reasoner", "pro", "o1", "o3")
+_FRONTIER_SUBSTRINGS = ("gpt-4", "gpt-5", "gpt-6", "405b", "nemotron-70b")
+_CODE_SUBSTRINGS = ("coder", "starcoder", "codellama", "deepseek-coder", "codeqwen", "code-")
+_EMBED_SUBSTRINGS = ("embed", "bge-", "nomic-embed", "text-embedding")
+_FAST_TOKENS = ("flash", "haiku", "mini", "3b", "7b", "8b", "9b", "12b", "14b")
 
 
 class ModelScavengerAgent:
@@ -116,15 +161,20 @@ class ModelScavengerAgent:
     # -- Public foraging entry point -----------------------------------
     # ------------------------------------------------------------------
 
-    def scavenge_market(self, window_days: int = 30) -> MarketIntelligenceReport:
+    def scavenge_market(
+        self, window_days: int = 30, fetch_all: bool = False
+    ) -> MarketIntelligenceReport:
         """Forage all three catalogues and assemble a market intelligence report.
 
         Args:
             window_days (int): Discovery window in days for OpenRouter deltas.
+                A value of zero or a negative value disables date truncation.
+            fetch_all (bool): When True (or when window_days <= 0), ingest the
+                entire OpenRouter catalog without filtering by release date.
 
         Returns:
             MarketIntelligenceReport: The aggregate report with VRAM classes,
-                recommended roles, and summary statistics.
+                recommended roles, fuzzy benchmarks, and summary statistics.
         """
         report = MarketIntelligenceReport(
             generated_at=datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -135,7 +185,7 @@ class ModelScavengerAgent:
         online_succeeded = False
         for name, forage in (
             ("huggingface", self._forage_huggingface),
-            ("openrouter", lambda: self._forage_openrouter(window_days)),
+            ("openrouter", lambda: self._forage_openrouter(window_days, fetch_all)),
             ("ollama", self._forage_ollama),
         ):
             try:
@@ -162,11 +212,19 @@ class ModelScavengerAgent:
         # -- Reconcile active provider telemetry. --
         report.active_providers = self._active_provider_count()
 
-        # -- Classify every model against the VRAM budget. --
+        # -- Classify every model and enrich fuzzy benchmark metrics. --
         for model in report.models:
-            model.vram_class = self._classify_vram(model)
+            role, vram = self._classify_model(
+                model.model,
+                model.parameter_count_b,
+                model.pricing_prompt_per_1m_usd,
+                model.context_window,
+                model.source,
+            )
+            model.vram_class = vram
             if not model.recommended_role:
-                model.recommended_role = self._recommend_role(model)
+                model.recommended_role = role
+            self._apply_fuzzy_benchmarks(model)
 
         self._compute_summary(report)
         return report
@@ -178,8 +236,8 @@ class ModelScavengerAgent:
     def _forage_huggingface(self) -> List[ScavengedModel]:
         payload = self._http_get_json(
             HF_API_URL,
-            params={"pipeline_tag": "text-generation", "sort": "trending",
-                    "direction": "-1", "limit": "50"},
+            params={"pipeline_tag": "text-generation", "sort": "downloads",
+                    "direction": "-1", "limit": "100"},
         )
         if not isinstance(payload, list):
             return []
@@ -217,6 +275,8 @@ class ModelScavengerAgent:
                     license=license_name,
                     release_date=ModelScavengerAgent._iso_date(item),
                     source="huggingface",
+                    downloads=int(item.get("downloads", 0) or 0),
+                    likes=int(item.get("likes", 0) or 0),
                 )
             )
         return models
@@ -225,26 +285,33 @@ class ModelScavengerAgent:
     # -- Source 2: OpenRouter models catalogue -------------------------
     # ------------------------------------------------------------------
 
-    def _forage_openrouter(self, window_days: int) -> List[ScavengedModel]:
+    def _forage_openrouter(
+        self, window_days: int, fetch_all: bool = False
+    ) -> List[ScavengedModel]:
         payload = self._http_get_json(OPENROUTER_API_URL)
         if not isinstance(payload, dict):
             return []
-        return self._parse_openrouter_payload(payload.get("data", []), window_days)
+        return self._parse_openrouter_payload(
+            payload.get("data", []), window_days, fetch_all
+        )
 
     @staticmethod
     def _parse_openrouter_payload(
-        payload: List[Dict[str, Any]], window_days: int
+        payload: List[Dict[str, Any]], window_days: int, fetch_all: bool = False
     ) -> List[ScavengedModel]:
-        """Parse an OpenRouter catalogue into scavenged records within the window.
+        """Parse an OpenRouter catalogue into scavenged records.
 
         Args:
             payload (list[dict]): The ``data`` array of the OpenRouter response.
-            window_days (int): Delta window for newly-released models.
+            window_days (int): Delta window for newly-released models. A value of
+                zero or a negative value disables the cutoff entirely.
+            fetch_all (bool): When True, ignore the release-window cutoff.
 
         Returns:
-            list[ScavengedModel]: Newly-released models with pricing metadata.
+            list[ScavengedModel]: Models with pricing metadata.
         """
-        cutoff = time.time() - (window_days * 86400)
+        apply_cutoff = (not fetch_all) and (window_days > 0)
+        cutoff = time.time() - (window_days * 86400) if apply_cutoff else 0
         models: List[ScavengedModel] = []
         for item in payload:
             if not isinstance(item, dict):
@@ -254,7 +321,7 @@ class ModelScavengerAgent:
                 created = int(created)
             except (TypeError, ValueError):
                 created = 0
-            if created and created < cutoff:
+            if apply_cutoff and created and created < cutoff:
                 continue
             pricing = item.get("pricing") or {}
             prompt_usd = ModelScavengerAgent._price_per_1m(pricing.get("prompt"))
@@ -291,18 +358,28 @@ class ModelScavengerAgent:
     def _forage_ollama(self) -> List[ScavengedModel]:
         payload = self._http_get_json(OLLAMA_TAGS_URL)
         if isinstance(payload, dict) and isinstance(payload.get("models"), list):
-            return self._parse_ollama_payload(payload.get("models", []))
-        return self._parse_ollama_payload(STATIC_OLLAMA_MODELS)
+            local = self._parse_ollama_payload(payload.get("models", []))
+        else:
+            local = self._parse_ollama_payload(STATIC_OLLAMA_MODELS)
+        # -- Append the canonical remote library catalogue (v5.21.1). --
+        remote = self._parse_ollama_payload(REMOTE_OLLAMA_MODELS)
+        merged: Dict[str, ScavengedModel] = {m.model: m for m in local}
+        for model in remote:
+            merged.setdefault(model.model, model)
+        return list(merged.values())
 
     @staticmethod
     def _parse_ollama_payload(payload: List[Dict[str, Any]]) -> List[ScavengedModel]:
-        """Parse an Ollama tag-list into scavenged records <= 14B parameters.
+        """Parse an Ollama tag-list into scavenged records of any parameter size.
 
         Args:
-            payload (list[dict]): Either local /api/tags entries or static entries.
+            payload (list[dict]): Either local /api/tags entries, static entries,
+                or the canonical remote library catalogue.
 
         Returns:
-            list[ScavengedModel]: Quantized GGUF records suitable for 12 GB VRAM.
+            list[ScavengedModel]: Quantized GGUF records; classification into
+                LOCAL_OPTIMAL / CLOUD_COST_EFFECTIVE / FRONTIER_REASONING is
+                deferred to the hardened classifier.
         """
         models: List[ScavengedModel] = []
         for item in payload:
@@ -312,8 +389,6 @@ class ModelScavengerAgent:
             params = item.get("params_b")
             if params is None:
                 params = ModelScavengerAgent._parse_param_count(model_id)
-            if params is not None and params > 14.0:
-                continue
             models.append(
                 ScavengedModel(
                     model=model_id,
@@ -323,7 +398,6 @@ class ModelScavengerAgent:
                     context_window=0,
                     license="",
                     source="ollama",
-                    vram_class=VRAM_LOCAL_OPTIMAL,
                     recommended_role=item.get("role", ""),
                 )
             )
@@ -374,8 +448,91 @@ class ModelScavengerAgent:
     # -- Hardware-aware role classifier --------------------------------
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _has_token(name: str, token: str) -> bool:
+        """Return True when ``token`` appears in ``name`` on a word boundary.
+
+        A token is matched only when it is delimited by non-alphanumeric
+        characters on both sides (or the start/end of the string). This prevents
+        false positives such as ``pro`` matching ``proprietary``, ``mini``
+        matching ``gemini``, or ``7b`` matching ``37b``/``70b``.
+
+        Args:
+            name (str): The lower-cased model identifier.
+            token (str): The keyword token to search for.
+
+        Returns:
+            bool: True when the token is present on a word boundary.
+        """
+        pattern = r"(?<![a-z0-9])" + re.escape(token) + r"(?![a-z0-9])"
+        return re.search(pattern, name) is not None
+
+    @staticmethod
+    def _classify_model(model_id, params, price, context, source=""):
+        """Classify a model into a (recommended_role, vram_class) pair.
+
+        Decision tree, evaluated strictly in priority order:
+
+        1. Vector Embeddings: ``embed``/``bge-``/``nomic-embed``/``text-embedding``.
+        2. Code Audit: ``coder``/``starcoder``/``codellama``/``deepseek-coder``/
+           ``codeqwen``/``code-``.
+        3. Frontier Reasoning / Kitchenham Rigor: ``sonnet``/``opus``/``r1``/
+           ``reasoner``/``pro``/``o1``/``o3``/``gpt-4``/``gpt-5``/``gpt-6``/
+           ``405b``/``nemotron-70b``, OR prompt price >= $3.00/1M, OR >= 70B params.
+        4. Fast Screening: ``flash``/``haiku``/``mini``/``3b``/``7b``/``8b``/
+           ``9b``/``12b``/``14b``, OR any model at or below 14B parameters.
+        5. General Research: everything else (CLOUD_COST_EFFECTIVE).
+
+        Args:
+            model_id (str): Model identifier.
+            params (Optional[float]): Parameter count in billions.
+            price (Optional[float]): Prompt price per 1M tokens in USD.
+            context (Any): Context window (reserved for future heuristics).
+            source (str): Discovery source (used to detect local Ollama models).
+
+        Returns:
+            tuple[str, str]: The (recommended_role, vram_class) pair.
+        """
+        name = (model_id or "").lower()
+
+        # -- 1. Vector Embeddings --
+        if any(s in name for s in _EMBED_SUBSTRINGS):
+            local = bool(source == "ollama") or (params is not None and params <= 14.0)
+            return ROLE_VECTOR_EMBEDDINGS, (
+                VRAM_LOCAL_OPTIMAL if local else VRAM_CLOUD_COST_EFFECTIVE
+            )
+
+        # -- 2. Code Audit --
+        if any(s in name for s in _CODE_SUBSTRINGS):
+            local = params is not None and params <= 14.0
+            return ROLE_CODE_AUDIT, (
+                VRAM_LOCAL_OPTIMAL if local else VRAM_CLOUD_COST_EFFECTIVE
+            )
+
+        # -- 3. Frontier Reasoning / Kitchenham Rigor --
+        frontier = any(ModelScavengerAgent._has_token(name, t) for t in _FRONTIER_TOKENS)
+        frontier = frontier or any(s in name for s in _FRONTIER_SUBSTRINGS)
+        frontier = frontier or (price is not None and price >= 3.0)
+        frontier = frontier or (params is not None and params >= 70.0)
+        if frontier:
+            return ROLE_KITCHENHAM_RIGOR, VRAM_FRONTIER_REASONING
+
+        # -- 4. Fast Screening / Local Optimal --
+        fast = any(ModelScavengerAgent._has_token(name, t) for t in _FAST_TOKENS)
+        fast = fast or (params is not None and params <= 14.0)
+        if fast:
+            local = params is not None and params <= 14.0
+            return ROLE_FAST_SCREENING, (
+                VRAM_LOCAL_OPTIMAL if local else VRAM_CLOUD_COST_EFFECTIVE
+            )
+
+        # -- 5. General Cloud --
+        return ROLE_GENERAL_RESEARCH, VRAM_CLOUD_COST_EFFECTIVE
+
     def _classify_vram(self, model: ScavengedModel) -> str:
         """Classify a model into one of three VRAM compatibility classes.
+
+        Delegates to :meth:`_classify_model` for a single source of truth.
 
         Args:
             model (ScavengedModel): The discovered model.
@@ -383,39 +540,66 @@ class ModelScavengerAgent:
         Returns:
             str: LOCAL_OPTIMAL, CLOUD_COST_EFFECTIVE, or FRONTIER_REASONING.
         """
-        params = model.parameter_count_b
-        is_quantized = model.source in ("ollama",)
-        if params is None:
-            return VRAM_CLOUD_COST_EFFECTIVE
-        if params <= 7.0:
-            return VRAM_LOCAL_OPTIMAL
-        if is_quantized and params <= 14.0:
-            return VRAM_LOCAL_OPTIMAL
-        if params <= 70.0:
-            return VRAM_CLOUD_COST_EFFECTIVE
-        return VRAM_FRONTIER_REASONING
+        _, vram = self._classify_model(
+            model.model,
+            model.parameter_count_b,
+            model.pricing_prompt_per_1m_usd,
+            model.context_window,
+            model.source,
+        )
+        return vram
 
     @staticmethod
     def _recommend_role(model: ScavengedModel) -> str:
-        """Recommend one of the four scientific workload roles for a model.
+        """Recommend one of the five scientific workload roles for a model.
+
+        Delegates to :meth:`_classify_model` for a single source of truth.
 
         Args:
             model (ScavengedModel): The discovered model.
 
         Returns:
-            str: Fast Screening, Kitchenham Rigor, Code Audit, or Vector Embeddings.
+            str: Fast Screening, Kitchenham Rigor, Code Audit, Vector
+                Embeddings, or General Research.
         """
-        name = (model.model or "").lower()
-        params = model.parameter_count_b
-        if any(k in name for k in ("embed", "nomic", "e5", "bge", "gte")):
-            return ROLE_VECTOR_EMBEDDINGS
-        if any(k in name for k in ("coder", "code", "starcoder")):
-            return ROLE_CODE_AUDIT
-        if any(k in name for k in ("r1", "reasoner", "o1", "o3", "deepseek-r1")):
-            return ROLE_KITCHENHAM_RIGOR
-        if params is not None and params >= 30.0:
-            return ROLE_KITCHENHAM_RIGOR
-        return ROLE_FAST_SCREENING
+        role, _ = ModelScavengerAgent._classify_model(
+            model.model,
+            model.parameter_count_b,
+            model.pricing_prompt_per_1m_usd,
+            model.context_window,
+            model.source,
+        )
+        return role
+
+    # ------------------------------------------------------------------
+    # -- Fuzzy benchmark enrichment (v5.21.1) ---------------------------
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _apply_fuzzy_benchmarks(model: ScavengedModel) -> None:
+        """Populate MMLU-Pro / HumanEval / TTFT from the fuzzy benchmark DB.
+
+        The enrichment only fills metrics that are currently empty so that
+        explicitly measured values are never overwritten.
+
+        Args:
+            model (ScavengedModel): The model record to enrich in place.
+        """
+        try:
+            from src.services.cognitive_mesh.benchmarks import (
+                fuzzy_enrich_benchmarks,
+            )
+            enriched = fuzzy_enrich_benchmarks(model.model, model.developer)
+        except Exception:
+            enriched = {}
+        if not isinstance(enriched, dict):
+            return
+        if not model.mmlu_pro and enriched.get("mmlu_pro"):
+            model.mmlu_pro = float(enriched["mmlu_pro"])
+        if not model.human_eval and enriched.get("human_eval"):
+            model.human_eval = float(enriched["human_eval"])
+        if not model.ttft_ms and enriched.get("ttft_ms"):
+            model.ttft_ms = float(enriched["ttft_ms"])
 
     # ------------------------------------------------------------------
     # -- Summary statistics --------------------------------------------
@@ -502,7 +686,9 @@ class ModelScavengerAgent:
             numeric = float(value)
         except (TypeError, ValueError):
             return 0.0
-        if numeric and numeric < 0.01:
+        if numeric <= 0:
+            return 0.0
+        if numeric < 0.01:
             return round(numeric * 1_000_000.0, 4)
         return round(numeric, 4)
 

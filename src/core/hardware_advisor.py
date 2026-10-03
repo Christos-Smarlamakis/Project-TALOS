@@ -224,8 +224,9 @@ class HardwareModelAdvisor:
 
         Returns:
             dict: Keys ``hardware_profile``, ``max_params_billions``,
-                ``screening_local``, ``reasoning_local``,
-                ``reasoning_cloud``, and ``fast_cloud``.
+                ``screening_local``, ``screening_cloud``, ``reasoning_local``,
+                ``reasoning_cloud``, and ``fast_cloud`` (v5.21.1 dual-slot
+                local/cloud definitions for the hybrid router).
         """
         profile = self.get_hardware_profile()
         budget = self.calculate_vram_budget(profile["total_vram_gb"])
@@ -244,6 +245,7 @@ class HardwareModelAdvisor:
             "hardware_profile": profile,
             "max_params_billions": budget,
             "screening_local": screening_local,
+            "screening_cloud": "gemini-2.5-flash",
             "reasoning_local": reasoning_local,
             "reasoning_cloud": "deepseek-reasoner",
             "fast_cloud": "gemini-2.5-flash",

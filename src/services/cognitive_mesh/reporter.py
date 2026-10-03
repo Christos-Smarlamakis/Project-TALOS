@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: reporter.py
-Project: TALOS v5.21.0
+Project: TALOS v5.21.1
 Description:
     Dual Intelligence Reporter for the Cognitive Mesh in-tree microservice. It
     renders a MarketIntelligenceReport into two deliverables under
@@ -103,6 +103,29 @@ class IntelligenceReporter:
         )
         lines.append(f"| Frontier Reasoning | {report.frontier_reasoning_count} |")
         lines.append("")
+        lines.append("## Executive Optimal Selection Matrix & FinOps")
+        lines.append("")
+        lines.append(
+            "Champion models are selected per execution budget and costed at the "
+            "estimated USD spend to process 1,000 papers. Abstract screening "
+            "assumes 2,000 prompt / 500 completion tokens per paper; full-text "
+            "Kitchenham audit assumes 12,000 prompt / 3,000 completion tokens "
+            "per paper."
+        )
+        lines.append("")
+        lines.append(
+            "| Budget | Champion Model | Developer | Role | Parameters | "
+            "MMLU-Pro | Screening /1k | Audit /1k |"
+        )
+        lines.append("| --- | --- | --- | --- | --- | --- | --- | --- |")
+        for champ in self._select_champions(report):
+            lines.append(
+                f"| {self._md_cell(champ['budget'])} | {self._md_cell(champ['model'])} "
+                f"| {self._md_cell(champ['developer'])} | {self._md_cell(champ['role'])} "
+                f"| {champ['params']} | {champ['mmlu_pro'] or '-'} | "
+                f"${champ['screening_cost_1k']:.2f} | ${champ['audit_cost_1k']:.2f} |"
+            )
+        lines.append("")
         lines.append("## Discovered Models")
         lines.append("")
         lines.append(
@@ -151,11 +174,116 @@ class IntelligenceReporter:
         return text.replace("|", "\\|")
 
     # ------------------------------------------------------------------
+    # -- Executive decision matrix & FinOps (v5.21.1) -------------------
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _finops_cost(
+        prompt_usd: float, completion_usd: float, screening: bool
+    ) -> float:
+        """Estimate USD cost to process 1,000 papers for a given model.
+
+        Abstract screening assumes 2,000 prompt tokens and 500 completion tokens
+        per paper; a full-text Kitchenham audit assumes 12,000 prompt tokens and
+        3,000 completion tokens per paper.
+
+        Args:
+            prompt_usd (float): Prompt price per 1M tokens.
+            completion_usd (float): Completion price per 1M tokens.
+            screening (bool): True for screening, False for full-text audit.
+
+        Returns:
+            float: Estimated USD cost per 1,000 papers.
+        """
+        if screening:
+            prompt_tokens, completion_tokens = 2000, 500
+        else:
+            prompt_tokens, completion_tokens = 12000, 3000
+        cost = (
+            prompt_tokens * prompt_usd + completion_tokens * completion_usd
+        ) / 1_000_000.0
+        return round(cost * 1000.0, 2)
+
+    @classmethod
+    def _select_champions(cls, report: MarketIntelligenceReport) -> List[Dict[str, Any]]:
+        """Select champion models for the three execution budgets.
+
+        The Local champion is the highest-quality LOCAL_OPTIMAL model (zero
+        marginal cost). The Cloud champion is the cheapest CLOUD_COST_EFFECTIVE
+        model meeting a quality floor. The Frontier champion is the
+        highest-quality FRONTIER_REASONING model.
+
+        Args:
+            report (MarketIntelligenceReport): The scavenged report.
+
+        Returns:
+            list[dict]: Champion descriptors with per-1k-paper cost estimates.
+        """
+        def pick(models: List[ScavengedModel], key, reverse: bool):
+            ranked = sorted(
+                [m for m in models if (key(m) or 0) > 0],
+                key=key, reverse=reverse,
+            )
+            return ranked[0] if ranked else None
+
+        local = pick(
+            [m for m in report.models if m.vram_class == "LOCAL_OPTIMAL"],
+            lambda m: m.mmlu_pro, True,
+        )
+        cloud_pool = [m for m in report.models if m.vram_class == "CLOUD_COST_EFFECTIVE"]
+        cloud = None
+        if cloud_pool:
+            qualified = [m for m in cloud_pool if m.mmlu_pro >= 50.0] or cloud_pool
+            cloud = min(
+                qualified,
+                key=lambda m: (
+                    (m.pricing_prompt_per_1m_usd or 0)
+                    + (m.pricing_completion_per_1m_usd or 0)
+                ) or 10**9,
+            )
+        frontier = pick(
+            [m for m in report.models if m.vram_class == "FRONTIER_REASONING"],
+            lambda m: m.mmlu_pro, True,
+        )
+
+        def champion(budget: str, model: ScavengedModel) -> Dict[str, Any]:
+            if model is None:
+                return {
+                    "budget": budget, "model": "-", "developer": "-", "role": "-",
+                    "params": "-", "mmlu_pro": 0.0, "prompt_usd": 0.0,
+                    "completion_usd": 0.0, "screening_cost_1k": 0.0,
+                    "audit_cost_1k": 0.0,
+                }
+            prompt_usd = model.pricing_prompt_per_1m_usd or 0.0
+            completion_usd = model.pricing_completion_per_1m_usd or 0.0
+            return {
+                "budget": budget, "model": model.model,
+                "developer": model.developer or "-",
+                "role": model.recommended_role or "-",
+                "params": model.parameter_count_label or "-",
+                "mmlu_pro": model.mmlu_pro, "prompt_usd": prompt_usd,
+                "completion_usd": completion_usd,
+                "screening_cost_1k": cls._finops_cost(
+                    prompt_usd, completion_usd, True
+                ),
+                "audit_cost_1k": cls._finops_cost(
+                    prompt_usd, completion_usd, False
+                ),
+            }
+
+        return [
+            champion("Local RTX 4070 (Air-Gapped)", local),
+            champion("Cloud Cost-Optimized", cloud),
+            champion("Frontier Maximum Rigor", frontier),
+        ]
+
+    # ------------------------------------------------------------------
     # -- HTML report ----------------------------------------------------
     # ------------------------------------------------------------------
 
     def _render_html(self, report: MarketIntelligenceReport) -> str:
         cards = "\n".join(self._render_card(m) for m in report.models)
+        champion_cards = self._render_champion_cards(report)
         timestamp = report.generated_at or datetime.now().strftime("%Y-%m-%d")
         stats = (
             f'<div class="stat"><span class="stat-num">'
@@ -186,6 +314,14 @@ class IntelligenceReporter:
             '<section class="stats">\n'
             f"{stats}\n"
             "</section>\n"
+            '<section class="champions">\n'
+            f"{champion_cards}\n"
+            "</section>\n"
+            '<section class="search" role="search" aria-label="Model search">\n'
+            '<input type="text" id="model-search" '
+            'placeholder="Search by model name or developer..." '
+            'oninput="searchModels(this.value)">\n'
+            "</section>\n"
             '<section class="filters" role="toolbar" aria-label="Model filters">\n'
             '<button class="filter active" data-filter="all" '
             'onclick="filterModels(\'all\')">All Models</button>\n'
@@ -214,8 +350,12 @@ class IntelligenceReporter:
             model.pricing_prompt_per_1m_usd + model.pricing_completion_per_1m_usd
         )
         price_text = f"${price:.2f}" if price else "-"
+        searchable = _html.escape(
+            f"{model.model or ''} {model.developer or ''}".lower(), quote=True
+        )
         return (
-            f'<article class="card" data-vram="{model.vram_class}">\n'
+            f'<article class="card" data-vram="{model.vram_class}" '
+            f'data-search="{searchable}">\n'
             '<div class="card-head">\n'
             f"<h3>{_html.escape(model.model or 'Unnamed')}</h3>\n"
             f'<span class="badge {cls}">{label}</span>\n'
@@ -232,6 +372,37 @@ class IntelligenceReporter:
             "</ul>\n"
             "</article>\n"
         )
+
+    @staticmethod
+    def _render_champion_cards(report: MarketIntelligenceReport) -> str:
+        """Render the three champion summary cards for the executive matrix.
+
+        Args:
+            report (MarketIntelligenceReport): The scavenged report.
+
+        Returns:
+            str: Concatenated HTML champion cards.
+        """
+        cards: List[str] = []
+        for champ in IntelligenceReporter._select_champions(report):
+            price = champ["prompt_usd"] + champ["completion_usd"]
+            price_text = f"${price:.2f}/1M" if price else "Local (0 cost)"
+            cards.append(
+                '<article class="champion-card">\n'
+                f'<h3>{_html.escape(champ["budget"])}</h3>\n'
+                f'<p class="champ-model">{_html.escape(champ["model"])}</p>\n'
+                f'<p class="dev">{_html.escape(champ["developer"])} &middot; '
+                f'{_html.escape(champ["role"])} &middot; '
+                f'{_html.escape(champ["params"])}</p>\n'
+                "<ul>\n"
+                f"<li>MMLU-Pro: {champ['mmlu_pro'] or '-'}</li>\n"
+                f"<li>Pricing: {price_text}</li>\n"
+                f"<li>Screening (1k papers): ${champ['screening_cost_1k']:.2f}</li>\n"
+                f"<li>Full-text audit (1k papers): ${champ['audit_cost_1k']:.2f}</li>\n"
+                "</ul>\n"
+                "</article>\n"
+            )
+        return "\n".join(cards)
 
 
 def _badge(vram_class: str) -> Tuple[str, str]:
@@ -298,6 +469,15 @@ body {
 .badge-local { background: #0f3d2e; color: #6ee7a8; border: 1px solid #1f7a52; }
 .badge-cloud { background: #4a3410; color: #f3c46b; border: 1px solid #8a6a1f; }
 .badge-frontier { background: #102a4a; color: #6fb8ff; border: 1px solid #2a6aa8; }
+.champions { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-bottom: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; }
+.champion-card { background: #101a2e; border: 1px solid #2a3a5c; border-radius: 14px; padding: 1.1rem 1.3rem; min-width: 260px; flex: 1 1 260px; }
+.champion-card h3 { color: #7fd1ff; font-size: 1rem; margin-bottom: 0.5rem; }
+.champ-model { color: #e6ebf4; font-weight: 700; font-size: 1.05rem; word-break: break-word; }
+.champion-card ul { list-style: none; font-size: 0.88rem; color: #c4cde0; }
+.champion-card li { padding: 0.15rem 0; }
+.search { text-align: center; margin-bottom: 1.5rem; }
+#model-search { width: min(480px, 90%); padding: 0.65rem 1rem; border-radius: 999px; border: 1px solid #2c3a5c; background: #141b30; color: #e6ebf4; font-size: 0.95rem; outline: none; }
+#model-search:focus { border-color: #7fd1ff; }
 @media (max-width: 640px) {
   body { padding: 1rem 0.8rem; }
   .hero h1 { font-size: 1.5rem; }
@@ -306,15 +486,28 @@ body {
 
 # -- Embedded vanilla JavaScript (zero external dependencies) ------------------
 _HTML_JS = """
+var activeFilter = 'all';
+var activeQuery = '';
+function applyFilters() {
+  document.querySelectorAll('.card').forEach(function (card) {
+    var vram = card.getAttribute('data-vram');
+    var text = (card.getAttribute('data-search') || '').toLowerCase();
+    var vramMatch = activeFilter === 'all' || vram === activeFilter;
+    var textMatch = activeQuery === '' || text.indexOf(activeQuery) !== -1;
+    card.style.display = (vramMatch && textMatch) ? '' : 'none';
+  });
+}
 function filterModels(cls) {
+  activeFilter = cls;
   var buttons = document.querySelectorAll('.filter');
   buttons.forEach(function (b) {
     b.classList.toggle('active', b.getAttribute('data-filter') === cls);
   });
-  document.querySelectorAll('.card').forEach(function (card) {
-    var match = cls === 'all' || card.getAttribute('data-vram') === cls;
-    card.style.display = match ? '' : 'none';
-  });
+  applyFilters();
+}
+function searchModels(q) {
+  activeQuery = (q || '').toLowerCase().trim();
+  applyFilters();
 }
 """
 

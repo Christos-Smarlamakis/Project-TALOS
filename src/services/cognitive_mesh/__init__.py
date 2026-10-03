@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: __init__.py
-Project: TALOS v5.21.0
+Project: TALOS v5.21.1
 Description:
     Public API surface for the Cognitive Mesh in-tree extraction-ready
     microservice. Re-exports the cognitive meta-router, the sixteen-provider

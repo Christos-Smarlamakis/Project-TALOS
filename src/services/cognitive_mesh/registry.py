@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: registry.py
-Project: TALOS v5.21.0
+Project: TALOS v5.21.1
 Description:
     Pluggable, adapter-based LLM provider registry implementing the
     Open-Closed Principle (software entities should be open for extension
@@ -29,7 +29,7 @@ Description:
     - Descriptors carry an ``is_openai_compatible`` flag and a ``category``
       label so routing layers can reason about transport shape and latency
       class without hard-coded per-provider branches.
-    - The registry is extraction-ready (Constitution, v5.21.0): it imports
+    - The registry is extraction-ready (Constitution, v5.21.1): it imports
       only ``config.settings`` and the standard library, never SQLite WAL
       storage, PRISMA pipelines, or CLI scripts, so it can be lifted into a
       standalone SYNAPSE (:8000) / MEMEX microservice without dependency

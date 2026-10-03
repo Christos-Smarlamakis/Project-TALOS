@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 Module: provider_registry.py
-Project: TALOS v5.21.0
+Project: TALOS v5.21.1
 Description:
     Backward-compatible shim. The sixteen-provider pluggable registry has been
     migrated into the in-tree extraction-ready microservice namespace
-    (src/services/cognitive_mesh/registry.py) in v5.21.0. This module
+    (src/services/cognitive_mesh/registry.py) in v5.21.1. This module
     re-exports the canonical public API so every existing TALOS consumer
     (AIManager) and test continues to resolve
     ``from src.core.provider_registry import ...`` without modification or

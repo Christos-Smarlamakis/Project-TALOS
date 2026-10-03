@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_intelligence_reporter.py
-Project: TALOS v5.21.0
+Project: TALOS v5.21.1
 Description:
     Unit tests for the Dual Intelligence Reporter
     (src/services/cognitive_mesh/reporter.py). Verifies that both the Markdown

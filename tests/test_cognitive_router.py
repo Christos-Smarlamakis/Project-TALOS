@@ -96,6 +96,29 @@ class TestStrategyDispatch:
         resp = router.dispatch("fast_screening", RoutingStrategy.LOCAL_AIRGAPPED, {})
         assert resp.provider == "ollama"
 
+    def test_local_first_cloud_backup_prefers_ollama(self):
+        router = CognitiveMetaRouter(
+            registry=_FakeRegistry(["ollama", "deepseek", "groq"]),
+            transport=_ok_transport,
+        )
+        resp = router.dispatch(
+            "fast_screening", RoutingStrategy.LOCAL_FIRST_CLOUD_BACKUP, {}
+        )
+        assert resp.provider == "ollama"
+        assert resp.fallback_occurred is False
+
+    def test_local_first_cloud_backup_fails_over_when_ollama_latched(self):
+        router = CognitiveMetaRouter(
+            registry=_FakeRegistry(["ollama", "deepseek"]),
+            transport=_ok_transport,
+        )
+        router.latch_provider("ollama", 429)
+        resp = router.dispatch(
+            "fast_screening", RoutingStrategy.LOCAL_FIRST_CLOUD_BACKUP, {}
+        )
+        assert resp.provider == "deepseek"
+        assert resp.fallback_occurred is True
+
     def test_dispatch_accepts_dto_form(self):
         router = CognitiveMetaRouter(
             registry=_FakeRegistry(["deepseek"]), transport=_ok_transport

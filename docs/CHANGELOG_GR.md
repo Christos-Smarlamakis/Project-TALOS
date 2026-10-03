@@ -2,6 +2,36 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.21.1] - 2026-10-03 -- Ενίσχυση Αποσυζευγμένου Γνωστικού Πλέγματος, Πλήρης Κατάλογος LLM, Ασαφή Συγκριτικά & Αυτόματος Πιλότος Διαμόρφωσης FinOps
+
+### Προστέθηκε
+
+- **Πλήρης συγκομιδή Hugging Face** (`scavenger.py`): το αίτημα Hub ταξινομεί πλέον κατά λήψεις (`sort=downloads&direction=-1&limit=100`) αντί της παλαιάς ταξινόμησης «trending», και αναλύει `downloads` / `likes` / `author` / μέγεθος παραμέτρων / άδεια στο DTO `ScavengedModel`. Το `huggingface` προστίθεται πάντα στο `sources_queried` για μη κενό αποτέλεσμα.
+
+- **Πλήρης κατάποση OpenRouter** (`scavenger.py`): οι `scavenge_market(window_days=0, fetch_all=False)` και `_parse_openrouter_payload(..., fetch_all)` παρακάμπτουν πλήρως το όριο ημερομηνίας κυκλοφορίας όταν `fetch_all=True` ή `window_days <= 0` (250+ μοντέλα)· το `window_days > 0` διατηρεί το φίλτρο.
+
+- **Απομακρυσμένος κατάλογος βιβλιοθήκης Ollama** (`scavenger.py`): το `REMOTE_OLLAMA_MODELS` προσθέτει 20 κανονικές απομακρυσμένες ετικέτες (Qwen 2.5 7B/14B/32B/72B, Llama 3.1 8B/70B/405B, DeepSeek-R1 8B/14B/32B/70B, Gemma 2/3, Mistral NeMo, Phi-4, CodeQwen) δίπλα στις τοπικά εγκατεστημένες· το προηγούμενο φίλτρο `>14B` αφαιρέθηκε.
+
+- **Ασαφής διασταύρωση συγκριτικών** (`benchmarks.py`): η `fuzzy_enrich_benchmarks(model_id, developer)` ταιριάζει υποσυμβολοσειρές χωρίς διάκριση πεζών-κεφαλαίων έναντι πίνακα 46 εγγραφών `FUZZY_BENCHMARK_PATTERNS` (Claude, GPT, DeepSeek R1/V3, Qwen 2.5, Llama 3.1, Mistral, Gemma, ενσωματώσεις) και συμπληρώνει MMLU-Pro / HumanEval / TTFT· άγνωστα παράγωγα κληρονομούν την οικογένεια βάσης. Το `scavenger.py` την εφαρμόζει μέσω `_apply_fuzzy_benchmarks()`.
+
+- **Ενισχυμένος ευρετικός ταξινομητής ρόλου & VRAM** (`scavenger.py`): ενιαίο δέντρο αποφάσεων `_classify_model(model_id, params, price, context, source)` (Vector Embeddings -> Code Audit -> Frontier Reasoning -> Fast Screening -> General Research) με αντιστοίχιση ορίου λέξης (`_has_token`) ώστε το `pro` να μην ταιριάζει με `proprietary`, το `mini` με `gemini` και το `7b` με `37b`/`70b`. Ερεθίσματα frontier: `sonnet`/`opus`/`r1`/`reasoner`/`pro`/`o1`/`o3`/`gpt-4/5/6`/`405b`/`nemotron-70b`, τιμή prompt >= 3,00 $/1M ή >= 70B παράμετροι. Οι `_classify_vram` / `_recommend_role` παραμένουν ως αναθέτοντες περιτυλιγτές.
+
+- **Εκτελεστικός Πίνακας Βέλτιστης Επιλογής & FinOps** (`reporter.py`): η `_select_champions()` επιλέγει τους πρωταθλητές Local RTX 4070 / Cloud Cost-Optimized / Frontier Rigor και η `_finops_cost()` εκτιμά USD ανά 1.000 άρθρα. Οι δύο αναφορές αποδίδουν τους Πίνακες Εκτελεστικής Ετυμηγορίας· το HTML προσθέτει γραμμή αναζήτησης vanilla-JS και τρεις κάρτες πρωταθλητών.
+
+- **Υβριδική δρομολόγηση** (`dto.py`, `router.py`): νέα `RoutingStrategy.LOCAL_FIRST_CLOUD_BACKUP` που δοκιμάζει πρώτα τοπικό Ollama και μεταπίπτει σε ενεργό νέφος.
+
+- **Αυτόματος Πιλότος Διαμόρφωσης FinOps** (`ai_strategy_selector.py`, `talos.py`): `configure_ai_strategy()` (Οθόνη 1 AUTO_PILOT + [1-4] χειροκίνητα, Οθόνη 2 πίνακας επιπτώσεων ρόλων, Οθόνη 3 αποθήκευση) και `apply_optimal_models(strategy)`. Νέες σημαίες CLI `--configure-ai-strategy` και `--apply-optimal-models [--strategy AUTO|LOCAL_FIRST|CLOUD_BUDGET|FRONTIER]`· το `--scavenge-models` αποκτά `--all`· η Επιλογή 10 του TUI εκκινεί τον διαμορφωτή.
+
+### Άλλαξε
+
+- **`hardware_advisor.py`**: η `get_recommendations()` αποδίδει πλέον τη διπλή υποδοχή `screening_cloud` δίπλα στα `screening_local` / `reasoning_local` / `reasoning_cloud` / `fast_cloud`.
+
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.21.1** στα βασικά αρχεία κώδικα, `docker-compose.yml` (`talos:5.21.1`), `CITATION.cff` (έκδοση 5.21.1, ημερομηνία 2026-10-03), τους εκκινητές, τα βοηθητικά και όλα τα κανονικά αρχεία τεκμηρίωσης (2026-10-03).
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.21.1)· `pytest tests/test_model_scavenger.py tests/test_intelligence_reporter.py tests/test_model_benchmark_client.py tests/test_cognitive_router.py -q` (45 ερμητικά)· `python src/utils/verify_dependency_map.py --ci` (exit 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD)· έλεγχος αποσύζευξης (0 απαγορευμένες εισαγωγές στο `src/services/cognitive_mesh/`).
+
 ## [v5.21.0] - 2026-10-03 -- Γνωστικό Πλέγμα, Έτοιμη για Εξαγωγή Ενσωματωμένη Μικροϋπηρεσία & Αυτόνομος Πράκτορας Ανίχνευσης LLM (Συμμορφούμενο με ISO/IEC 25010)
 
 ### Προστέθηκε

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: main_api.py
-Project: TALOS v5.21.0
+Project: TALOS v5.21.1
 Description:
     FastAPI facade layer exposing core TALOS functions (database queries,
     semantic search, scraping trigger, GWO optimization, Synapse webhook receiver,
@@ -116,7 +116,7 @@ async def lifespan(app: FastAPI):
         None: Control returns to the server for the duration of its lifetime.
     """
     # -- Startup --
-    logger.info("TALOS FastAPI v5.21.0 starting up (Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger Agent, port 8001)...")
+    logger.info("TALOS FastAPI v5.21.1 starting up (Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger Agent, port 8001)...")
     _get_db()  # warm DatabaseManager
     logger.info("TALOS FastAPI ready on http://127.0.0.1:8001")
     logger.info("API docs: http://localhost:8001/docs")
@@ -129,8 +129,8 @@ async def lifespan(app: FastAPI):
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-    description="Facade REST API for the TALOS autonomous research platform (v5.21.0 -- Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger Agent)",
-    version="5.21.0",
+    description="Facade REST API for the TALOS autonomous research platform (v5.21.1 -- Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger Agent)",
+    version="5.21.1",
     lifespan=lifespan,
 )
 app.add_middleware(
@@ -147,7 +147,7 @@ app.include_router(synapse_router)
 # -- Include Autonomous Red Tester router (v5.9.1) --
 app.include_router(red_tester_router)
 
-# -- Include Cognitive Mesh microservice router (v5.21.0) --
+# -- Include Cognitive Mesh microservice router (v5.21.1) --
 app.include_router(
     cognitive_router_app,
     prefix="/api/v1/cognitive",

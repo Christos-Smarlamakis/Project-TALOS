@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.21.0</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.21.1</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.18.0</h1>
+<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.21.1</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-10-03 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.21.0 -- Cognitive Mesh Extraction-Ready In-Tree Microservice &amp; Autonomous LLM Scavenger Agent
+  <strong>Version:</strong> v5.21.1 -- Decoupled Cognitive Mesh Hardening, Full-Catalog LLM Scavenger, Fuzzy Benchmarks &amp; Auto-Pilot FinOps Configurator
 </div>
 
 <!-- ===================================================================== -->
@@ -357,7 +357,7 @@
 <table>
   <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
   <tbody>
-    <tr><td>TALOS_VERSION</td><td>"5.21.0"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_VERSION</td><td>"5.21.1"</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
@@ -1545,8 +1545,25 @@
 
 <p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.21.0), scavenger + reporter + provider registry + cognitive router + model benchmark (43 hermetic), <code>python talos.py --scavenge-models --days 7 --report-only</code> (exit 0), <code>--help</code> (Runbook A4), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (0 U+FFFD).</p>
 
+<h3 id="s15-54">15.54 Decoupled Cognitive Mesh Hardening, Full-Catalog LLM Scavenger, Fuzzy Benchmarks &amp; Auto-Pilot FinOps Configurator (v5.21.1)</h3>
+
+<p><strong>Overview:</strong> v5.21.1 hardens the extraction-ready microservice with full-catalog scavenging (Hugging Face top-100 by downloads, OpenRouter 250+ without date truncation, canonical remote Ollama tags), fuzzy MMLU-Pro/HumanEval/TTFT benchmark cross-referencing, a hardened token-boundary role/VRAM classifier, an Executive Optimal Selection Matrix with FinOps cost estimation, a hybrid <code>LOCAL_FIRST_CLOUD_BACKUP</code> routing strategy, and an interactive Auto-Pilot FinOps configurator.</p>
+
+<ul>
+  <li><strong>Hugging Face full-catalog harvester</strong>: <code>sort=downloads&amp;direction=-1&amp;limit=100</code>; parses downloads / likes / author / params / license; <code>huggingface</code> always appended to <code>sources_queried</code>.</li>
+  <li><strong>OpenRouter full-catalog ingestion</strong>: <code>fetch_all</code> / <code>window_days &lt;= 0</code> disables the release-date cutoff (250+ models).</li>
+  <li><strong>Remote Ollama library catalogue</strong>: 20 canonical remote tags (Qwen 2.5, Llama 3.1, DeepSeek-R1, Gemma 2/3, Mistral NeMo, Phi-4, CodeQwen).</li>
+  <li><strong>Fuzzy benchmark cross-referencing</strong> (<code>benchmarks.py</code>): <code>fuzzy_enrich_benchmarks()</code> (46-entry table) populates MMLU-Pro / HumanEval / TTFT.</li>
+  <li><strong>Hardened heuristic classifier</strong> (<code>scavenger.py</code>): unified <code>_classify_model()</code> with token-boundary <code>_has_token()</code>; frontier = sonnet/opus/r1/reasoner/pro/o1/o3/gpt-4/5/6/405b/nemotron-70b, price &gt;= $3.00/1M, or &gt;= 70B.</li>
+  <li><strong>Executive Decision Matrix &amp; FinOps</strong> (<code>reporter.py</code>): <code>_select_champions()</code> + <code>_finops_cost()</code> per 1k papers; HTML champion cards + vanilla-JS search bar.</li>
+  <li><strong>Hybrid routing</strong> (<code>dto.py</code>, <code>router.py</code>): <code>RoutingStrategy.LOCAL_FIRST_CLOUD_BACKUP</code>.</li>
+  <li><strong>Auto-Pilot FinOps Configurator</strong> (<code>ai_strategy_selector.py</code>, <code>talos.py</code>): <code>configure_ai_strategy()</code> + <code>apply_optimal_models()</code>; CLI <code>--configure-ai-strategy</code>, <code>--apply-optimal-models</code>, <code>--scavenge-models --all</code>.</li>
+</ul>
+
+<p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.21.1), scavenger + reporter + benchmark client + cognitive router incl. LOCAL_FIRST_CLOUD_BACKUP failover (45 hermetic), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, strict UTF-8 scan (0 U+FFFD), decoupling grep (0 forbidden imports).</p>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.21.0</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.21.1</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

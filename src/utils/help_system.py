@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: help_system.py
-Project: TALOS v5.21.0
+Project: TALOS v5.21.1
 Description:
     Enterprise Console Help System. Renders a structured, four-section CLI
     manual for the TALOS terminal UI and bridges to the interactive FastAPI Web
@@ -100,11 +100,17 @@ def _section_a_sop_runbooks() -> Panel:
 
     body.append("Runbook A4 -- Autonomous Model Scavenger & Market Intelligence\n",
                 style="bold bright_green")
-    body.append("  1. Forage the market (Hugging Face / OpenRouter / Ollama):\n")
+    body.append("  1. Forage the full multi-source catalog (150+ models):\n")
+    body.append("     python talos.py --scavenge-models --all\n")
+    body.append("  2. Limit discovery to a recent window:\n")
     body.append("     python talos.py --scavenge-models --days 30\n")
-    body.append("  2. Generate reports without the console summary:\n")
-    body.append("     python talos.py --scavenge-models --report-only\n")
-    body.append("  3. Open the standalone Dark Theme dashboard under:\n")
+    body.append("  3. Generate reports without the console summary:\n")
+    body.append("     python talos.py --scavenge-models --all --report-only\n")
+    body.append("  4. Configure the hybrid FinOps strategy (auto-pilot):\n")
+    body.append("     python talos.py --configure-ai-strategy\n")
+    body.append("  5. Adopt champion models with one click:\n")
+    body.append("     python talos.py --apply-optimal-models --strategy AUTO\n")
+    body.append("  6. Open the standalone Dark Theme dashboard under:\n")
     body.append("     data/reports/llm_intelligence/llm_market_intelligence_YYYYMMDD.html\n")
 
     return Panel(
@@ -161,8 +167,12 @@ def _section_b_command_matrix() -> Panel:
                   "Persist the recommended model stack.")
     table.add_row("System Management", "--discover-llms",
                   "Live SOTA benchmark discovery matrix.")
-    table.add_row("System Management", "--scavenge-models [--days N] [--report-only]",
+    table.add_row("System Management", "--scavenge-models [--all] [--days N] [--report-only]",
                   "Autonomous model scavenger + dual MD/HTML intelligence reports.")
+    table.add_row("System Management", "--configure-ai-strategy",
+                  "Interactive Cognitive FinOps & Strategy Configurator (auto-pilot).")
+    table.add_row("System Management", "--apply-optimal-models [--strategy ...]",
+                  "1-click champion hybrid model adoption into the active profile.")
     table.add_row("System Management", "--diagnostics | --doctor",
                   "8-point ISO/IEC 25010 diagnostics analyzer.")
     table.add_row("System Management", "--stats", "Database statistics report.")

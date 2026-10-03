@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: router.py
-Project: TALOS v5.21.0
+Project: TALOS v5.21.1
 Description:
     Decoupled, extraction-ready Cognitive Meta-Router. This module selects an
     inference provider for a scientific task using one of four named routing
@@ -11,7 +11,7 @@ Description:
     can be lifted verbatim into a standalone SYNAPSE (:8000) microservice shared
     between TALOS and MEMEX with zero dependency surgery.
 
-    The router exposes four strategies:
+    The router exposes five strategies:
       - LOWEST_LATENCY   : dispatch to the fastest active provider (Groq,
                            Cerebras, SambaNova, or local Ollama) ranked by an
                            exponential moving average of time-to-first-token.
@@ -21,6 +21,8 @@ Description:
                            score meets the floor Q_min >= 0.70.
       - LOCAL_AIRGAPPED  : strictly local Ollama on port 11434, zero outbound
                            network egress, bounded by threading.Semaphore(2).
+      - LOCAL_FIRST_CLOUD_BACKUP : attempt local Ollama first, then dynamically
+                           fail over to the active cloud tier (v5.21.1).
 
     Key design decisions:
     - Zero imports from SQLite WAL storage, PRISMA pipelines, or CLI scripts;
@@ -368,6 +370,9 @@ class CognitiveMetaRouter:
     ) -> List[str]:
         if strategy == RoutingStrategy.LOCAL_AIRGAPPED:
             return ["ollama"]
+        if strategy == RoutingStrategy.LOCAL_FIRST_CLOUD_BACKUP:
+            fallback = [p for p in active if p != "ollama"]
+            return ["ollama"] + fallback
         if strategy == RoutingStrategy.REASONING_RIGOR:
             return ["deepseek", "anthropic", "sambanova"]
         if strategy == RoutingStrategy.LOWEST_LATENCY:

@@ -4,9 +4,33 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-03 (v5.21.0 -- Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger Agent)
+> **Last Updated:** 2026-10-03 (v5.21.1 -- Decoupled Cognitive Mesh Hardening, Full-Catalog LLM Scavenger, Fuzzy Benchmarks & Auto-Pilot FinOps Configurator)
 
 ---
+
+## Phase 81: Decoupled Cognitive Mesh Hardening, Full-Catalog Scavenger, Fuzzy Benchmarks & Auto-Pilot FinOps Configurator (v5.21.1)
+
+- [x] **Status:** COMPLETED (2026-10-03).
+
+- [x] **Hugging Face full-catalog harvester** -- `sort=downloads&direction=-1&limit=100`; parses downloads / likes / author / params / license; `huggingface` always appended to `sources_queried`.
+
+- [x] **OpenRouter full-catalog ingestion** -- `fetch_all` / `window_days <= 0` disables the release-date cutoff (250+ models); `window_days > 0` retains the delta.
+
+- [x] **Remote Ollama library catalogue** -- 20 canonical remote tags (Qwen 2.5, Llama 3.1, DeepSeek-R1, Gemma 2/3, Mistral NeMo, Phi-4, CodeQwen); the previous `>14B` drop removed.
+
+- [x] **Fuzzy benchmark cross-referencing** -- `fuzzy_enrich_benchmarks()` (46-entry pattern table) populates MMLU-Pro / HumanEval / TTFT across Claude, GPT, DeepSeek, Qwen, Llama, Mistral, Gemma.
+
+- [x] **Hardened heuristic classifier** -- unified `_classify_model()` decision tree with token-boundary `_has_token()` (pro / mini / 7b false positives eliminated); frontier = sonnet/opus/r1/reasoner/pro/o1/o3/gpt-4/5/6/405b/nemotron-70b, price >= $3.00/1M, or >= 70B.
+
+- [x] **Executive Decision Matrix & FinOps** -- `_select_champions()` (Local / Cloud / Frontier) + `_finops_cost()` per 1k papers; MD verdict tables + HTML champion cards + vanilla-JS search bar.
+
+- [x] **Hybrid routing** -- `RoutingStrategy.LOCAL_FIRST_CLOUD_BACKUP` (local-first, cloud failover via latching loop).
+
+- [x] **Auto-Pilot FinOps Configurator** -- `configure_ai_strategy()` + `apply_optimal_models()`; CLI `--configure-ai-strategy`, `--apply-optimal-models [--strategy ...]`, `--scavenge-models --all`; TUI Option 10.
+
+- [x] **Version sync** -- 5.21.1 across core files + docker-compose (`talos:5.21.1`) + CITATION.cff (5.21.1, 2026-10-03) + launchers + auxiliary modules + canonical docs (2026-10-03).
+
+- [x] **Verification gates passed** -- compileall (0 errors), test_system_integrity, test_talos_version (5.21.1), 45 hermetic (scavenger + reporter + benchmark client + cognitive router incl. LOCAL_FIRST_CLOUD_BACKUP failover + fuzzy benchmarks), verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD), decoupling grep (0 forbidden imports).
 
 ## Phase 80: Cognitive Mesh In-Tree Microservice & Autonomous Model Scavenger Agent (v5.21.0)
 

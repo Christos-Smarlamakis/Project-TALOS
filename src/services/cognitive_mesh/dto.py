@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: dto.py
-Project: TALOS v5.21.0
+Project: TALOS v5.21.1
 Description:
     Standalone Pydantic v2 data-transfer objects for the Cognitive Mesh in-tree
     microservice. This module is the single interchange surface consumed by the
@@ -36,16 +36,19 @@ from pydantic import BaseModel, Field
 
 
 class RoutingStrategy(str, Enum):
-    """The four named cognitive routing strategies.
+    """The five named cognitive routing strategies.
 
     Members are ``str`` subclasses so they serialize directly in Pydantic DTOs
-    and remain comparable with provider-name string keys.
+    and remain comparable with provider-name string keys. ``LOCAL_FIRST_CLOUD_BACKUP``
+    attempts the local Ollama tier first and dynamically fails over to the active
+    cloud tier on failure or overload.
     """
 
     LOWEST_LATENCY = "lowest_latency"
     REASONING_RIGOR = "reasoning_rigor"
     LOWEST_COST = "lowest_cost"
     LOCAL_AIRGAPPED = "local_airgapped"
+    LOCAL_FIRST_CLOUD_BACKUP = "local_first_cloud_backup"
 
 
 class RouterTaskRequest(BaseModel):
@@ -183,6 +186,8 @@ class ScavengedModel(BaseModel):
         license (str): Weight license identifier.
         release_date (Optional[str]): ISO 8601 release date.
         source (str): Discovery source (huggingface/openrouter/ollama/benchmarks).
+        downloads (int): Hugging Face download count (0 when unavailable).
+        likes (int): Hugging Face like count (0 when unavailable).
         vram_class (str): LOCAL_OPTIMAL | CLOUD_COST_EFFECTIVE |
             FRONTIER_REASONING.
         recommended_role (str): Recommended scientific workload role.
@@ -201,6 +206,8 @@ class ScavengedModel(BaseModel):
     license: str = ""
     release_date: Optional[str] = None
     source: str = ""
+    downloads: int = 0
+    likes: int = 0
     vram_class: str = "LOCAL_OPTIMAL"
     recommended_role: str = ""
     pricing_prompt_per_1m_usd: float = 0.0

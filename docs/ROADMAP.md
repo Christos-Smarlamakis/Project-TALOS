@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.21.0 (Cognitive Mesh Extraction-Ready In-Tree Microservice & Autonomous LLM Scavenger Agent) — Complete, 2026-10-03
+> **Current Version:** v5.21.1 (Decoupled Cognitive Mesh Hardening, Full-Catalog LLM Scavenger, Fuzzy Benchmarks & Auto-Pilot FinOps Configurator) — Complete, 2026-10-03
 > **Last Updated:** 2026-10-03
 
 ---
@@ -161,6 +161,7 @@ The v5.10.x series transitions Project TALOS from an aggregator to a fully adapt
 | **v5.19.0** | Two-Stage Rigor Decoupling & Cognitive SOTA Role Matcher | Two-stage rigor-decoupling `HierarchicalEvaluationEngine` (Stage-1 fast sieve -> Stage-2 Dual-Audit: Faceted Relevance Calibration S_rel_calibrated + Kitchenham 2007 S_qual via PrismaQualityAppraiser) with 2D Evidence Quadrant real-time persistence; 4-role SOTA model matcher (`get_role_based_matrix` / `render_role_matrix` / `apply_recommended_models`); `historic_search` engine unification; `--apply-models` CLI. | Complete |
 | **v5.20.0** | Cognitive Meta-Router, SOTA LLM Discovery & Enterprise Console Runbooks | Decoupled `CognitiveMetaRouter` (`src/core/cognitive_router.py`, 4 strategies + circuit breaker + Semaphore(2)), 16-provider registry, `model_benchmark_client` + `--discover-llms`, 4-section enterprise help, `ARCHITECTURE_MAP` (6 zones), Rule 10 Dossier 08. | Complete |
 | **v5.21.0** | Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger Agent | Extraction-ready `src/services/cognitive_mesh/` (dto/registry/router/benchmarks/scavenger/reporter/server/client) with backward-compatible `src/core/` shims; `ModelScavengerAgent` foraging Hugging Face/OpenRouter/Ollama with hardware-aware VRAM classifier; dual MD/HTML `IntelligenceReporter`; Cognitive Mesh FastAPI mini-server mounted under `/api/v1/cognitive`; `--scavenge-models` CLI + TUI Option 10; Dossier 09. | Complete |
+| **v5.21.1** | Decoupled Cognitive Mesh Hardening, Full-Catalog LLM Scavenger, Fuzzy Benchmarks & Auto-Pilot FinOps Configurator | HF full-catalog (top-100 by downloads), OpenRouter full-catalog (`--all`), remote Ollama catalogue, `fuzzy_enrich_benchmarks()` (46-entry pattern table), hardened token-boundary `_classify_model()` classifier, Executive Decision Matrix & FinOps, `LOCAL_FIRST_CLOUD_BACKUP` routing, Auto-Pilot FinOps Configurator (`--configure-ai-strategy`, `--apply-optimal-models`). | Complete |
 | **v6.0.0+** | ALEXANDRIA-VII (CORTEX Prime, Standalone Cognitive Microservice & SYNAPSE Event Bus) | Extract the `src/services/cognitive_mesh/` microservice into a standalone SYNAPSE (:8000) service shared between TALOS and MEMEX; Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs. | Future |
 
 ---
@@ -235,6 +236,7 @@ Project ALEXANDRIA marks the full desktop and distributed release of the platfor
 | **v5.19.0** | Two-Stage Rigor Decoupling & Cognitive SOTA Role Matcher | Stage-2 Dual-Audit (S_rel_calibrated + Kitchenham S_qual), 2D Evidence Quadrant persistence, 4-role SOTA matcher, --apply-models | Complete |
 | **v5.20.0** | Cognitive Meta-Router, SOTA LLM Discovery & Enterprise Console Runbooks | Decoupled CognitiveMetaRouter (4 strategies), 16 providers, --discover-llms, enterprise help, ARCHITECTURE_MAP, Dossier 08 | Complete |
 | **v5.21.0** | Cognitive Mesh In-Tree Microservice & Autonomous LLM Scavenger Agent | Extraction-ready cognitive mesh, ModelScavengerAgent, dual MD/HTML reporter, Cognitive Mesh FastAPI mini-server, --scavenge-models, Dossier 09 | Complete |
+| **v5.21.1** | Decoupled Cognitive Mesh Hardening, Full-Catalog LLM Scavenger, Fuzzy Benchmarks & Auto-Pilot FinOps Configurator | HF + OpenRouter full-catalog, fuzzy benchmarks, hardened classifier, Executive Decision Matrix & FinOps, hybrid routing, Auto-Pilot configurator | Complete |
 | **v5.20.0** | CORTEX & n8n Gateway | Discord bot, n8n workflow templates, ecosystem integration | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine | Future |
 
