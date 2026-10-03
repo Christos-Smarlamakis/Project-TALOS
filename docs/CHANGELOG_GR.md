@@ -2,6 +2,60 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.19.0] - 2026-10-03 -- Μηχανή Αποσύζευξης Αυστηρότητας Δύο Σταδίων & Γνωστικός Αντιστοιχιστής Ρόλων SOTA
+
+### Προστέθηκε
+
+- **Μηχανή Αποσύζευξης Αυστηρότητας Δύο Σταδίων** (`src/core/hierarchical_evaluator.py`): η `HierarchicalEvaluationEngine` αναβαθμίζεται από την κλιμάκωση δύο επιπέδων της v5.18.5 σε μια πραγματική σωλήνωση αποσύζευξης αυστηρότητας δύο σταδίων. Το Στάδιο 1 (Γρήγορο Κόσκινο Συνάφειας) βαθμολογεί τον τίτλο και την περίληψη του άρθρου με το ελαφρύ μοντέλο fast-edge μέσω `AIManager.evaluate_paper_json(..., model_type='flash')`, παράγοντας την προκαταρκτική σημασιολογική συνάφεια $S_{rel}^{prelim}$. Η Πύλη Κλιμάκωσης στη συνέχεια απορρίπτει άμεσα κάθε άρθρο κάτω από το όριο (`escalation_threshold=6.0`) με ετυμηγορία `tier='fast_local'` που φέρει `evidence_quadrant='METHODOLOGICAL_NOISE'`, `quality_score=None` και `overall_score=S_rel_prelim`, με μηδενικό βαρύ υπολογισμό. Τα άρθρα στο όριο ή πάνω από αυτό προάγονται στο Στάδιο 2 (Επίπεδο Βαριάς Λογικής, `model_type='pro'` -> τοπικό `qwen2.5:14b` ή νέφος `deepseek-reasoner`), το οποίο εκτελεί **Διπλό Έλεγχο**: (1) **Βαθμονόμηση Συνάφειας κατά Όψεις** επαναβαθμολογεί το άρθρο έναντι των συγκεκριμένων αλγορίθμων σμήνους του ερευνητικού πλαισίου (HMADRL, Dec-POMDP, QMIX) και αρχιτεκτονικών GNN (ST-GNN, ST-GAT), αποδίδοντας τη βαθμονομημένη συνάφεια $S_{rel}^{calibrated}$· και (2) **Αξιολόγηση Ποιότητας κατά Kitchenham (2007)** ελέγχει τα έξι ερωτήματα $Q_1..Q_6$ μέσω του `PrismaQualityAppraiser`, παράγοντας την αποσυζευγμένη μεθοδολογική ποιότητα $S_{qual}$, μια επικυρωμένη `KitchenhamRubric` και ταξινόμηση σε Δισδιάστατο Τεταρτημόριο Τεκμηρίων. Η βαθιά ετυμηγορία επιστρέφει `is_accepted = (S_rel_calibrated >= 6.0)`, `overall_score=S_rel_calibrated`, `quality_score=S_qual`, `quality_rubric_json`, `evidence_quadrant` και `critique` (το `critique_rationale` της ρουμπρίκας), διατηρώντας τα προς-τα-πίσω συμβατά κλειδιά `fast_evaluation` / `deep_evaluation` / `key_contributions` ώστε οι υφιστάμενοι καταναλωτές να συνεχίσουν να λειτουργούν.
+
+- **Αποθήκευση Δισδιάστατου Τεταρτημορίου σε πραγματικό χρόνο** (`src/ingestion/daily_search.py`, `src/ingestion/historic_search.py`): και οι δύο σωληνώσεις πλέον αποθηκεύουν την αποσυζευγμένη αξιολόγηση μέσω `DatabaseManager.update_paper_quality()` (SQLite WAL), καταγράφοντας `quality_score`, `quality_rubric_json` και `evidence_quadrant` για κάθε προαγόμενο άρθρο. Το `historic_search.py` ενοποιείται πλήρως στη `HierarchicalEvaluationEngine` (αντικαθιστώντας την παλαιά κλήση flash-only `evaluate_paper_json`).
+
+- **Γνωστικός Αντιστοιχιστής Ρόλων SOTA 4 Ρόλων** (`src/core/hardware_advisor.py`): η `get_role_based_matrix()` κατηγοριοποιεί την κανονική στοίβα μοντέλων σε τέσσερα επιστημονικά φορτία εργασίας, το καθένα με τοπική GPU, τοπική CPU και επιλογή Cloud Mesh -- `fast_screening` (llama3.1:8b / qwen2.5:3b / gemini-2.5-flash), `deep_reasoning_rigor` (qwen2.5:14b / qwen2.5:3b / deepseek-reasoner), `code_audit_slicing` (qwen2.5-coder:14b / qwen2.5:3b / deepseek-coder) και `vector_embeddings` (nomic-embed-text / nomic-embed-text / text-embedding-3-small). Η `render_role_matrix()` αποδίδει τον πίνακα ως στυλιζαρισμένο Rich πίνακα και η `apply_recommended_models()` εκτελεί ατομική εγγραφή ενός κλικ της προτεινόμενης στοίβας στο `config.json` του ενεργού προφίλ.
+
+- **Επιφάνεια υιοθέτησης CLI & TUI** (`talos.py`, `src/utils/help_system.py`): οι `--recommend-models` / `--hardware-advisor` αποδίδουν πλέον τόσο τον Σύμβουλο Μοντέλων με Επίγνωση Υλικού όσο και τον πίνακα SOTA 4 Ρόλων· μια νέα σημαία `--apply-models` εκτελεί μη διαδραστική υιοθέτηση ενός κλικ· και η Επιλογή 8 του μενού Διαμόρφωσης & Προφίλ προσφέρει διαδραστική προτροπή υιοθέτησης.
+
+### Άλλαξε
+
+- **`src/ai/drl/talos_service.py`**: ο επίσημος δυναμικός τίτλος παραθύρου κονσόλας αναβαθμίζεται σε `TALOS v5.19.0 | Autonomous Research Service [{active_profile}]` (εξακολουθεί να είναι καθαρός ASCII, χωρίς emoji, με δυναμική παρεμβολή προφίλ).
+
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.19.0** στα 6 βασικά αρχεία κώδικα (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` μεταδεδομένα FastAPI/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py` assertion έκδοσης), `docker-compose.yml` (`talos:5.19.0`), `CITATION.cff` (έκδοση 5.19.0, ημερομηνία 2026-10-03), `config.template.json`, μεταδεδομένα tray/visualizer/wizard/strategy/diagnostics/bibtex/help/resolver, docstrings `src/core/`, `src/prisma/`, `src/search/`, `src/ingestion/pdf_harvester/`, και στα 19 κανονικά αρχεία τεκμηρίωσης (ημερομηνία 2026-10-03).
+
+- **ROADMAP.md**: τρέχουσα έκδοση σε v5.19.0 (Ολοκληρωμένο, 2026-10-03)· η ενορχήστρωση CORTEX & n8n προάγεται σε v5.20.0.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py scripts` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.19.0)· `pytest tests/test_hierarchical_evaluator.py tests/test_hardware_advisor.py tests/test_quality_appraisal.py tests/test_quota_latching.py tests/test_dblp_sanitizer.py tests/test_scigov_resilience.py -q` (53 ερμητικές)· `python talos.py --recommend-models` αποδίδει τον Σύμβουλο Υλικού + τον πίνακα SOTA 4 Ρόλων και τερματίζει με 0· `python src/utils/verify_dependency_map.py --ci` (έξοδος 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
+## [v5.18.5] - 2026-10-03 -- Ιεραρχική Μηχανή Αξιολόγησης, Γνωστικός Δρομολογητής LLM & Καθαρός Κύκλος Ζωής Εισαγωγής
+
+### Προστέθηκε
+
+- **Κεντρική Ιεραρχική Μηχανή Αξιολόγησης** (`src/core/hierarchical_evaluator.py`): νέα κλάση `HierarchicalEvaluationEngine` ενοποιεί την κατακερματισμένη λογική πολυεπίπεδης αξιολόγησης σε μια ντετερμινιστική σωλήνωση κλιμάκωσης δύο επιπέδων. Η `evaluate_paper(paper, escalation_threshold=6.0)` εκτελεί πρώτα το Γρήγορο Κόσκινο Διαλογής -- ο τίτλος και η περίληψη βαθμολογούνται από το ελαφρύ τοπικό μοντέλο fast-edge μέσω `AIManager.evaluate_paper_json(..., model_type='flash')`, παράγοντας την προκαταρκτική βαθμολογία σημασιολογικής συνάφειας $S_{rel}$ από το δομημένο `overall_score` (με εφεδρεία τον αριθμητικό μέσο των τεσσάρων επιπέδων). Η Πύλη Κλιμάκωσης στη συνέχεια διακλαδίζεται: όταν $S_{rel} < 6.0$ το άρθρο απορρίπτεται άμεσα με ετυμηγορία `tier='fast_local'` (`is_accepted=False`, `escalated=False`, `overall_score=S_rel`) και μηδενικό βαρύ υπολογισμό· όταν $S_{rel} >= 6.0$ το άρθρο προάγεται στο Επίπεδο Βαριάς Λογικής (`model_type='pro'`, αποστολή στο τοπικό μοντέλο GPU `qwen2.5:14b` ή σε μοντέλο λογικής νέφους όπως το DeepSeek) το οποίο εκδίδει βαθιά κριτική, εξάγει βασικές συνεισφορές και υπολογίζει αξιολόγηση μεθοδολογικής ποιότητας εμπνευσμένη από Kitchenham $S_{qual}$. Η `evaluate_batch(papers, threshold)` διαχειρίζεται τη συγχρονικότητα μέσω `ThreadPoolExecutor` οριοθετημένου από `threading.Semaphore(2)` ώστε ο κοινός προϋπολογισμός VRAM της GPU να μην εξαντλείται ποτέ, διατηρώντας τη σειρά εισόδου. Η μηχανή είναι αγνωστικιστική ως προς την αποθήκευση: επιστρέφει δομημένα λεξικά ετυμηγορίας και αφήνει τις εγγραφές DB στον καλούντα.
+
+- **Κλείδωμα Ορίου Γνωστικού Δρομολογητή LLM** (`src/core/ai_manager.py`): σύνολο `exhausted_providers` επιπέδου συνόδου πλέον κλειδώνει εκτός λειτουργίας κάθε πάροχο νέφους που επιστρέφει HTTP `402` (`RESOURCE_EXHAUSTED` / εξάντληση προπληρωμένων μονάδων) ή `401` (`Unauthorized`). Ο νέος βοηθός `_latch_provider_exhausted(provider_name, reason)` προσθέτει τον πάροχο στο σύνολο κλειδώματος, ενεργοποιεί `circuit_open=True` και εκδίδει μία μοναδική ειδοποίηση: `[INFO] Provider {provider_name} quota/credits exhausted (402). Latching bypass for this session.` Οι στατικοί ταξινομητές `_is_quota_or_auth_exhausted()` και `_quota_reason()` αποκωδικοποιούν το μήνυμα εξαίρεσης. Οι βρόχοι εφεδρικής δρομολόγησης `_execute_cloud_chain` και `_execute_legacy_request` πλέον παρακάμπτουν τους κλειδωμένους παρόχους με ΜΗΔΕΝΙΚΕΣ απόπειρες δικτύου, δρομολογώντας την αμέσως επόμενη αίτηση απευθείας σε ενεργούς παρόχους με έγκυρα διαπιστευτήρια (π.χ. DeepSeek).
+
+- **Επίσημος δυναμικός τίτλος παραθύρου κονσόλας** (`src/ai/drl/talos_service.py`): στα Windows ο δαίμονας ορίζει πλέον `TALOS v5.18.5 | Autonomous Research Service [{active_profile}]` μέσω `ctypes.windll.kernel32.SetConsoleTitleW`, χρησιμοποιώντας το ενεργό προφίλ που επιλύεται από το `ProfileManager`. Ο τίτλος είναι καθαρός ASCII χωρίς emoji, σε συμμόρφωση με το Πρωτόκολλο Μηδενικών Emoji.
+
+- **Απομόνωση DNS με ανοχή σφαλμάτων για το Science.gov** (`src/ingestion/sources/scigov_source.py`): ο προσαρμογέας πλέον συλλαμβάνει `requests.exceptions.RequestException`, `requests.exceptions.ConnectionError` και την υποκείμενη `urllib3` DNS `NameResolutionError`. Μια αποτυχία επίλυσης ονόματος για το `api.science.gov` καταγράφει `[INFO] Science.gov API unavailable. Delegating to federal OSTI coverage.` και επιστρέφει `[]` χωρίς εξαίρεση. Η πηγή είναι επίσης απενεργοποιημένη από προεπιλογή (`scigov_enabled=false` / `SCI_GOV_ENABLED=0`) ώστε ο πράκτορας DRL να αποφεύγει νεκρές ενέργειες εξερεύνησης.
+
+- **Καθαρισμός ερωτήματος DBLP & ανθεκτικότητα JSON** (`src/ingestion/sources/dblp_source.py`): νέος στατικός βοηθός `_sanitize_dblp_query()` αφαιρεί παρενθέσεις, εισαγωγικά και τελεστές Boolean (`AND` / `OR` / `WITH` / `NOT`) και συμπτύσσει το υπόλοιπο σε λίστα σημαντικών όρων διαχωρισμένων με κενό, ανώτατο όριο 8 λέξεις-κλειδιά. Τόσο η `fetch_new_papers()` όσο και η `search_papers()` αποστέλλουν το καθαρισμένο ερώτημα, και κάθε κλήση `response.json()` τυλίγεται σε `try/except (ValueError, json.JSONDecodeError)` ώστε ένα μη έγκυρο ή HTML φορτίο να υποβαθμίζεται σε `[]` αντί να εγείρει εξαίρεση.
+
+### Άλλαξε
+
+- **Συγχρονισμός συμβολοσειρών έκδοσης σε 5.18.5** στα 6 βασικά αρχεία κώδικα (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` μεταδεδομένα FastAPI/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py` assertion έκδοσης), `docker-compose.yml` (`talos:5.18.5`), `CITATION.cff` (έκδοση 5.18.5, ημερομηνία 2026-10-03), `config.template.json`, μεταδεδομένα tray/visualizer/wizard/strategy/diagnostics/bibtex/help, docstrings `src/core/`, `src/prisma/`, `src/search/`, `src/ingestion/pdf_harvester/`, και στα 19 κανονικά αρχεία τεκμηρίωσης (ημερομηνία 2026-10-03).
+
+- **`src/ingestion/daily_search.py`**: η κατακερματισμένη διακλάδωση PHASE 3 (flash προδιαλογή) + PHASE 4 (pro βαθιά ανάλυση) αντικαθίσταται από μία κλήση `HierarchicalEvaluationEngine.evaluate_paper()` ανά άρθρο, με τους προϋπολογισμούς flash/pro API να επιβάλλονται μέσω παράκαμψης ορίου κλιμάκωσης `11.0` όταν επιτευχθεί το όριο pro.
+
+- **`src/ai/drl/live_agent_orchestrator.py`**: η `evaluate_paper()` πλέον αναθέτει στη `HierarchicalEvaluationEngine` (διατηρώντας το συμβόλαιο επιστροφής float $S_{rel}$ για τη σημασιολογία ανταμοιβής DRL και την απόδοση παρόχου).
+
+- **`config/settings.py`**: προστέθηκαν `LOCAL_HEAVY_MODEL` (ψευδώνυμο του `HEAVY_REASONING_MODEL`, `qwen2.5:14b`) και `SCI_GOV_ENABLED` (προεπιλογή `0`).
+
+- **ROADMAP.md**: τρέχουσα έκδοση σε v5.18.5 (Ολοκληρωμένο, 2026-10-03)· η ενορχήστρωση CORTEX & n8n διατηρείται στο v5.19.0.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py scripts` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.5)· `pytest tests/test_hierarchical_evaluator.py tests/test_quota_latching.py tests/test_dblp_sanitizer.py tests/test_scigov_resilience.py -q` (24 ερμητικές δοκιμές -- γρήγορη απόρριψη < 6.0, κλιμάκωση >= 6.0, 402 κλειδώνει το Gemini με μηδενικές απόπειρες δρομολογώντας στο DeepSeek, καθαριστής Boolean DBLP, απομόνωση DNS Science.gov)· `python src/utils/verify_dependency_map.py --ci` (έξοδος 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.18.4] - 2026-10-03 -- Αυτοθεραπευόμενη Πύλη Εισαγωγής & Επιλογέας Προφίλ Autostart
 
 ### Προστέθηκε

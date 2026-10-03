@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: daemon_autostart.py
-Project: TALOS v5.18.4
+Project: TALOS v5.19.0
 Description:
     Windows OS autostart orchestrator for the TALOS 24/7 autonomous daemon.
     Generates a self-contained boot batch script (talos_daemon_boot.bat) that
@@ -21,7 +21,7 @@ Description:
     Startup shortcut, and the daemon banner and execution dynamically
     synchronize to it via ``talos_service.py --profile <name>``.
 
-    v5.18.4 promotes profile selection to the first mandatory prompt of a new
+    v5.18.5 promotes profile selection to the first mandatory prompt of a new
     ``main()`` provisioning flow, adopts the canonical ``TALOS_QUESTIONARY_STYLE``
     theme, cancels cleanly on Ctrl+C without mutating autostart state, and
     persists the selected daemon target into ``_profiles/<profile>/config.json``.

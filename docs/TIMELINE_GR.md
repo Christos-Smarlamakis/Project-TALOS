@@ -4,9 +4,41 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.18.4 -- Αυτοθεραπευόμενη Πύλη Εισαγωγής & Επιλογέας Προφίλ Autostart)
+> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.19.0 -- Μηχανή Αποσύζευξης Αυστηρότητας Δύο Σταδίων & Γνωστικός Αντιστοιχιστής Ρόλων SOTA)
 
 ---
+
+## Φάση 78: Αποσύζευξη Αυστηρότητας Δύο Σταδίων & Γνωστικός Αντιστοιχιστής Ρόλων SOTA (v5.19.0)
+
+- [x] **Κατάσταση:** ΟΛΟΚΛΗΡΩΜΕΝΟ (2026-10-03).
+
+- [x] **Μηχανή Αποσύζευξης Αυστηρότητας Δύο Σταδίων** -- το `src/core/hierarchical_evaluator.py` αναβαθμίζει την `HierarchicalEvaluationEngine` σε πραγματική σωλήνωση δύο σταδίων. Το Στάδιο 1 (Γρήγορο Κόσκινο Συνάφειας) παράγει το $S_{rel}^{prelim}$· άρθρα κάτω από την Πύλη Κλιμάκωσης απορρίπτονται άμεσα με `evidence_quadrant='METHODOLOGICAL_NOISE'`. Το Στάδιο 2 εκτελεί Διπλό Έλεγχο στο βαρύ επίπεδο: Βαθμονόμηση Συνάφειας κατά Όψεις ($S_{rel}^{calibrated}$ επαληθεύοντας σμήνος HMADRL / Dec-POMDP / QMIX + αρχιτεκτονικές ST-GNN / ST-GAT) και Αξιολόγηση Ποιότητας Kitchenham 2007 ($S_{qual}$ μέσω `PrismaQualityAppraiser`), χαρτογραφώντας κάθε άρθρο στο Δισδιάστατο Τεταρτημόριο Τεκμηρίων και επιστρέφοντας `quality_rubric_json` + `critique`.
+
+- [x] **Αποθήκευση Δισδιάστατου Τεταρτημορίου σε πραγματικό χρόνο** -- τα `daily_search.py` και `historic_search.py` αποθηκεύουν `quality_score`, `quality_rubric_json` και `evidence_quadrant` μέσω `update_paper_quality()`· το `historic_search.py` ενοποιείται πλήρως στη μηχανή.
+
+- [x] **Γνωστικός Αντιστοιχιστής Ρόλων SOTA 4 Ρόλων** -- το `hardware_advisor.py` αποκτά `get_role_based_matrix()` (fast_screening / deep_reasoning_rigor / code_audit_slicing / vector_embeddings), `render_role_matrix()` και `apply_recommended_models()`· CLI `--apply-models` + υιοθέτηση μέσω Επιλογής 8 TUI.
+
+- [x] **Καθαρός κύκλος ζωής κονσόλας** -- ο τίτλος του `talos_service.py` αναβαθμίζεται σε `TALOS v5.19.0 | Autonomous Research Service [{active_profile}]`.
+
+- [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose.yml (`talos:5.19.0`) + CITATION.cff (5.19.0, 2026-10-03) + μεταδεδομένα + 19 κανονικά έγγραφα σε v5.19.0 (2026-10-03).
+
+- [x] **Πέρασαν οι πύλες επαλήθευσης** -- compileall (0 σφάλματα), test_system_integrity, test_talos_version (5.19.0), 53 ερμητικές δοκιμές, `--recommend-models` (έξοδος 0), verify_dependency_map --ci (έξοδος 0), bash -n, σάρωση UTF-8 (0 U+FFFD).
+
+## Φάση 77: Ιεραρχική Μηχανή Αξιολόγησης & Ενίσχυση Ορίου Δρομολογητή LLM (v5.18.5)
+
+- [x] **Κατάσταση:** ΟΛΟΚΛΗΡΩΜΕΝΟ (2026-10-03).
+
+- [x] **Κεντρική Ιεραρχική Μηχανή Αξιολόγησης** -- το `src/core/hierarchical_evaluator.py` εισάγει την `HierarchicalEvaluationEngine` με ντετερμινιστική σωλήνωση κλιμάκωσης δύο επιπέδων: ένα Γρήγορο Κόσκινο Διαλογής 8B (`evaluate_paper_json(model_type='flash')`) παράγει το $S_{rel}$, και μια Πύλη Κλιμάκωσης προάγει άρθρα με $S_{rel} >= 6.0$ στο Επίπεδο Βαριάς Λογικής 14B/cloud (`model_type='pro'` + Kitchenham $S_{qual}$). Η `evaluate_batch()` εκτελεί `ThreadPoolExecutor` πίσω από `threading.Semaphore(2)` για προστασία VRAM GPU. Τα `daily_search.py` και `live_agent_orchestrator.py` δρομολογούν πλέον την αξιολόγηση μέσω της μηχανής.
+
+- [x] **Κλείδωμα Ορίου Γνωστικού Δρομολογητή LLM** -- ο `AIManager` κλειδώνει κάθε πάροχο νέφους που επιστρέφει HTTP 402/401 στο `exhausted_providers` για τη σύνοδο, παρακάμπτοντάς τον με μηδενικές απόπειρες δικτύου και δρομολογώντας την επόμενη κλήση απευθείας στο DeepSeek. Μοναδική ειδοποίηση μέσω `_latch_provider_exhausted()`.
+
+- [x] **Καθαρός κύκλος ζωής κονσόλας** -- το `talos_service.py` ορίζει τον επίσημο δυναμικό τίτλο κονσόλας χωρίς emoji `TALOS v5.18.5 | Autonomous Research Service [{active_profile}]` μέσω `SetConsoleTitleW`.
+
+- [x] **Καθαρός κύκλος ζωής εισαγωγής** -- το `scigov_source.py` απομονώνει αποτυχίες DNS (ανάθεση στην κάλυψη OSTI, απενεργοποιημένο από προεπιλογή) και το `dblp_source.py` καθαρίζει ερωτήματα Boolean + φυλάσσει την `response.json()` από `JSONDecodeError`.
+
+- [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose.yml (`talos:5.18.5`) + CITATION.cff (5.18.5, 2026-10-03) + μεταδεδομένα + 19 κανονικά έγγραφα σε v5.18.5 (2026-10-03).
+
+- [x] **Πέρασαν οι πύλες επαλήθευσης** -- compileall, test_system_integrity, test_talos_version (5.18.5), 24 νέες ερμητικές δοκιμές (ιεραρχική μηχανή / κλείδωμα ορίου / καθαριστής DBLP / DNS Science.gov), verify_dependency_map --ci (έξοδος 0), bash -n, σάρωση UTF-8 (0 U+FFFD).
 
 ## Φάση 76: Αυτοθεραπευόμενη Πύλη Εισαγωγής & Επιλογέας Προφίλ Autostart (v5.18.4)
 

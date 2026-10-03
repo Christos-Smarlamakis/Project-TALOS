@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: quality_swarm.py
-Project: TALOS v5.18.4
+Project: TALOS v5.19.0
 Description:
     Tier-2 Forensic Quality Swarm for the Two-Tier Hierarchical Swarm
     Architecture. Where the Tier-1 swarm (``swarm_evaluators.py``) performs

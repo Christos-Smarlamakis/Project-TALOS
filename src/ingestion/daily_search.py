@@ -11,7 +11,7 @@
 
 """
 Module: daily_search.py (Quad-Layer & Rate Limit Safe)
-Project: TALOS v5.13.0
+Project: TALOS v5.19.0
 
 Description:
     The daily search orchestrator. Fetches new papers from all 18 configured
@@ -21,6 +21,12 @@ Description:
     threshold. Generates a Markdown briefing report and optionally posts it
     to Discord via webhook. Respects configurable API call limits and rate
     delays to avoid quota exhaustion.
+
+    v5.18.5: The fragmented PHASE 3 (flash pre-screen) + PHASE 4 (pro deep
+    analysis) if/else branching is replaced by the unified
+    ``HierarchicalEvaluationEngine`` (src/core/hierarchical_evaluator.py),
+    which runs the fast screening sieve and the escalation gate in a single
+    deterministic ``evaluate_paper()`` call.
 """
 import sys
 import os, sys
@@ -48,6 +54,7 @@ from src.ingestion.resilient_gateway import ResilientIngestionGateway
 
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
+from src.core.hierarchical_evaluator import HierarchicalEvaluationEngine
 from src.ai.drl.llm_router_subagent import estimate_prompt_tokens
 from src.integration.visualizer_bridge import push_visualizer_event
 from rich.console import Console
@@ -497,88 +504,94 @@ def main(sources=None):
         print("\nNo new articles found. Terminating.")
         return
 
-    print(f"\n--- PHASE 3: Pre-screening (Flash Model) for {len(papers_to_process)} new articles ---")
+    print(f"\n--- PHASE 3: Hierarchical Evaluation (Fast Sieve + Escalation Gate) for {len(papers_to_process)} new articles ---")
 
     API_CALL_LIMIT = config.get("api_call_limit_flash", 950)
+    PRO_LIMIT = config.get("api_call_limit_pro", 95)
     REQUEST_DELAY = config.get("ai_request_delay", 5)
     min_score_for_deep_analysis = config.get("min_pre_screening_score", 6)
 
+    # -- v5.18.5: Unified Hierarchical Evaluation Engine. The fragmented
+    # -- PHASE 3 (flash pre-screen) + PHASE 4 (pro deep analysis) if/else
+    # -- branching is replaced by a single deterministic two-tier call.
+    evaluator = HierarchicalEvaluationEngine(
+        ai_manager, escalation_threshold=min_score_for_deep_analysis)
+
     api_calls_made = 0
-    promising_papers = []
+    pro_calls_made = 0
+    final_results_for_report = []
 
     for i, paper in enumerate(papers_to_process):
         if api_calls_made >= API_CALL_LIMIT:
-            print(f"\nWARNING: Flash model API call limit reached. Stopping pre-screening.")
+            print(f"\nWARNING: Flash model API call limit reached. Stopping evaluation.")
             break
 
-        print(f"-> Pre-screening {i+1}/{len(papers_to_process)}: '{paper['title'][:80]}...'")
+        print(f"-> Hierarchical evaluation {i+1}/{len(papers_to_process)}: '{paper['title'][:80]}...'")
         content_for_ai = f"Title: {paper['title']}\nAbstract: {paper.get('abstract', '')}"
 
         route_evaluation_provider(ai_manager, content_for_ai, task_type="fast_screening")
 
-        evaluation_data = ai_manager.evaluate_paper_json(content_for_ai, model_type='flash')
-        api_calls_made += 1
-
-        if evaluation_data:
-            paper_id = db_manager.add_paper(paper, evaluation_data)
-            overall = evaluation_data.get('overall_score', 0)
-            if paper_id:
-                logger.info("[DB SAVED] Successfully stored new paper: %s", paper.get('title'))
-                print(f"   Score: {overall:.2f} (Saved)")
-                # -- v5.10.12 hotfix: centralized visualizer bridge (active push) --
-                push_visualizer_event(
-                    "paper_evaluated",
-                    paper.get("source", "unknown"),
-                    overall,
-                    paper.get("title", "Unknown"),
-                )
-                if overall >= min_score_for_deep_analysis:
-                    promising_papers.append(paper)
-            else:
-                logger.error("[DB SAVED] FAILED to store new paper: %s", paper.get('title'))
-                print(f"   WARNING: Failed to save '{paper.get('title')}' to the database.")
-        else:
-            print(f"   WARNING: Flash evaluation failed for {paper['doi']}. Skipping.")
-
-        time.sleep(REQUEST_DELAY)
-
-    if not promising_papers:
-        print("\nNo articles passed the threshold for deep analysis. Terminating.")
-        return
-
-    print(f"\n--- PHASE 4: Deep Analysis (Pro Model) for {len(promising_papers)} articles ---")
-    PRO_LIMIT = config.get("api_call_limit_pro", 95)
-    pro_calls_made = 0
-    final_results_for_report = []
-
-    for i, paper in enumerate(promising_papers):
+        # -- When the heavy-tier (pro) budget is exhausted, force a fast-only
+        # -- verdict by raising the escalation threshold beyond reach so no
+        # -- further pro-tier inference is dispatched. --
         if pro_calls_made >= PRO_LIMIT:
-            print(f"\nWARNING: Pro model API call limit reached. Stopping deep analysis.")
-            break
+            verdict = evaluator.evaluate_paper(paper, escalation_threshold=11.0)
+        else:
+            verdict = evaluator.evaluate_paper(paper)
 
-        print(f"-> Deep Analysis {i+1}/{len(promising_papers)}: '{paper['title'][:80]}...'")
-        content_for_ai = f"Title: {paper['title']}\nAbstract: {paper.get('abstract', '')}"
+        api_calls_made += 1
+        if verdict.get("escalated"):
+            pro_calls_made += 1
 
-        route_evaluation_provider(ai_manager, content_for_ai, task_type="deep_research")
+        fast_eval = verdict.get("fast_evaluation")
+        if not fast_eval:
+            print(f"   WARNING: Hierarchical evaluation failed for {paper.get('doi')}. Skipping.")
+            time.sleep(REQUEST_DELAY)
+            continue
 
-        deep_evaluation_data = ai_manager.evaluate_paper_json(content_for_ai, model_type='pro')
-        pro_calls_made += 1
-
-        if deep_evaluation_data:
-            db_manager.update_paper_evaluation(db_manager.get_paper_id_by_doi(paper['doi']), deep_evaluation_data)
-            final_results_for_report.append({'paper': paper, 'eval': deep_evaluation_data})
-
-            scores = deep_evaluation_data.get('scores', {})
-            print(f"   SUCCESS: S:{scores.get('strategic')} O:{scores.get('operational')} T:{scores.get('tactical')} P:{scores.get('playground')}")
+        paper_id = db_manager.add_paper(paper, fast_eval)
+        overall = verdict.get("overall_score", 0.0)
+        if paper_id:
+            logger.info("[DB SAVED] Successfully stored new paper: %s", paper.get('title'))
+            print(f"   Score: {overall:.2f} (Saved) | Tier: {verdict.get('tier')}")
             # -- v5.10.12 hotfix: centralized visualizer bridge (active push) --
             push_visualizer_event(
                 "paper_evaluated",
                 paper.get("source", "unknown"),
-                deep_evaluation_data.get("overall_score", 0.0),
+                overall,
                 paper.get("title", "Unknown"),
             )
         else:
-            print(f"   WARNING: Pro evaluation failed for {paper['doi']}.")
+            logger.error("[DB SAVED] FAILED to store new paper: %s", paper.get('title'))
+            print(f"   WARNING: Failed to save '{paper.get('title')}' to the database.")
+
+        # -- v5.19.0: persist the decoupled Kitchenham quality appraisal
+        # -- (S_qual + rubric JSON + 2D Evidence Quadrant) for escalated papers. --
+        if paper_id and verdict.get("escalated") and verdict.get("quality_score") is not None:
+            db_manager.update_paper_quality(
+                int(paper_id),
+                float(verdict.get("quality_score")),
+                verdict.get("quality_rubric_json") or "",
+                verdict.get("evidence_quadrant") or "METHODOLOGICAL_NOISE",
+            )
+
+        # -- Escalated papers: persist the heavy-tier deep evaluation and
+        # -- queue them for the final briefing report. --
+        if verdict.get("escalated"):
+            deep_eval = verdict.get("deep_evaluation")
+            if deep_eval:
+                db_manager.update_paper_evaluation(
+                    db_manager.get_paper_id_by_doi(paper['doi']), deep_eval)
+                final_results_for_report.append({'paper': paper, 'eval': deep_eval})
+                scores = deep_eval.get('scores', {})
+                print(f"   SUCCESS (heavy): S:{scores.get('strategic')} O:{scores.get('operational')} T:{scores.get('tactical')} P:{scores.get('playground')}")
+                # -- v5.10.12 hotfix: centralized visualizer bridge (active push) --
+                push_visualizer_event(
+                    "paper_evaluated",
+                    paper.get("source", "unknown"),
+                    deep_eval.get("overall_score", 0.0),
+                    paper.get("title", "Unknown"),
+                )
 
         time.sleep(REQUEST_DELAY)
 

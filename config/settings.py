@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.18.4
+Project: TALOS v5.19.0
 Description:
-    Canonical configuration hub for TALOS v5.18.4. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.19.0. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
@@ -50,6 +50,17 @@ Description:
       adapters, fast-fails on 401/403/Quota errors without delayed retries, and
       mirrors IEEE/Elsevier/Springer through OpenAlex; daemon_autostart.py
       promotes profile selection to the first mandatory prompt.
+    - v5.18.5: Hierarchical Evaluation Engine, Cognitive Router Quota Latching
+      & Clean Ingestion Lifecycle -- centralizes the two-tier escalation
+      pipeline (fast 8B sieve -> S_rel >= 6.0 -> heavy 14B/cloud deep
+      scrutiny) in src/core/hierarchical_evaluator.py, latches cloud providers
+      returning HTTP 402/401 directly into DeepSeek routing, and hardens the
+      Science.gov (DNS isolation) and DBLP (query sanitization) adapters.
+    - v5.19.0: Two-Stage Rigor Decoupling Engine & Cognitive SOTA Role Matcher --
+      upgrades src/core/hierarchical_evaluator.py to a true Stage-2 Dual-Audit
+      (Faceted Deep Relevance Calibration S_rel_calibrated + Kitchenham 2007
+      S_qual via PrismaQualityAppraiser) with 2D Evidence Quadrant mapping, and
+      adds a four-role SOTA model matcher (src/core/hardware_advisor.py).
     - Cloud LLM providers (Gemini, NVIDIA NIM, Groq, Cerebras, GitHub Models,
       Mistral, OpenRouter, DeepSeek, HuggingFace) are configured via environment
       variables for optional redundancy/failover (v5.9.18 Universal Cloud Mesh).
@@ -91,6 +102,19 @@ HEAVY_REASONING_MODEL = os.getenv(
     "HEAVY_REASONING_MODEL",
     "qwen2.5:14b"
 )
+
+# -- v5.18.5: Canonical local heavy-tier model alias consumed by the
+# -- Hierarchical Evaluation Engine (src/core/hierarchical_evaluator.py).
+# -- It is the same qwen2.5:14b GPU reasoning model as HEAVY_REASONING_MODEL,
+# -- exposed under a semantic name so the escalation pipeline can reference
+# -- the heavy tier without ambiguity.
+LOCAL_HEAVY_MODEL = os.getenv("LOCAL_HEAVY_MODEL", HEAVY_REASONING_MODEL)
+
+# -- v5.18.5: Science.gov is disabled by default. The federal endpoint is
+# -- frequently absent (DNS failures) and produces dead DRL exploration
+# -- actions; enable it explicitly by setting SCI_GOV_ENABLED=1 or the
+# -- ``scigov_enabled`` config key.
+SCI_GOV_ENABLED = os.getenv("SCI_GOV_ENABLED", "0")
 
 # Standard Ollama base URL for the heavy reasoning tier.
 # Default: localhost port 11434 (standard Ollama instance).
@@ -221,7 +245,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.18.4"
+TALOS_VERSION = "5.19.0"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.

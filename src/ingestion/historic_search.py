@@ -10,8 +10,8 @@
 #  For commercial licensing, please contact the author.
 
 """
-Module: historic_search.py (v5.13.0 - Concurrent Multi-Threaded Historical Harvester)
-Project: TALOS v5.13.0
+Module: historic_search.py (v5.19.0 - Unified Hierarchical Historical Harvester)
+Project: TALOS v5.19.0
 
 Description:
     The deep archive search orchestrator. Fetches papers from all 18 configured
@@ -46,6 +46,7 @@ from src.ingestion.resilient_gateway import ResilientIngestionGateway
 
 from src.core.database_manager import DatabaseManager
 from src.core.ai_manager import AIManager
+from src.core.hierarchical_evaluator import HierarchicalEvaluationEngine
 from src.ai.drl.llm_router_subagent import estimate_prompt_tokens
 from src.integration.visualizer_bridge import push_visualizer_event
 from rich.console import Console
@@ -416,8 +417,17 @@ def main(sources=None):
     print(f"INFO: Found {len(papers_to_process)} new, unique papers to add to the database.")
 
     API_CALL_LIMIT = config.get("api_call_limit_flash", 950)
+    PRO_LIMIT = config.get("api_call_limit_pro", 95)
     REQUEST_DELAY = config.get("ai_request_delay", 5)
+    min_score_for_deep_analysis = config.get("min_pre_screening_score", 6)
     api_calls_made = 0
+    pro_calls_made = 0
+
+    # -- v5.19.0: unified Two-Stage Rigor Decoupling engine. The legacy
+    # -- flash-only scoring is replaced by the single deterministic
+    # -- ``evaluate_paper()`` call (fast sieve + escalation gate + dual-audit). --
+    evaluator = HierarchicalEvaluationEngine(
+        ai_manager, escalation_threshold=min_score_for_deep_analysis)
 
     for i, paper in enumerate(papers_to_process):
         if api_calls_made >= API_CALL_LIMIT:
@@ -430,30 +440,44 @@ def main(sources=None):
 
         route_evaluation_provider(ai_manager, content_for_ai, task_type="fast_screening")
 
-        evaluation_data = ai_manager.evaluate_paper_json(content_for_ai, model_type='flash')
+        # -- When the heavy-tier (pro) budget is exhausted, force a fast-only
+        # -- verdict by raising the escalation threshold beyond reach. --
+        if pro_calls_made >= PRO_LIMIT:
+            verdict = evaluator.evaluate_paper(paper, escalation_threshold=11.0)
+        else:
+            verdict = evaluator.evaluate_paper(paper)
         api_calls_made += 1
+        if verdict.get("escalated"):
+            pro_calls_made += 1
 
-        if evaluation_data:
-            db_manager.add_paper(paper, evaluation_data)
+        fast_eval = verdict.get("fast_evaluation")
+        if not fast_eval:
+            print(f"   WARNING: Hierarchical evaluation failed for {paper.get('doi')}. Skipping.")
+            time.sleep(REQUEST_DELAY)
+            continue
 
+        paper_id = db_manager.add_paper(paper, fast_eval)
+        overall = verdict.get("overall_score", 0.0)
+        if paper_id:
             # -- v5.10.12 hotfix: centralized visualizer bridge (active push) --
             push_visualizer_event(
                 "paper_evaluated",
                 paper.get("source", "unknown"),
-                evaluation_data.get("overall_score", 0.0),
+                overall,
                 paper.get("title", "Unknown"),
             )
-
-            scores = evaluation_data.get('scores', {})
-            s = scores.get('strategic', 0)
-            o = scores.get('operational', 0)
-            t = scores.get('tactical', 0)
-            p = scores.get('playground', 0)
-            overall = evaluation_data.get('overall_score', 0)
-
-            print(f"   SUCCESS: [S:{s} O:{o} T:{t} P:{p}] -> Overall: {overall:.2f}")
+            print(f"   Score: {overall:.2f} (Saved) | Tier: {verdict.get('tier')}")
         else:
-            print(f"   WARNING: Evaluation failed. Skipping.")
+            print(f"   WARNING: Failed to save '{paper.get('title')}' to the database.")
+
+        # -- v5.19.0: persist the decoupled Kitchenham quality appraisal. --
+        if paper_id and verdict.get("escalated") and verdict.get("quality_score") is not None:
+            db_manager.update_paper_quality(
+                int(paper_id),
+                float(verdict.get("quality_score")),
+                verdict.get("quality_rubric_json") or "",
+                verdict.get("evidence_quadrant") or "METHODOLOGICAL_NOISE",
+            )
 
         time.sleep(REQUEST_DELAY)
 

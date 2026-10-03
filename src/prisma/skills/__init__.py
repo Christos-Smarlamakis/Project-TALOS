@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: __init__.py (src/prisma/skills)
-Project: TALOS v5.18.4
+Project: TALOS v5.19.0
 Description:
     Package marker for the Tier-2 Forensic Quality Swarm skill assets. The
     ``templates/`` subdirectory holds the four canonical, domain-agnostic

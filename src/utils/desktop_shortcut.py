@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: desktop_shortcut.py
-Project: TALOS v5.18.4
+Project: TALOS v5.19.0
 Description:
     1-click Desktop Shortcut provisioner for Project TALOS. Resolves the
     operator's Windows Desktop directory and materializes a

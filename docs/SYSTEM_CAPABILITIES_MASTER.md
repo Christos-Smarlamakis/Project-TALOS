@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.18.4
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.19.0
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-03
-> **Version:** v5.18.4 -- Self-Healing Ingestion Gateway & Autostart Profile Provisioning
+> **Version:** v5.19.0 -- Two-Stage Rigor Decoupling Engine & Cognitive SOTA Role Matcher
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.18.4" | `config/settings.py` |
+| TALOS_VERSION | "5.19.0" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1270,6 +1270,36 @@ For each evaluated paper, the AI generates:
 - **Mandatory autostart profile selection** (`src/utils/daemon_autostart.py`): `main()` makes the Questionary profile list the first prompt (canonical `TALOS_QUESTIONARY_STYLE`), cancels cleanly on Ctrl+C, persists `daemon_profile` / `daemon_autostart` into `_profiles/<profile>/config.json`, and embeds `--profile <target>` in `talos_daemon_boot.bat` and the Startup shortcut.
 
 **Verification surface:** `python -m compileall src config tests talos.py scripts` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.4), `pytest tests/test_resilient_gateway.py -q` (11 hermetic -- simulated 403 / "Developer Inactive" triggers the OpenAlex mirror cleanly), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
+
+### 15.50 Hierarchical Multi-Tier Evaluation Architecture, Cognitive Router Quota Latching, and Clean Console Lifecycles (v5.18.5)
+
+**Overview:** v5.18.5 centralizes the paper-evaluation workflow into a single deterministic escalation engine and hardens the LLM router against quota exhaustion. A new `HierarchicalEvaluationEngine` (`src/core/hierarchical_evaluator.py`) replaces the fragmented multi-tier if/else screening spread across `daily_search.py` and the daemon foraging loop, while `AIManager` learns to latch quota-exhausted cloud providers offline so the very next request routes directly to a credentialed provider (DeepSeek) with zero wasted network attempts. The release also standardizes the daemon console title and hardens two ingestion adapters against transient upstream failure modes.
+
+- **HierarchicalEvaluationEngine** (`src/core/hierarchical_evaluator.py`): `evaluate_paper(paper, escalation_threshold=6.0)` runs the Fast Screening Sieve (`AIManager.evaluate_paper_json(model_type='flash')`) to produce $S_{rel}$, then branches at the Escalation Gate: $S_{rel} < 6.0$ returns a `tier='fast_local'` rejection, while $S_{rel} >= 6.0$ dispatches to the Heavy Reasoning tier (`model_type='pro'`, local `qwen2.5:14b` or cloud `deepseek-reasoner`) and computes a Kitchenham-inspired $S_{qual}$. `evaluate_batch()` uses a `ThreadPoolExecutor` bounded by `threading.Semaphore(2)` to protect shared GPU VRAM.
+
+- **Cognitive LLM Router Quota Latching** (`src/core/ai_manager.py`): `exhausted_providers` set + `_latch_provider_exhausted()` latch any provider returning HTTP 402 (`RESOURCE_EXHAUSTED` / prepayment credits depleted) or 401 (`Unauthorized`) offline for the session, emitting a single notice. `_execute_cloud_chain` and `_execute_legacy_request` skip latched providers with zero network attempts.
+
+- **Clean console lifecycle** (`src/ai/drl/talos_service.py`): `SetConsoleTitleW("TALOS v5.18.5 | Autonomous Research Service [{active_profile}]")` -- a pure-ASCII, emoji-free dynamic title.
+
+- **Clean ingestion lifecycle**: `ScienceGovSource` isolates DNS failures (delegating to federal OSTI coverage, disabled by default via `scigov_enabled`); `DBLPSource._sanitize_dblp_query()` strips Boolean operators and `search_papers()`/`fetch_new_papers()` guard `response.json()` against `JSONDecodeError`.
+
+**Verification surface:** `python -m compileall src config tests talos.py scripts` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.5), `pytest tests/test_hierarchical_evaluator.py tests/test_quota_latching.py tests/test_dblp_sanitizer.py tests/test_scigov_resilience.py -q` (24 hermetic), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
+
+### 15.51 Two-Stage Rigor Decoupling Engine, Cognitive Router Quota Latching, and 4-Role SOTA Model Matching (v5.19.0)
+
+**Overview:** v5.19.0 decouples cheap semantic relevance screening from expensive methodological rigor appraisal into a deterministic Two-Stage pipeline, upgrades paper evaluation with a Stage-2 Dual-Audit, and introduces a Cognitive SOTA 4-Role Model Matcher for hardware-aware model selection across local and cloud tiers.
+
+- **Two-Stage Rigor Decoupling Engine** (`src/core/hierarchical_evaluator.py`): `HierarchicalEvaluationEngine.evaluate_paper()` runs Stage 1 (Fast Relevance Sieve via `evaluate_paper_json(model_type='flash')`) to produce $S_{rel}^{prelim}$, fast-rejecting papers below the `escalation_threshold=6.0` with `evidence_quadrant='METHODOLOGICAL_NOISE'` and zero heavy compute. Stage 2 executes a Dual-Audit on the heavy tier (`model_type='pro'` -> local `qwen2.5:14b` or cloud `deepseek-reasoner`): (1) Faceted Deep Relevance Calibration yields $S_{rel}^{calibrated}$ (verifying HMADRL / Dec-POMDP / QMIX swarm algorithms and ST-GNN / ST-GAT architectures); (2) Kitchenham 2007 Quality Appraisal yields $S_{qual}$ via `PrismaQualityAppraiser`. The 2D Evidence Quadrant (ELITE_FOUNDATIONAL / IDEA_MINE / METHODOLOGICAL_EXEMPLAR / METHODOLOGICAL_NOISE) is computed from the decoupled pair, and the deep verdict returns `overall_score=S_rel_calibrated`, `quality_score=S_qual`, `quality_rubric_json`, `evidence_quadrant`, and `critique`.
+
+- **Cognitive Router Quota Latching** (`src/core/ai_manager.py`): the `exhausted_providers` set + `_latch_provider_exhausted()` latch any provider returning HTTP 402/401 offline for the session, emitting a single notice and routing subsequent calls directly to active providers (e.g. DeepSeek) with zero network attempts.
+
+- **4-Role SOTA Model Matcher** (`src/core/hardware_advisor.py`): `get_role_based_matrix()` / `render_role_matrix()` / `apply_recommended_models()` categorize four scientific workloads (fast_screening / deep_reasoning_rigor / code_audit_slicing / vector_embeddings) across local GPU/CPU and Cloud Mesh, and persist the recommended stack into the active profile config.json via a 1-click `--apply-models` flag.
+
+- **Clean console lifecycle** (`src/ai/drl/talos_service.py`): `SetConsoleTitleW("TALOS v5.19.0 | Autonomous Research Service [{active_profile}]")` -- a pure-ASCII, emoji-free dynamic title.
+
+- **Clean ingestion + script unification**: `daily_search.py` and `historic_search.py` route evaluation through the engine and persist `quality_score` / `quality_rubric_json` / `evidence_quadrant` in SQLite WAL; `historic_search.py` is fully unified; Science.gov DNS isolation and DBLP query sanitization are retained.
+
+**Verification surface:** `python -m compileall src config tests talos.py scripts` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.19.0), `pytest tests/test_hierarchical_evaluator.py tests/test_hardware_advisor.py tests/test_quality_appraisal.py tests/test_quota_latching.py tests/test_dblp_sanitizer.py tests/test_scigov_resilience.py -q` (53 hermetic), `python talos.py --recommend-models` (exit 0), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
 
 ---
 

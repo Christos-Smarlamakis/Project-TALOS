@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.18.4
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.19.0
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.18.4 -- Αυτοθεραπευόμενη Πύλη Εισαγωγής & Επιλογέας Προφίλ Autostart)
+> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.19.0 -- Μηχανή Αποσύζευξης Αυστηρότητας Δύο Σταδίων & Γνωστικός Αντιστοιχιστής Ρόλων SOTA)
 
 ---
 
@@ -65,13 +65,14 @@ User > talos.py > run_script() > src/<package>/*.py > src/core/*.py
 
 | Module | Ρόλος |
 |--------|-------|
-| `ai_manager.py` | Multi-provider LLM manager (Gemini, DeepSeek, HuggingFace, Ollama) με circuit breakers, λειτουργίες JSON/text/embedding, και απόδοση `last_provider_used`; v5.12.2 προσθέτει αυτο-θεραπευόμενο έλεγχο/εκκίνηση Ollama (`probe_local_ollama`), περικοπή παρόχων (`STANDBY_NO_KEY`), έγχυση κλειδιού .env κατά παραγγελία, google.genai GA SDK, αναλυτή μοντέλων σκέψης (`_strip_thinking_tags()` / `_extract_assistant_content()`) και βάση `LOCAL_GPU_MODEL` |
+| `ai_manager.py` | Multi-provider LLM manager (Gemini, DeepSeek, HuggingFace, Ollama) με circuit breakers, λειτουργίες JSON/text/embedding, και απόδοση `last_provider_used`; v5.12.2 προσθέτει αυτο-θεραπευόμενο έλεγχο/εκκίνηση Ollama (`probe_local_ollama`), περικοπή παρόχων (`STANDBY_NO_KEY`), έγχυση κλειδιού .env κατά παραγγελία, google.genai GA SDK, αναλυτή μοντέλων σκέψης (`_strip_thinking_tags()` / `_extract_assistant_content()`) και βάση `LOCAL_GPU_MODEL`; v5.18.5 προσθέτει Quota Latching (`exhausted_providers`) για γρήγορη παράκαμψη παρόχων 402/401 |
 | `database_manager.py` | Αποθήκευση SQLite (20+ στήλες), βαθμολόγηση 4 επιπέδων (strategic/operational/tactical/playground), πίνακας embeddings, σημασιολογική αναζήτηση συνημιτόνου, state machine εμπλουτισμού |
 | `hardware.py` | Μοναδική πηγή αλήθειας για ανίχνευση GPU και ερωτήματα VRAM; CPU fallback με ομαλή υποβάθμιση |
 | `provider_registry.py` | Ενθέσιμο μητρώο παρόχων LLM (Αρχή Ανοικτού-Κλειστού): `ProviderDescriptor` + `ProviderRegistry` με `register`/`get`/`list_all`/`list_active` -- τοπικό Ollama + 9 πάροχοι νέφους |
 | `hardware_advisor.py` | Σύμβουλος μοντέλων με επίγνωση υλικού: `HardwareModelAdvisor` -- `get_hardware_profile()`, `calculate_vram_budget()` (4-bit), `get_recommendations()`, `scan_sota_models()` |
 | `notifier.py` | Ειδοποιήσεις Telegram / Discord / Email για papers υψηλής βαθμολογίας |
 | `profile_manager.py` | Εναλλαγή και ανάκτηση profile (απομονωμένο config + DB ανά ερευνητικό θέμα) |
+| `hierarchical_evaluator.py` | Κεντρική Μηχανή Αποσύζευξης Αυστηρότητας Δύο Σταδίων (v5.19.0): `HierarchicalEvaluationEngine` με Στάδιο 1 (γρήγορο κόσκινο 8B → S_rel_prelim) + Στάδιο 2 Διπλό Έλεγχο (Βαθμονόμηση Συνάφειας S_rel_calibrated + Kitchenham 2007 S_qual μέσω `PrismaQualityAppraiser`) + χαρτογράφηση Δισδιάστατου Τεταρτημορίου Τεκμηρίων -- μέσω `evaluate_paper()` / `evaluate_batch()` (ThreadPoolExecutor + `Semaphore(2)`) |
 
 ### 2.1 DRL Environment (`src/ai/drl/talos_env.py`, v3.2)
 
@@ -252,6 +253,10 @@ src/core/hardware_advisor.py
 
 src/core/ai_manager.py
   +-- src/core/provider_registry.py
+
+src/core/hierarchical_evaluator.py
+  +-- config/settings.py
+  +-- src/core/ai_manager.py (lazy)
 ```
 
 ## 8. Περιγραφές Modules (επισημασμένες πρόσφατες προσθήκες)
@@ -296,6 +301,8 @@ src/core/ai_manager.py
 | **Μηχανή Αξιολόγησης Ποιότητας PRISMA & Διαξονικής Επιστημονικής Αυστηρότητας (v5.16.0)** | `src/prisma/quality_appraisal.py`, `src/core/database_manager.py`, `src/utils/bibtex_exporter.py` | `KitchenhamRubric` / `QualityAppraisalResult` / `PrismaQualityAppraiser`· `map_evidence_quadrant()` (2D τεταρτημόρια, τ_rel=7.0 / τ_qual=7.5)· `appraise_paper()` / `appraise_candidates_batch(force_reappraise)` (ThreadPoolExecutor + `Semaphore(2)`)· `update_paper_quality()` (στήλες `quality_score`/`quality_rubric_json`/`evidence_quadrant`)· `export_library(min_quality, quadrant)` (διπλό φίλτρο BibTeX + πεδίο `note`)· CLI `--appraise-quality [--force]` + TUI Ομάδα 3 Επιλογή 15 (ερώτηση επαναξιολόγησης v5.17.1) |
 | **Ενθέσιμο Μητρώο Παρόχων & Σύμβουλος Μοντέλων με Επίγνωση Υλικού (v5.16.2)** | `src/core/provider_registry.py`, `src/core/hardware_advisor.py`, `src/core/ai_manager.py`, `talos.py`, `src/utils/help_system.py` | `ProviderRegistry` (Αρχή Ανοικτού-Κλειστού, 10 πάροχοι)· `HardwareModelAdvisor` (προφίλ υλικού, τμηματικός προϋπολογισμός VRAM 4-bit, στοίβα ανά ρόλο, ραντάρ SOTA)· `AIManager.list_active_providers()` / `get_provider_descriptor()` (μηδενική παλινδρόμηση)· CLI `--hardware-advisor` / `--recommend-models` + TUI Επιλογή 8 |
 
+| **Αποσύζευξη Αυστηρότητας Δύο Σταδίων & Γνωστικός Αντιστοιχιστής Ρόλων SOTA (v5.19.0)** | `src/core/hierarchical_evaluator.py`, `src/core/hardware_advisor.py`, `src/ingestion/historic_search.py`, `talos.py` | `HierarchicalEvaluationEngine` Διπλός Έλεγχος Σταδίου 2 (Βαθμονόμηση Συνάφειας S_rel_calibrated + Kitchenham S_qual μέσω `PrismaQualityAppraiser`) + Δισδιάστατο Τεταρτημόριο Τεκμηρίων· `get_role_based_matrix()` / `render_role_matrix()` / `apply_recommended_models()` (4-ρόλο SOTA)· ενοποίηση `historic_search` στη μηχανή· CLI `--apply-models` |
+| **Ιεραρχική Μηχανή Αξιολόγησης, Γνωστικός Δρομολογητής LLM & Καθαρός Κύκλος Ζωής Εισαγωγής (v5.18.5)** | `src/core/hierarchical_evaluator.py`, `src/core/ai_manager.py`, `src/ingestion/daily_search.py`, `src/ai/drl/live_agent_orchestrator.py`, `src/ingestion/sources/scigov_source.py`, `src/ingestion/sources/dblp_source.py` | `HierarchicalEvaluationEngine.evaluate_paper()` / `evaluate_batch()` (γρήγορο κόσκινο 8B → πύλη S_rel >= 6.0 → βαριά λογική 14B/cloud + Kitchenham S_qual)· `AIManager.exhausted_providers` + `_latch_provider_exhausted()` (παράκαμψη 402/401 με μηδενικές απόπειρες)· `SetConsoleTitleW` δυναμικός τίτλος κονσόλας (χωρίς emoji)· `ScienceGovSource` (απομόνωση DNS + disabled-by-default)· `DBLPSource._sanitize_dblp_query()` (καθαρισμός Boolean + φύλαξη JSONDecodeError) |
 | **Αυτοθεραπευόμενη Πύλη Εισαγωγής & Επιλογέας Προφίλ Autostart (v5.18.4)** | `src/ingestion/resilient_gateway.py`, `src/ingestion/daily_search.py`, `src/ingestion/historic_search.py`, `src/utils/daemon_autostart.py` | `ResilientIngestionGateway` (fast-fail 401/403/Quota, αντικατοπτρισμός OpenAlex IEEE/Elsevier/Springer, `source=<source_key>`)· `main()` επιλογέας προφίλ Questionary (Βήμα 1) + εμμονή `daemon_profile` στο `_profiles/<profile>/config.json` |
 | **Χειρουργική Net2Net Διπλού Checkpoint & Διάθεση Προφίλ Δαίμονα (v5.18.3)** | `scripts/migrate_d3qn_checkpoint.py`, `src/utils/daemon_autostart.py`, `src/ai/drl/talos_service.py` | Γνήσια χειρουργική τανυστών εισόδου Net2Net ΚΑΙ ΣΤΑ ΔΥΟ checkpoints (`models/` + `src/ai/models/`, `lstm1.weight_ih_l0` [512, 25], `A.weight` [19, 32], εξάλειψη `RuntimeError: Expected 23, got 25`)· `select_daemon_profile()` (Questionary) + `--profile <name>` με δυναμικό banner συγχρονισμένο στο `uav_mission_planning` |
 | **Επισκευή Checkpoint Net2Net, Close-to-Tray Win32, Συντόμευση Επιφάνειας Εργασίας & Επιλογέας Προφίλ Autostart (v5.18.2)** | `scripts/migrate_d3qn_checkpoint.py`, `src/utils/tray_icon.py`, `src/utils/desktop_shortcut.py`, `src/utils/daemon_autostart.py`, `src/ai/drl/talos_service.py`, `talos.py` | Επιβεβαίωση/σφράγιση idempotent της μετανάστευσης Net2Net (18 πηγές / 25 διαστάσεις, forward pass χωρίς σφάλματα)· `enable_close_to_tray()` (WNDPROC, SW_HIDE + ειδοποίηση `[TRAY]`)· `create_desktop_shortcut()` (`TALOS Research Hub.lnk` μέσω COM `WScript.Shell`)· `select_daemon_profile()` + `--profile <name>` |
@@ -338,8 +345,8 @@ src/core/ai_manager.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.18.4 -- Αυτοθεραπευόμενη Πύλη Εισαγωγής & Επιλογέας Προφίλ Autostart)
-> **Έκδοση Project:** v5.18.4
+> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.19.0 -- Μηχανή Αποσύζευξης Αυστηρότητας Δύο Σταδίων & Γνωστικός Αντιστοιχιστής Ρόλων SOTA)
+> **Έκδοση Project:** v5.19.0
 > **Συνολικά .py modules στο src/:** 103 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 6 + ingestion/sources 18 + search 3 + integration 3 + utils 23 + api 4 + prisma 8 + mcp_server 1)
 
 

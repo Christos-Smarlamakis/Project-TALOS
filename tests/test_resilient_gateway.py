@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_resilient_gateway.py
-Project: TALOS v5.18.4
+Project: TALOS v5.19.0
 Description:
     Hermetic unit tests for the overarching ResilientIngestionGateway and the
     daemon autostart profile selector. Verifies fast-fail classification on

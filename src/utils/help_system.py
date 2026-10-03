@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: help_system.py
-Project: TALOS v5.18.4
+Project: TALOS v5.19.0
 Description:
     Dual-Surface User Assistance System. This module renders a rich, four-panel
     interactive command reference for the TALOS terminal UI and provides the
@@ -112,8 +112,13 @@ def _panel_1_cli_flags() -> Panel:
                   "Switch the AI execution strategy (strict_local, local_first, "
                   "cloud_first, strict_cloud, auto_dynamic).")
     table.add_row("Hardware Advisor", "--hardware-advisor | --recommend-models",
-                  "Hardware-aware model advisor: VRAM parameter budgeting and SOTA "
-                  "discovery radar (src/core/hardware_advisor.py).")
+                  "Hardware-aware model advisor: VRAM parameter budgeting, the "
+                  "4-role SOTA model matcher (fast screening / deep reasoning / "
+                  "code audit / embeddings), and a SOTA discovery radar "
+                  "(src/core/hardware_advisor.py).")
+    table.add_row("Model Adoption", "--apply-models",
+                  "Persist the recommended 4-role SOTA model stack into the "
+                  "active profile config.json in one click.")
     table.add_row("Diagnostics", "--diagnostics | --doctor, -d",
                   "Run the 8-point ISO/IEC 25010 System Diagnostics Analyzer.")
     table.add_row("Diagnostics", "--stats",

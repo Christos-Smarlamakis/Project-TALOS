@@ -11,7 +11,7 @@
 
 """
 Module: dblp_source.py
-Project: TALOS v5.10.0
+Project: TALOS v5.19.0
 
 Description:
     Search agent for the DBLP Computer Science Bibliography API
@@ -21,8 +21,17 @@ Description:
     batch fetching (``fetch_new_papers``) and single-title search
     (``search_papers``) for metadata enrichment workflows.
 
+    v5.18.5: Query sanitization and JSON resilience. ``_sanitize_dblp_query``
+    strips parentheses, quotes, and Boolean operators (AND/OR/WITH/NOT) and
+    caps the result at 6-8 salient space-separated terms before the request
+    is sent. Every ``response.json()`` call is guarded against invalid or
+    HTML responses so a non-JSON payload degrades to an empty result instead
+    of raising ``JSONDecodeError``.
+
     Free to use — no API key required.
 """
+import json
+import re
 import requests
 
 try:
@@ -61,6 +70,29 @@ class DBLPSource:
         self.base_url = "https://dblp.org/search/publ/api"
         print("INFO: DBLPSource initialized.")
 
+    @staticmethod
+    def _sanitize_dblp_query(query: str) -> str:
+        """Sanitize a DBLP query into simple space-separated salient terms.
+
+        DBLP's search endpoint does not tolerate parentheses, quotes, or
+        Boolean operators well (they can trigger HTML error responses). This
+        method strips those tokens and collapses the remaining words into a
+        short keyword list capped at 8 terms.
+
+        Args:
+            query (str): The raw query string.
+
+        Returns:
+            str: A sanitized space-separated keyword query.
+        """
+        if not query:
+            return ""
+        text = str(query)
+        text = re.sub(r'[()"\'\[\]{}]', ' ', text)
+        text = re.sub(r'\b(AND|OR|WITH|NOT)\b', ' ', text, flags=re.IGNORECASE)
+        terms = [t for t in re.split(r'\s+', text) if t]
+        return " ".join(terms[:8])
+
     def fetch_new_papers(self) -> List[Dict[str, Any]]:
         """Fetch recent papers from DBLP matching the configured query.
 
@@ -72,10 +104,11 @@ class DBLPSource:
         offset = 0
         page_size = 100
         start_year = datetime.now().year - (self.days_to_search // 365) - 1
+        sanitized_query = self._sanitize_dblp_query(self.query)
 
         while len(all_papers) < self.total_max_results:
             params = {
-                "q": self.query,
+                "q": sanitized_query,
                 "h": page_size,
                 "f": offset,
                 "format": "json"
@@ -83,7 +116,11 @@ class DBLPSource:
             try:
                 response = self.session.get(self.base_url, params=params, timeout=20)
                 response.raise_for_status()
-                data = response.json()
+                try:
+                    data = response.json()
+                except (ValueError, json.JSONDecodeError):
+                    print(f"   ERROR [DBLP]: Invalid JSON response (HTML or empty).")
+                    break
 
                 hits = data.get('result', {}).get('hits', {}).get('hit', [])
                 if not hits:
@@ -128,11 +165,14 @@ class DBLPSource:
         Returns:
             list of dict: Standardized paper dictionaries.
         """
-        params = {"q": query, "h": limit, "format": "json"}
+        params = {"q": self._sanitize_dblp_query(query), "h": limit, "format": "json"}
         try:
             response = self.session.get(self.base_url, params=params, timeout=10)
             response.raise_for_status()
-            data = response.json()
+            try:
+                data = response.json()
+            except (ValueError, json.JSONDecodeError):
+                return []
             results = []
             for item in data.get('result', {}).get('hits', {}).get('hit', []):
                 info = item.get('info', {})

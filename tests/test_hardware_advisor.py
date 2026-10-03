@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_hardware_advisor.py
-Project: TALOS v5.18.4
+Project: TALOS v5.19.0
 Description:
     Unit tests for the HardwareModelAdvisor (v5.16.2). Verifies the
     piecewise 4-bit-quantization VRAM parameter budget, role-based model
@@ -104,3 +104,30 @@ class TestSotaRadar:
         assert maverick["fits_budget"] is False
         qwen14 = next(r for r in results if r["name"] == "qwen2.5:14b")
         assert qwen14["fits_budget"] is True
+
+
+class TestRoleMatrix:
+    """Verify the four-role SOTA model matcher (v5.19.0)."""
+
+    def test_matrix_contains_four_roles(self):
+        matrix = _advisor_with_vram(12.0).get_role_based_matrix()
+        roles = {r["role"] for r in matrix["roles"]}
+        assert roles == {
+            "fast_screening", "deep_reasoning_rigor",
+            "code_audit_slicing", "vector_embeddings",
+        }
+        assert matrix["vram_budget"] == 14.0
+
+    def test_local_recommendation_respects_gpu(self):
+        roles = {r["role"]: r for r in _advisor_with_vram(12.0).get_role_based_matrix()["roles"]}
+        assert roles["fast_screening"]["local_recommended"] == "llama3.1:8b"
+        assert roles["deep_reasoning_rigor"]["local_recommended"] == "qwen2.5:14b"
+        assert roles["deep_reasoning_rigor"]["cloud"] == "deepseek-reasoner"
+        assert roles["code_audit_slicing"]["cloud"] == "deepseek-coder"
+        assert roles["vector_embeddings"]["cloud"] == "text-embedding-3-small"
+
+    def test_cpu_fallback_recommendations(self):
+        roles = {r["role"]: r for r in _advisor_with_vram(0.0).get_role_based_matrix()["roles"]}
+        assert roles["fast_screening"]["local_recommended"] == "qwen2.5:3b"
+        assert roles["deep_reasoning_rigor"]["local_recommended"] == "qwen2.5:3b"
+        assert roles["vector_embeddings"]["local_recommended"] == "nomic-embed-text"

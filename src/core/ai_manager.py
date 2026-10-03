@@ -6,7 +6,7 @@
 #
 """
 Module: ai_manager.py (v4.1 - Self-Healing AI Manager, Universal Cloud Mesh & Auto-Dynamic Privacy Guardrails)
-Project: TALOS v5.18.4
+Project: TALOS v5.19.0
 
 Description:
     Centralized AI provider manager implementing a multi-provider architecture
@@ -78,6 +78,13 @@ Description:
     method contracts (evaluate_paper_json / analyze_generic_text /
     batch_evaluate_papers / _resolve_strategies) remain 100% backward
     compatible; the registry is purely additive and extensible.
+
+    v5.18.5: Cloud Provider Quota Latching -- any cloud provider returning
+    HTTP 402 (RESOURCE_EXHAUSTED / prepayment credits depleted) or 401
+    (Unauthorized) is latched into ``self.exhausted_providers`` for the
+    remainder of the session. Subsequent fallbacks skip exhausted providers
+    with ZERO network attempts, routing directly to active providers with
+    valid credentials (e.g. DeepSeek).
 """
 
 import os, json, re, requests, sys, functools, subprocess, time
@@ -433,6 +440,13 @@ class AIManager:
         # -- v5.11.3 legacy per-batch memo retained as a synonym so existing --
         # -- diagnostics and documentation references never break. --
         self._fast_edge_offline_memo = False
+        # -- v5.18.5: Cloud Provider Quota Latching -- providers returning HTTP
+        # -- 402 (RESOURCE_EXHAUSTED / prepayment credits depleted) or 401
+        # -- (Unauthorized) are latched into this set for the remainder of the
+        # -- session. Subsequent fallbacks skip them with zero network attempts,
+        # -- routing directly to active providers with valid credentials.
+        self.exhausted_providers = set()
+        self._quota_notice_emitted = set()
         # -- v5.10.2: LLM Router Sub-Agent (provider selection delegate) --
         self.router = self._init_router()
 
@@ -1598,6 +1612,8 @@ class AIManager:
                 continue  # Skip unconfigured providers
             if self.providers[provider_name]['circuit_open']:
                 continue  # Skip open-circuit providers
+            if provider_name in self.exhausted_providers:
+                continue  # Skip quota-latched providers with zero network attempts
             print(f"  > Attempting cloud request with provider: {provider_name.upper()}")
             if provider_name == 'gemini':
                 result = self._execute_gemini_request(prompt, model_type, response_format)
@@ -1651,7 +1667,9 @@ class AIManager:
 
         ordered = self._get_router_ordered_providers(prompt, self._task_type(model_type))
         for provider_name in ordered:
-            if provider_name in self.providers and not self.providers[provider_name]['circuit_open']:
+            if (provider_name in self.providers
+                    and not self.providers[provider_name]['circuit_open']
+                    and provider_name not in self.exhausted_providers):
                 print(f"  > Attempting request with provider: {provider_name.upper()}")
                 if provider_name == 'gemini':
                     result = self._execute_gemini_request(prompt, model_type, response_format)
@@ -1719,8 +1737,11 @@ class AIManager:
                     response = model.generate_content(prompt)
                     return response.text
         except Exception as e:
+            message = str(e)
             print(f"  >!> Gemini execution error: {e}")
-            if "429" in str(e) or "resource exhausted" in str(e).lower():
+            if self._is_quota_or_auth_exhausted(message):
+                self._latch_provider_exhausted('gemini', reason=self._quota_reason(message))
+            elif "429" in message or "resource exhausted" in message.lower():
                 self._handle_failure('gemini')
             return None
 
@@ -1800,8 +1821,13 @@ class AIManager:
             self.providers[provider_name]['consecutive_failures'] = 0
             return response_text
         except Exception as e:
+            message = str(e)
             print(f"  >!> {provider_name} execution error: {e}")
-            self._handle_failure(provider_name)
+            if self._is_quota_or_auth_exhausted(message):
+                self._latch_provider_exhausted(
+                    provider_name, reason=self._quota_reason(message))
+            else:
+                self._handle_failure(provider_name)
             return None
 
     def _execute_openai_compatible(self, prompt: str, response_format: str,
@@ -1888,6 +1914,65 @@ class AIManager:
     # ==================================================================
     # -- Circuit Breaker --
     # ==================================================================
+
+    def _latch_provider_exhausted(self, provider_name: str, reason: str = "") -> None:
+        """Latch a cloud provider as quota/credential-exhausted for the session.
+
+        v5.18.5: When a provider returns HTTP 402 (RESOURCE_EXHAUSTED /
+        prepayment credits depleted) or 401 (Unauthorized), it is added to
+        ``self.exhausted_providers`` so every subsequent fallback skips it with
+        ZERO network attempts. A single notice is emitted per provider to avoid
+        log spam.
+
+        Args:
+            provider_name (str): Name of the exhausted provider.
+            reason (str): Human-readable reason (e.g. ``402`` or ``401``).
+        """
+        if provider_name in self.exhausted_providers:
+            return
+        self.exhausted_providers.add(provider_name)
+        self.providers[provider_name]['circuit_open'] = True
+        self.providers[provider_name]['consecutive_failures'] = self.FAILURE_THRESHOLD
+        if provider_name not in self._quota_notice_emitted:
+            self._quota_notice_emitted.add(provider_name)
+            print(f"[INFO] Provider {provider_name} quota/credits exhausted "
+                  f"({reason}). Latching bypass for this session.")
+
+    @staticmethod
+    def _is_quota_or_auth_exhausted(message: str) -> bool:
+        """Detect an HTTP 402/401 quota or auth exhaustion signal in a message.
+
+        Args:
+            message (str): The exception string emitted by a provider client.
+
+        Returns:
+            bool: True when the message signals exhausted quota or invalid auth.
+        """
+        text = (message or "").lower()
+        tokens = (
+            "402", "401",
+            "resource_exhausted", "resource exhausted",
+            "prepayment credits depleted", "prepayment_credits_depleted",
+            "unauthorized", "quota exceeded", "quota_exceeded",
+        )
+        return any(token in text for token in tokens)
+
+    @staticmethod
+    def _quota_reason(message: str) -> str:
+        """Return a compact reason code (401/402/quota) from an error message.
+
+        Args:
+            message (str): The exception string emitted by a provider client.
+
+        Returns:
+            str: A short reason code for the latch notice.
+        """
+        text = (message or "").lower()
+        if "401" in text or "unauthorized" in text:
+            return "401"
+        if "402" in text:
+            return "402"
+        return "quota"
 
     def _handle_failure(self, provider_name: str):
         """Increment failure counter and open circuit if threshold exceeded.

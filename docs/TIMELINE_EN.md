@@ -4,9 +4,41 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-03 (v5.18.4 -- Self-Healing Ingestion Gateway & Autostart Profile Provisioning)
+> **Last Updated:** 2026-10-03 (v5.19.0 -- Two-Stage Rigor Decoupling Engine & Cognitive SOTA Role Matcher)
 
 ---
+
+## Phase 78: Two-Stage Rigor Decoupling & Cognitive SOTA Role Matcher (v5.19.0)
+
+- [x] **Status:** COMPLETED (2026-10-03).
+
+- [x] **Two-Stage Rigor Decoupling Engine** -- `src/core/hierarchical_evaluator.py` upgrades `HierarchicalEvaluationEngine` into a true two-stage pipeline. Stage 1 (Fast Relevance Sieve) yields $S_{rel}^{prelim}$; papers below the escalation gate fast-reject with `evidence_quadrant='METHODOLOGICAL_NOISE'`. Stage 2 runs a Dual-Audit on the heavy tier: Faceted Deep Relevance Calibration ($S_{rel}^{calibrated}$ verifying HMADRL / Dec-POMDP / QMIX swarm + ST-GNN / ST-GAT architectures) and Kitchenham 2007 Quality Appraisal ($S_{qual}$ via `PrismaQualityAppraiser`), mapping each paper onto the 2D Evidence Quadrant and returning `quality_rubric_json` + `critique`.
+
+- [x] **2D Evidence Quadrant real-time persistence** -- `daily_search.py` and `historic_search.py` persist `quality_score`, `quality_rubric_json`, and `evidence_quadrant` via `update_paper_quality()`; `historic_search.py` is fully unified onto the engine.
+
+- [x] **Cognitive SOTA 4-Role Model Matcher** -- `hardware_advisor.py` gains `get_role_based_matrix()` (fast_screening / deep_reasoning_rigor / code_audit_slicing / vector_embeddings), `render_role_matrix()`, and `apply_recommended_models()`; `--apply-models` CLI + TUI Option 8 adoption.
+
+- [x] **Clean console lifecycle** -- `talos_service.py` title bumped to `TALOS v5.19.0 | Autonomous Research Service [{active_profile}]`.
+
+- [x] **Version synced** -- 6 code files + docker-compose.yml (`talos:5.19.0`) + CITATION.cff (5.19.0, 2026-10-03) + metadata + 19 canonical docs to v5.19.0 (2026-10-03).
+
+- [x] **Verification gates passed** -- compileall (0 errors), test_system_integrity, test_talos_version (5.19.0), 53 hermetic tests, `--recommend-models` (exit 0), verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
+
+## Phase 77: Hierarchical Evaluation Engine & LLM Router Quota Hardening (v5.18.5)
+
+- [x] **Status:** COMPLETED (2026-10-03).
+
+- [x] **Centralized Hierarchical Evaluation Engine** -- `src/core/hierarchical_evaluator.py` introduces `HierarchicalEvaluationEngine` with a deterministic two-tier escalation pipeline: a Fast 8B Screening Sieve (`evaluate_paper_json(model_type='flash')`) yields $S_{rel}$, and an Escalation Gate promotes papers scoring $S_{rel} >= 6.0$ to the Heavy 14B/cloud Reasoning tier (`model_type='pro'` + Kitchenham $S_{qual}$). `evaluate_batch()` runs a `ThreadPoolExecutor` behind `threading.Semaphore(2)` to protect GPU VRAM. `daily_search.py` and `live_agent_orchestrator.py` now route evaluation through the engine.
+
+- [x] **Cognitive LLM Router Quota Latching** -- `AIManager` latches any cloud provider returning HTTP 402/401 into `exhausted_providers` for the session, skipping them with zero network attempts and routing the next call directly to DeepSeek. Single-notice emission via `_latch_provider_exhausted()`.
+
+- [x] **Clean console lifecycle** -- `talos_service.py` sets the official emoji-free dynamic console title `TALOS v5.18.5 | Autonomous Research Service [{active_profile}]` via `SetConsoleTitleW`.
+
+- [x] **Clean ingestion lifecycle** -- `scigov_source.py` isolates DNS failures (delegating to OSTI coverage, disabled by default) and `dblp_source.py` sanitizes Boolean queries + guards `response.json()` against `JSONDecodeError`.
+
+- [x] **Version synced** -- 6 code files + docker-compose.yml (`talos:5.18.5`) + CITATION.cff (5.18.5, 2026-10-03) + metadata + 19 canonical docs to v5.18.5 (2026-10-03).
+
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.18.5), 24 new hermetic tests (hierarchical evaluator / quota latching / DBLP sanitizer / Science.gov DNS), verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 76: Self-Healing Ingestion Gateway & Autostart Profile Selector (v5.18.4)
 

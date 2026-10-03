@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: live_agent_orchestrator.py (v1.4 — 18-Source Scaling)
-Project: TALOS v5.15.4
+Project: TALOS v5.19.0
 Description:
     Main orchestration loop for the TALOS Live DRL Agent. Handles the
     full cycle: state calculation → action selection → API fetch →
@@ -308,15 +308,22 @@ def evaluate_paper(paper, ai_manager, provider_call_counts):
     )
 
     try:
-        evaluation = ai_manager.evaluate_paper_json(content, model_type='flash')
-        if evaluation:
-            # v1.1 FIX (provider attribution): credit the provider that ACTUALLY
-            # served the request (exposed by AIManager v3.7 as last_provider_used),
-            # instead of always crediting "gemini". This keeps the provider-usage
-            # portion of the DRL state vector correct when fallback occurs.
-            used = getattr(ai_manager, "last_provider_used", None) or "gemini"
-            provider_call_counts[used] = provider_call_counts.get(used, 0) + 1
-            return float(evaluation.get('overall_score', 0))
+        # -- v5.18.5: Unified Hierarchical Evaluation Engine replaces the
+        # -- single-tier flash evaluation. High-relevance papers now escalate
+        # -- to the heavy reasoning tier for a deep critique; the DRL reward
+        # -- still keys off the fast relevance score ($S_{rel}$) so the state
+        # -- vector semantics remain unchanged. --
+        from src.core.hierarchical_evaluator import HierarchicalEvaluationEngine
+        engine = HierarchicalEvaluationEngine(ai_manager)
+        verdict = engine.evaluate_paper(paper)
+        overall = float(verdict.get("overall_score", 0.0))
+        # v1.1 FIX (provider attribution): credit the provider that ACTUALLY
+        # served the request (exposed by AIManager v3.7 as last_provider_used),
+        # instead of always crediting "gemini". This keeps the provider-usage
+        # portion of the DRL state vector correct when fallback occurs.
+        used = getattr(ai_manager, "last_provider_used", None) or "gemini"
+        provider_call_counts[used] = provider_call_counts.get(used, 0) + 1
+        return overall
     except Exception as e:
         console.print(
             f"    [bold yellow][WARNING][/bold yellow] "

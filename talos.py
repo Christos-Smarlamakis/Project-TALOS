@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.18.4
+Project: TALOS v5.19.0
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -71,6 +71,24 @@ Description:
     adapters with fast-fail circuit breaking (401/403/Quota) and automatic
     OpenAlex publisher mirroring for IEEE, Elsevier, and Springer; the daemon
     autostart flow promotes profile selection to the first mandatory prompt.
+
+    v5.18.5: Hierarchical Evaluation Engine, Cognitive LLM Router Quota Latching
+    & Clean Ingestion Lifecycle -- a centralized two-tier escalation engine
+    (src/core/hierarchical_evaluator.py) runs a fast 8B screening sieve and
+    escalates papers scoring S_rel >= 6.0 to the heavy 14B/cloud reasoning tier;
+    the AI manager latches cloud providers returning HTTP 402/401 so they are
+    bypassed with zero network attempts in favor of DeepSeek; the Science.gov
+    adapter isolates DNS failures and DBLP sanitizes Boolean queries; and the
+    daemon sets an official emoji-free dynamic console title.
+
+    v5.19.0: Two-Stage Rigor Decoupling Engine & Cognitive SOTA Role Matcher --
+    src/core/hierarchical_evaluator.py now executes a Stage-2 Dual-Audit (Faceted
+    Deep Relevance Calibration S_rel_calibrated + Kitchenham 2007 S_qual via
+    PrismaQualityAppraiser) and maps each study onto the 2D Evidence Quadrant;
+    src/core/hardware_advisor.py gains get_role_based_matrix() / render_role_matrix()
+    / apply_recommended_models() (four-role SOTA matcher); daily_search,
+    historic_search and talos_service are unified through the engine; and the
+    CLI gains --apply-models for 1-click model adoption.
 
     v5.16.2: Pluggable Provider Registry & Hardware-Aware Model Advisor -- a
     modular adapter-based provider registry (src/core/provider_registry.py)
@@ -1762,9 +1780,22 @@ def _show_evaluation_history(limit=30):
 
 
 def _run_hardware_advisor():
-    """Render the Hardware-Aware Model Advisor in-process (v5.17.0)."""
+    """Render the Hardware-Aware Model Advisor + 4-role SOTA matrix (v5.19.0)."""
     from src.core.hardware_advisor import HardwareModelAdvisor
-    HardwareModelAdvisor().render_recommendations()
+    advisor = HardwareModelAdvisor()
+    advisor.render_recommendations()
+    advisor.render_role_matrix()
+    # -- 1-click adoption of the recommended 4-role model stack. --
+    try:
+        import questionary
+        if questionary.confirm(
+            "Adopt the recommended 4-role SOTA model stack "
+            "(writes active profile config.json)?",
+            default=False,
+        ).ask():
+            advisor.apply_recommended_models()
+    except Exception:
+        pass
 
 
 def _run_model_discovery():
@@ -2604,10 +2635,17 @@ def _handle_cli_flags(argv):
             force_reappraise="--force" in argv,
         )
         return True
-    # -- v5.16.2: Hardware-Aware Model Advisor (--hardware-advisor / --recommend-models). --
+    # -- v5.16.2 / v5.19.0: Hardware-Aware Model Advisor + 4-Role SOTA Matcher
+    # -- (--hardware-advisor / --recommend-models / --apply-models). --
     if any(flag in argv for flag in ("--hardware-advisor", "--recommend-models")):
         from src.core.hardware_advisor import HardwareModelAdvisor
-        HardwareModelAdvisor().render_recommendations()
+        advisor = HardwareModelAdvisor()
+        advisor.render_recommendations()
+        advisor.render_role_matrix()
+        return True
+    if "--apply-models" in argv:
+        from src.core.hardware_advisor import HardwareModelAdvisor
+        HardwareModelAdvisor().apply_recommended_models()
         return True
     # -- v5.15.0: Universal Search Hub fast-dispatch flags. --
     if "--snowball" in argv:

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: talos_service.py (v2.1 — Profile-Aware, Dynamic N Sources)
-Project: TALOS v5.10.5 — Phase 5
+Project: TALOS v5.19.0
 Description:
     24/7 autonomous research service. Runs continuously on weak hardware
     (Raspberry Pi, old laptop, etc.) using the trained DRL agent to
@@ -731,6 +731,18 @@ def main():
         active_profile = _pm.get_active_profile_name()
     except Exception:
         active_profile = "default"
+
+    # -- v5.18.5: Official dynamic console window title. Zero emojis; pure
+    # -- ASCII title with the active profile interpolated so the daemon
+    # -- console is unambiguously identifiable in the Windows taskbar. --
+    if os.name == "nt":
+        try:
+            import ctypes
+            ctypes.windll.kernel32.SetConsoleTitleW(
+                f"TALOS v5.19.0 | Autonomous Research Service [{active_profile}]"
+            )
+        except Exception:
+            pass
 
     console.print(Panel(
         "Service Active / 24-7 Mode",

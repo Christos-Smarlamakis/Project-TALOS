@@ -2,6 +2,60 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.19.0] - 2026-10-03 -- Two-Stage Rigor Decoupling Engine & Cognitive SOTA Role Matcher
+
+### Added
+
+- **Two-Stage Rigor Decoupling Engine** (`src/core/hierarchical_evaluator.py`): `HierarchicalEvaluationEngine` is upgraded from the v5.18.5 two-tier escalation into a true two-stage rigor-decoupling pipeline. Stage 1 (Fast Relevance Sieve) scores the paper's title and abstract with the lightweight fast-edge model via `AIManager.evaluate_paper_json(..., model_type='flash')`, producing the preliminary semantic relevance $S_{rel}^{prelim}$. The Escalation Gate then fast-rejects any paper below the threshold (`escalation_threshold=6.0`) with a `tier='fast_local'` verdict carrying `evidence_quadrant='METHODOLOGICAL_NOISE'`, `quality_score=None`, and `overall_score=S_rel_prelim`, incurring zero heavy compute. Papers at or above the threshold are promoted to Stage 2 (Heavy Reasoning tier, `model_type='pro'` -> local `qwen2.5:14b` or cloud `deepseek-reasoner`), which executes a **Dual-Audit**: (1) **Faceted Deep Relevance Calibration** re-scores the paper against the research framework's specific swarm algorithms (HMADRL, Dec-POMDP, QMIX) and GNN architectures (ST-GNN, ST-GAT), yielding the calibrated relevance $S_{rel}^{calibrated}$; and (2) **Kitchenham (2007) Quality Appraisal** audits the six questions $Q_1..Q_6$ through `PrismaQualityAppraiser`, producing the decoupled methodological quality $S_{qual}$, a validated `KitchenhamRubric`, and a 2D Evidence Quadrant classification. The deep verdict returns `is_accepted = (S_rel_calibrated >= 6.0)`, `overall_score=S_rel_calibrated`, `quality_score=S_qual`, `quality_rubric_json`, `evidence_quadrant`, and `critique` (the rubric's `critique_rationale`), while retaining the backward-compatible `fast_evaluation` / `deep_evaluation` / `key_contributions` keys so existing consumers keep working.
+
+- **2D Evidence Quadrant real-time persistence** (`src/ingestion/daily_search.py`, `src/ingestion/historic_search.py`): both pipelines now persist the decoupled appraisal through `DatabaseManager.update_paper_quality()` (SQLite WAL), storing `quality_score`, `quality_rubric_json`, and `evidence_quadrant` for every escalated paper. `historic_search.py` is fully unified onto the `HierarchicalEvaluationEngine` (replacing its legacy flash-only `evaluate_paper_json` call).
+
+- **Cognitive SOTA 4-Role Model Matcher** (`src/core/hardware_advisor.py`): `get_role_based_matrix()` categorizes the canonical model stack across four scientific workloads, each with a local-GPU, local-CPU, and Cloud Mesh selection -- `fast_screening` (llama3.1:8b / qwen2.5:3b / gemini-2.5-flash), `deep_reasoning_rigor` (qwen2.5:14b / qwen2.5:3b / deepseek-reasoner), `code_audit_slicing` (qwen2.5-coder:14b / qwen2.5:3b / deepseek-coder), and `vector_embeddings` (nomic-embed-text / nomic-embed-text / text-embedding-3-small). `render_role_matrix()` renders the matrix as a styled Rich table, and `apply_recommended_models()` performs a 1-click atomic write of the recommended stack into the active profile `config.json`.
+
+- **CLI & TUI adoption surface** (`talos.py`, `src/utils/help_system.py`): `--recommend-models` / `--hardware-advisor` now render both the Hardware-Aware Model Advisor and the 4-Role SOTA matrix; a new `--apply-models` flag performs non-interactive 1-click adoption; and the Configuration & Profiles menu Option 8 offers an interactive adoption prompt.
+
+### Changed
+
+- **`src/ai/drl/talos_service.py`**: the official dynamic console window title is bumped to `TALOS v5.19.0 | Autonomous Research Service [{active_profile}]` (still pure ASCII, zero emojis, dynamic profile interpolation).
+
+- **Version strings synchronized to 5.19.0** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py` version assertion), `docker-compose.yml` (`talos:5.19.0`), `CITATION.cff` (version 5.19.0, date-released 2026-10-03), `config.template.json`, tray/visualizer/wizard/strategy/diagnostics/bibtex/help/resolver metadata, `src/core/`, `src/prisma/`, `src/search/`, `src/ingestion/pdf_harvester/` docstrings, and all 19 canonical documentation files (dated 2026-10-03).
+
+- **ROADMAP.md**: current version advanced to v5.19.0 (Complete, 2026-10-03); CORTEX & n8n orchestration advanced to v5.20.0.
+
+### Verification
+
+- `python -m compileall src config tests talos.py scripts` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.19.0); `pytest tests/test_hierarchical_evaluator.py tests/test_hardware_advisor.py tests/test_quality_appraisal.py tests/test_quota_latching.py tests/test_dblp_sanitizer.py tests/test_scigov_resilience.py -q` (53 hermetic); `python talos.py --recommend-models` renders the Hardware Advisor + 4-Role SOTA matrix and exits 0; `python src/utils/verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
+## [v5.18.5] - 2026-10-03 -- Hierarchical Evaluation Engine, Cognitive LLM Router & Clean Ingestion Lifecycle
+
+### Added
+
+- **Centralized Hierarchical Evaluation Engine** (`src/core/hierarchical_evaluator.py`): a new `HierarchicalEvaluationEngine` consolidates the fragmented multi-tier screening logic into a deterministic two-tier escalation pipeline. `evaluate_paper(paper, escalation_threshold=6.0)` runs the Fast Screening Sieve first -- the paper title and abstract are scored by the lightweight local fast-edge model via `AIManager.evaluate_paper_json(..., model_type='flash')`, producing the preliminary semantic relevance score $S_{rel}$ extracted from the structured `overall_score` (with a four-layer arithmetic-mean fallback). The Escalation Gate then branches: when $S_{rel} < 6.0$ the paper is rejected immediately with a `tier='fast_local'` verdict (`is_accepted=False`, `escalated=False`, `overall_score=S_rel`) and zero heavy compute; when $S_{rel} >= 6.0$ the paper is promoted to the Heavy Reasoning tier (`model_type='pro'`, dispatching to the local `qwen2.5:14b` GPU model or a cloud reasoning model such as DeepSeek) which emits a deep critique, extracts key contributions, and computes a Kitchenham-inspired methodological quality appraisal $S_{qual}$. `evaluate_batch(papers, threshold)` manages concurrency through a `ThreadPoolExecutor` bounded by a `threading.Semaphore(2)` so the shared local GPU VRAM budget is never exhausted while preserving input order. The engine is persistence-agnostic: it returns structured verdict dictionaries and leaves DB writes to the caller.
+
+- **Cognitive LLM Router Quota Latching** (`src/core/ai_manager.py`): a session-level `exhausted_providers` set now latches any cloud provider that returns HTTP `402` (`RESOURCE_EXHAUSTED` / prepayment credits depleted) or `401` (`Unauthorized`) offline. The new `_latch_provider_exhausted(provider_name, reason)` helper adds the provider to the latch set, forces `circuit_open=True`, and emits a single one-time notice: `[INFO] Provider {provider_name} quota/credits exhausted (402). Latching bypass for this session.` Static classifiers `_is_quota_or_auth_exhausted()` and `_quota_reason()` decode the exception message. Both the `_execute_cloud_chain` and `_execute_legacy_request` fallback loops now skip latched providers with ZERO network attempts, routing the very next request directly to active providers with valid credentials (e.g. DeepSeek).
+
+- **Official dynamic console window title** (`src/ai/drl/talos_service.py`): on Windows the daemon now sets `TALOS v5.18.5 | Autonomous Research Service [{active_profile}]` via `ctypes.windll.kernel32.SetConsoleTitleW`, using the active profile resolved from `ProfileManager`. The title is pure ASCII with zero emojis, conforming to the Zero-Emojis Protocol.
+
+- **Fault-tolerant Science.gov DNS isolation** (`src/ingestion/sources/scigov_source.py`): the adapter now catches `requests.exceptions.RequestException`, `requests.exceptions.ConnectionError`, and the underlying `urllib3` DNS `NameResolutionError`. A name-resolution failure for `api.science.gov` logs `[INFO] Science.gov API unavailable. Delegating to federal OSTI coverage.` and returns `[]` without raising. The source is also disabled by default (`scigov_enabled=false` / `SCI_GOV_ENABLED=0`) so the DRL agent avoids dead exploration actions against the frequently-absent endpoint.
+
+- **DBLP query sanitization & JSON resilience** (`src/ingestion/sources/dblp_source.py`): a new `_sanitize_dblp_query()` static helper strips parentheses, quotes, and Boolean operators (`AND` / `OR` / `WITH` / `NOT`), then collapses the remainder into a space-separated salient-term list capped at 8 keywords. Both `fetch_new_papers()` and `search_papers()` send the sanitized query, and every `response.json()` call is wrapped in `try/except (ValueError, json.JSONDecodeError)` so an HTML or invalid payload degrades to `[]` instead of raising.
+
+### Changed
+
+- **Version strings synchronized to 5.18.5** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py` version assertion), `docker-compose.yml` (`talos:5.18.5`), `CITATION.cff` (version 5.18.5, date-released 2026-10-03), `config.template.json`, tray/visualizer/wizard/strategy/diagnostics/bibtex/help metadata, `src/core/`, `src/prisma/`, `src/search/`, `src/ingestion/pdf_harvester/` docstrings, and all 19 canonical documentation files (dated 2026-10-03).
+
+- **`src/ingestion/daily_search.py`**: the fragmented PHASE 3 (flash pre-screen) + PHASE 4 (pro deep analysis) if/else branching is replaced by a single `HierarchicalEvaluationEngine.evaluate_paper()` call per paper, with the flash and pro API budgets enforced via a `11.0` escalation-threshold override once the pro limit is reached.
+
+- **`src/ai/drl/live_agent_orchestrator.py`**: `evaluate_paper()` now delegates to the `HierarchicalEvaluationEngine` (preserving the float $S_{rel}$ return contract for DRL reward semantics and provider attribution).
+
+- **`config/settings.py`**: added `LOCAL_HEAVY_MODEL` (alias of `HEAVY_REASONING_MODEL`, `qwen2.5:14b`) and `SCI_GOV_ENABLED` (default `0`).
+
+- **ROADMAP.md**: current version advanced to v5.18.5 (Complete, 2026-10-03); CORTEX & n8n orchestration retained at v5.19.0.
+
+### Verification
+
+- `python -m compileall src config tests talos.py scripts` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.5); `pytest tests/test_hierarchical_evaluator.py tests/test_quota_latching.py tests/test_dblp_sanitizer.py tests/test_scigov_resilience.py -q` (24 hermetic tests -- fast rejection < 6.0, escalation >= 6.0, 402 latches Gemini with zero attempts routing to DeepSeek, DBLP Boolean sanitizer, Science.gov DNS isolation); `python src/utils/verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.18.4] - 2026-10-03 -- Self-Healing Ingestion Gateway & Autostart Profile Provisioning
 
 ### Added

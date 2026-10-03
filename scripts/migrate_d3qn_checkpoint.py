@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: migrate_d3qn_checkpoint.py
-Project: TALOS v5.18.4
+Project: TALOS v5.19.0
 Description:
     One-shot Net2Net tensor-surgery utility that migrates the trained DDDQN
     checkpoints in BOTH canonical locations (``models/dddqn_trained.pth`` and

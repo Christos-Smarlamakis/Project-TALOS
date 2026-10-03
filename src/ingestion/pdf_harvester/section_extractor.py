@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: section_extractor.py
-Project: TALOS v5.18.4
+Project: TALOS v5.19.0
 Description:
     Air-gapped PDF text extraction and smart section slicing for the Tier-2
     Quality Swarm. ``PDFSectionExtractor`` reads a locally cached PDF, extracts

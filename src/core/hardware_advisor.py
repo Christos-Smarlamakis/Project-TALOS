@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: hardware_advisor.py
-Project: TALOS v5.18.4
+Project: TALOS v5.19.0
 Description:
     Hardware-aware model advisor that translates raw GPU/CPU telemetry into
     a mathematical parameter budget and a concrete recommended model stack.
@@ -77,10 +77,11 @@ SOTA_RADAR: List[Dict] = [
 class HardwareModelAdvisor:
     """Compute a VRAM-based parameter budget and a tailored model stack.
 
-    The advisor reuses existing VRAM telemetry and exposes four capabilities:
+    The advisor reuses existing VRAM telemetry and exposes five capabilities:
     hardware profiling, mathematical parameter budgeting, role-based model
-    recommendations, and a best-effort SOTA discovery radar. All public
-    methods degrade gracefully when no GPU or network is available.
+    recommendations, a four-role SOTA model matcher, and a best-effort SOTA
+    discovery radar. All public methods degrade gracefully when no GPU or
+    network is available.
     """
 
     # ------------------------------------------------------------------
@@ -451,6 +452,176 @@ class HardwareModelAdvisor:
                 "yes" if entry["installed"] else "no",
             )
         console.print(radar_table)
+
+    # ------------------------------------------------------------------
+    # -- 4-Role SOTA Model Matcher (v5.19.0) ----------------------------
+    # ------------------------------------------------------------------
+
+    def get_role_based_matrix(self) -> Dict:
+        """Return the four-role scientific workload model matrix.
+
+        Categorizes the canonical model stack across four scientific workloads,
+        each with a local-hardware recommendation (GPU and CPU tiers) and a
+        Cloud Mesh counterpart. The local recommendation is selected against
+        the detected VRAM budget; the cloud model is fixed per the Universal
+        Cloud Mesh registry.
+
+        The four roles are:
+            - ``fast_screening``: cheap, low-latency relevance sieving.
+            - ``deep_reasoning_rigor``: heavy multi-step reasoning and rigor.
+            - ``code_audit_slicing``: source-slice audit and code synthesis.
+            - ``vector_embeddings``: semantic vector embedding generation.
+
+        Returns:
+            dict: Keys ``roles`` (list of per-role dictionaries), plus the
+                resolved ``hardware_profile`` and ``vram_budget``.
+        """
+        profile = self.get_hardware_profile()
+        budget = self.calculate_vram_budget(profile["total_vram_gb"])
+        has_gpu = bool(profile.get("has_cuda"))
+
+        def _gpu(candidate: str, cpu_fallback: str) -> str:
+            return candidate if has_gpu else cpu_fallback
+
+        roles = [
+            {
+                "role": "fast_screening",
+                "title": "Fast Screening Sieve",
+                "local_gpu": "llama3.1:8b",
+                "local_cpu": "qwen2.5:3b",
+                "local_recommended": _gpu("llama3.1:8b", "qwen2.5:3b"),
+                "cloud": "gemini-2.5-flash",
+            },
+            {
+                "role": "deep_reasoning_rigor",
+                "title": "Deep Reasoning Rigor",
+                "local_gpu": "qwen2.5:14b",
+                "local_cpu": "qwen2.5:3b",
+                "local_recommended": _gpu("qwen2.5:14b", "qwen2.5:3b"),
+                "cloud": "deepseek-reasoner",
+            },
+            {
+                "role": "code_audit_slicing",
+                "title": "Code Audit Slicing",
+                "local_gpu": "qwen2.5-coder:14b",
+                "local_cpu": "qwen2.5:3b",
+                "local_recommended": _gpu("qwen2.5-coder:14b", "qwen2.5:3b"),
+                "cloud": "deepseek-coder",
+            },
+            {
+                "role": "vector_embeddings",
+                "title": "Vector Embeddings",
+                "local_gpu": "nomic-embed-text",
+                "local_cpu": "nomic-embed-text",
+                "local_recommended": "nomic-embed-text",
+                "cloud": "text-embedding-3-small",
+            },
+        ]
+        return {
+            "roles": roles,
+            "hardware_profile": profile,
+            "vram_budget": budget,
+        }
+
+    def render_role_matrix(self) -> None:
+        """Render the four-role SOTA matrix as a styled Rich table.
+
+        Falls back to plain ``print`` lines when Rich is unavailable, so the
+        method never raises in a headless or minimal environment.
+        """
+        matrix = self.get_role_based_matrix()
+        try:
+            from rich.console import Console
+            from rich.table import Table
+            from rich.panel import Panel
+        except ImportError:
+            for role in matrix["roles"]:
+                print(f"{role['title']}: local={role['local_recommended']} "
+                      f"| cloud={role['cloud']}")
+            return
+        console = Console()
+        console.print(Panel(
+            "[bold bright_cyan]4-Role SOTA Model Matcher[/bold bright_cyan]\n"
+            "[dim]Scientific workload model matrix (local hardware + Cloud Mesh).[/dim]",
+            border_style="bright_cyan",
+        ))
+        table = Table(
+            title="Cognitive SOTA Role Matcher",
+            show_header=True,
+            border_style="cyan",
+        )
+        table.add_column("Role", style="dim cyan")
+        table.add_column("Workload", style="white")
+        table.add_column("Local (GPU)", style="green")
+        table.add_column("Local (CPU)", style="yellow")
+        table.add_column("Recommended Local", style="bright_green")
+        table.add_column("Cloud Mesh", style="bright_blue")
+        for role in matrix["roles"]:
+            table.add_row(
+                role["role"],
+                role["title"],
+                role["local_gpu"],
+                role["local_cpu"],
+                role["local_recommended"],
+                role["cloud"],
+            )
+        console.print(table)
+
+    def apply_recommended_models(self) -> bool:
+        """Persist the recommended 4-role model stack into the active profile.
+
+        Updates the ``ai_models`` block (fast edge, heavy reasoning, and cloud
+        fallback models) and records the full four-role matrix under a new
+        ``recommended_role_models`` key, then writes the active profile's
+        ``config.json`` atomically in pure UTF-8 (``ensure_ascii=False``).
+
+        Returns:
+            bool: True when the config was updated and persisted, else False.
+        """
+        matrix = self.get_role_based_matrix()
+        roles = {r["role"]: r for r in matrix["roles"]}
+
+        try:
+            from src.core.profile_manager import ProfileManager
+            config_path = ProfileManager().get_active_config_path()
+        except Exception:
+            return False
+
+        try:
+            import json
+            import os
+            with open(config_path, "r", encoding="utf-8") as fh:
+                config = json.load(fh)
+        except Exception:
+            return False
+
+        ai_models = config.setdefault("ai_models", {})
+        ai_models.setdefault("fast_edge", {})["model"] = (
+            roles["fast_screening"]["local_recommended"])
+        ai_models.setdefault("heavy_reasoning", {})["model"] = (
+            roles["deep_reasoning_rigor"]["local_recommended"])
+        cloud = ai_models.setdefault("cloud_fallback", {})
+        cloud["flash_model"] = roles["fast_screening"]["cloud"]
+        cloud["pro_model"] = roles["deep_reasoning_rigor"]["cloud"]
+        cloud["deepseek_model"] = roles["deep_reasoning_rigor"]["cloud"]
+
+        config["recommended_role_models"] = {
+            r["role"]: {
+                "title": r["title"],
+                "local": r["local_recommended"],
+                "cloud": r["cloud"],
+            } for r in matrix["roles"]
+        }
+
+        try:
+            tmp_path = config_path + ".tmp"
+            with open(tmp_path, "w", encoding="utf-8") as fh:
+                json.dump(config, fh, indent=2, ensure_ascii=False)
+            os.replace(tmp_path, config_path)
+            print(f"[OK] Recommended 4-role model stack applied to {config_path}")
+            return True
+        except Exception:
+            return False
 
 
 # -- Module-level convenience singleton ----------------------------------------
