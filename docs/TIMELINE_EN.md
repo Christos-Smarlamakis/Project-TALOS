@@ -4,9 +4,25 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-03 (v5.18.1 -- Autonomous Chaos Hardening, Fault Isolation & Dead Code Decommissioning)
+> **Last Updated:** 2026-10-03 (v5.18.2 -- Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray Hook & Desktop Provisioner)
 
 ---
+
+## Phase 74: Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray & Desktop Provisioner (v5.18.2)
+
+- [x] **Status:** COMPLETED (2026-10-03).
+
+- [x] **Net2Net DRL checkpoint repair sealed** -- `scripts/migrate_d3qn_checkpoint.py` is confirmed idempotent and the trained checkpoint `models/dddqn_trained.pth` is verified at the 18-source / 25-dim observation space (`lstm1.weight_ih_l0` [512, 25], `A.weight` [19, 32], `A.bias` [19], `state_dim=25`, `action_dim=19`), resolving the PyTorch forward-pass shape mismatch; `TalosDRLAgent(25, 19).act(np.zeros((1, 25)))` executes with zero errors.
+
+- [x] **Win32 close-to-tray hook** -- `src/utils/tray_icon.py:enable_close_to_tray()` subclasses the console WNDPROC and intercepts WM_CLOSE / SC_CLOSE to `ShowWindow(SW_HIDE)` with a single de-duplicated `[TRAY]` notice; `talos_service.py` installs the hook immediately at startup.
+
+- [x] **1-click Desktop Shortcut provisioner** -- `src/utils/desktop_shortcut.py:create_desktop_shortcut()` (PowerShell `WScript.Shell` COM, OneDrive-aware Desktop, `TALOS Research Hub.lnk`), wired via `talos.py --create-shortcut` and a Configuration & Profiles menu entry.
+
+- [x] **Autostart profile-target selector** -- `daemon_autostart.py:select_daemon_profile()` + `talos_service.py --profile <name>` activate the operator-selected SSOT profile on boot.
+
+- [x] **Version synced** -- 6 code files + docker-compose.yml (`talos:5.18.2`) + CITATION.cff (5.18.2, 2026-10-03) + metadata + 19 canonical docs to v5.18.2 (2026-10-03).
+
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.18.2), migrate_d3qn_checkpoint (strict load), TalosDRLAgent forward pass, talos.py --create-shortcut, verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 72: Ethical Academic PDF Harvester & Full-Text FTS5 Engine (v5.18.0)
 

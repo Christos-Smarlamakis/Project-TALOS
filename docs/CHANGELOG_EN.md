@@ -2,6 +2,28 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.18.2] - 2026-10-03 -- Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray Hook & Desktop Provisioner
+
+### Added
+
+- **Net2Net DRL checkpoint repair confirmed & sealed** (`scripts/migrate_d3qn_checkpoint.py` + `models/dddqn_trained.pth`): the trained DDDQN checkpoint is now canonically verified at the 18-source / 25-dimension observation space. The migration utility performs a Net2WiderNet "replicate-then-specialise" expansion of `lstm1.weight_ih_l0` from `[512, 21]` to `[512, 25]` -- the hour column (index 0) is position-invariant, the 14 legacy source columns are remapped by name to their canonical alphabetical positions, and the four newly introduced source columns (`hal_inria`, `nasa_ntrs`, `openaire`, `openreview`) are initialised with the column-mean prior of the existing source features; the two streak columns and the four provider-ratio columns are shifted to their trailing positions. The advantage head `A.weight` is widened to `[19, 32]` and `A.bias` to `[19]`, copying preserved source rows bit-for-bit and seeding the new source rows with the mean of the top-5 existing rows (L2-norm ranked) plus a +0.05 exploratory bias. Metadata is updated (`state_dim=25`, `action_dim=19`, 18 `source_names`), resolving the PyTorch forward-pass shape mismatch: `TalosDRLAgent(25, 19).act(np.zeros((1, 25)))` now executes with zero shape errors. The utility is idempotent -- re-running it against an already-migrated checkpoint verifies a strict `DuelingLSTM(25, 19)` load and exits without rewriting the file.
+
+- **Win32 Close-to-Tray window-procedure hook** (`src/utils/tray_icon.py` + `src/ai/drl/talos_service.py`): `enable_close_to_tray()` subclasses the console window procedure via `SetWindowLongPtrW(GWLP_WNDPROC)` and intercepts both `WM_CLOSE` (0x0010) and `WM_SYSCOMMAND`/`SC_CLOSE` (0xF060). On interception the daemon console is hidden with `ShowWindow(hwnd, SW_HIDE)` and the message is suppressed (return 0), so an accidental close never terminates the background daemon; the process can only be ended explicitly via the tray "Terminate Daemon" item or SIGINT. A single de-duplicated `[TRAY] Daemon console minimized to system tray. Research continues in background.` notice is emitted on the first hide. `talos_service.py` now installs this hook immediately at startup, independently of the optional pystray companion.
+
+- **1-click Desktop Shortcut provisioner** (`src/utils/desktop_shortcut.py`): `create_desktop_shortcut()` resolves the Windows Desktop (OneDrive-aware) and materialises `TALOS Research Hub.lnk` targeting `run_talos.bat` with the project root as working directory, via a zero-dependency PowerShell `WScript.Shell` COM dispatch. Exposed through `talos.py --create-shortcut` and a Configuration & Profiles menu entry.
+
+- **Autostart profile-target selector** (`src/utils/daemon_autostart.py` + `src/ai/drl/talos_service.py`): `select_daemon_profile()` queries `ProfileManager().list_profiles()` and prompts for the 24/7 daemon's target profile, embedding `--profile <name>` into the generated `talos_daemon_boot.bat` and Startup `.lnk`. `talos_service.py` accepts `--profile <name>` and activates the selected SSOT via `ProfileManager().set_active_profile()` before loading config/env/model.
+
+### Changed
+
+- **Version strings synchronized to 5.18.2** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py` version assertion), `docker-compose.yml` (`talos:5.18.2`), `CITATION.cff` (version 5.18.2, date-released 2026-10-03), `config.template.json`, tray/visualizer/wizard/strategy/diagnostics/bibtex/help metadata, `src/core/`, `src/prisma/`, `src/search/`, `src/ingestion/pdf_harvester/` docstrings, and all 19 canonical documentation files (dated 2026-10-03).
+
+- **ROADMAP.md**: current version advanced to v5.18.2 (Complete, 2026-10-03); CORTEX & n8n orchestration retained at v5.19.0.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.2); `scripts/migrate_d3qn_checkpoint.py` (`DuelingLSTM(25, 19)` loads strictly); `TalosDRLAgent(25, 19).act(np.zeros((1, 25)))` forward pass (exit 0); `python talos.py --create-shortcut` (exit 0); `python src/utils/verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.18.1] - 2026-10-03 -- Autonomous Chaos Hardening, Fault Isolation & Dead Code Decommissioning
 
 ### Added

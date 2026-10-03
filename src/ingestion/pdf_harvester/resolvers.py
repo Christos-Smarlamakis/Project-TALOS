@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: resolvers.py
-Project: TALOS v5.18.1
+Project: TALOS v5.18.2
 Description:
     Cascading Open Access (OA) and preprint URL resolver for the Ethical
     Academic PDF Harvester. Given a paper metadata dictionary, ``resolve_oa_url``
@@ -48,7 +48,7 @@ from typing import Optional, Tuple
 
 # -- Polite academic User-Agent (University of the Peloponnese). -- #
 ACADEMIC_USER_AGENT = (
-    "TALOS-Academic-Research-Bot/5.18.1 "
+    "TALOS-Academic-Research-Bot/5.18.2 "
     "(University of the Peloponnese; mailto:c.smarlamakis@uop.gr)"
 )
 

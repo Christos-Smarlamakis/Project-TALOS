@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: daemon_autostart.py
-Project: TALOS v5.10.6
+Project: TALOS v5.18.2
 Description:
     Windows OS autostart orchestrator for the TALOS 24/7 autonomous daemon.
     Generates a self-contained boot batch script (talos_daemon_boot.bat) that
@@ -9,6 +9,12 @@ Description:
     CPU server, and launches the daemon. It then registers a Windows
     Startup-folder shortcut (via pywin32 Shell COM) so the daemon survives
     reboots with a minimized console and a system icon.
+
+    v5.18.2 adds an interactive research-profile target selector: the operator
+    chooses which profile the 24/7 daemon activates on boot, and the selected
+    profile is embedded as a ``--profile <name>`` argument in both the boot
+    batch script and the Startup shortcut so the daemon boots into the correct
+    isolated workspace SSOT.
 
     Key design decisions:
     - The generated .bat is human-auditable and lives at the project root.
@@ -35,7 +41,7 @@ def _project_root():
     return str(Path(__file__).resolve().parent.parent.parent)
 
 
-def generate_boot_batch():
+def generate_boot_batch(profile_name=None):
     """Generate talos_daemon_boot.bat in the project root.
 
     The batch script sets a clean console, starts the local Fast Edge CPU
@@ -43,6 +49,13 @@ def generate_boot_batch():
     inference, and launches the daemon. All Python invocations use the
     absolute path of the current interpreter (sys.executable, quoted) so the
     correct conda environment is always used without relying on PATH.
+
+    When ``profile_name`` is supplied (v5.18.2), a ``--profile <name>``
+    argument is appended to the daemon invocation so the boot-time daemon
+    activates the operator-selected research profile SSOT.
+
+    Args:
+        profile_name (str, optional): Target research profile for the daemon.
 
     Returns:
         str: Absolute path to the generated batch script.
@@ -68,25 +81,68 @@ def generate_boot_batch():
         'if %ERRORLEVEL%==0 start /B "" ' + py + ' -m llama_cpp.server --port ' + str(CPU_SERVER_PORT),
         "",
         "REM 2. Launch the 24/7 autonomous research daemon.",
-        py + ' src/ai/drl/talos_service.py',
+        py + ' src/ai/drl/talos_service.py' + (
+            ' --profile ' + profile_name if profile_name else ''
+        ),
     ]
     with open(bat_path, "w", encoding="utf-8", newline="") as f:
         f.write(os.linesep.join(lines) + os.linesep)
     return bat_path
 
 
-def install_windows_autostart():
+def select_daemon_profile():
+    """Prompt the operator to choose the target research profile for the daemon.
+
+    Queries ``ProfileManager().list_profiles()`` and renders a questionary
+    select prompt defaulting to the current active profile. When no profiles
+    exist, the active profile is used; when questionary is unavailable (for
+    example a headless boot), the active profile is returned as-is.
+
+    Returns:
+        str: The selected profile name (never None).
+    """
+    try:
+        from src.core.profile_manager import ProfileManager
+        pm = ProfileManager()
+        profiles = pm.list_profiles()
+        active = pm.get_active_profile_name()
+    except Exception:
+        return "default"
+
+    if not profiles:
+        return active
+    if active and active not in profiles:
+        profiles.insert(0, active)
+
+    try:
+        import questionary
+        choice = questionary.select(
+            "Select the target research profile for the 24/7 background daemon:",
+            choices=profiles,
+            default=active,
+        ).ask()
+        return choice or active
+    except Exception:
+        return active
+
+
+def install_windows_autostart(profile_name=None):
     """Install the TALOS daemon into the Windows Startup folder.
 
     Generates talos_daemon_boot.bat and creates a .lnk shortcut named
     "TALOS Autonomous Daemon" in the user's Startup folder with a system
-    icon (shell32.dll) and a minimized window style.
+    icon (shell32.dll) and a minimized window style. When ``profile_name``
+    is supplied (v5.18.2), the selected research profile is embedded as a
+    ``--profile <name>`` argument in both the boot batch and the shortcut.
+
+    Args:
+        profile_name (str, optional): Target research profile for the daemon.
 
     Returns:
         str | None: Path to the created shortcut, the boot batch path if the
             shortcut could not be created, or None on failure.
     """
-    bat_path = generate_boot_batch()
+    bat_path = generate_boot_batch(profile_name=profile_name)
     try:
         import win32com.client
     except ImportError:
@@ -109,7 +165,9 @@ def install_windows_autostart():
         shortcut.WorkingDirectory = os.path.dirname(bat_path)
         shortcut.IconLocation = "shell32.dll, 43"
         shortcut.WindowStyle = 7  # Minimized
-        shortcut.Description = "TALOS Autonomous Research Daemon (24/7)"
+        shortcut.Description = "TALOS Autonomous Research Daemon (24/7)" + (
+            (" - profile: " + profile_name) if profile_name else ""
+        )
         shortcut.save()
     except Exception as e:
         print(f"  [WARN] Could not create Startup shortcut: {e}")
@@ -120,4 +178,5 @@ def install_windows_autostart():
 
 
 if __name__ == "__main__":
-    install_windows_autostart()
+    profile_name = select_daemon_profile()
+    install_windows_autostart(profile_name=profile_name)

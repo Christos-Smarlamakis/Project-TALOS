@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: migrate_d3qn_checkpoint.py
-Project: TALOS v5.15.4
+Project: TALOS v5.18.2
 Description:
     One-shot Net2Net tensor-surgery utility that migrates the trained DDDQN
     checkpoint ``models/dddqn_trained.pth`` from the legacy 14-source action
@@ -30,6 +30,10 @@ Description:
     ``action_dim=19``, ``source_names`` expanded to 18), and the result is
     verified by instantiating ``DuelingLSTM(input_dim=25, output_dim=19)`` and
     running ``load_state_dict(strict=True)``.
+
+    v5.18.2: this utility is confirmed as the canonical Net2Net repair tool and
+    is now idempotent -- re-running it against an already-migrated 18-source
+    checkpoint verifies the strict load and exits without rewriting the file.
 
 Dependencies:
     - torch: tensor loading, surgical expansion, and re-serialisation.
@@ -130,6 +134,19 @@ def migrate():
     num_old_sources = len(old_source_names)
     new_action_dim = len(TARGET_SOURCES) + 1                          # 18 sources + sleep = 19
     new_state_dim = 1 + len(TARGET_SOURCES) + 2 + _PROVIDER_COUNT     # 25
+
+    # -- v5.18.2: idempotency guard. When the checkpoint is already at the
+    #    canonical 18-source / 25-dim layout, no surgery is required; verify a
+    #    strict load and exit without rewriting the file. --
+    if (num_old_sources == len(TARGET_SOURCES)
+            and old_state_dim == new_state_dim
+            and old_action_dim == new_action_dim):
+        from src.ai.drl.drl_networks import DuelingLSTM
+        _model = DuelingLSTM(input_dim=new_state_dim, output_dim=new_action_dim)
+        _model.load_state_dict(weights)
+        print("[VERIFY] Checkpoint already at canonical {} sources / {} state dims / {} actions; no surgery required.".format(
+            num_old_sources, new_state_dim, new_action_dim))
+        return
 
     # -- 1. Expand the advantage head (output layer). --
     adv_weight_key, adv_bias_key, adv_action_dim, hidden_dim = _locate_advantage_head(weights)

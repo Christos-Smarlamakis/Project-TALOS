@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.18.1
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.18.2
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.18.1 -- Αυτόνομη Σκλήρυνση Chaos, Απομόνωση Σφαλμάτων & Απομάκρυνση Νεκρού Κώδικα)
+> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.18.2 -- Επισκευή Checkpoint DRL Net2Net, Hook Close-to-Tray Win32 & Πάροχος Συντόμευσης Επιφάνειας Εργασίας)
 
 ---
 
@@ -206,6 +206,12 @@ src/utils/help_system.py
   +-- src/utils/ui_theme.py
   +-- rich, questionary, webbrowser
 
+src/utils/desktop_shortcut.py
+  +-- os, subprocess (stdlib); rich (lazy)
+
+src/utils/daemon_autostart.py
+  +-- src/core/profile_manager.py (lazy); win32com.client, questionary (lazy)
+
 src/prisma/dspy_modules.py
   +-- src/prisma/dspy_signatures.py
   +-- src/prisma/swarm_evaluators.py
@@ -286,6 +292,8 @@ src/core/ai_manager.py
 | **Μηχανή Αξιολόγησης Ποιότητας PRISMA & Διαξονικής Επιστημονικής Αυστηρότητας (v5.16.0)** | `src/prisma/quality_appraisal.py`, `src/core/database_manager.py`, `src/utils/bibtex_exporter.py` | `KitchenhamRubric` / `QualityAppraisalResult` / `PrismaQualityAppraiser`· `map_evidence_quadrant()` (2D τεταρτημόρια, τ_rel=7.0 / τ_qual=7.5)· `appraise_paper()` / `appraise_candidates_batch(force_reappraise)` (ThreadPoolExecutor + `Semaphore(2)`)· `update_paper_quality()` (στήλες `quality_score`/`quality_rubric_json`/`evidence_quadrant`)· `export_library(min_quality, quadrant)` (διπλό φίλτρο BibTeX + πεδίο `note`)· CLI `--appraise-quality [--force]` + TUI Ομάδα 3 Επιλογή 15 (ερώτηση επαναξιολόγησης v5.17.1) |
 | **Ενθέσιμο Μητρώο Παρόχων & Σύμβουλος Μοντέλων με Επίγνωση Υλικού (v5.16.2)** | `src/core/provider_registry.py`, `src/core/hardware_advisor.py`, `src/core/ai_manager.py`, `talos.py`, `src/utils/help_system.py` | `ProviderRegistry` (Αρχή Ανοικτού-Κλειστού, 10 πάροχοι)· `HardwareModelAdvisor` (προφίλ υλικού, τμηματικός προϋπολογισμός VRAM 4-bit, στοίβα ανά ρόλο, ραντάρ SOTA)· `AIManager.list_active_providers()` / `get_provider_descriptor()` (μηδενική παλινδρόμηση)· CLI `--hardware-advisor` / `--recommend-models` + TUI Επιλογή 8 |
 
+| **Επισκευή Checkpoint Net2Net, Close-to-Tray Win32, Συντόμευση Επιφάνειας Εργασίας & Επιλογέας Προφίλ Autostart (v5.18.2)** | `scripts/migrate_d3qn_checkpoint.py`, `src/utils/tray_icon.py`, `src/utils/desktop_shortcut.py`, `src/utils/daemon_autostart.py`, `src/ai/drl/talos_service.py`, `talos.py` | Επιβεβαίωση/σφράγιση idempotent της μετανάστευσης Net2Net (18 πηγές / 25 διαστάσεις, forward pass χωρίς σφάλματα)· `enable_close_to_tray()` (WNDPROC, SW_HIDE + ειδοποίηση `[TRAY]`)· `create_desktop_shortcut()` (`TALOS Research Hub.lnk` μέσω COM `WScript.Shell`)· `select_daemon_profile()` + `--profile <name>` |
+
 ## 9. Βοηθητικά Αρχεία
 
 | Αρχείο/Φάκελος | Ρόλος |
@@ -324,8 +332,8 @@ src/core/ai_manager.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.18.1 -- Αυτόνομη Σκλήρυνση Chaos, Απομόνωση Σφαλμάτων & Απομάκρυνση Νεκρού Κώδικα)
-> **Έκδοση Project:** v5.18.1
-> **Συνολικά .py modules στο src/:** 102 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 6 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 8 + mcp_server 1)
+> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.18.2 -- Επισκευή Checkpoint DRL Net2Net, Hook Close-to-Tray Win32 & Πάροχος Συντόμευσης Επιφάνειας Εργασίας)
+> **Έκδοση Project:** v5.18.2
+> **Συνολικά .py modules στο src/:** 103 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 6 + ingestion/sources 18 + search 3 + integration 3 + utils 23 + api 4 + prisma 8 + mcp_server 1)
 
 

@@ -107,9 +107,10 @@ from src.utils.evaluation_history import record_evaluation, verdict_for_score, n
 # -- System tray companion (optional; degrades gracefully when pystray is
 #    missing so headless or non-Windows daemons keep working). --
 try:
-    from src.utils.tray_icon import launch_tray_icon_async
+    from src.utils.tray_icon import launch_tray_icon_async, enable_close_to_tray
 except ImportError:
     launch_tray_icon_async = None
+    enable_close_to_tray = None
 
 # -- Rich console instance for the daemon TUI --
 console = Console()
@@ -700,16 +701,36 @@ def main():
     """
     global _shutdown_requested
 
-    # ── Profile detection ───────────────────────────────────────────────────
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    active_profile = "default"
-    profile_file = os.path.join(project_root, '_profiles', 'active_profile.txt')
-    if os.path.exists(profile_file):
+    # -- v5.18.2: install the Win32 close-to-tray window hook immediately on
+    #    startup so an accidental console close (WM_CLOSE / SC_CLOSE) hides the
+    #    daemon instead of terminating it. This runs independently of the
+    #    optional pystray tray-icon companion so the protection is always on. --
+    if enable_close_to_tray is not None:
         try:
-            with open(profile_file, 'r') as f:
-                active_profile = f.read().strip()
+            if enable_close_to_tray():
+                console.print("[green][TRAY] Close-to-tray window hook installed.[/green]")
         except Exception:
             pass
+
+    # ── Profile detection (v5.18.2: optional --profile override) ─────────────
+    # The target profile resolves from an explicit --profile <name> flag,
+    # otherwise from the active-profile SSOT marker. ProfileManager is the
+    # single source of truth: set_active_profile validates the name, scaffolds
+    # the directory, persists the marker, and copies the profile config.json
+    # into the root working copy so every downstream subsystem (env, model,
+    # config) reads the same isolated workspace.
+    try:
+        from src.core.profile_manager import ProfileManager
+        _pm = ProfileManager()
+        if "--profile" in sys.argv:
+            idx = sys.argv.index("--profile")
+            if idx + 1 < len(sys.argv):
+                requested = sys.argv[idx + 1].strip()
+                if requested:
+                    _pm.set_active_profile(requested)
+        active_profile = _pm.get_active_profile_name()
+    except Exception:
+        active_profile = "default"
 
     console.print(Panel(
         "Service Active / 24-7 Mode",

@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.18.1
+Project: TALOS v5.18.2
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -50,6 +50,13 @@ Description:
     src/analysis/citation_analyzer.py, a fault-tolerant optional-dependency
     import guard in src/ingestion/sources/pubmed_source.py, and the safe
     decommissioning of the legacy src/ingestion/pdf_downloader.py module.
+
+    v5.18.2: Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray & Desktop
+    Provisioner -- confirmation of the 18-source / 25-dim DDDQN tensor surgery
+    on models/dddqn_trained.pth, a Win32 close-to-tray window-procedure hook
+    that minimizes the daemon console (SW_HIDE) instead of terminating it, a
+    1-click Desktop Shortcut provisioner (--create-shortcut), and an
+    interactive autostart profile-target selector (--profile).
 
     v5.16.2: Pluggable Provider Registry & Hardware-Aware Model Advisor -- a
     modular adapter-based provider registry (src/core/provider_registry.py)
@@ -1046,7 +1053,8 @@ def profile_settings_menu(python_exe):
             "9. Model Provisioning CLI",
             "10. API Keys Management",
             "11. API Key Diagnostics",
-            "12. Back / Return to Main Menu"
+            "12. Create Desktop Shortcut (1-Click Launcher)",
+            "13. Back / Return to Main Menu"
         ])
         if not c or "Back" in c: return
         if c == "1. Research Setup Wizard (Full Onboarding & Reconfiguration)": run_script("research_setup_wizard.py", python_exe)
@@ -1066,6 +1074,9 @@ def profile_settings_menu(python_exe):
         elif c == "9. Model Provisioning CLI": run_script("model_provisioner.py", python_exe)
         elif c == "10. API Keys Management": api_keys_menu(python_exe)
         elif c == "11. API Key Diagnostics": run_script("api_health_check.py", python_exe)
+        elif c == "12. Create Desktop Shortcut (1-Click Launcher)":
+            from src.utils.desktop_shortcut import create_desktop_shortcut
+            create_desktop_shortcut()
         safe_pause("\nPress Enter...")
 
 # -- v5.9.15: Silent Fast Boot --
@@ -2629,6 +2640,12 @@ def _handle_cli_flags(argv):
     # -- v5.18.0: Open a downloaded local PDF (--open-pdf [paper_id]). -- #
     if "--open-pdf" in argv:
         _open_local_pdf(_flag_value(argv, "--open-pdf"))
+        return True
+    # -- v5.18.2: 1-click Desktop Shortcut provisioner (--create-shortcut). -- #
+    if "--create-shortcut" in argv:
+        from src.utils.desktop_shortcut import create_desktop_shortcut
+        if not create_desktop_shortcut():
+            sys.exit(1)
         return True
     return False
 

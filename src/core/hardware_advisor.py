@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: hardware_advisor.py
-Project: TALOS v5.18.1
+Project: TALOS v5.18.2
 Description:
     Hardware-aware model advisor that translates raw GPU/CPU telemetry into
     a mathematical parameter budget and a concrete recommended model stack.

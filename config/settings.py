@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.18.1
+Project: TALOS v5.18.2
 Description:
-    Canonical configuration hub for TALOS v5.18.1. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.18.2. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
@@ -35,6 +35,10 @@ Description:
       src/analysis/citation_analyzer.py, a fault-tolerant optional-dependency
       import guard in src/ingestion/sources/pubmed_source.py, and the safe
       decommissioning of the legacy src/ingestion/pdf_downloader.py module.
+    - v5.18.2: Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray & Desktop
+      Provisioner -- 18-source / 25-dim DDDQN tensor surgery confirmation,
+      a Win32 close-to-tray window-procedure hook, a 1-click Desktop Shortcut
+      provisioner, and an interactive autostart profile-target selector.
     - Cloud LLM providers (Gemini, NVIDIA NIM, Groq, Cerebras, GitHub Models,
       Mistral, OpenRouter, DeepSeek, HuggingFace) are configured via environment
       variables for optional redundancy/failover (v5.9.18 Universal Cloud Mesh).
@@ -206,7 +210,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.18.1"
+TALOS_VERSION = "5.18.2"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.

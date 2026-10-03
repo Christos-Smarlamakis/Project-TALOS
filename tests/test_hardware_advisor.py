@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_hardware_advisor.py
-Project: TALOS v5.18.1
+Project: TALOS v5.18.2
 Description:
     Unit tests for the HardwareModelAdvisor (v5.16.2). Verifies the
     piecewise 4-bit-quantization VRAM parameter budget, role-based model

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: harvester.py
-Project: TALOS v5.18.1
+Project: TALOS v5.18.2
 Description:
     Ethical Academic PDF Harvester. Implements a fault-tolerant, fully local
     download pipeline that resolves a legal Open Access or preprint full-text

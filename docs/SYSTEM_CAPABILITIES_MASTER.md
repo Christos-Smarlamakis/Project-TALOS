@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.17.0
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.18.2
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-03
-> **Version:** v5.18.1 -- Autonomous Chaos Hardening, Fault Isolation & Dead Code Decommissioning
+> **Version:** v5.18.2 -- Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray Hook & Desktop Provisioner
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -1230,6 +1230,20 @@ For each evaluated paper, the AI generates:
 - **Autonomous Red Tester audit** (`src/ai/testing/red_tester.py`): a 5-episode Non-Stationary Multi-Armed Bandit run across 95 discovered CLI/API arms confirmed zero unhandled crashes post-guard, with a clean Q-table update and stable `citation_analyzer.py` resilience.
 
 **Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.1), `python src/analysis/citation_analyzer.py --help` (exit 0, no `NoConsoleScreenBufferError`), `python src/ai/testing/red_tester.py 5` (0 unhandled crashes), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
+
+### 15.47 Net2Net Input Tensor Surgery, Win32 Close-to-Tray Hook, and Desktop Workspace Provisioning (v5.18.2)
+
+**Overview:** v5.18.2 consolidates three operator-facing resilience and provisioning capabilities plus a Net2Net checkpoint repair. It seals the 18-source / 25-dimension DDDQN tensor surgery on `models/dddqn_trained.pth`, installs a Win32 close-to-tray window-procedure hook that minimizes the daemon console instead of terminating it, provisions a 1-click Desktop Shortcut launcher, and adds an interactive autostart profile-target selector.
+
+- **Net2Net DRL checkpoint repair** (`scripts/migrate_d3qn_checkpoint.py`): an idempotent Net2WiderNet "replicate-then-specialise" expansion of `lstm1.weight_ih_l0` from `[512, 21]` to `[512, 25]` (hour column invariant; 14 legacy source columns remapped by name; four new source columns seeded with the column-mean prior; streak and provider columns shifted), plus advantage-head widening `A.weight` to `[19, 32]` / `A.bias` to `[19]` (preserved rows copied bit-for-bit, new rows seeded with the top-5 L2-norm mean + 0.05 exploratory bias). Metadata is updated (`state_dim=25`, `action_dim=19`, 18 `source_names`) and the PyTorch forward pass `TalosDRLAgent(25, 19).act(np.zeros((1, 25)))` now executes with zero shape errors.
+
+- **Win32 close-to-tray window hook** (`src/utils/tray_icon.py`): `enable_close_to_tray()` subclasses the console WNDPROC via `SetWindowLongPtrW(GWLP_WNDPROC)` and intercepts `WM_CLOSE` (0x0010) and `WM_SYSCOMMAND`/`SC_CLOSE` (0xF060), hiding the console with `ShowWindow(hwnd, SW_HIDE)` and emitting a single de-duplicated `[TRAY]` notice. `talos_service.py` installs the hook immediately at startup, independently of the optional pystray companion.
+
+- **1-click Desktop Shortcut provisioner** (`src/utils/desktop_shortcut.py`): `create_desktop_shortcut()` resolves the Windows Desktop (OneDrive-aware) and materialises `TALOS Research Hub.lnk` targeting `run_talos.bat` via a zero-dependency PowerShell `WScript.Shell` COM dispatch; wired through `talos.py --create-shortcut` and a Configuration & Profiles menu entry.
+
+- **Autostart profile-target selector** (`src/utils/daemon_autostart.py` + `src/ai/drl/talos_service.py`): `select_daemon_profile()` queries `ProfileManager().list_profiles()` and embeds `--profile <name>` in the generated `talos_daemon_boot.bat` and Startup `.lnk`; `talos_service.py` accepts `--profile <name>` and activates the SSOT via `ProfileManager().set_active_profile()` before loading config/env/model.
+
+**Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.2), `scripts/migrate_d3qn_checkpoint.py` (strict `DuelingLSTM(25, 19)` load), `TalosDRLAgent(25, 19).act(...)` forward pass (exit 0), `python talos.py --create-shortcut` (exit 0), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
 
 ---
 

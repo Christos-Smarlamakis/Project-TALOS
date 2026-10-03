@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: tray_icon.py
-Project: TALOS v5.18.1
+Project: TALOS v5.18.2
 Description:
     Desktop Control Hub system tray companion for the TALOS autonomous research
     daemon. It renders a 16x16 navy/cyan icon and exposes a seven-item context
@@ -14,6 +14,10 @@ Description:
     procedure is subclassed so that WM_CLOSE and WM_SYSCOMMAND/SC_CLOSE hide
     the daemon console (SW_HIDE) instead of terminating the background
     process.
+
+    v5.18.2 emits a single [TRAY] minimization notice when the hook fires so
+    the operator receives explicit confirmation that research continues in
+    the background after the console closes to the tray.
 
     The visualizer, Swagger docs, and instant-search actions self-heal the
     FastAPI backend first: they probe http://127.0.0.1:8001/api/v1/health and,
@@ -51,7 +55,7 @@ SWAGGER_URL = API_BASE_URL + "/docs"
 SCRAPE_TRIGGER_URL = API_BASE_URL + "/api/v1/scrape/trigger"
 
 # -- Canonical tray tooltip title --
-TRAY_TITLE = "TALOS v5.18.1 | Research Intelligence Mesh"
+TRAY_TITLE = "TALOS v5.18.2 | Research Intelligence Mesh"
 
 
 def _project_root():
@@ -216,6 +220,25 @@ def _toggle_console_visibility():
 #    window remains subclassed. --
 _CLOSE_TO_TRAY_PROC = None
 
+# -- v5.18.2: de-duplication flag for the minimize-to-tray notice so repeated
+#    WM_CLOSE / SC_CLOSE messages never spam the hidden console. --
+_TRAY_HIDE_NOTIFIED = False
+
+
+def _log_minimized_to_tray():
+    """Emit a single console notice when the daemon minimizes to the tray.
+
+    De-duplicated via a module-level flag. The notice is written to stdout
+    (captured by the daemon log) so the operator has an auditable record that
+    research continued in the background after the console closed.
+    """
+    global _TRAY_HIDE_NOTIFIED
+    if _TRAY_HIDE_NOTIFIED:
+        return
+    _TRAY_HIDE_NOTIFIED = True
+    print("[TRAY] Daemon console minimized to system tray. "
+          "Research continues in background.")
+
 
 def enable_close_to_tray():
     """Intercept the console window's close button to minimize to tray.
@@ -273,11 +296,9 @@ def enable_close_to_tray():
 
         def _wnd_proc(hwnd_, msg, wparam, lparam):
             # -- WM_CLOSE or WM_SYSCOMMAND/SC_CLOSE: hide instead of terminate --
-            if msg == WM_CLOSE:
+            if msg == WM_CLOSE or (msg == WM_SYSCOMMAND and (wparam & 0xFFF0) == SC_CLOSE):
                 user32.ShowWindow(hwnd_, SW_HIDE)
-                return 0
-            if msg == WM_SYSCOMMAND and (wparam & 0xFFF0) == SC_CLOSE:
-                user32.ShowWindow(hwnd_, SW_HIDE)
+                _log_minimized_to_tray()
                 return 0
             return user32.CallWindowProcW(original_proc, hwnd_, msg, wparam, lparam)
 

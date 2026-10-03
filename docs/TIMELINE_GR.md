@@ -4,9 +4,25 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.18.1 -- Αυτόνομη Σκλήρυνση Chaos, Απομόνωση Σφαλμάτων & Απομάκρυνση Νεκρού Κώδικα)
+> **Τελευταία Ενημέρωση:** 2026-10-03 (v5.18.2 -- Επισκευή Checkpoint DRL Net2Net, Hook Close-to-Tray Win32 & Πάροχος Συντόμευσης Επιφάνειας Εργασίας)
 
 ---
+
+## Φάση 74: Επισκευή Checkpoint DRL Net2Net, Close-to-Tray Win32 & Πάροχος Επιφάνειας Εργασίας (v5.18.2)
+
+- [x] **Κατάσταση:** ΟΛΟΚΛΗΡΩΜΕΝΟ (2026-10-03).
+
+- [x] **Σφράγιση επισκευής checkpoint DRL Net2Net** -- το `scripts/migrate_d3qn_checkpoint.py` επιβεβαιώνεται idempotent και το checkpoint `models/dddqn_trained.pth` επαληθεύεται στον χώρο 18 πηγών / 25 διαστάσεων (`lstm1.weight_ih_l0` [512, 25], `A.weight` [19, 32], `A.bias` [19], `state_dim=25`, `action_dim=19`), επιλύοντας την ασυμφωνία διαστάσεων του forward pass· το `TalosDRLAgent(25, 19).act(np.zeros((1, 25)))` εκτελείται με μηδενικά σφάλματα.
+
+- [x] **Hook close-to-tray Win32** -- η `src/utils/tray_icon.py:enable_close_to_tray()` υποκαθιστά το WNDPROC της κονσόλας και αναχαιτίζει WM_CLOSE / SC_CLOSE σε `ShowWindow(SW_HIDE)` με μία ειδοποίηση `[TRAY]`· το `talos_service.py` εγκαθιστά το hook αμέσως κατά την εκκίνηση.
+
+- [x] **Πάροχος συντόμευσης επιφάνειας εργασίας 1 κλικ** -- `src/utils/desktop_shortcut.py:create_desktop_shortcut()` (COM `WScript.Shell` PowerShell, επιφάνεια εργασίας με επίγνωση OneDrive, `TALOS Research Hub.lnk`), συνδεδεμένο μέσω `talos.py --create-shortcut` και επιλογής στο μενού Configuration & Profiles.
+
+- [x] **Επιλογέας προφίλ-στόχου autostart** -- `daemon_autostart.py:select_daemon_profile()` + `talos_service.py --profile <name>` ενεργοποιούν το επιλεγμένο προφίλ SSOT κατά την εκκίνηση.
+
+- [x] **Συγχρονισμός έκδοσης** -- 6 αρχεία κώδικα + docker-compose.yml (`talos:5.18.2`) + CITATION.cff (5.18.2, 2026-10-03) + μεταδεδομένα + 19 κανονικά έγγραφα σε v5.18.2 (2026-10-03).
+
+- [x] **Πέρασαν οι πύλες επαλήθευσης** -- compileall, test_system_integrity, test_talos_version (5.18.2), migrate_d3qn_checkpoint (αυστηρή φόρτωση), forward pass TalosDRLAgent, talos.py --create-shortcut, verify_dependency_map --ci (έξοδος 0), bash -n, σάρωση UTF-8 (0 U+FFFD).
 
 ## Φάση 72: Ηθικός Συλλέκτης Ακαδημαϊκών PDF & Μηχανή Πλήρους Κειμένου FTS5 (v5.18.0)
 

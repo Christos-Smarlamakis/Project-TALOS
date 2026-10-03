@@ -2,6 +2,28 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.18.2] - 2026-10-03 -- Επισκευή Checkpoint DRL Net2Net, Hook Close-to-Tray Win32 & Πάροχος Συντόμευσης Επιφάνειας Εργασίας
+
+### Προστέθηκε
+
+- **Επισκευή checkpoint DRL Net2Net επιβεβαιωμένη & σφραγισμένη** (`scripts/migrate_d3qn_checkpoint.py` + `models/dddqn_trained.pth`): το εκπαιδευμένο checkpoint DDDQN επαληθεύεται πλέον κανονικά στον χώρο παρατήρησης 18 πηγών / 25 διαστάσεων. Το βοηθητικό μετανάστευσης εκτελεί επέκταση Net2WiderNet «αναπαραγωγή-και-εξειδίκευση» του `lstm1.weight_ih_l0` από `[512, 21]` σε `[512, 25]` -- η στήλη ώρας (δείκτης 0) είναι αμετάβλητη ως προς τη θέση, οι 14 παλαιές στήλες πηγών επαναχαρτογραφούνται ονομαστικά στις κανονικές αλφαβητικές θέσεις τους, και οι τέσσερις νέες στήλες πηγών (`hal_inria`, `nasa_ntrs`, `openaire`, `openreview`) αρχικοποιούνται με την πρότερη μέση τιμή των υπαρχουσών στηλών· οι δύο στήλες σερί και οι τέσσερις στήλες αναλογιών παρόχων μετατοπίζονται στις τελικές θέσεις τους. Η κεφαλή πλεονεκτήματος `A.weight` διευρύνεται σε `[19, 32]` και το `A.bias` σε `[19]`, αντιγράφοντας bit-προς-bit τις διατηρημένες γραμμές πηγών και σπέρνοντας τις νέες γραμμές με τη μέση τιμή των κορυφαίων 5 υπαρχουσών γραμμών (κατάταξη L2-norm) συν +0,05 εξερευνητική προκατάληψη. Τα μεταδεδομένα ενημερώνονται (`state_dim=25`, `action_dim=19`, 18 `source_names`), επιλύοντας την ασυμφωνία διαστάσεων του forward pass: το `TalosDRLAgent(25, 19).act(np.zeros((1, 25)))` εκτελείται πλέον με μηδενικά σφάλματα. Το βοηθητικό είναι idempotent -- η επανεκτέλεσή του σε ήδη μεταναστευμένο checkpoint επαληθεύει αυστηρή φόρτωση `DuelingLSTM(25, 19)` και εξέρχεται χωρίς επανεγγραφή.
+
+- **Hook Win32 Close-to-Tray** (`src/utils/tray_icon.py` + `src/ai/drl/talos_service.py`): η `enable_close_to_tray()` υποκαθιστά τη διαδικασία παραθύρου της κονσόλας μέσω `SetWindowLongPtrW(GWLP_WNDPROC)` και αναχαιτίζει τόσο το `WM_CLOSE` (0x0010) όσο και το `WM_SYSCOMMAND`/`SC_CLOSE` (0xF060). Κατά την αναχαίτιση η κονσόλα κρύβεται με `ShowWindow(hwnd, SW_HIDE)` και το μήνυμα καταστέλλεται (επιστροφή 0), ώστε ένα τυχαίο κλείσιμο να μην τερματίζει ποτέ τον δαίμονα· η διαδικασία μπορεί να τερματιστεί μόνο ρητά μέσω του στοιχείου «Terminate Daemon» του tray ή SIGINT. Μία μοναδική ειδοποίηση `[TRAY] Daemon console minimized to system tray. Research continues in background.` εκδίδεται στην πρώτη απόκρυψη. Το `talos_service.py` εγκαθιστά πλέον αυτό το hook αμέσως κατά την εκκίνηση, ανεξάρτητα από το προαιρετικό pystray.
+
+- **Πάροχος συντόμευσης επιφάνειας εργασίας 1 κλικ** (`src/utils/desktop_shortcut.py`): η `create_desktop_shortcut()` επιλύει την επιφάνεια εργασίας των Windows (με επίγνωση OneDrive) και δημιουργεί τη συντόμευση `TALOS Research Hub.lnk` με στόχο το `run_talos.bat` και κατάλογο εργασίας τη ρίζα του έργου, μέσω αποστολής COM `WScript.Shell` χωρίς εξαρτήσεις στο PowerShell. Εκτίθεται μέσω `talos.py --create-shortcut` και επιλογής στο μενού Configuration & Profiles.
+
+- **Επιλογέας προφίλ-στόχου autostart** (`src/utils/daemon_autostart.py` + `src/ai/drl/talos_service.py`): η `select_daemon_profile()` ρωτά το `ProfileManager().list_profiles()` και ζητά το προφίλ-στόχο του δαίμονα 24/7, ενσωματώνοντας `--profile <name>` στο παραγόμενο `talos_daemon_boot.bat` και στη συντόμευση Startup `.lnk`. Το `talos_service.py` δέχεται `--profile <name>` και ενεργοποιεί το επιλεγμένο SSOT μέσω `ProfileManager().set_active_profile()` πριν τη φόρτωση config/env/model.
+
+### Άλλαξε
+
+- **Συγχρονισμός έκδοσης σε 5.18.2** στα 6 βασικά αρχεία κώδικα (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py`), `docker-compose.yml` (`talos:5.18.2`), `CITATION.cff` (5.18.2, 2026-10-03), `config.template.json`, μεταδεδομένα tray/visualizer/wizard/strategy/diagnostics/bibtex/help, docstrings `src/core/`, `src/prisma/`, `src/search/`, `src/ingestion/pdf_harvester/`, και στα 19 κανονικά αρχεία τεκμηρίωσης (2026-10-03).
+
+- **ROADMAP.md**: τρέχουσα έκδοση v5.18.2 (Complete, 2026-10-03)· ενορχήστρωση CORTEX & n8n σε v5.19.0.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.2)· `scripts/migrate_d3qn_checkpoint.py` (αυστηρή φόρτωση `DuelingLSTM(25, 19)`); forward pass `TalosDRLAgent(25, 19).act(...)` (έξοδος 0)· `python talos.py --create-shortcut` (έξοδος 0)· `python src/utils/verify_dependency_map.py --ci` (έξοδος 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.18.1] - 2026-10-03 -- Αυτόνομη Σκλήρυνση Chaos, Απομόνωση Σφαλμάτων & Απομάκρυνση Νεκρού Κώδικα
 
 ### Προστέθηκε
