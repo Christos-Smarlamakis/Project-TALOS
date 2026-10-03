@@ -4,9 +4,21 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-03 (v5.18.2 -- Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray Hook & Desktop Provisioner)
+> **Last Updated:** 2026-10-03 (v5.18.3 -- DRL Dual-Checkpoint Net2Net Surgery & Daemon Profile Provisioning Engine)
 
 ---
+
+## Phase 75: DRL Dual-Checkpoint Net2Net Surgery & Daemon Profile Provisioning (v5.18.3)
+
+- [x] **Status:** COMPLETED (2026-10-03).
+
+- [x] **Genuine dual-checkpoint Net2Net input tensor surgery** -- `scripts/migrate_d3qn_checkpoint.py` now iterates over BOTH `models/dddqn_trained.pth` and `src/ai/models/dddqn_trained.pth`, expanding `lstm1.weight_ih_l0` to `[512, 25]` and the advantage head to `[19, 32]` / `[19]` (name-based remapping, column-mean prior seeding, Sleep action re-indexed to 18), permanently eliminating `RuntimeError: Expected 23, got 25`; the stale `src/ai/models/` copy migrated 16 -> 18 sources / 23 -> 25 dims / 17 -> 19 actions, while `models/` verified idempotently.
+
+- [x] **Daemon profile provisioning** -- `daemon_autostart.py:select_daemon_profile()` (interactive Questionary selector, default active profile `uav_mission_planning`) embeds `--profile <name>` in the boot batch and Startup link; `talos_service.py --profile <name>` activates the SSOT and prints a dynamic `Version: v5.18.3 | Profile: {active_profile} | Device: {device}` banner.
+
+- [x] **Version synced** -- 6 code files + docker-compose.yml (`talos:5.18.3`) + CITATION.cff (5.18.3, 2026-10-03) + metadata + 19 canonical docs to v5.18.3 (2026-10-03).
+
+- [x] **Verification gates passed** -- compileall, test_system_integrity, test_talos_version (5.18.3), dual-checkpoint forward pass, daemon `--profile` banner, verify_dependency_map --ci (exit 0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ## Phase 74: Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray & Desktop Provisioner (v5.18.2)
 

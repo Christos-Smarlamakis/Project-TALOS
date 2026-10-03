@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.18.2</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.18.3</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-10-03 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.18.2 -- Net2Net DRL Checkpoint Repair, Win32 Close-to-Tray Hook &amp; Desktop Provisioner
+  <strong>Version:</strong> v5.18.3 -- DRL Dual-Checkpoint Net2Net Surgery &amp; Daemon Profile Provisioning Engine
 </div>
 
 <!-- ===================================================================== -->
@@ -1472,8 +1472,17 @@
 </ul>
 <p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.18.2), <code>migrate_d3qn_checkpoint.py</code> (strict load), <code>TalosDRLAgent</code> forward pass (exit 0), <code>talos.py --create-shortcut</code> (exit 0), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (0 U+FFFD).</p>
 
+<h3 id="s15-48">15.48 Dual-Checkpoint Net2Net Input Surgery, Dynamic Daemon Profile Provisioning, and Zero-Mismatch Execution (v5.18.3)</h3>
+<p><strong>Overview:</strong> v5.18.3 performs a genuine dual-checkpoint Net2Net input tensor surgery across BOTH canonical checkpoint locations (<code>models/dddqn_trained.pth</code> and <code>src/ai/models/dddqn_trained.pth</code>), permanently eliminating the PyTorch forward-pass shape mismatch <code>RuntimeError: Expected 23, got 25</code>, and formalises the interactive Questionary daemon-profile provisioning path with dynamic banner synchronisation to the active profile (<code>uav_mission_planning</code>).</p>
+<ul>
+  <li><strong>Dual-checkpoint Net2Net input tensor surgery</strong> (<code>migrate_d3qn_checkpoint.py</code>): iterates both checkpoint paths in one deterministic pass; expands <code>lstm1.weight_ih_l0</code> to <code>[512, 25]</code> (name-based column remapping, column-mean prior for new sources, streak/provider shift) and <code>A.weight</code> to <code>[19, 32]</code> / <code>A.bias</code> to <code>[19]</code> (top-5 L2-norm mean + 0.05 bias for new rows, Sleep re-indexed to 18); the stale <code>src/ai/models/</code> copy migrates 16 -&gt; 18 sources / 23 -&gt; 25 dims / 17 -&gt; 19 actions, while <code>models/</code> is skipped idempotently.</li>
+  <li><strong>Dynamic daemon profile provisioning</strong> (<code>daemon_autostart.py</code> + <code>talos_service.py</code>): <code>select_daemon_profile()</code> is the canonical Questionary target-profile selector (defaulting to <code>uav_mission_planning</code>); <code>talos_service.py --profile &lt;name&gt;</code> activates the SSOT and prints a dynamic <code>Version: v5.18.3 | Profile: {active_profile} | Device: {device}</code> banner, with all operations scoped to <code>_profiles/{active_profile}/</code>.</li>
+  <li><strong>Zero-mismatch execution</strong>: <code>TalosDRLAgent(25, 19).act(np.zeros((1, 25)), eps=0.0)</code> executes with zero shape errors on both checkpoints.</li>
+</ul>
+<p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.18.3), dual-checkpoint forward pass (exit 0), daemon <code>--profile uav_mission_planning</code> banner, <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (0 U+FFFD).</p>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.18.2</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.18.3</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

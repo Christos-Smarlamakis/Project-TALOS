@@ -11,7 +11,7 @@
 
 """
 Module: citation_analyzer.py (v2.1 - Robust Interactive Selection)
-Project: TALOS v5.18.2
+Project: TALOS v5.18.3
 
 Description:
 Η τελική, διορθωμένη έκδοση του "ORPHEUS".

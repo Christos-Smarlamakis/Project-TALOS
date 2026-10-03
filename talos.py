@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.18.2
+Project: TALOS v5.18.3
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -57,6 +57,14 @@ Description:
     that minimizes the daemon console (SW_HIDE) instead of terminating it, a
     1-click Desktop Shortcut provisioner (--create-shortcut), and an
     interactive autostart profile-target selector (--profile).
+
+    v5.18.3: DRL Dual-Checkpoint Net2Net Surgery & Daemon Profile Provisioning
+    Engine -- genuine Net2Net input tensor expansion on BOTH checkpoint
+    locations (models/dddqn_trained.pth and src/ai/models/dddqn_trained.pth),
+    widening lstm1.weight_ih_l0 to [512, 25] and the advantage head to [19, 32]
+    to permanently eliminate the RuntimeError: Expected 23, got 25; the 24/7
+    daemon dynamically synchronizes its banner and execution to the active
+    profile (uav_mission_planning) via interactive Questionary selection.
 
     v5.16.2: Pluggable Provider Registry & Hardware-Aware Model Advisor -- a
     modular adapter-based provider registry (src/core/provider_registry.py)

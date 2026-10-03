@@ -2,6 +2,24 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.18.3] - 2026-10-03 -- Χειρουργική Net2Net Διπλού Checkpoint DRL & Μηχανή Διάθεσης Προφίλ Δαίμονα
+
+### Προστέθηκε
+
+- **Γνήσια χειρουργική τανυστών εισόδου Net2Net διπλού checkpoint** (`scripts/migrate_d3qn_checkpoint.py`): το βοηθητικό μετανάστευσης πλέον επεξεργάζεται ΚΑΙ ΤΙΣ ΔΥΟ κανονικές τοποθεσίες checkpoint (`models/dddqn_trained.pth` και `src/ai/models/dddqn_trained.pth`) σε ένα μόνο ντετερμινιστικό πέρασμα. Για κάθε checkpoint δημιουργεί αντίγραφο ασφαλείας `.pth.bak` (μία φορά), επιθεωρεί το `lstm1.weight_ih_l0` (`[512, in_dim]`), και -- όταν `in_dim != 25` -- κατασκευάζει τανυστή `[512, 25]` με ονομαστική επαναχαρτογράφηση στηλών (η στήλη ώρας αμετάβλητη· οι υπάρχουσες στήλες πηγών αντιγράφονται bit-προς-bit· οι νέες στήλες πηγών σπέρνονται με τη μέση τιμή των υπαρχουσών· οι στήλες σερί και παρόχων μετατοπίζονται στις τελικές θέσεις). Η κεφαλή πλεονεκτήματος `A.weight` διευρύνεται σε `[19, 32]` / `A.bias` σε `[19]` (διατηρημένες γραμμές αντιγράφονται, νέες γραμμές σπέρνονται με τη μέση τιμή των κορυφαίων 5 γραμμών L2-norm + 0,05 εξερευνητική προκατάληψη, η ενέργεια Sleep επαναδεικτοδοτείται στο 18) και τα μεταδεδομένα ενημερώνονται (`state_dim=25`, `action_dim=19`, 18 `source_names`). Αυτό εξαλείφει οριστικά την ασυμφωνία διαστάσεων του forward pass `RuntimeError: Expected 23, got 25`: το απαρχαιωμένο `src/ai/models/dddqn_trained.pth` (16 πηγές / 23 διαστάσεις / 17 ενέργειες) επεκτείνεται χειρουργικά σε 18 πηγές / 25 διαστάσεις / 19 ενέργειες, ενώ το ήδη κανονικό `models/dddqn_trained.pth` φορτώνεται αυστηρά και παραλείπεται idempotent.
+
+- **Επιβεβαίωση διάθεσης προφίλ δαίμονα** (`src/utils/daemon_autostart.py` + `src/ai/drl/talos_service.py`): η `select_daemon_profile()` επιβεβαιώνεται ως ο κανονικός διαδραστικός επιλογέας προφίλ-στόχου μέσω Questionary (προεπιλογή το ενεργό προφίλ, π.χ. `uav_mission_planning`), ενσωματώνοντας `--profile <name>` στο `talos_daemon_boot.bat` και στη συντόμευση Startup `.lnk`. Το `talos_service.py` αναλύει το `--profile <name>` στην αρχή του `main()`, καλεί αμέσως `ProfileManager().set_active_profile(name)`, επιλύει το `active_profile` από το SSOT, και εκτυπώνει δυναμικά `Version: v5.18.3 | Profile: {active_profile} | Device: {device}` -- κάθε αναζήτηση, αξιολόγηση και εισαγωγή στη βάση λειτουργεί αποκλειστικά εντός του `_profiles/{active_profile}/`.
+
+### Άλλαξε
+
+- **Συγχρονισμός έκδοσης σε 5.18.3** στα 6 βασικά αρχεία κώδικα (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py`), `docker-compose.yml` (`talos:5.18.3`), `CITATION.cff` (5.18.3, 2026-10-03), `config.template.json`, μεταδεδομένα tray/visualizer/wizard/strategy/diagnostics/bibtex/help, docstrings `src/core/`, `src/prisma/`, `src/search/`, `src/ingestion/pdf_harvester/`, και στα 19 κανονικά αρχεία τεκμηρίωσης (2026-10-03).
+
+- **ROADMAP.md**: τρέχουσα έκδοση v5.18.3 (Complete, 2026-10-03)· ενορχήστρωση CORTEX & n8n σε v5.19.0.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py scripts` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.3)· forward pass διπλού checkpoint `TalosDRLAgent(25, 19).act(np.zeros((1, 25)))` και στα δύο checkpoints (έξοδος 0)· επιβεβαίωση banner δαίμονα `--profile uav_mission_planning`· `python src/utils/verify_dependency_map.py --ci` (έξοδος 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.18.2] - 2026-10-03 -- Επισκευή Checkpoint DRL Net2Net, Hook Close-to-Tray Win32 & Πάροχος Συντόμευσης Επιφάνειας Εργασίας
 
 ### Προστέθηκε

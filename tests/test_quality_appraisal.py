@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_quality_appraisal.py
-Project: TALOS v5.18.2
+Project: TALOS v5.18.3
 Description:
     Unit tests for the PRISMA Quality Appraisal engine (Kitchenham 2007).
     The suite is hermetic -- no live Ollama or external API calls are made.

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: daemon_autostart.py
-Project: TALOS v5.18.2
+Project: TALOS v5.18.3
 Description:
     Windows OS autostart orchestrator for the TALOS 24/7 autonomous daemon.
     Generates a self-contained boot batch script (talos_daemon_boot.bat) that
@@ -15,6 +15,11 @@ Description:
     profile is embedded as a ``--profile <name>`` argument in both the boot
     batch script and the Startup shortcut so the daemon boots into the correct
     isolated workspace SSOT.
+
+    v5.18.3 confirms this selector as the canonical daemon-profile provisioning
+    path: the selected profile is embedded into the generated boot batch and
+    Startup shortcut, and the daemon banner and execution dynamically
+    synchronize to it via ``talos_service.py --profile <name>``.
 
     Key design decisions:
     - The generated .bat is human-auditable and lives at the project root.
