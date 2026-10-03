@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_pdf_harvester.py
-Project: TALOS v5.18.0
+Project: TALOS v5.18.1
 Description:
     Hermetic unit tests for the Ethical Academic PDF Harvester. Verifies the
     four integrity guards (``%PDF-`` magic-bytes validation, SHA-256 hashing,

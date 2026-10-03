@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.18.0
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.18.1
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-10-02 (v5.18.0 -- Ethical Academic PDF Harvester, Smart Section Slicing & SQLite FTS5 Engine)
+> **Last Updated:** 2026-10-03 (v5.18.1 -- Autonomous Chaos Hardening, Fault Isolation & Dead Code Decommissioning)
 
 ---
 
@@ -324,8 +324,8 @@ src/core/ai_manager.py
 
 ---
 
-> **Last Updated:** 2026-10-02 (v5.18.0 -- Ethical Academic PDF Harvester, Smart Section Slicing & SQLite FTS5 Engine)
-> **Project Version:** v5.18.0
+> **Last Updated:** 2026-10-03 (v5.18.1 -- Autonomous Chaos Hardening, Fault Isolation & Dead Code Decommissioning)
+> **Project Version:** v5.18.1
 > **Total .py modules under src/:** 102 (core 7 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 6 + ingestion/sources 18 + search 3 + integration 3 + utils 22 + api 4 + prisma 8 + mcp_server 1)
 
 

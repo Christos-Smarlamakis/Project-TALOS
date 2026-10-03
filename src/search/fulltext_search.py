@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: fulltext_search.py
-Project: TALOS v5.18.0
+Project: TALOS v5.18.1
 Description:
     SQLite FTS5 full-text search engine over locally cached paper bodies.
     ``FullTextSearchEngine`` creates and maintains the virtual table

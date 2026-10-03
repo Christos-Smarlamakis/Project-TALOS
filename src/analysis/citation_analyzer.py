@@ -11,7 +11,7 @@
 
 """
 Module: citation_analyzer.py (v2.1 - Robust Interactive Selection)
-Project: TALOS v5.10.0
+Project: TALOS v5.18.1
 
 Description:
 Η τελική, διορθωμένη έκδοση του "ORPHEUS".
@@ -118,15 +118,21 @@ def get_target_paper_from_user(db_manager: DatabaseManager) -> Union[str, None]:
     """
     Ρωτά τον χρήστη πώς θέλει να επιλέξει το άρθρο-στόχο και επιστρέφει το DOI.
     """
-    choice = questionary.select(
-        "Πώς θέλεις να επιλέξεις το άρθρο-στόχο;",
-        choices=[
-            "1. Εισαγωγή DOI ή URL του Semantic Scholar χειροκίνητα",
-            "2. Επιλογή από τα πρόσφατα 'Core Papers' της βάσης TALOS"
-        ],
-        pointer="»",
-        style=TALOS_QUESTIONARY_STYLE,
-    ).ask()
+    try:
+        choice = questionary.select(
+            "Πώς θέλεις να επιλέξεις το άρθρο-στόχο;",
+            choices=[
+                "1. Εισαγωγή DOI ή URL του Semantic Scholar χειροκίνητα",
+                "2. Επιλογή από τα πρόσφατα 'Core Papers' της βάσης TALOS"
+            ],
+            pointer="»",
+            style=TALOS_QUESTIONARY_STYLE,
+        ).ask()
+    except (EOFError, KeyboardInterrupt):
+        sys.exit(0)
+    except Exception:
+        print("[INFO] Interactive console unavailable. Exiting cleanly.")
+        sys.exit(0)
 
     if choice is None: return None
 
@@ -154,16 +160,41 @@ def get_target_paper_from_user(db_manager: DatabaseManager) -> Union[str, None]:
             ) for p in core_papers
         ]
         
-        selected_doi = questionary.select(
-            "Διάλεξε ένα άρθρο από τη λίστα (ταξινομημένα κατά συνάφεια):",
-            choices=paper_choices,
-            pointer="»",
-            style=TALOS_QUESTIONARY_STYLE,
-        ).ask()
+        try:
+            selected_doi = questionary.select(
+                "Διάλεξε ένα άρθρο από τη λίστα (ταξινομημένα κατά συνάφεια):",
+                choices=paper_choices,
+                pointer="»",
+                style=TALOS_QUESTIONARY_STYLE,
+            ).ask()
+        except (EOFError, KeyboardInterrupt):
+            sys.exit(0)
+        except Exception:
+            print("[INFO] Interactive console unavailable. Exiting cleanly.")
+            sys.exit(0)
 
         return selected_doi
 
 def main():
+    # -- v5.18.1: non-interactive CLI & help hardening. The Red Tester and CI
+    # invoke this script headlessly; questionary/prompt_toolkit requires a real
+    # console screen buffer, so we short-circuit before any interactive prompt. -- #
+    if "--help" in sys.argv or "-h" in sys.argv:
+        print("Usage: python src/analysis/citation_analyzer.py")
+        print("")
+        print("ORPHEUS Citation Analyzer -- interactive citation network analysis.")
+        print("Select a target paper by DOI/URL or from recent Core Papers, then")
+        print("analyze its references and citations and render an interactive")
+        print("pyvis network graph plus a Markdown report.")
+        print("")
+        print("Options:")
+        print("  -h, --help   Show this help message and exit.")
+        sys.exit(0)
+
+    if (not sys.stdin.isatty()) or os.getenv("TALOS_HEADLESS"):
+        print("[INFO] Running in headless mode. Provide arguments or run in interactive terminal.")
+        sys.exit(0)
+
     print("--- ΕΝΑΡΞΗ ORPHEUS CITATION ANALYZER (v2.1) ---")
     
     project_root = _P if _P else os.getcwd()

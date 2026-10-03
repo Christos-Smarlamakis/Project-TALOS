@@ -2,8 +2,8 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.18.0 (Ethical Academic PDF Harvester, Smart Section Slicing & SQLite FTS5 Engine)
-> **Last Updated:** 2026-10-02
+> **Current Version:** v5.18.1 (Autonomous Chaos Hardening, Fault Isolation & Dead Code Decommissioning)
+> **Last Updated:** 2026-10-03
 
 ---
 
@@ -153,6 +153,7 @@ The v5.10.x series transitions Project TALOS from an aggregator to a fully adapt
 | **v5.16.0** | PRISMA Quality Appraisal & Dual-Axis Scientific Rigor Engine (Kitchenham 2007) | Standardized six-question, three-point Kitchenham quality rubric (`src/prisma/quality_appraisal.py`), decoupling of Semantic Relevance (S_rel) from Methodological Quality (S_qual), 2D Evidence Decision Plane quadrants, batch appraisal (`--appraise-quality`), SQLite schema expansion (`quality_score`/`quality_rubric_json`/`evidence_quadrant`), BibTeX dual-filter export, Rule 10 dossier 05. | Complete |
 | **v5.17.0** | Two-Tier Hierarchical Swarm Architecture & Forensic Quality Engine | Tier-2 Forensic Quality Swarm (`src/prisma/quality_swarm.py`): four specialized skill auditors (Theory Q1 / Operational Q2 / Benchmark Q3-Q4 / OpenScience Q5-Q6) loading profile-compiled, domain-agnostic template skills; `SkillCompiler`, `SmartSectionSlicer`, and `KitchenhamQualitySynthesizer` with `S_qual` and inter-auditor Fleiss `kappa_qual`; appraiser `appraisal_mode` ('single'/'swarm'); CLI `--appraise-quality [--swarm]` / `--compile-skills`; Rule 10 dossier 06. | Complete |
 | **v5.18.0** | Ethical Academic PDF Harvester, Smart Section Slicing & SQLite FTS5 Engine | Cascading 13-source legal Open Access resolver (`src/ingestion/pdf_harvester/resolvers.py`), six-layer download pipeline (`harvester.py`: `%PDF-` magic bytes, atomic writes, SHA-256, timeout, size cap, polite rate limit), air-gapped `PDFSectionExtractor`, SQLite FTS5 `FullTextSearchEngine` (`src/search/fulltext_search.py`), CLI `--download-pdfs` / `--fts` / `--open-pdf`, `SmartSectionSlicer` cached-section integration, Rule 10 dossier 07. | Complete |
+| **v5.18.1** | Autonomous Chaos Hardening, Fault Isolation & Dead Code Decommissioning | Headless/non-interactive TTY hardening (`src/analysis/citation_analyzer.py`), fault-tolerant optional-dependency import guard (`pymed` in `pubmed_source.py`), decommissioning of legacy `pdf_downloader.py` (module inventory 103 -> 102), and an Autonomous Red Tester chaos audit (5 episodes, 95 components, zero unhandled crashes). | Complete |
 | **v5.19.0** | CORTEX & n8n Gateway | Live arXiv RSS & text evaluation Discord Bot (`src/integration/discord_evaluator.py`) and SYNAPSE n8n Workflow Gateway templates (`templates/n8n_workflows/`). | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine. | Future |
 

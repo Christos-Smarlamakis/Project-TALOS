@@ -4,7 +4,7 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-02 (v5.18.0 -- Ethical Academic PDF Harvester, Smart Section Slicing & SQLite FTS5 Engine)
+> **Last Updated:** 2026-10-03 (v5.18.1 -- Autonomous Chaos Hardening, Fault Isolation & Dead Code Decommissioning)
 
 ---
 
@@ -23,6 +23,22 @@
 - [x] **Version synced** -- 6 code files + docker-compose.yml (`talos:5.18.0`) + CITATION.cff (5.18.0, 2026-10-02) + metadata + 19 canonical docs to v5.18.0 (2026-10-02).
 
 - [x] **Verification gates passed** -- compileall, `test_pdf_harvester.py` (8 passed), `test_fulltext_search.py` (4 passed), `test_quality_swarm.py`/`test_quality_appraisal.py` (34 passed), `test_system_integrity.py`, `test_talos_version` (5.18.0), `talos.py --help`, `verify_dependency_map.py --ci` (exit 0), `bash -n`, UTF-8 scan (0 U+FFFD).
+
+## Phase 73: Autonomous Chaos Hardening & Fault Isolation (v5.18.1)
+
+- [x] **Status:** COMPLETED (2026-10-03).
+
+- [x] **Headless CLI & TTY hardening** -- `src/analysis/citation_analyzer.py` `main()` now handles `--help`/`-h`, detects non-TTY/`TALOS_HEADLESS` headless mode, and wraps `questionary.select().ask()` in a try/except for `EOFError`/`KeyboardInterrupt`/`Exception`, eliminating the `NoConsoleScreenBufferError` crash the Red Tester surfaced.
+
+- [x] **Fault-tolerant ingestion imports** -- `src/ingestion/sources/pubmed_source.py` guards the optional `pymed` import behind `try/except ImportError` so the 18-source registry never crashes with `ModuleNotFoundError`.
+
+- [x] **Dead code decommissioning** -- legacy `src/ingestion/pdf_downloader.py` removed (superseded by the v5.18.0 PDF Harvester); module inventory 103 -> 102.
+
+- [x] **Autonomous Red Tester chaos audit** -- 5-episode Non-Stationary MAB run across 95 components with clean Q-table updates and zero unhandled crashes.
+
+- [x] **Version synced** -- 6 code files + docker-compose.yml (`talos:5.18.1`) + CITATION.cff (5.18.1, 2026-10-03) + metadata + 19 canonical docs to v5.18.1 (2026-10-03).
+
+- [x] **Verification gates passed** -- compileall, `test_system_integrity.py`, `test_talos_version` (5.18.1), `citation_analyzer.py --help` (exit 0), `red_tester.py 5`, `verify_dependency_map.py --ci` (exit 0), `bash -n`, UTF-8 scan (0 U+FFFD).
 
 ## Phase 71: PRISMA Quality Appraisal UX Transparency & Force Re-Appraisal (v5.17.1)
 

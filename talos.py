@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.18.0
+Project: TALOS v5.18.1
 Description:
     Main entry point for the TALOS TUI (Text User Interface). Provides a
     Rich-powered terminal dashboard with a dynamic status table showing
@@ -44,6 +44,12 @@ Description:
     caches Methodology/Experiments/Code/Limitations windows for the Tier-2
     Quality Swarm, and src/search/fulltext_search.py indexes cached bodies with
     SQLite FTS5. CLI gains --download-pdfs, --fts, and --open-pdf.
+
+    v5.18.1: Autonomous Chaos Hardening, Fault Isolation & Dead Code
+    Decommissioning -- headless/non-interactive TTY hardening in
+    src/analysis/citation_analyzer.py, a fault-tolerant optional-dependency
+    import guard in src/ingestion/sources/pubmed_source.py, and the safe
+    decommissioning of the legacy src/ingestion/pdf_downloader.py module.
 
     v5.16.2: Pluggable Provider Registry & Hardware-Aware Model Advisor -- a
     modular adapter-based provider registry (src/core/provider_registry.py)

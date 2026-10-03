@@ -2,6 +2,28 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.18.1] - 2026-10-03 -- Autonomous Chaos Hardening, Fault Isolation & Dead Code Decommissioning
+
+### Added
+
+- **Headless CLI & TTY hardening** (`src/analysis/citation_analyzer.py`): `main()` now short-circuits before any interactive `questionary` prompt. A `--help` / `-h` flag prints a clean usage description and exits `0`; a `not sys.stdin.isatty()` check or the `TALOS_HEADLESS` environment variable prints `[INFO] Running in headless mode. Provide arguments or run in interactive terminal.` and exits `0`; and the `questionary.select(...).ask()` call is wrapped in a try/except block catching `EOFError`, `KeyboardInterrupt`, and `Exception` so a non-interactive console buffer exits cleanly instead of raising `NoConsoleScreenBufferError`.
+
+- **Fault-tolerant optional-dependency import** (`src/ingestion/sources/pubmed_source.py`): the optional `pymed` dependency is now imported behind a `try/except ImportError` guard (`PYMED_AVAILABLE`), degrading `PubMedSource` to a disabled no-op source with a `[WARNING]` line instead of crashing the entire 18-source `__init__` registry with an unhandled `ModuleNotFoundError`.
+
+### Changed
+
+- **Decommissioned legacy `src/ingestion/pdf_downloader.py`**: the obsolete Unpaywall-based downloader (superseded by the v5.18.0 Ethical Academic PDF Harvester) was removed, reducing the module inventory from 103 to 102 Python modules.
+
+- **Autonomous Red Tester chaos audit** (`src/ai/testing/red_tester.py`): a 5-episode Non-Stationary Multi-Armed Bandit run across 95 discovered CLI/API arms confirmed zero unhandled crashes after the headless/TTY and `pymed` guards; the Q-table updated cleanly and `citation_analyzer.py` reached stable resilience.
+
+- **Version strings synchronized to 5.18.1** across the 6 core code files (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py` version assertion), `docker-compose.yml` (`talos:5.18.1`), `CITATION.cff` (version 5.18.1, date-released 2026-10-03), `config.template.json`, tray/visualizer/wizard/strategy/diagnostics/bibtex/help metadata, `src/core/`, `src/prisma/`, `src/search/`, and `src/ingestion/pdf_harvester/` docstrings, and all 19 canonical documentation files (dated 2026-10-03).
+
+- **ROADMAP.md**: current version advanced to v5.18.1 (Complete, 2026-10-03); CORTEX & n8n orchestration retained at v5.19.0.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.1); `python src/analysis/citation_analyzer.py --help` (exit 0, no `NoConsoleScreenBufferError`); `python src/ai/testing/red_tester.py 5` (0 unhandled crashes); `python src/utils/verify_dependency_map.py --ci` (exit 0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.18.0] - 2026-10-02 -- Ethical Academic PDF Harvester, Smart Section Slicing & SQLite FTS5 Engine
 
 ### Added

@@ -2,6 +2,28 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.18.1] - 2026-10-03 -- Αυτόνομη Σκλήρυνση Chaos, Απομόνωση Σφαλμάτων & Απομάκρυνση Νεκρού Κώδικα
+
+### Προστέθηκε
+
+- **Σκλήρυνση CLI χωρίς κεφαλή & TTY** (`src/analysis/citation_analyzer.py`): η `main()` βραχυκυκλώνει πριν από οποιαδήποτε διαδραστική προτροπή `questionary`. Η σημαία `--help` / `-h` εκτυπώνει καθαρή περιγραφή χρήσης και εξέρχεται με `0`· ο έλεγχος `not sys.stdin.isatty()` ή η μεταβλητή περιβάλλοντος `TALOS_HEADLESS` εκτυπώνει `[INFO] Running in headless mode...` και εξέρχεται με `0`· και η κλήση `questionary.select(...).ask()` τυλίγεται σε try/except που συλλαμβάνει `EOFError`, `KeyboardInterrupt` και `Exception` ώστε να εξέρχεται καθαρά αντί να σηκώνει `NoConsoleScreenBufferError` σε μη διαδραστικό buffer κονσόλας.
+
+- **Ανεκτική σε σφάλματα εισαγωγή προαιρετικής εξάρτησης** (`src/ingestion/sources/pubmed_source.py`): η εξάρτηση `pymed` εισάγεται πλέον πίσω από φρουρό `try/except ImportError` (`PYMED_AVAILABLE`), υποβαθμίζοντας το `PubMedSource` σε απενεργοποιημένη μη-λειτουργική πηγή με γραμμή `[WARNING]` αντί να καταρρέει ολόκληρο το μητρώο 18 πηγών με μη διαχειριζόμενο `ModuleNotFoundError`.
+
+### Άλλαξε
+
+- **Απομάκρυνση του παλαιού `src/ingestion/pdf_downloader.py`**: ο παρωχημένος φορτωτής με Unpaywall (αντικαταστάθηκε από τον Ηθικό Συλλέκτη Ακαδημαϊκών PDF της v5.18.0) αφαιρέθηκε, μειώνοντας το απόθεμα μονάδων από 103 σε 102 αρχεία Python.
+
+- **Έλεγχος chaos Αυτόνομου Κόκκινου Ελεγκτή** (`src/ai/testing/red_tester.py`): εκτέλεση 5 επεισοδίων Μη-Στάσιμου Multi-Armed Bandit σε 95 στοιχεία επιβεβαίωσε μηδέν μη διαχειριζόμενα σφάλματα μετά τους φρουρούς κεφαλής/TTY και `pymed`· ο πίνακας Q ενημερώθηκε καθαρά και το `citation_analyzer.py` πέτυχε σταθερή ανθεκτικότητα.
+
+- **Συγχρονισμός έκδοσης σε 5.18.1** στα 6 βασικά αρχεία κώδικα (`config/settings.py` `TALOS_VERSION`, `src/api/main_api.py` FastAPI metadata/lifespan/description, `talos.py` docstring/banner, `run_talos.bat`, `run_talos.sh`, `tests/test_multi_tier.py`), `docker-compose.yml` (`talos:5.18.1`), `CITATION.cff` (5.18.1, 2026-10-03), `config.template.json`, μεταδεδομένα tray/visualizer/wizard/strategy/diagnostics/bibtex/help, docstrings `src/core/`, `src/prisma/`, `src/search/` και `src/ingestion/pdf_harvester/`, και στα 19 κανονικά αρχεία τεκμηρίωσης (2026-10-03).
+
+- **ROADMAP.md**: τρέχουσα έκδοση v5.18.1 (Complete, 2026-10-03)· ενορχήστρωση CORTEX & n8n σε v5.19.0.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.1)· `python src/analysis/citation_analyzer.py --help` (έξοδος 0)· `python src/ai/testing/red_tester.py 5` (0 μη διαχειριζόμενα σφάλματα)· `python src/utils/verify_dependency_map.py --ci` (έξοδος 0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.18.0] - 2026-10-02 -- Ηθικός Συλλέκτης Ακαδημαϊκών PDF, Έξυπνος Τεμαχισμός Ενοτήτων & Μηχανή SQLite FTS5
 
 ### Προστέθηκε

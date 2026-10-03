@@ -3,8 +3,8 @@
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-10-02
-> **Version:** v5.18.0 -- Ethical Academic PDF Harvester, Smart Section Slicing & SQLite FTS5 Engine
+> **Last Updated:** 2026-10-03
+> **Version:** v5.18.1 -- Autonomous Chaos Hardening, Fault Isolation & Dead Code Decommissioning
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -1216,6 +1216,20 @@ For each evaluated paper, the AI generates:
 - **CLI / TUI** (`talos.py`): `--download-pdfs [--min-score 7.0]`, `--fts "<query>"`, `--open-pdf [paper_id]`; Group 2 (Universal Search Hub) and Group 5 (Database & Data) menu options; Rule 10 dossier 07.
 
 **Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_pdf_harvester.py -q` (8 hermetic), `pytest tests/test_fulltext_search.py -q` (4 hermetic), `pytest tests/test_quality_swarm.py tests/test_quality_appraisal.py -q` (34), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.0), `python talos.py --help` (`--download-pdfs` / `--fts` / `--open-pdf`), dossier 07 (0 U+FFFD), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
+
+### 15.46 Autonomous Chaos Hardening, Fault-Tolerant Ingestion Guards, and Headless TTY Resilience (v5.18.1)
+
+**Overview:** v5.18.1 is a hardening release focused on eliminating two classes of unhandled runtime failures that the Autonomous Red Tester (RL-Driven Chaos Engineering) surfaced under headless, non-interactive execution. The release adds headless CLI and TTY guards to `src/analysis/citation_analyzer.py`, wraps the optional `pymed` ingestion dependency in a fault-isolation import guard, and decommissions the legacy `src/ingestion/pdf_downloader.py` module.
+
+- **Headless CLI & TTY hardening** (`src/analysis/citation_analyzer.py`): `main()` short-circuits before any interactive prompt -- `--help`/`-h` prints a usage description and exits `0`; `not sys.stdin.isatty()` or `TALOS_HEADLESS` prints a `[INFO] Running in headless mode...` notice and exits `0`; and `questionary.select(...).ask()` is wrapped in a try/except for `EOFError`/`KeyboardInterrupt`/`Exception` so a non-interactive console buffer exits cleanly instead of raising `NoConsoleScreenBufferError`.
+
+- **Fault-tolerant ingestion import** (`src/ingestion/sources/pubmed_source.py`): the optional `pymed` dependency is imported behind a `try/except ImportError` guard (`PYMED_AVAILABLE`), degrading `PubMedSource` to a disabled no-op source with a `[WARNING]` line, so the 18-source `__init__` registry never crashes with an unhandled `ModuleNotFoundError`.
+
+- **Dead code decommissioning** -- the legacy `src/ingestion/pdf_downloader.py` (Unpaywall-based downloader, superseded by the v5.18.0 Ethical Academic PDF Harvester) is removed, reducing the module inventory from 103 to 102 Python modules.
+
+- **Autonomous Red Tester audit** (`src/ai/testing/red_tester.py`): a 5-episode Non-Stationary Multi-Armed Bandit run across 95 discovered CLI/API arms confirmed zero unhandled crashes post-guard, with a clean Q-table update and stable `citation_analyzer.py` resilience.
+
+**Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.18.1), `python src/analysis/citation_analyzer.py --help` (exit 0, no `NoConsoleScreenBufferError`), `python src/ai/testing/red_tester.py 5` (0 unhandled crashes), `python src/utils/verify_dependency_map.py --ci` (exit 0), `bash -n run_talos.sh`, and a strict UTF-8 scan (0 U+FFFD).
 
 ---
 

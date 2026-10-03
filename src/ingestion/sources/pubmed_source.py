@@ -10,12 +10,17 @@
 #  For commercial licensing, please contact the author.
 """
 Module: pubmed_source.py 
-Project: TALOS v5.10.0
+Project: TALOS v5.18.1
 
 Description:
     Search agent for the PubMed biomedical literature database via the pymed
     library. Fetches papers matching the configured query with date filtering.
     Does not require an API key but needs a valid email address in config.
+
+    Fault isolation (v5.18.1): the optional ``pymed`` dependency is imported
+    behind a try/except ImportError guard so the module degrades to a disabled
+    no-op source when ``pymed`` is absent, never raising an unhandled
+    ModuleNotFoundError at package import time.
 """
 try:
     from pymed import PubMed

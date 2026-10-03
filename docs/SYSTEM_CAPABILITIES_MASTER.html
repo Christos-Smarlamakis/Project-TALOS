@@ -302,8 +302,8 @@
   <strong>Document ID:</strong> TALOS-SYS-CAP-001 &nbsp;|&nbsp;
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
-  <strong>Last Updated:</strong> 2026-10-02 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.18.0 -- Ethical Academic PDF Harvester, Smart Section Slicing &amp; SQLite FTS5 Engine
+  <strong>Last Updated:</strong> 2026-10-03 &nbsp;|&nbsp;
+  <strong>Version:</strong> v5.18.1 -- Autonomous Chaos Hardening, Fault Isolation &amp; Dead Code Decommissioning
 </div>
 
 <!-- ===================================================================== -->
@@ -1452,8 +1452,18 @@
 </ul>
 <p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_pdf_harvester.py -q</code> (8 hermetic), <code>test_fulltext_search.py -q</code> (4 hermetic), <code>test_quality_swarm.py</code>/<code>test_quality_appraisal.py -q</code> (34), system integrity, version assertion (5.18.0), <code>talos.py --help</code>, dossier 07 (0 U+FFFD), <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (0 U+FFFD).</p>
 
+<h3 id="s15-46">15.46 Autonomous Chaos Hardening, Fault-Tolerant Ingestion Guards, and Headless TTY Resilience (v5.18.1)</h3>
+<p><strong>Overview:</strong> v5.18.1 is a hardening release focused on eliminating two classes of unhandled runtime failures that the Autonomous Red Tester surfaced under headless, non-interactive execution. It adds headless CLI and TTY guards to <code>src/analysis/citation_analyzer.py</code>, wraps the optional <code>pymed</code> ingestion dependency in a fault-isolation import guard, and decommissions the legacy <code>src/ingestion/pdf_downloader.py</code>.</p>
+<ul>
+  <li><strong>Headless CLI &amp; TTY hardening</strong> (<code>citation_analyzer.py</code>): <code>main()</code> short-circuits before any interactive prompt -- <code>--help</code>/<code>-h</code> prints usage and exits 0; <code>not sys.stdin.isatty()</code> or <code>TALOS_HEADLESS</code> exits with a <code>[INFO]</code> headless notice; and <code>questionary.select(...).ask()</code> is wrapped in try/except for <code>EOFError</code>/<code>KeyboardInterrupt</code>/<code>Exception</code> so a non-interactive console buffer never raises <code>NoConsoleScreenBufferError</code>.</li>
+  <li><strong>Fault-tolerant ingestion import</strong> (<code>pubmed_source.py</code>): the optional <code>pymed</code> dependency is imported behind a <code>try/except ImportError</code> guard, degrading <code>PubMedSource</code> to a disabled no-op source instead of crashing the 18-source registry.</li>
+  <li><strong>Dead code decommissioning</strong>: legacy <code>src/ingestion/pdf_downloader.py</code> removed (module inventory 103 -&gt; 102).</li>
+  <li><strong>Autonomous Red Tester audit</strong> (<code>red_tester.py</code>): 5-episode Non-Stationary MAB run across 95 arms with zero unhandled crashes and a clean Q-table update.</li>
+</ul>
+<p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.18.1), <code>citation_analyzer.py --help</code> (exit 0), <code>red_tester.py 5</code>, <code>verify_dependency_map.py --ci</code> (exit 0), <code>bash -n run_talos.sh</code>, and a strict UTF-8 scan (0 U+FFFD).</p>
+
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.18.0</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.18.1</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>
