@@ -2,7 +2,7 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.24.0 (Enterprise Data Vault, Proactive Token-Bucket Rate Limiter & Distributed JSONL Buffer Sync) — Complete, 2026-10-04
+> **Current Version:** v5.25.0 (Autonomous Multi-LLM Relay, XAI Decision Ledger & Dynamic Swarm Sizing) — Complete, 2026-10-04
 > **Last Updated:** 2026-10-04
 
 ---

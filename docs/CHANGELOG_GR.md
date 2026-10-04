@@ -2,6 +2,30 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.25.0] - 2026-10-04 -- Αυτόνομος Πολυ-Μοντέλος Αναμετάδοσης (Multi-LLM Relay), Μητρώο Αποφάσεων Εξηγήσιμης ΤΝ (XAI) & Δυναμική Διαστασιολόγηση Σμήνους (ISO/IEC 25010)
+
+### Προστέθηκαν
+
+- **Μητρώο Αποφάσεων XAI** (`src/services/cognitive_mesh/xai_ledger.py`): οι `XAiDecisionLedger.append(record) -> dict`, `.latest(limit) -> list` και `.explain(record) -> str` καταγράφουν append-only εγγραφές JSONL στο `data/cache/xai_decision_log.jsonl` με πεδία `timestamp`, `decision_id` (UUID4), `task_type`, `complexity_score`, `swarm_size`, `candidate_models`, `pareto_rationale`, `safety_flags` και `fallback_cascade`. Νηματοασφαλές και ανθεκτικό σε παραποίηση.
+
+- **Δυναμικός Διαστασιολογητής Σμήνους & Λειτουργία AUTO** (`src/services/cognitive_mesh/router.py`): η `DynamicSwarmSizer.recommend_swarm(task_type, input_payload) -> SwarmSizingRecommendation` υπολογίζει τη σύνθετη πολυπλοκότητα `C = 0.8 D + 0.15 T + 0.05 S` και αντιστοιχίζει το `C` στη βέλτιστη πληθικότητα σμήνους `K in {1, 2, 3, 5}`. Η `RoutingStrategy.AUTO_SWARM_CASCADE` επικαλείται διαφανώς τον διαστασιολογητή, καταγράφει εγγραφή XAI και αναμεταδίδει μέσω της αλυσίδας free-tier frontier.
+
+- **Endpoint Έτοιμα για Σταθμούς Ρομποτικών Επιχειρήσεων** (`src/services/cognitive_mesh/server.py`): `POST /mesh/swarm-recommend` επιστρέφει το προτεινόμενο `K` και την ταξινομημένη αλυσίδα μοντέλων· `GET /mesh/xai-trail` επιστρέφει τις τελευταίες εγγραφές XAI για εξωτερικούς καταναλωτές (Σταθμοί Ρομποτικών Επιχειρήσεων, MEMEX).
+
+- **Υποσύστημα Τεκμηρίωσης Κώδικα** (`src/utils/codebase_documenter/`): `CodebaseAstAnalyzer` (εξαγωγή AST κλάσεων, συναρτήσεων, υπογραφών, docstrings, εισαγωγών και εξαρτήσεων σε 112+ modules), `ArchitectureLedger` (ζωντανό ημερολόγιο αρχιτεκτονικών αποφάσεων και καθολικός πίνακας συμβόλων), `MultiLlmRelayOrchestrator` (stateful πολυ-μοντέλος αναμετάδοσης με ιχνηλάτηση XAI) και `CodebaseDocGenerator` (κύριο Markdown συν αυτόνομη αναφορά HTML σκούρου θέματος με ζωντανή αναζήτηση, μηδέν CDN).
+
+- **CLI, Παλέτα Εντολών & TUI** (`talos.py`): `--document-codebase [--cascade|--local|--dry-run]`, `--show-xai-log [--limit N]`, και συντομεύσεις παλέτας εντολών `/doc-codebase` και `/xai`· καταχωρήσεις 9-10 στο υπομενού System Health.
+
+- **Κανόνας 11 & Κανόνας 12** (`.clinerules`): Υποχρεωτικό Πρωτόκολλο Ακαδημαϊκής Ουδετερότητας Διπλής Χρήσης και Υποχρεωτικό Πρωτόκολλο Ακεραιότητας Αναφορών & Αντι-Παραίσθησης.
+
+- **Απόρρητος Ακαδημαϊκός Φάκελος 13** (`docs/internal/academic/13_MULTI_LLM_STATEFUL_RELAY_CODEBASE_DOCUMENTATION_ISO25010.md`): φάκελος επτά ενοτήτων Θεωρία-σε-Κώδικα.
+
+### Άλλαξαν
+
+- Συγχρονισμός έκδοσης σε `5.25.0` σε όλα τα 21 κανονικά αρχεία τεκμηρίωσης, σημεία εισόδου κώδικα, `docker-compose.yml` και `CITATION.cff`.
+
+---
+
 ## [v5.24.0] - 2026-10-04 -- Επιχειρηματικό Θησαυροφυλάκιο Δεδομένων, Προληπτικός Περιοριστής Ρυθμού Token-Bucket & Κατανεμημένος Συγχρονισμός Προσωρινής Μνήμης JSONL (ISO/IEC 25010)
 
 ### Προστέθηκαν

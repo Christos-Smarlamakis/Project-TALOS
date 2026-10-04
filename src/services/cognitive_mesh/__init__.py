@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: __init__.py
-Project: TALOS v5.24.0
+Project: TALOS v5.25.0
 Description:
     Public API surface for the Cognitive Mesh in-tree extraction-ready
     microservice. Re-exports the cognitive meta-router, the self-healing
@@ -30,6 +30,9 @@ from src.services.cognitive_mesh.dto import (  # noqa: F401
     RouterTaskResponse,
     RoutingStrategy,
     ScavengedModel,
+    SwarmSizingRecommendation,
+    TaskComplexity,
+    XAiDecisionRecord,
 )
 from src.services.cognitive_mesh.registry import (  # noqa: F401
     LLMProvider,
@@ -40,6 +43,7 @@ from src.services.cognitive_mesh.registry import (  # noqa: F401
 )
 from src.services.cognitive_mesh.router import (  # noqa: F401
     CognitiveMetaRouter,
+    DynamicSwarmSizer,
     ProviderHttpError,
 )
 from src.services.cognitive_mesh.self_healing import (  # noqa: F401
@@ -63,9 +67,11 @@ from src.services.cognitive_mesh.rate_limiter import (  # noqa: F401
     get_rate_specs,
 )
 from src.services.cognitive_mesh.buffer_sync import BufferSyncEngine  # noqa: F401
+from src.services.cognitive_mesh.xai_ledger import XAiDecisionLedger  # noqa: F401
 
 __all__ = [
     "RoutingStrategy",
+    "TaskComplexity",
     "AccessTier",
     "ProviderHealthState",
     "RouterTaskRequest",
@@ -75,6 +81,8 @@ __all__ = [
     "BenchmarkScorecard",
     "ScavengedModel",
     "MarketIntelligenceReport",
+    "SwarmSizingRecommendation",
+    "XAiDecisionRecord",
     "ProviderHealthReport",
     "MeshDiagnosticReport",
     "LLMProvider",
@@ -83,6 +91,7 @@ __all__ = [
     "get_provider_registry",
     "get_available_providers",
     "CognitiveMetaRouter",
+    "DynamicSwarmSizer",
     "ProviderHttpError",
     "SelfHealingCircuitBreaker",
     "ApiHealthProbeEngine",
@@ -97,4 +106,5 @@ __all__ = [
     "TokenBucketRateLimiter",
     "get_rate_specs",
     "BufferSyncEngine",
+    "XAiDecisionLedger",
 ]

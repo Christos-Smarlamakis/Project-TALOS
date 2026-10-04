@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Module: router.py
-Project: TALOS v5.24.0
+Project: TALOS v5.25.0
 Description:
     Decoupled, extraction-ready Cognitive Meta-Router. This module selects an
-    inference provider for a scientific task using one of four named routing
+    inference provider for a scientific task using one of six named routing
     strategies and protects the runtime with a self-healing six-state circuit
     breaker (SelfHealingCircuitBreaker), a session-scoped quota-latching state
     machine, and dynamic zero-config failover to free-tier endpoints. It is
@@ -13,7 +13,7 @@ Description:
     can be lifted verbatim into a standalone SYNAPSE (:8000) microservice shared
     between TALOS and MEMEX with zero dependency surgery.
 
-    The router exposes five strategies:
+    The router exposes six strategies:
       - LOWEST_LATENCY   : dispatch to the fastest active provider (Groq,
                            Cerebras, SambaNova, or local Ollama) ranked by an
                            exponential moving average of time-to-first-token.
@@ -25,6 +25,12 @@ Description:
                            network egress, bounded by threading.Semaphore(2).
       - LOCAL_FIRST_CLOUD_BACKUP : attempt local Ollama first, then dynamically
                            fail over to the active cloud tier (v5.21.1).
+
+      - AUTO_SWARM_CASCADE   : dynamically size the swarm (K = f(C)) via the
+                            DynamicSwarmSizer and relay across the free-tier
+                            frontier, logging every decision to the XAI ledger
+                            (v5.25.0).
+
 
     Key design decisions:
     - Zero imports from SQLite WAL storage, PRISMA pipelines, or CLI scripts;
@@ -53,6 +59,7 @@ Dependencies:
       classify_access_tier (six-state resilience + access-tier taxonomy).
 """
 
+import json
 import os
 import threading
 import time
@@ -123,7 +130,11 @@ from src.services.cognitive_mesh.dto import (  # noqa: E402
     RoutingStrategy,
     RouterTaskRequest,
     RouterTaskResponse,
+    SwarmSizingRecommendation,
+    TaskComplexity,
+    XAiDecisionRecord,
 )
+from src.services.cognitive_mesh.xai_ledger import XAiDecisionLedger  # noqa: E402
 from src.services.cognitive_mesh.self_healing import (  # noqa: E402
     SelfHealingCircuitBreaker,
     classify_access_tier,
@@ -158,6 +169,236 @@ class _ProviderMetrics:
         self.latch_reason: Optional[int] = None
 
 
+class DynamicSwarmSizer:
+    """Dynamic swarm cardinality selector mapping task complexity to K.
+
+    Computes a composite complexity score C in [0, 1] from the task's token
+    volume, reasoning depth, and operational safety category, then maps C to
+    the optimal swarm cardinality K in {1, 2, 3, 5} and selects an ordered
+    model chain through the free-tier frontier cascade. Every recommendation
+    is optionally persisted to the XAI decision ledger.
+
+    Attributes:
+        registry (ProviderRegistry): Provider catalogue (default: shared
+            singleton). Injectable for hermetic tests.
+        ledger (Optional[XAiDecisionLedger]): Injected XAI audit ledger.
+    """
+
+    _FREE_TIERS = (
+        "LOCAL_NO_KEY",
+        "CLOUD_ZERO_CONFIG_FREE",
+        "CLOUD_FREE_TIER_WITH_KEY",
+    )
+
+    _TASK_DEPTH: Dict[str, float] = {
+        "parsing": 0.1,
+        "extraction": 0.1,
+        "normalization": 0.1,
+        "classification": 0.15,
+        "summarization": 0.4,
+        "redaction": 0.4,
+        "translation": 0.4,
+        "consensus": 0.65,
+        "consensus_verification": 0.65,
+        "verification": 0.65,
+        "audit": 0.65,
+        "kitchenham": 0.7,
+        "appraisal": 0.7,
+        "documentation": 0.95,
+        "code_audit": 0.9,
+        "synthesis": 0.95,
+        "deep_synthesis": 0.95,
+    }
+
+    def __init__(
+        self,
+        registry: Optional[ProviderRegistry] = None,
+        ledger: Optional[XAiDecisionLedger] = None,
+    ) -> None:
+        self._registry = registry if registry is not None else get_provider_registry()
+        self._ledger = ledger
+
+    def recommend_swarm(
+        self,
+        task_type: str,
+        input_payload: Optional[Dict[str, Any]] = None,
+    ) -> SwarmSizingRecommendation:
+        """Recommend an optimal swarm cardinality and ordered model chain.
+
+        Args:
+            task_type (str): Semantic task label.
+            input_payload (Optional[dict]): Task payload for complexity scoring.
+
+        Returns:
+            SwarmSizingRecommendation: The recommended K and model chain.
+        """
+        payload = input_payload or {}
+        complexity = self._compute_complexity(task_type, payload)
+        band = self._band_for_complexity(complexity)
+        swarm_size = self._swarm_size_for_band(band)
+        active = self._active_provider_names()
+        model_chain = self._ordered_model_chain(active, swarm_size)
+        access_tiers = [slot["access_tier"] for slot in model_chain]
+        safety_category = str(payload.get("safety_category", "standard"))
+        rationale = self._build_rationale(task_type, complexity, swarm_size, band)
+
+        recommendation = SwarmSizingRecommendation(
+            task_type=str(task_type),
+            complexity_score=round(complexity, 4),
+            complexity_band=band,
+            swarm_size=swarm_size,
+            model_chain=model_chain,
+            access_tiers=access_tiers,
+            rationale=rationale,
+            safety_category=safety_category,
+        )
+
+        if self._ledger is not None:
+            self._ledger.append(
+                XAiDecisionRecord(
+                    task_type=str(task_type),
+                    complexity_score=recommendation.complexity_score,
+                    swarm_size=swarm_size,
+                    candidate_models=[slot["model"] for slot in model_chain],
+                    pareto_rationale=rationale,
+                    safety_flags=self._safety_flags(payload),
+                    fallback_cascade=self._free_tier_frontier(active),
+                )
+            )
+        return recommendation
+
+    # ------------------------------------------------------------------
+    # -- Complexity estimation -------------------------------------------
+    # ------------------------------------------------------------------
+
+    def _compute_complexity(
+        self, task_type: str, payload: Dict[str, Any]
+    ) -> float:
+        depth = self._reasoning_depth(str(task_type))
+        tokens = self._token_score(payload)
+        safety = self._safety_score(payload)
+        return min(1.0, max(0.0, 0.8 * depth + 0.15 * tokens + 0.05 * safety))
+
+    @classmethod
+    def _reasoning_depth(cls, task_type: str) -> float:
+        key = task_type.lower()
+        for label, score in cls._TASK_DEPTH.items():
+            if label in key:
+                return score
+        return 0.5
+
+    @staticmethod
+    def _token_score(payload: Dict[str, Any]) -> float:
+        text = payload.get("text") or payload.get("content") or ""
+        if not text:
+            text = json.dumps(payload, default=str)
+        tokens = len(str(text)) / 4.0
+        return min(1.0, tokens / 4000.0)
+
+    @staticmethod
+    def _safety_score(payload: Dict[str, Any]) -> float:
+        category = str(payload.get("safety_category", "")).lower()
+        if category in ("high_consequence", "high-consequence", "safety_critical"):
+            return 1.0
+        if "geofence" in str(payload).lower():
+            return 0.6
+        return 0.0
+
+    @staticmethod
+    def _band_for_complexity(complexity: float) -> str:
+        if complexity < 0.25:
+            return TaskComplexity.PARSING.value
+        if complexity < 0.5:
+            return TaskComplexity.SUMMARIZATION.value
+        if complexity < 0.75:
+            return TaskComplexity.CONSENSUS_VERIFICATION.value
+        return TaskComplexity.DEEP_SYNTHESIS.value
+
+    @staticmethod
+    def _swarm_size_for_band(band: str) -> int:
+        return {
+            TaskComplexity.PARSING.value: 1,
+            TaskComplexity.SUMMARIZATION.value: 2,
+            TaskComplexity.CONSENSUS_VERIFICATION.value: 3,
+            TaskComplexity.DEEP_SYNTHESIS.value: 5,
+        }[band]
+
+    @staticmethod
+    def _build_rationale(
+        task_type: str, complexity: float, swarm_size: int, band: str
+    ) -> str:
+        return (
+            "Task '{}' scored complexity C={:.3f} (band '{}'); selected swarm "
+            "cardinality K={} to balance latency, cost, and cross-model "
+            "agreement."
+        ).format(task_type, complexity, band, swarm_size)
+
+    @staticmethod
+    def _safety_flags(payload: Dict[str, Any]) -> Dict[str, bool]:
+        text = str(payload).lower()
+        return {
+            "geofence_checked": "geofence" in text,
+            "consent_checked": "consent" in text,
+            "airgapped": bool(payload.get("airgapped", False)),
+        }
+
+    # ------------------------------------------------------------------
+    # -- Model chain selection -------------------------------------------
+    # ------------------------------------------------------------------
+
+    def _active_provider_names(self) -> List[str]:
+        try:
+            return [d.name for d in self._registry.list_active()]
+        except Exception:
+            return []
+
+    def _free_tier_frontier(self, active: List[str]) -> List[str]:
+        ordered = [p for p in active if p == "ollama"]
+        ordered += [
+            p
+            for p in active
+            if p != "ollama" and classify_access_tier(p) in self._FREE_TIERS
+        ]
+        return ordered
+
+    def _ordered_model_chain(
+        self, active: List[str], k: int
+    ) -> List[Dict[str, str]]:
+        frontier = self._free_tier_frontier(active)
+        chain: List[Dict[str, str]] = []
+        seen: set = set()
+        for provider in frontier:
+            if len(chain) >= k:
+                break
+            if provider in seen:
+                continue
+            seen.add(provider)
+            chain.append(self._chain_slot(provider))
+        if len(chain) < k:
+            remaining = sorted(
+                [p for p in active if p not in seen],
+                key=lambda p: _PROVIDER_QUALITY.get(p, 0.0),
+                reverse=True,
+            )
+            for provider in remaining:
+                if len(chain) >= k:
+                    break
+                if provider in seen:
+                    continue
+                seen.add(provider)
+                chain.append(self._chain_slot(provider))
+        return chain
+
+    def _chain_slot(self, provider: str) -> Dict[str, str]:
+        descriptor = self._registry.get(provider)
+        model = descriptor.default_model if descriptor else provider
+        return {
+            "provider": provider,
+            "model": model,
+            "access_tier": classify_access_tier(provider),
+        }
+
+
 class CognitiveMetaRouter:
     """Decoupled multi-strategy cognitive meta-router with circuit breaking.
 
@@ -172,6 +413,9 @@ class CognitiveMetaRouter:
         ema_alpha (float): Smoothing factor for time-to-first-token EMA.
         breaker (Optional[SelfHealingCircuitBreaker]): Injected six-state
             breaker (default: a fresh instance).
+        swarm_sizer (Optional[DynamicSwarmSizer]): Injected swarm sizer
+            (default: lazily created with the shared ledger).
+        ledger (Optional[XAiDecisionLedger]): Injected XAI audit ledger.
     """
 
     def __init__(
@@ -182,6 +426,8 @@ class CognitiveMetaRouter:
         ema_alpha: float = 0.2,
         breaker: Optional[SelfHealingCircuitBreaker] = None,
         rate_limiter: Optional[TokenBucketRateLimiter] = None,
+        swarm_sizer: Optional[DynamicSwarmSizer] = None,
+        ledger: Optional[XAiDecisionLedger] = None,
     ) -> None:
         self._registry = registry if registry is not None else get_provider_registry()
         self._transport = transport
@@ -192,6 +438,8 @@ class CognitiveMetaRouter:
         self._rate_limiter = (
             rate_limiter if rate_limiter is not None else TokenBucketRateLimiter()
         )
+        self._swarm_sizer = swarm_sizer
+        self._ledger = ledger
 
     # ------------------------------------------------------------------
     # -- Public dispatch API -------------------------------------------
@@ -228,6 +476,31 @@ class CognitiveMetaRouter:
                 **kwargs,
             )
         return self._execute(request)
+
+    def recommend_swarm(
+        self,
+        task_type: str,
+        input_payload: Optional[Dict[str, Any]] = None,
+    ) -> SwarmSizingRecommendation:
+        """Recommend an optimal swarm cardinality and ordered model chain.
+
+        Delegates to the injected (or lazily created) ``DynamicSwarmSizer`` and
+        logs the resulting decision to the XAI ledger when one is configured.
+
+        Args:
+            task_type (str): Semantic task label.
+            input_payload (Optional[dict]): Task payload for complexity scoring.
+
+        Returns:
+            SwarmSizingRecommendation: The recommended K and model chain.
+        """
+        return self._get_swarm_sizer().recommend_swarm(task_type, input_payload)
+
+    def _get_swarm_sizer(self) -> "DynamicSwarmSizer":
+        """Return the swarm sizer, creating it lazily with the shared ledger."""
+        if self._swarm_sizer is None:
+            self._swarm_sizer = DynamicSwarmSizer(self._registry, self._ledger)
+        return self._swarm_sizer
 
     def record_result(
         self,
@@ -303,7 +576,11 @@ class CognitiveMetaRouter:
 
     def _execute(self, request: RouterTaskRequest) -> RouterTaskResponse:
         active = self._active_provider_names()
-        candidates = self._candidates_for_strategy(request.strategy, active)
+        if request.strategy == RoutingStrategy.AUTO_SWARM_CASCADE:
+            recommendation = self.recommend_swarm(request.task_type, request.payload)
+            candidates = [slot["provider"] for slot in recommendation.model_chain]
+        else:
+            candidates = self._candidates_for_strategy(request.strategy, active)
         latched: List[str] = []
         last_error: Optional[Exception] = None
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: dto.py
-Project: TALOS v5.23.0
+Project: TALOS v5.25.0
 Description:
     Standalone Pydantic v2 data-transfer objects for the Cognitive Mesh in-tree
     microservice. This module is the single interchange surface consumed by the
@@ -30,6 +30,8 @@ Description:
       output and its summary statistics.
     - ProviderHealthReport / MeshDiagnosticReport model the ApiHealthProbeEngine
       probe result and the aggregate mesh diagnostic.
+    - TaskComplexity / XAiDecisionRecord / SwarmSizingRecommendation model the
+      v5.25.0 dynamic swarm-sizing and Explainable AI (XAI) audit domains.
 
 Dependencies:
     - typing: type annotations (List, Dict, Optional, Any).
@@ -57,6 +59,7 @@ class RoutingStrategy(str, Enum):
     LOWEST_COST = "lowest_cost"
     LOCAL_AIRGAPPED = "local_airgapped"
     LOCAL_FIRST_CLOUD_BACKUP = "local_first_cloud_backup"
+    AUTO_SWARM_CASCADE = "auto_swarm_cascade"
 
 
 class ProviderHealthState(str, Enum):
@@ -101,6 +104,26 @@ class AccessTier(str, Enum):
     CLOUD_ZERO_CONFIG_FREE = "CLOUD_ZERO_CONFIG_FREE"
     CLOUD_FREE_TIER_WITH_KEY = "CLOUD_FREE_TIER_WITH_KEY"
     CLOUD_PAID_API = "CLOUD_PAID_API"
+
+
+class TaskComplexity(str, Enum):
+    """The four civilian task-complexity bands used by the dynamic swarm sizer.
+
+    Members subclass ``str`` so they serialize directly in JSON and remain
+    comparable with task-type string keys. The band is derived from the
+    composite complexity score C in [0, 1] and drives the optimal swarm
+    cardinality K in {1, 2, 3, 5} for autonomous multi-agent relays.
+
+    - ``PARSING``: Deterministic extraction and normalization (K = 1).
+    - ``SUMMARIZATION``: Single-pass compression and redaction (K = 2).
+    - ``CONSENSUS_VERIFICATION``: Cross-model agreement audit (K = 3).
+    - ``DEEP_SYNTHESIS``: Multi-perspective reasoning relay (K = 5).
+    """
+
+    PARSING = "parsing"
+    SUMMARIZATION = "summarization"
+    CONSENSUS_VERIFICATION = "consensus_verification"
+    DEEP_SYNTHESIS = "deep_synthesis"
 
 
 class RouterTaskRequest(BaseModel):
@@ -357,4 +380,61 @@ class MeshDiagnosticReport(BaseModel):
     free: int = 0
     latched: int = 0
     probes: List[ProviderHealthReport] = Field(default_factory=list)
+
+
+class XAiDecisionRecord(BaseModel):
+    """Append-only Explainable AI (XAI) audit record for a routing decision.
+
+    Persisted to ``data/cache/xai_decision_log.jsonl`` as one JSON object per
+    line by ``XAiDecisionLedger``. Each record captures the full rationale
+    behind a swarm-sizing or model-selection decision so that high-consequence
+    operational outcomes remain auditable by external consumers (Robotic
+    Operations Stations, MEMEX) with zero proprietary coupling.
+
+    Attributes:
+        timestamp (str): ISO 8601 wall-clock timestamp.
+        decision_id (str): UUID4 decision identifier.
+        task_type (str): Semantic task label.
+        complexity_score (float): Composite complexity C in [0, 1].
+        swarm_size (int): Optimal swarm cardinality K in {1, 2, 3, 5}.
+        candidate_models (list[str]): Ordered model chain selected.
+        pareto_rationale (str): Human-readable cost/latency/quality trade-off.
+        safety_flags (dict): High-consequence operational safety verification
+            flags (geofence_checked, consent_checked, airgapped).
+        fallback_cascade (list[str]): Providers consulted before final choice.
+    """
+
+    timestamp: str = ""
+    decision_id: str = ""
+    task_type: str = "general"
+    complexity_score: float = 0.0
+    swarm_size: int = 1
+    candidate_models: List[str] = Field(default_factory=list)
+    pareto_rationale: str = ""
+    safety_flags: Dict[str, bool] = Field(default_factory=dict)
+    fallback_cascade: List[str] = Field(default_factory=list)
+
+
+class SwarmSizingRecommendation(BaseModel):
+    """Dynamic swarm-sizing recommendation produced by ``DynamicSwarmSizer``.
+
+    Attributes:
+        task_type (str): Semantic task label.
+        complexity_score (float): Composite complexity C in [0, 1].
+        complexity_band (str): TaskComplexity band derived from C.
+        swarm_size (int): Optimal swarm cardinality K in {1, 2, 3, 5}.
+        model_chain (list[dict]): Ordered candidate models with access tiers.
+        access_tiers (list[str]): AccessTier classification per chain slot.
+        rationale (str): Human-readable justification of the K selection.
+        safety_category (str): Civilian operational safety category label.
+    """
+
+    task_type: str = "general"
+    complexity_score: float = 0.0
+    complexity_band: str = "parsing"
+    swarm_size: int = 1
+    model_chain: List[Dict[str, str]] = Field(default_factory=list)
+    access_tiers: List[str] = Field(default_factory=list)
+    rationale: str = ""
+    safety_category: str = "standard"
 

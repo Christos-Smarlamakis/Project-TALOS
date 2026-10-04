@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.24.0
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.25.0
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-04
-> **Version:** v5.24.0 -- Enterprise Data Vault, Proactive Token-Bucket Rate Limiter & Distributed JSONL Buffer Sync
+> **Version:** v5.25.0 -- Autonomous Multi-LLM Relay, XAI Decision Ledger & Dynamic Swarm Sizing
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.24.0" | `config/settings.py` |
+| TALOS_VERSION | "5.25.0" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1405,6 +1405,24 @@ For each evaluated paper, the AI generates:
 - **Rule 9** (`.clinerules`): the complete 8-Pillar ISO/IEC 25010 Software Product Quality Standard.
 
 **Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.24.0), `pytest tests/test_rate_limiter.py tests/test_buffer_sync.py tests/test_database_vault.py -q` (16 hermetic), `python talos.py --verify-db` / `--backup-db` (exit 0), `python src/utils/verify_dependency_map.py --ci` (0/0/0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD).
+
+### 15.59 Autonomous Multi-LLM Relay, XAI Decision Ledger & Dynamic Swarm Sizing (v5.25.0)
+
+**Overview:** v5.25.0 introduces the Cognitive Mesh XAI engine and dynamic swarm sizer, a codebase documentation subsystem, and codifies the Academic Dual-Use Neutrality (Rule 11) and Citation Integrity & Anti-Hallucination (Rule 12) protocols under ISO/IEC 25010.
+
+- **XAI Decision Ledger** (`src/services/cognitive_mesh/xai_ledger.py`): `XAiDecisionLedger.append` / `latest` / `explain` persist append-only JSONL to `data/cache/xai_decision_log.jsonl` (timestamp, decision_id UUID4, task_type, complexity_score, swarm_size, candidate_models, pareto_rationale, safety_flags, fallback_cascade).
+
+- **Dynamic Swarm Sizer & AUTO mode** (`src/services/cognitive_mesh/router.py`): `DynamicSwarmSizer.recommend_swarm(task_type, input_payload)` computes `C = 0.8 D + 0.15 T + 0.05 S` and maps C to `K in {1,2,3,5}`; `RoutingStrategy.AUTO_SWARM_CASCADE` relays across the free-tier frontier cascade.
+
+- **Field-Station Endpoints** (`src/services/cognitive_mesh/server.py`): `POST /mesh/swarm-recommend`, `GET /mesh/xai-trail`.
+
+- **Codebase Documentation Subsystem** (`src/utils/codebase_documenter/`): `CodebaseAstAnalyzer`, `ArchitectureLedger`, `MultiLlmRelayOrchestrator`, `CodebaseDocGenerator` producing `docs/CODEBASE_DOCUMENTATION_MASTER.md` and standalone `.html`.
+
+- **CLI & Palette** (`talos.py`): `--document-codebase [--cascade|--local|--dry-run]`, `--show-xai-log [--limit N]`, `/doc-codebase`, `/xai`.
+
+- **Rule 11 & Rule 12** (`.clinerules`): Academic Dual-Use Neutrality and Citation Integrity & Anti-Hallucination.
+
+**Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.25.0), `pytest tests/test_xai_ledger.py tests/test_dynamic_swarm_sizer.py tests/test_codebase_documenter.py -q` (19 hermetic), `python talos.py --document-codebase --dry-run` / `--show-xai-log` (exit 0), `python src/utils/verify_dependency_map.py --ci` (0/0/0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD).
 
 ### 15.56 Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization (v5.22.1)
 

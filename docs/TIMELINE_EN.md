@@ -4,7 +4,31 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-04 (v5.24.0 -- Enterprise Data Vault, Proactive Token-Bucket Rate Limiter & Distributed JSONL Buffer Sync)
+> **Last Updated:** 2026-10-04 (v5.25.0 -- Autonomous Multi-LLM Relay, XAI Decision Ledger & Dynamic Swarm Sizing)
+
+---
+
+## Phase 86: Autonomous Multi-LLM Relay, XAI Decision Ledger & Dynamic Swarm Sizing (v5.25.0)
+
+- [x] **Status:** COMPLETED (2026-10-04).
+
+- [x] **XAI Decision Ledger** -- `xai_ledger.py` (`XAiDecisionLedger.append` / `latest` / `explain`) persisting append-only JSONL to `data/cache/xai_decision_log.jsonl`.
+
+- [x] **Dynamic Swarm Sizer & AUTO mode** -- `router.py` (`DynamicSwarmSizer.recommend_swarm`, `RoutingStrategy.AUTO_SWARM_CASCADE`), complexity `C = 0.8 D + 0.15 T + 0.05 S`, `K in {1,2,3,5}`, free-tier frontier cascade.
+
+- [x] **Field-station endpoints** -- `server.py` (`POST /mesh/swarm-recommend`, `GET /mesh/xai-trail`).
+
+- [x] **Codebase documentation subsystem** -- `src/utils/codebase_documenter/` (`CodebaseAstAnalyzer`, `ArchitectureLedger`, `MultiLlmRelayOrchestrator`, `CodebaseDocGenerator`) producing `docs/CODEBASE_DOCUMENTATION_MASTER.md` and standalone `.html`.
+
+- [x] **CLI & palette** -- `--document-codebase [--cascade|--local|--dry-run]`, `--show-xai-log [--limit N]`, `/doc-codebase`, `/xai`.
+
+- [x] **Rule 11 & Rule 12** -- Academic Dual-Use Neutrality and Citation Integrity & Anti-Hallucination codified in `.clinerules`.
+
+- [x] **Confidential Academic Dossier 13** -- `docs/internal/academic/13_MULTI_LLM_STATEFUL_RELAY_CODEBASE_DOCUMENTATION_ISO25010.md` (7 sections).
+
+- [x] **Version sync** -- `config/settings.py` (`TALOS_VERSION = "5.25.0"`), `main_api.py`, `talos.py`, launchers, `docker-compose.yml` (`talos:5.25.0`), `CITATION.cff` (5.25.0, 2026-10-04), `tests/test_multi_tier.py`, and all 21 canonical docs to v5.25.0 (2026-10-04).
+
+- [x] **Verification gates passed** -- compileall (0 errors), test_system_integrity, test_talos_version (5.25.0), test_xai_ledger + test_dynamic_swarm_sizer + test_codebase_documenter (19), `--document-codebase --dry-run` (exit 0), `--show-xai-log` (exit 0), neutrality audit, verify_dependency_map --ci (0/0/0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ---
 

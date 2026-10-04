@@ -4,7 +4,31 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-04 (v5.24.0 -- Επιχειρηματικό Θησαυροφυλάκιο Δεδομένων, Προληπτικός Περιοριστής Ρυθμού Token-Bucket & Κατανεμημένος Συγχρονισμός Προσωρινής Μνήμης JSONL)
+> **Τελευταία Ενημέρωση:** 2026-10-04 (v5.25.0 -- Αυτόνομος Πολυ-Μοντέλος Αναμετάδοσης, Μητρώο Αποφάσεων Εξηγήσιμης ΤΝ & Δυναμική Διαστασιολόγηση Σμήνους)
+
+---
+
+## Φάση 86: Αυτόνομος Πολυ-Μοντέλος Αναμετάδοσης, Μητρώο Αποφάσεων Εξηγήσιμης ΤΝ & Δυναμική Διαστασιολόγηση Σμήνους (v5.25.0)
+
+- [x] **Κατάσταση:** ΟΛΟΚΛΗΡΩΘΗΚΕ (2026-10-04).
+
+- [x] **Μητρώο Αποφάσεων XAI** -- `xai_ledger.py` (`XAiDecisionLedger.append` / `latest` / `explain`) με append-only JSONL στο `data/cache/xai_decision_log.jsonl`.
+
+- [x] **Δυναμικός Διαστασιολογητής Σμήνους & λειτουργία AUTO** -- `router.py` (`DynamicSwarmSizer.recommend_swarm`, `RoutingStrategy.AUTO_SWARM_CASCADE`), πολυπλοκότητα `C = 0.8 D + 0.15 T + 0.05 S`, `K in {1,2,3,5}`, αλυσίδα free-tier frontier.
+
+- [x] **Endpoint σταθμών επιχειρήσεων** -- `server.py` (`POST /mesh/swarm-recommend`, `GET /mesh/xai-trail`).
+
+- [x] **Υποσύστημα τεκμηρίωσης κώδικα** -- `src/utils/codebase_documenter/` (`CodebaseAstAnalyzer`, `ArchitectureLedger`, `MultiLlmRelayOrchestrator`, `CodebaseDocGenerator`) που παράγει `docs/CODEBASE_DOCUMENTATION_MASTER.md` και αυτόνομο `.html`.
+
+- [x] **CLI & παλέτα** -- `--document-codebase [--cascade|--local|--dry-run]`, `--show-xai-log [--limit N]`, `/doc-codebase`, `/xai`.
+
+- [x] **Κανόνας 11 & Κανόνας 12** -- Ακαδημαϊκή Ουδετερότητα Διπλής Χρήσης και Ακεραιότητα Αναφορών & Αντι-Παραίσθηση κωδικοποιημένα στο `.clinerules`.
+
+- [x] **Απόρρητος Ακαδημαϊκός Φάκελος 13** -- `docs/internal/academic/13_MULTI_LLM_STATEFUL_RELAY_CODEBASE_DOCUMENTATION_ISO25010.md` (7 ενότητες).
+
+- [x] **Συγχρονισμός έκδοσης** -- `config/settings.py` (`TALOS_VERSION = "5.25.0"`), `main_api.py`, `talos.py`, εκκινητές, `docker-compose.yml` (`talos:5.25.0`), `CITATION.cff` (5.25.0, 2026-10-04), `tests/test_multi_tier.py`, και όλα τα 21 κανονικά έγγραφα σε v5.25.0 (2026-10-04).
+
+- [x] **Πύλες επαλήθευσης πέρασαν** -- compileall (0 σφάλματα), test_system_integrity, test_talos_version (5.25.0), test_xai_ledger + test_dynamic_swarm_sizer + test_codebase_documenter (19), `--document-codebase --dry-run` (έξοδος 0), `--show-xai-log` (έξοδος 0), έλεγχος ουδετερότητας, verify_dependency_map --ci (0/0/0), bash -n, σάρωση UTF-8 (0 U+FFFD).
 
 ---
 

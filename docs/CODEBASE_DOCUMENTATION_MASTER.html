@@ -1,0 +1,3301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TALOS Codebase Documentation Master</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --border: #30363d;
+  --text: #e6edf3;
+  --muted: #8b949e;
+  --accent: #58a6ff;
+  --code: #f0883e;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.55;
+}
+.hero { padding: 2rem 1.5rem 1.5rem; border-bottom: 1px solid var(--border); }
+.hero h1 { margin: 0 0 .5rem; font-size: 1.8rem; color: var(--accent); }
+.hero .meta { margin: 0; color: var(--muted); font-size: .9rem; }
+.searchbar {
+  position: sticky; top: 0; padding: 1rem 1.5rem;
+  background: var(--bg); border-bottom: 1px solid var(--border);
+}
+.searchbar input {
+  width: 100%; padding: .65rem .9rem; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--panel);
+  color: var(--text); font-size: 1rem;
+}
+.card {
+  margin: 1.25rem 1.5rem; padding: 1.25rem 1.5rem;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.card h2 { margin: 0 0 .35rem; font-size: 1.15rem; color: var(--accent); }
+.card h3 { margin: 1rem 0 .4rem; font-size: .95rem; color: var(--muted); }
+.card ul { margin: .2rem 0; padding-left: 1.4rem; }
+.card .summary { color: var(--muted); margin: 0; }
+.card .prose { margin-top: .8rem; white-space: pre-wrap; }
+code { color: var(--code); font-family: "SFMono-Regular", Consolas, monospace; }
+.hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="searchbar">
+  <input id="search" type="search" placeholder="Search modules, classes, or functions...">
+</div>
+<div id="content">
+<header class="hero"><h1>TALOS Codebase Documentation Master</h1><p class="meta">Version 5.25.0 &middot; Generated 2026-10-04T13:55:36.109254+03:00 &middot; 147 modules &middot; 150 classes &middot; 586 functions &middot; 322 dependency edges</p></header><section class="card" data-search="config/settings.py">
+<h2>config/settings.py</h2>
+<p class="summary">Module: settings.py</p>
+</section>
+<section class="card" data-search="src/ai/drl/drl_agent.py">
+<h2>src/ai/drl/drl_agent.py</h2>
+<p class="summary">Module: drl_agent.py (v2.2 — 18-Source Scaling)</p>
+<h3>Classes</h3><ul>
+<li><code>ReplayMemory</code> (line 75)
+ &mdash; Experience replay buffer for the DDQN agent.
+<ul><li><code>__init__(self, capacity)</code> (line 88)</li></ul>
+<ul><li><code>store(self, transition)</code> (line 97)</li></ul>
+<ul><li><code>sample(self, batch_size)</code> (line 106)</li></ul>
+<ul><li><code>__len__(self)</code> (line 118)</li></ul>
+</li>
+<li><code>TalosDRLAgent</code> (line 124)
+ &mdash; Double Dueling DQN agent for TALOS API source selection.
+<ul><li><code>__init__(self, state_dim, action_dim, network_class)</code> (line 150)</li></ul>
+<ul><li><code>reset_hidden_states(self)</code> (line 203)</li></ul>
+<ul><li><code>act(self, state, eps)</code> (line 216)</li></ul>
+<ul><li><code>learn(self)</code> (line 251)</li></ul>
+<ul><li><code>_soft_update(local_model, target_model, tau)</code> (line 309)</li></ul>
+<ul><li><code>save(self, path)</code> (line 327)</li></ul>
+<ul><li><code>load(self, path)</code> (line 345)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/ai/drl/drl_networks.py</li>
+<li>src/ai/drl/talos_env.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/drl/drl_networks.py">
+<h2>src/ai/drl/drl_networks.py</h2>
+<p class="summary">Module: drl_networks.py (v1.1)</p>
+<h3>Classes</h3><ul>
+<li><code>DuelingLSTM</code> (line 30)
+ &mdash; Dueling LSTM network for the TALOS DRL agent.
+<ul><li><code>__init__(self, input_dim, output_dim)</code> (line 54)</li></ul>
+<ul><li><code>forward(self, state)</code> (line 84)</li></ul>
+</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/drl/drl_trainer.py">
+<h2>src/ai/drl/drl_trainer.py</h2>
+<p class="summary">Module: drl_trainer.py (v1.4 — DRL Environment Scaling)</p>
+<h3>Functions</h3><ul>
+<li><code>main()</code> (line 48)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/ai/drl/drl_agent.py</li>
+<li>src/ai/drl/talos_env.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/drl/live_agent_orchestrator.py">
+<h2>src/ai/drl/live_agent_orchestrator.py</h2>
+<p class="summary">Module: live_agent_orchestrator.py (v1.4 — 18-Source Scaling)</p>
+<h3>Functions</h3><ul>
+<li><code>_get_provider_limits(config)</code> (line 66)</li>
+<li><code>calculate_state(normalized_hour, source_call_counts, source_limits, provider_call_counts, provider_limits, low_score_streak, error_streak, source_names)</code> (line 100)</li>
+<li><code>execute_live_fetch(action, action_map, config)</code> (line 151)</li>
+<li><code>_estimate_prompt_tokens(text)</code> (line 223)</li>
+<li><code>evaluate_paper(paper, ai_manager, provider_call_counts)</code> (line 239)</li>
+<li><code>calculate_reward(score)</code> (line 335)</li>
+<li><code>run_live_loop(agent, action_map, working_source_names, config, ai_manager, verbose, episodes)</code> (line 353)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/hierarchical_evaluator.py</li>
+<li>src/core/profile_manager.py</li>
+<li>src/integration/visualizer_bridge.py</li>
+<li>src/utils/evaluation_history.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/drl/live_agent_sources.py">
+<h2>src/ai/drl/live_agent_sources.py</h2>
+<p class="summary">Module: live_agent_sources.py (v1.2)</p>
+<h3>Functions</h3><ul>
+<li><code>import_source_class(source_name)</code> (line 22)</li>
+<li><code>build_source_map(source_names)</code> (line 71)</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/drl/llm_router_subagent.py">
+<h2>src/ai/drl/llm_router_subagent.py</h2>
+<p class="summary">Module: llm_router_subagent.py</p>
+<h3>Classes</h3><ul>
+<li><code>LLMRouterSubAgent</code> (line 174)
+ &mdash; Selects the optimal active provider for an LLM inference request.
+<ul><li><code>__init__(self, weights_path)</code> (line 183)</li></ul>
+<ul><li><code>_normalize(weights_dict)</code> (line 198)</li></ul>
+<ul><li><code>load_weights(path)</code> (line 218)</li></ul>
+<ul><li><code>set_weights(self, weights)</code> (line 242)</li></ul>
+<ul><li><code>estimate_signals(self, prompt_length, task_type)</code> (line 252)</li></ul>
+<ul><li><code>score_provider(self, signals)</code> (line 286)</li></ul>
+<ul><li><code>load_quality_scores(self, quality_map)</code> (line 303)</li></ul>
+<ul><li><code>refresh_quality_scores(self, engine, online)</code> (line 316)</li></ul>
+<ul><li><code>_emit_router_decision(self, provider, task_type, prompt_length, score)</code> (line 345)</li></ul>
+<ul><li><code>select_provider(self, prompt_length, task_type, active_providers)</code> (line 369)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>relative_quality(raw_score)</code> (line 124)</li>
+<li><code>estimate_prompt_tokens(text)</code> (line 157)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/ai/llm/model_discovery.py</li>
+<li>src/integration/synapse_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/drl/talos_env.py">
+<h2>src/ai/drl/talos_env.py</h2>
+<p class="summary">Module: talos_env.py (v3.3 — 18-source / 25-dim scaling)</p>
+<h3>Classes</h3><ul>
+<li><code>TalosEnv</code> (line 159)
+ &mdash; Gymnasium environment for TALOS API source selection (N sources + sleep).
+<ul><li><code>__init__(self, source_names, source_limits, config)</code> (line 180)</li></ul>
+<ul><li><code>arxiv_limit(self)</code> (line 244)</li></ul>
+<ul><li><code>openalex_limit(self)</code> (line 249)</li></ul>
+<ul><li><code>s2_limit(self)</code> (line 254)</li></ul>
+<ul><li><code>_get_limit(self, name)</code> (line 258)</li></ul>
+<ul><li><code>reset(self, seed, options)</code> (line 266)</li></ul>
+<ul><li><code>step(self, action)</code> (line 304)</li></ul>
+<ul><li><code>_build_obs(self)</code> (line 401)</li></ul>
+<ul><li><code>_simulate_score(self)</code> (line 433)</li></ul>
+<ul><li><code>_score_to_reward(score)</code> (line 455)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_load_source_list(config)</code> (line 66)</li>
+<li><code>_try_load_config()</code> (line 114)</li>
+<li><code>_load_source_limits(source_names, config)</code> (line 134)</li>
+<li><code>get_default_state_space()</code> (line 482)</li>
+<li><code>get_default_action_space()</code> (line 496)</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/drl/talos_live_agent.py">
+<h2>src/ai/drl/talos_live_agent.py</h2>
+<p class="summary">Module: talos_live_agent.py (v3.2 — Batch 2 TUI hardening)</p>
+<h3>Functions</h3><ul>
+<li><code>_parse_args()</code> (line 47)</li>
+<li><code>main()</code> (line 61)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/ai/drl/drl_agent.py</li>
+<li>src/ai/drl/live_agent_orchestrator.py</li>
+<li>src/ai/drl/live_agent_sources.py</li>
+<li>src/ai/drl/talos_env.py</li>
+<li>src/core/ai_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/drl/talos_service.py">
+<h2>src/ai/drl/talos_service.py</h2>
+<p class="summary">Module: talos_service.py (v2.1 — Profile-Aware, Dynamic N Sources)</p>
+<h3>Functions</h3><ul>
+<li><code>_handle_signal(signum, frame)</code> (line 84)</li>
+<li><code>_spawn_fermion_cpu_server(strategy)</code> (line 134)</li>
+<li><code>_terminate_fermion_cpu_server()</code> (line 174)</li>
+<li><code>build_paper_alert(paper_data, source)</code> (line 195)</li>
+<li><code>_is_fresh_paper(paper_meta)</code> (line 224)</li>
+<li><code>should_send_daily_digest(last_sent_date)</code> (line 282)</li>
+<li><code>send_daily_digest(notifier)</code> (line 305)</li>
+<li><code>_save_daily_report(today_discoveries)</code> (line 327)</li>
+<li><code>_get_daemon_router()</code> (line 359)</li>
+<li><code>_log_router_decision(source_name, provider, prompt_length)</code> (line 376)</li>
+<li><code>route_daemon_evaluation(source_name, prompt_length)</code> (line 402)</li>
+<li><code>_load_daemon_target_sources()</code> (line 421)</li>
+<li><code>_run_live_search()</code> (line 441)</li>
+<li><code>_run_daemon_iteration(env, agent, notifier, sleep_action, verbose, epsilon, last_live_search, last_digest_date, papers_discovered, high_score_count)</code> (line 481)</li>
+<li><code>main()</code> (line 689)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+<li>src/ai/drl/drl_agent.py</li>
+<li>src/ai/drl/llm_router_subagent.py</li>
+<li>src/ai/drl/train_agent.py</li>
+<li>src/core/database_manager.py</li>
+<li>src/core/notifier.py</li>
+<li>src/core/profile_manager.py</li>
+<li>src/integration/visualizer_bridge.py</li>
+<li>src/utils/evaluation_history.py</li>
+<li>src/utils/logger.py</li>
+<li>src/utils/tray_icon.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/drl/train_agent.py">
+<h2>src/ai/drl/train_agent.py</h2>
+<p class="summary">Module: train_agent.py (v1.0)</p>
+<h3>Classes</h3><ul>
+<li><code>OfflineTalosEnv</code> (line 52)
+ &mdash; Extension of TalosEnv that uses REAL paper scores from the database.
+<ul><li><code>__init__(self, *args, **kwargs)</code> (line 65)</li></ul>
+<ul><li><code>_load_papers_from_db()</code> (line 80)</li></ul>
+<ul><li><code>_simulate_score(self)</code> (line 124)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>main()</code> (line 145)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/ai/drl/drl_agent.py</li>
+<li>src/ai/drl/talos_env.py</li>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/embeddings/db_embedding_upgrade.py">
+<h2>src/ai/embeddings/db_embedding_upgrade.py</h2>
+<p class="summary">Module: db_embedding_upgrade.py (v2.0)</p>
+<h3>Functions</h3><ul>
+<li><code>get_db_path()</code> (line 35)</li>
+<li><code>upgrade_database(db_path)</code> (line 55)</li>
+<li><code>main()</code> (line 157)</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/embeddings/embedding_generator.py">
+<h2>src/ai/embeddings/embedding_generator.py</h2>
+<p class="summary">Module: embedding_generator.py (v4.0 — Multi-Model Seed All)</p>
+<h3>Functions</h3><ul>
+<li><code>load_configuration()</code> (line 36)</li>
+<li><code>generate_for_model(ai_manager, db_manager, model_name, provider_name)</code> (line 49)</li>
+<li><code>main()</code> (line 106)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/ai_manager.py</li>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/llm/model_discovery.py">
+<h2>src/ai/llm/model_discovery.py</h2>
+<p class="summary">Module: model_discovery.py</p>
+<h3>Classes</h3><ul>
+<li><code>ModelDiscoveryEngine</code> (line 99)
+ &mdash; Dynamic discovery of active LLM models with air-gapped quality scoring.
+<ul><li><code>__init__(self, registry_path, ollama_url, cloud_endpoints, timeout, emit_events)</code> (line 111)</li></ul>
+<ul><li><code>_ensure_registry(self)</code> (line 134)</li></ul>
+<ul><li><code>_load_registry(self)</code> (line 152)</li></ul>
+<ul><li><code>_http_get_json(self, url, params)</code> (line 171)</li></ul>
+<ul><li><code>_discover_local_models(self)</code> (line 195)</li></ul>
+<ul><li><code>_parse_local_tags(data)</code> (line 205)</li></ul>
+<ul><li><code>_discover_cloud_models(self)</code> (line 229)</li></ul>
+<ul><li><code>_parse_cloud_models(data, provider)</code> (line 242)</li></ul>
+<ul><li><code>discover_active_models(self, online)</code> (line 272)</li></ul>
+<ul><li><code>_enrich_models(models, registry)</code> (line 317)</li></ul>
+<ul><li><code>get_normalized_quality_scores(self, online)</code> (line 345)</li></ul>
+<ul><li><code>_compute_quality_scores(active)</code> (line 366)</li></ul>
+<ul><li><code>get_provider_quality_scores(self, online)</code> (line 386)</li></ul>
+<ul><li><code>_emit_model_discovered(self, model)</code> (line 415)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>get_discovery_engine()</code> (line 442)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+<li>src/integration/synapse_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/llm/model_manager.py">
+<h2>src/ai/llm/model_manager.py</h2>
+<p class="summary">Module: model_manager.py</p>
+<h3>Functions</h3><ul>
+<li><code>get_ollama_base()</code> (line 109)</li>
+<li><code>check_ollama_alive()</code> (line 114)</li>
+<li><code>get_installed_models()</code> (line 128)</li>
+<li><code>get_available_tags(model_name)</code> (line 145)</li>
+<li><code>get_quantized_variants(model_base_name)</code> (line 201)</li>
+<li><code>_categorize_tags(tags, base, installed_full)</code> (line 249)</li>
+<li><code>pull_model(full_name)</code> (line 305)</li>
+<li><code>_provision_model(model_name)</code> (line 343)</li>
+<li><code>_fits_label(fits, size_gb, vram_limit)</code> (line 402)</li>
+<li><code>_confirm_setting_change(env_path, key_name, old_value, new_value)</code> (line 428)</li>
+<li><code>_browse_and_pick_ollama_model(vram_gb, vram_limit, env_path, current_model_key)</code> (line 484)</li>
+<li><code>_pick_quantization(model_name, vram_limit, installed_models)</code> (line 635)</li>
+<li><code>_install_if_needed(final_model, installed_models, vram_limit)</code> (line 750)</li>
+<li><code>select_fast_edge_model(env_path)</code> (line 790)</li>
+<li><code>select_heavy_model(env_path)</code> (line 874)</li>
+<li><code>get_cloud_provider_rows(values)</code> (line 977)</li>
+<li><code>select_cloud_models(env_path)</code> (line 1002)</li>
+<li><code>select_execution_mode(env_path)</code> (line 1093)</li>
+<li><code>select_embedding_model(env_path)</code> (line 1383)</li>
+<li><code>main()</code> (line 1483)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+<li>src/core/hardware.py</li>
+<li>src/utils/model_provisioner.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/llm/query_translator.py">
+<h2>src/ai/llm/query_translator.py</h2>
+<p class="summary">Module: query_translator.py (v2.3 - Final with Override)</p>
+<h3>Functions</h3><ul>
+<li><code>load_config()</code> (line 36)</li>
+<li><code>save_config(config, path)</code> (line 44)</li>
+<li><code>flatten_json(y)</code> (line 49)</li>
+<li><code>main()</code> (line 88)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/ai_manager.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/llm/research_pivot.py">
+<h2>src/ai/llm/research_pivot.py</h2>
+<p class="summary">Module: research_pivot.py</p>
+<h3>Functions</h3><ul>
+<li><code>get_active_profile_name()</code> (line 62)</li>
+<li><code>save_state_to_profile(profile_name)</code> (line 70)</li>
+<li><code>_resolve_script_path(script_name)</code> (line 86)</li>
+<li><code>run_script(script_name, stdin_text, args)</code> (line 103)</li>
+<li><code>main()</code> (line 138)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/logger.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py">
+<h2>src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py</h2>
+<p class="summary">Module: gwo_foraging_hyperparameter_tuner.py (v2.1 — GWOForagingHyperparameterTuner)</p>
+<h3>Classes</h3><ul>
+<li><code>GWOForagingHyperparameterTuner</code> (line 276)
+ &mdash; Class-based facade for the GWO DRL hyperparameter tuner.
+<ul><li><code>__init__(self, wolves, iterations, rl_episodes, live)</code> (line 291)</li></ul>
+<ul><li><code>optimize(self)</code> (line 306)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_build_history_entry(iteration, wolves, best_wolves, wolves_number, fitness_values)</code> (line 59)</li>
+<li><code>decode_wolf(wolf_position)</code> (line 82)</li>
+<li><code>calculate_fitness(wolf_position)</code> (line 89)</li>
+<li><code>find_best_three_wolves(wolves_positions)</code> (line 139)</li>
+<li><code>update_wolf_position(wolf_pos, dim, best_wolves, a_factor)</code> (line 152)</li>
+<li><code>_write_live_progress(iteration, max_iters, best_reward, best_fitness, a_factor, status)</code> (line 174)</li>
+<li><code>run_gwo(wolves_number, max_iterations, live)</code> (line 187)</li>
+<li><code>main()</code> (line 321)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/ai/drl/drl_agent.py</li>
+<li>src/ai/drl/talos_env.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/optimizers/gwo_live_dashboard.py">
+<h2>src/ai/optimizers/gwo_live_dashboard.py</h2>
+<p class="summary">Module: gwo_live_dashboard.py (v1.0 — Dash Live GWO Visualizer)</p>
+<h3>Functions</h3><ul>
+<li><code>update_dashboard(n_intervals)</code> (line 73)</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/optimizers/gwo_llm_router_reward_shaper.py">
+<h2>src/ai/optimizers/gwo_llm_router_reward_shaper.py</h2>
+<p class="summary">Module: gwo_llm_router_reward_shaper.py</p>
+<h3>Classes</h3><ul>
+<li><code>GWOLLMRouterRewardShaper</code> (line 90)
+ &mdash; Bi-Level GWO optimizer for the LLM Router reward weights.
+<ul><li><code>__init__(self, wolves, iterations, eval_episodes, seed)</code> (line 107)</li></ul>
+<ul><li><code>_project_simplex(vector)</code> (line 128)</li></ul>
+<ul><li><code>_evaluate_router(self, weights)</code> (line 146)</li></ul>
+<ul><li><code>_fitness(self, weights)</code> (line 187)</li></ul>
+<ul><li><code>_update_position(self, wolf, dim, alpha, beta, delta, a_factor)</code> (line 198)</li></ul>
+<ul><li><code>optimize(self)</code> (line 241)</li></ul>
+<ul><li><code>_models_dir()</code> (line 309)</li></ul>
+<ul><li><code>export(self, result)</code> (line 320)</li></ul>
+<ul><li><code>run(self)</code> (line 370)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>main()</code> (line 406)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/ai/drl/llm_router_subagent.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/testing/__init__.py">
+<h2>src/ai/testing/__init__.py</h2>
+<p class="summary">Module: __init__.py</p>
+<h3>Dependencies</h3><ul>
+<li>src/ai/testing/red_tester.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ai/testing/red_tester.py">
+<h2>src/ai/testing/red_tester.py</h2>
+<p class="summary">Module: red_tester.py</p>
+<h3>Functions</h3><ul>
+<li><code>_make_clickable_path(path_str)</code> (line 67)</li>
+<li><code>_safe_str(output)</code> (line 79)</li>
+<li><code>_get_ai_manager()</code> (line 112)</li>
+<li><code>_get_synapse_emitter()</code> (line 125)</li>
+<li><code>_discover_all_targets()</code> (line 145)</li>
+<li><code>_build_api_fuzzing_arms()</code> (line 187)</li>
+<li><code>_load_q_table()</code> (line 276)</li>
+<li><code>_save_q_table(q_table)</code> (line 295)</li>
+<li><code>_protect_context_window(text, max_chars)</code> (line 311)</li>
+<li><code>_diagnose_crash(component_name, command, stderr)</code> (line 332)</li>
+<li><code>_execute_arm(arm)</code> (line 373)</li>
+<li><code>_execute_cli_arm(display_name, script_path, args)</code> (line 394)</li>
+<li><code>_execute_api_arm(display_name, request_spec)</code> (line 444)</li>
+<li><code>_select_arm(q_table)</code> (line 511)</li>
+<li><code>_save_crash_report(display_name, command, stdout, stderr, diagnosis, q_table, arm_index)</code> (line 538)</li>
+<li><code>_build_q_table_panel(q_table)</code> (line 626)</li>
+<li><code>_run_test_cycle(q_table, cycle, total_cycles)</code> (line 679)</li>
+<li><code>run_red_tester(cycles)</code> (line 806)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/ai_manager.py</li>
+<li>src/integration/synapse_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/analysis/architecture_intelligence_report.py">
+<h2>src/analysis/architecture_intelligence_report.py</h2>
+<p class="summary">Module: architecture_intelligence_report.py (v1.0)</p>
+<h3>Functions</h3><ul>
+<li><code>load_config()</code> (line 47)</li>
+<li><code>collect_data()</code> (line 58)</li>
+<li><code>build_prompt(data, language)</code> (line 105)</li>
+<li><code>generate_report(data, language, config)</code> (line 171)</li>
+<li><code>main()</code> (line 201)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/ai_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/analysis/author_profiler.py">
+<h2>src/analysis/author_profiler.py</h2>
+<p class="summary">Module: author_profiler.py (v3.9 - Intelligent Input &amp; Final)</p>
+<h3>Classes</h3><ul>
+<li><code>UnifiedProfiler</code> (line 44)
+<ul><li><code>__init__(self, mailto_email)</code> (line 45)</li></ul>
+<ul><li><code>_is_orcid(self, identifier)</code> (line 57)</li></ul>
+<ul><li><code>_query_api(self, url, source_name, headers, params)</code> (line 61)</li></ul>
+<ul><li><code>_query_orcid_search(self, author_name)</code> (line 71)</li></ul>
+<ul><li><code>_query_openalex(self, orcid_id)</code> (line 77)</li></ul>
+<ul><li><code>_get_doi_from_work(self, work_summary)</code> (line 81)</li></ul>
+<ul><li><code>run(self, identifier)</code> (line 89)</li></ul>
+<ul><li><code>display_unified_dossier(self, name, orcid_id, oa_data, ss_data, works)</code> (line 155)</li></ul>
+<ul><li><code>export_to_markdown(self, search_term, name, orcid_id, oa_data, ss_data, works)</code> (line 187)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/analysis/author_trajectory_analyzer.py">
+<h2>src/analysis/author_trajectory_analyzer.py</h2>
+<p class="summary">Module: author_trajectory_analyzer.py (v3.2 - Unified Input)</p>
+<h3>Classes</h3><ul>
+<li><code>TrajectoryAnalyzer</code> (line 42)
+<ul><li><code>__init__(self, config)</code> (line 43)</li></ul>
+<ul><li><code>_query_api(self, url, source_name, headers)</code> (line 52)</li></ul>
+<ul><li><code>get_author_data(self, orcid_id)</code> (line 61)</li></ul>
+<ul><li><code>analyze_trajectory(self, author_name, works)</code> (line 70)</li></ul>
+<ul><li><code>_is_orcid(self, identifier)</code> (line 91)</li></ul>
+<ul><li><code>run(self, identifier)</code> (line 95)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/analysis/author_profiler.py</li>
+<li>src/core/ai_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/analysis/citation_analyzer.py">
+<h2>src/analysis/citation_analyzer.py</h2>
+<p class="summary">Module: citation_analyzer.py (v2.1 - Robust Interactive Selection)</p>
+<h3>Functions</h3><ul>
+<li><code>get_paper_identifier(user_input)</code> (line 44)</li>
+<li><code>analyze_paper_list(ai_manager, papers, analysis_type, config)</code> (line 51)</li>
+<li><code>create_interactive_citation_graph(target_paper, references, citations, output_path)</code> (line 73)</li>
+<li><code>get_target_paper_from_user(db_manager)</code> (line 117)</li>
+<li><code>main()</code> (line 178)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/ai_manager.py</li>
+<li>src/core/database_manager.py</li>
+<li>src/ingestion/sources/semantic_scholar_source.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/analysis/generate_architecture_graph.py">
+<h2>src/analysis/generate_architecture_graph.py</h2>
+<p class="summary">Module: generate_architecture_graph.py (v2.0)</p>
+<h3>Functions</h3><ul>
+<li><code>extract_imports(py_file)</code> (line 138)</li>
+<li><code>classify_module(module_name)</code> (line 167)</li>
+<li><code>get_module_label(module_name, layer)</code> (line 176)</li>
+<li><code>scrape_all_imports()</code> (line 185)</li>
+<li><code>build_elements(raw_imports)</code> (line 200)</li>
+<li><code>embed_data_in_html(elements, html_path, stats)</code> (line 371)</li>
+<li><code>main()</code> (line 390)</li>
+</ul>
+</section>
+<section class="card" data-search="src/analysis/generate_baseline_report.py">
+<h2>src/analysis/generate_baseline_report.py</h2>
+<p class="summary">Module: generate_baseline_report.py (v1.1 — Academic Style)</p>
+<h3>Functions</h3><ul>
+<li><code>apply_academic_style()</code> (line 75)</li>
+<li><code>resolve_db_path()</code> (line 106)</li>
+<li><code>load_dataframe(db_path)</code> (line 129)</li>
+<li><code>load_embedding_stats(db_path)</code> (line 151)</li>
+<li><code>compute_metrics(df)</code> (line 183)</li>
+<li><code>plot_score_distribution(df, outdir, academic)</code> (line 220)</li>
+<li><code>plot_layer_averages(df, outdir, academic)</code> (line 266)</li>
+<li><code>plot_source_distribution(df, outdir, academic)</code> (line 305)</li>
+<li><code>plot_embedding_distribution(embedding_stats, outdir, academic)</code> (line 351)</li>
+<li><code>generate_markdown(metrics, embedding_stats, plot_paths, outdir, timestamp)</code> (line 394)</li>
+<li><code>generate_html(metrics, embedding_stats, plot_paths, outdir, timestamp)</code> (line 478)</li>
+<li><code>main()</code> (line 578)</li>
+</ul>
+</section>
+<section class="card" data-search="src/analysis/graphify_adapter.py">
+<h2>src/analysis/graphify_adapter.py</h2>
+<p class="summary">Module: graphify_adapter.py</p>
+<h3>Functions</h3><ul>
+<li><code>generate_ast_knowledge_graph(target_dir)</code> (line 44)</li>
+<li><code>_inject_light_mode_toggle(output_dir)</code> (line 403)</li>
+</ul>
+</section>
+<section class="card" data-search="src/analysis/knowledge_path_generator.py">
+<h2>src/analysis/knowledge_path_generator.py</h2>
+<p class="summary">Module: knowledge_path_generator.py (v1.9 - Final Bugfix)</p>
+<h3>Classes</h3><ul>
+<li><code>KnowledgePathGenerator</code> (line 41)
+ &mdash; The KnowledgePathGenerator class is responsible for generating a structured knowledge path based on a user's learning goal.
+<ul><li><code>__init__(self, config)</code> (line 60)</li></ul>
+<ul><li><code>_get_user_goal(self)</code> (line 73)</li></ul>
+<ul><li><code>_find_relevant_papers(self, goal_text, top_k)</code> (line 87)</li></ul>
+<ul><li><code>_extract_keywords_for_filename(self, goal_text)</code> (line 101)</li></ul>
+<ul><li><code>_get_top_keywords_for_cluster(self, vectorizer, kmeans_model, cluster_id, top_n)</code> (line 112)</li></ul>
+<ul><li><code>_structure_knowledge(self, df, num_clusters, min_score)</code> (line 119)</li></ul>
+<ul><li><code>_synthesize_narrative(self, structured_knowledge, user_goal)</code> (line 148)</li></ul>
+<ul><li><code>_save_report(self, topic_keywords, narrative_report)</code> (line 176)</li></ul>
+<ul><li><code>run(self)</code> (line 198)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/ai_manager.py</li>
+<li>src/core/database_manager.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/analysis/recommender.py">
+<h2>src/analysis/recommender.py</h2>
+<p class="summary">Module: recommender.py (v4.1 - Structured Reports Update)</p>
+<h3>Classes</h3><ul>
+<li><code>ReadingRecommender</code> (line 50)
+ &mdash; Αναλύει τα άρθρα της βάσης δεδομένων του TALOS, εφαρμόζει μηχανική μάθηση
+<ul><li><code>__init__(self, db_name)</code> (line 56)</li></ul>
+<ul><li><code>load_papers_from_db(self)</code> (line 64)</li></ul>
+<ul><li><code>get_top_keywords_for_cluster(self, vectorizer, kmeans_model, cluster_id, top_n)</code> (line 81)</li></ul>
+<ul><li><code>_clean_abstract(self, text)</code> (line 88)</li></ul>
+<ul><li><code>run_analysis_and_reporting(self, num_clusters, min_score)</code> (line 97)</li></ul>
+<ul><li><code>_print_structured_report(self, foundational, hot, clusters)</code> (line 149)</li></ul>
+<ul><li><code>_paper_to_dict(self, row)</code> (line 171)</li></ul>
+<ul><li><code>export_structured_reports(self, foundational, hot, clusters, all_papers)</code> (line 192)</li></ul>
+<ul><li><code>_export_structured_html(self, found, hot, clusters, top50, timestamp)</code> (line 211)</li></ul>
+<ul><li><code>_export_structured_docx(self, found, hot, clusters, top50, timestamp)</code> (line 350)</li></ul>
+<ul><li><code>_export_structured_markdown(self, found, hot, clusters, top50, timestamp)</code> (line 401)</li></ul>
+</li>
+</ul>
+</section>
+<section class="card" data-search="src/analysis/trend_analyzer.py">
+<h2>src/analysis/trend_analyzer.py</h2>
+<p class="summary">Module: trend_analyzer.py (v1.0 - Scientometrics Module)</p>
+<h3>Classes</h3><ul>
+<li><code>TrendAnalyzer</code> (line 50)
+<ul><li><code>__init__(self, db_path)</code> (line 51)</li></ul>
+<ul><li><code>load_data(self)</code> (line 56)</li></ul>
+<ul><li><code>fig_to_base64(self, fig)</code> (line 82)</li></ul>
+<ul><li><code>generate_plots(self, df)</code> (line 91)</li></ul>
+<ul><li><code>generate_html_report(self, plots, count)</code> (line 172)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>main()</code> (line 296)</li>
+</ul>
+</section>
+<section class="card" data-search="src/api/main_api.py">
+<h2>src/api/main_api.py</h2>
+<p class="summary">Module: main_api.py</p>
+<h3>Classes</h3><ul>
+<li><code>PaperSummary</code> (line 498)
+ &mdash; Mirrors get_all_papers_for_dashboard() columns.
+</li>
+<li><code>PaperDetail</code> (line 518)
+ &mdash; Full row from get_single_paper_details() -- all columns.
+</li>
+<li><code>PaginatedPapers</code> (line 554)
+ &mdash; Paginated response wrapper.
+</li>
+<li><code>SemanticSearchRequest</code> (line 562)
+ &mdash; Request body for semantic search.
+</li>
+<li><code>SemanticSearchResponse</code> (line 572)
+ &mdash; Response from semantic search.
+</li>
+<li><code>ScrapeRequest</code> (line 579)
+ &mdash; Optional source filter for scraping.
+</li>
+<li><code>GWORunRequest</code> (line 587)
+ &mdash; GWO hyperparameter optimization parameters.
+</li>
+<li><code>GWOResult</code> (line 594)
+ &mdash; Result from a completed GWO run.
+</li>
+<li><code>TaskStatus</code> (line 604)
+ &mdash; Status of a background task.
+</li>
+<li><code>SystemHealth</code> (line 615)
+ &mdash; System health check response.
+</li>
+<li><code>TranslateQueryRequest</code> (line 624)
+ &mdash; Request body for natural-language-to-boolean query translation.
+</li>
+<li><code>TranslateQueryResponse</code> (line 629)
+ &mdash; Response from query translation -- flattened dict of source keys -&gt; boolean queries.
+</li>
+<li><code>AuthorSummary</code> (line 635)
+ &mdash; A single author with their publication count in the database.
+</li>
+<li><code>EvaluatePaperRequest</code> (line 641)
+ &mdash; Optional model preference for single-paper evaluation.
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>lifespan(app)</code> (line 105)</li>
+<li><code>_get_project_root()</code> (line 174)</li>
+<li><code>_load_config()</code> (line 179)</li>
+<li><code>_get_db()</code> (line 196)</li>
+<li><code>_get_ai()</code> (line 207)</li>
+<li><code>_create_task()</code> (line 226)</li>
+<li><code>_update_task(task_id, **kwargs)</code> (line 241)</li>
+<li><code>broadcast_visualizer_event(event_type, payload)</code> (line 258)</li>
+<li><code>_source_has_key(slug)</code> (line 319)</li>
+<li><code>_record_source_status(payload)</code> (line 336)</li>
+<li><code>_record_beam_event(event_type, payload)</code> (line 375)</li>
+<li><code>health_check()</code> (line 653)</li>
+<li><code>list_papers(page, page_size)</code> (line 679)</li>
+<li><code>get_paper(paper_id)</code> (line 703)</li>
+<li><code>semantic_search(request)</code> (line 715)</li>
+<li><code>_run_scrape_background(task_id, source_filter)</code> (line 768)</li>
+<li><code>trigger_scrape(background_tasks, request)</code> (line 832)</li>
+<li><code>_run_gwo_background(task_id, wolves, iterations, rl_episodes)</code> (line 860)</li>
+<li><code>trigger_gwo(background_tasks, request)</code> (line 936)</li>
+<li><code>get_task_status(task_id)</code> (line 968)</li>
+<li><code>list_tasks()</code> (line 980)</li>
+<li><code>_run_evaluate_background(task_id, paper_id, model_type)</code> (line 996)</li>
+<li><code>evaluate_paper_endpoint(paper_id, background_tasks, request)</code> (line 1060)</li>
+<li><code>_flatten_json_for_translation(y)</code> (line 1082)</li>
+<li><code>translate_query(request)</code> (line 1107)</li>
+<li><code>list_top_authors(limit)</code> (line 1154)</li>
+<li><code>_run_recalculate_background(task_id)</code> (line 1182)</li>
+<li><code>recalculate_scores_endpoint(background_tasks)</code> (line 1242)</li>
+<li><code>get_gwo_history()</code> (line 1262)</li>
+<li><code>view_architecture_graph()</code> (line 1290)</li>
+<li><code>get_capabilities()</code> (line 1311)</li>
+<li><code>serve_help_manual()</code> (line 1329)</li>
+<li><code>redirect_manual_to_help()</code> (line 1350)</li>
+<li><code>serve_visualizer()</code> (line 1358)</li>
+<li><code>visualizer_sse_stream()</code> (line 1380)</li>
+<li><code>get_visualizer_demo_data(limit)</code> (line 1423)</li>
+<li><code>get_visualizer_sources_health()</code> (line 1466)</li>
+<li><code>_score_to_reward(score)</code> (line 1503)</li>
+<li><code>_infer_active_provider()</code> (line 1522)</li>
+<li><code>_clean_paper_title(title)</code> (line 1543)</li>
+<li><code>get_visualizer_state()</code> (line 1584)</li>
+<li><code>post_visualizer_events(request)</code> (line 1698)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/ai/optimizers/gwo_foraging_hyperparameter_tuner.py</li>
+<li>src/api/red_tester_routes.py</li>
+<li>src/api/synapse_routes.py</li>
+<li>src/core/ai_manager.py</li>
+<li>src/core/database_manager.py</li>
+<li>src/ingestion/daily_search.py</li>
+<li>src/services/cognitive_mesh/server.py</li>
+<li>src/utils/logger.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/api/red_tester_routes.py">
+<h2>src/api/red_tester_routes.py</h2>
+<p class="summary">Module: red_tester_routes.py</p>
+<h3>Classes</h3><ul>
+<li><code>ArmStatus</code> (line 94)
+ &mdash; Q-value status for a single test arm (system component).
+</li>
+<li><code>TesterStatus</code> (line 103)
+ &mdash; Full status response for the Autonomous Red Tester.
+</li>
+<li><code>CrashReportEntry</code> (line 112)
+ &mdash; Metadata for a single crash report file.
+</li>
+<li><code>TesterReports</code> (line 121)
+ &mdash; List of available crash reports.
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_discover_target_arms()</code> (line 52)</li>
+<li><code>_classify_fragility(q_value)</code> (line 133)</li>
+<li><code>_load_q_table()</code> (line 152)</li>
+<li><code>get_tester_status()</code> (line 174)</li>
+<li><code>get_tester_reports()</code> (line 205)</li>
+</ul>
+</section>
+<section class="card" data-search="src/api/synapse_routes.py">
+<h2>src/api/synapse_routes.py</h2>
+<p class="summary">Module: synapse_routes.py</p>
+<h3>Classes</h3><ul>
+<li><code>SynapseWebhookRequest</code> (line 59)
+ &mdash; Inbound SYNAPSE command envelope.
+</li>
+<li><code>SynapseWebhookResponse</code> (line 81)
+ &mdash; Acknowledgment response for a received SYNAPSE command.
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>register_handler(command, handler)</code> (line 112)</li>
+<li><code>_handle_get_status(params)</code> (line 137)</li>
+<li><code>_handle_shutdown(params)</code> (line 142)</li>
+<li><code>synapse_webhook(request)</code> (line 158)</li>
+<li><code>_check_bus_reachability(bus_url, timeout)</code> (line 243)</li>
+<li><code>synapse_status()</code> (line 266)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/integration/synapse_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/api/talos_service_api.py">
+<h2>src/api/talos_service_api.py</h2>
+<p class="summary">Module: talos_service_api.py (v1.0)</p>
+<h3>Functions</h3><ul>
+<li><code>_get_today_folder()</code> (line 46)</li>
+<li><code>api_status()</code> (line 53)</li>
+<li><code>api_report()</code> (line 104)</li>
+</ul>
+</section>
+<section class="card" data-search="src/core/ai_manager.py">
+<h2>src/core/ai_manager.py</h2>
+<p class="summary">Module: ai_manager.py (v4.1 - Self-Healing AI Manager, Universal Cloud Mesh &amp; Auto-Dynamic Privacy Guardrails)</p>
+<h3>Classes</h3><ul>
+<li><code>AIManager</code> (line 408)
+ &mdash; Manages all LLM and embedding interactions with multi-provider fallback
+<ul><li><code>__init__(self, config)</code> (line 426)</li></ul>
+<ul><li><code>_ensure_local_ollama_runtime(self)</code> (line 536)</li></ul>
+<ul><li><code>_persist_env_key(self, key, value)</code> (line 585)</li></ul>
+<ul><li><code>_register_cloud_provider_on_demand(self, provider_name)</code> (line 618)</li></ul>
+<ul><li><code>_prompt_cloud_key(self, provider_name)</code> (line 672)</li></ul>
+<ul><li><code>_ensure_cloud_credential(self, provider_name)</code> (line 711)</li></ul>
+<ul><li><code>_ensure_cloud_credential_for_fallback(self)</code> (line 731)</li></ul>
+<ul><li><code>_init_router(self)</code> (line 748)</li></ul>
+<ul><li><code>_task_type(model_type)</code> (line 763)</li></ul>
+<ul><li><code>_emit_router_decision_synapse(self, provider, task_type, prompt_length)</code> (line 778)</li></ul>
+<ul><li><code>_get_router_ordered_providers(self, prompt, task_type)</code> (line 799)</li></ul>
+<ul><li><code>list_active_providers(self)</code> (line 833)</li></ul>
+<ul><li><code>get_provider_descriptor(self, name)</code> (line 846)</li></ul>
+<ul><li><code>_clean_json_string(self, text)</code> (line 860)</li></ul>
+<ul><li><code>evaluate_paper_json(self, abstract, model_type, system_prompt_override)</code> (line 885)</li></ul>
+<ul><li><code>_resolve_eval_concurrency(self)</code> (line 907)</li></ul>
+<ul><li><code>batch_evaluate_papers(self, papers, criteria, max_workers, model_type)</code> (line 931)</li></ul>
+<ul><li><code>analyze_generic_text(self, full_prompt)</code> (line 991)</li></ul>
+<ul><li><code>generate_embeddings(self, texts)</code> (line 1004)</li></ul>
+<ul><li><code>_execute_huggingface_embedding(self, texts, hf_token)</code> (line 1088)</li></ul>
+<ul><li><code>_resolve_strategies(self, model_type)</code> (line 1151)</li></ul>
+<ul><li><code>_is_network_online(host, port, timeout)</code> (line 1205)</li></ul>
+<ul><li><code>_detect_vram_gb()</code> (line 1227)</li></ul>
+<ul><li><code>_resolve_auto_dynamic(self, model_type, hardware)</code> (line 1239)</li></ul>
+<ul><li><code>_prompt_auto_dynamic_consent(self, vram_gb)</code> (line 1276)</li></ul>
+<ul><li><code>_log_auto_matrix(self, task_type, resolved_strategy, reason)</code> (line 1330)</li></ul>
+<ul><li><code>_execute_request(self, prompt, model_type, response_format, tier, allow_prompt)</code> (line 1353)</li></ul>
+<ul><li><code>_execute_local_strategy(self, prompt, response_format, tier, hardware_strategy, allow_prompt)</code> (line 1448)</li></ul>
+<ul><li><code>_execute_ollama_http(self, prompt, response_format, use_edge, allow_prompt)</code> (line 1478)</li></ul>
+<ul><li><code>_execute_cloud_chain(self, prompt, model_type, response_format)</code> (line 1590)</li></ul>
+<ul><li><code>_execute_legacy_request(self, prompt, model_type, response_format, tier, allow_prompt)</code> (line 1635)</li></ul>
+<ul><li><code>_execute_fast_tier_request(self, prompt, response_format)</code> (line 1692)</li></ul>
+<ul><li><code>_execute_gemini_request(self, prompt, model_type, response_format)</code> (line 1712)</li></ul>
+<ul><li><code>_execute_deepseek_request(self, prompt, response_format)</code> (line 1748)</li></ul>
+<ul><li><code>_execute_openai_compatible_request(self, provider_name, prompt, model_type, response_format)</code> (line 1762)</li></ul>
+<ul><li><code>_execute_openai_compatible(self, prompt, response_format, provider_name)</code> (line 1833)</li></ul>
+<ul><li><code>_interactive_cloud_fallback(self, error, tier, allow_prompt)</code> (line 1853)</li></ul>
+<ul><li><code>_latch_provider_exhausted(self, provider_name, reason)</code> (line 1918)</li></ul>
+<ul><li><code>_is_quota_or_auth_exhausted(message)</code> (line 1942)</li></ul>
+<ul><li><code>_quota_reason(message)</code> (line 1961)</li></ul>
+<ul><li><code>_handle_failure(self, provider_name)</code> (line 1977)</li></ul>
+<ul><li><code>_ensure_local_model(self)</code> (line 1995)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_try_import_openai()</code> (line 130)</li>
+<li><code>_try_import_genai()</code> (line 149)</li>
+<li><code>_resolve_project_root()</code> (line 206)</li>
+<li><code>probe_local_ollama(port, timeout)</code> (line 221)</li>
+<li><code>_spawn_local_ollama()</code> (line 242)</li>
+<li><code>_is_interactive_tty()</code> (line 262)</li>
+<li><code>_strip_thinking_tags(text)</code> (line 278)</li>
+<li><code>_extract_assistant_content(message)</code> (line 306)</li>
+<li><code>_sanitize_connection_error(exc)</code> (line 392)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+<li>src/ai/drl/llm_router_subagent.py</li>
+<li>src/core/hardware.py</li>
+<li>src/core/provider_registry.py</li>
+<li>src/integration/synapse_client.py</li>
+<li>src/utils/http_client.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/core/cognitive_router.py">
+<h2>src/core/cognitive_router.py</h2>
+<p class="summary">Module: cognitive_router.py</p>
+<h3>Dependencies</h3><ul>
+<li>src/services/cognitive_mesh/router.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/core/database_manager.py">
+<h2>src/core/database_manager.py</h2>
+<p class="summary">Module: database_manager.py (v5.0 - Multi-Provider Hybrid Embeddings)</p>
+<h3>Classes</h3><ul>
+<li><code>DatabaseManager</code> (line 276)
+<ul><li><code>__init__(self, db_path, db_name)</code> (line 277)</li></ul>
+<ul><li><code>_resolve_profile_db(project_root)</code> (line 302)</li></ul>
+<ul><li><code>_table_exists(self, table_name)</code> (line 316)</li></ul>
+<ul><li><code>_apply_pragmas(self, conn)</code> (line 321)</li></ul>
+<ul><li><code>_connect(self)</code> (line 339)</li></ul>
+<ul><li><code>execute_query(self, query, params, commit, fetch_one, fetch_all)</code> (line 350)</li></ul>
+<ul><li><code>execute_many(self, query, params_list, commit)</code> (line 362)</li></ul>
+<ul><li><code>create_table(self)</code> (line 373)</li></ul>
+<ul><li><code>paper_exists_by_doi(self, doi)</code> (line 444)</li></ul>
+<ul><li><code>paper_exists_by_url(self, url)</code> (line 447)</li></ul>
+<ul><li><code>get_paper_id_by_doi(self, doi)</code> (line 450)</li></ul>
+<ul><li><code>get_paper_id_by_url(self, url)</code> (line 454)</li></ul>
+<ul><li><code>_calculate_overall_score(self, scores)</code> (line 459)</li></ul>
+<ul><li><code>add_paper(self, paper_data, evaluation_data, in_zotero)</code> (line 463)</li></ul>
+<ul><li><code>update_paper_evaluation(self, paper_id, evaluation_data)</code> (line 487)</li></ul>
+<ul><li><code>update_paper_quality(self, paper_id, quality_score, rubric_json, quadrant)</code> (line 505)</li></ul>
+<ul><li><code>get_papers_not_recently_evaluated(self, days_window, limit)</code> (line 531)</li></ul>
+<ul><li><code>get_all_papers_for_dashboard(self)</code> (line 536)</li></ul>
+<ul><li><code>get_single_paper_details(self, paper_id)</code> (line 542)</li></ul>
+<ul><li><code>update_zotero_status_by_id(self, paper_id, status)</code> (line 548)</li></ul>
+<ul><li><code>get_papers_needing_embedding(self, model)</code> (line 552)</li></ul>
+<ul><li><code>store_embeddings_batch(self, updates)</code> (line 566)</li></ul>
+<ul><li><code>get_all_embeddings(self, model_filter)</code> (line 569)</li></ul>
+<ul><li><code>get_cached_embeddings(self, model_name)</code> (line 584)</li></ul>
+<ul><li><code>save_embeddings_batch(self, records)</code> (line 619)</li></ul>
+<ul><li><code>get_papers_by_ids(self, ids)</code> (line 649)</li></ul>
+<ul><li><code>get_recent_core_papers(self, limit, min_score)</code> (line 657)</li></ul>
+<ul><li><code>get_recent_elite_papers(self, hours, min_score)</code> (line 662)</li></ul>
+<ul><li><code>get_embedding_model_stats(self)</code> (line 672)</li></ul>
+<ul><li><code>_load_embeddings_into_memory(self, model_filter)</code> (line 682)</li></ul>
+<ul><li><code>reload_embeddings_for_model(self, model_filter)</code> (line 697)</li></ul>
+<ul><li><code>semantic_search(self, query_vector, top_k, model_filter)</code> (line 702)</li></ul>
+<ul><li><code>get_all_papers_as_dataframe(self)</code> (line 724)</li></ul>
+<ul><li><code>get_database_statistics(self)</code> (line 733)</li></ul>
+<ul><li><code>get_papers_for_enrichment(self)</code> (line 752)</li></ul>
+<ul><li><code>update_papers_enrichment_batch(self, update_list)</code> (line 761)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>get_active_profile_db_path()</code> (line 21)</li>
+<li><code>_run_vault_verify_once()</code> (line 52)</li>
+<li><code>_paper_columns(conn)</code> (line 96)</li>
+<li><code>_has_papers_table(conn)</code> (line 111)</li>
+<li><code>_normalized_title(title)</code> (line 126)</li>
+<li><code>_dedup_keys(row)</code> (line 140)</li>
+<li><code>merge_orphan_databases(target_profile_name)</code> (line 166)</li>
+<li><code>_run_orphan_merge_once()</code> (line 254)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_vault.py</li>
+<li>src/core/profile_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/core/database_vault.py">
+<h2>src/core/database_vault.py</h2>
+<p class="summary">Module: database_vault.py</p>
+<h3>Classes</h3><ul>
+<li><code>DatabaseVault</code> (line 41)
+ &mdash; Automated SQLite integrity vault with atomic snapshot rotation.
+<ul><li><code>__init__(self, backup_dir, max_retention_days, db_path)</code> (line 49)</li></ul>
+<ul><li><code>verify_integrity(self, db_path)</code> (line 63)</li></ul>
+<ul><li><code>quick_status(self)</code> (line 111)</li></ul>
+<ul><li><code>create_atomic_snapshot(self, backup_dir, max_retention_days)</code> (line 137)</li></ul>
+<ul><li><code>_rotate(self, backup_dir, max_retention_days)</code> (line 178)</li></ul>
+<ul><li><code>restore_snapshot(self, snapshot_path)</code> (line 192)</li></ul>
+<ul><li><code>_resolve_db(self, db_path)</code> (line 225)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/core/hardware.py">
+<h2>src/core/hardware.py</h2>
+<p class="summary">Module: hardware.py</p>
+<h3>Functions</h3><ul>
+<li><code>detect_vram_gb()</code> (line 36)</li>
+<li><code>recommend_model(preferred)</code> (line 53)</li>
+<li><code>extract_params_b(model_name)</code> (line 124)</li>
+<li><code>estimate_size_for_quant(model_name, quant_tag)</code> (line 142)</li>
+<li><code>estimate_size(model_name)</code> (line 174)</li>
+<li><code>get_installed_models()</code> (line 189)</li>
+<li><code>get_all_chat_models_sorted(vram_gb)</code> (line 206)</li>
+<li><code>get_embedding_models()</code> (line 244)</li>
+<li><code>get_ollama_library_models(vram_gb)</code> (line 287)</li>
+<li><code>get_bitnet_models(vram_gb)</code> (line 333)</li>
+<li><code>get_all_chat_models_sorted(vram_gb)</code> (line 357)</li>
+<li><code>pull_model(model_name)</code> (line 422)</li>
+</ul>
+</section>
+<section class="card" data-search="src/core/hardware_advisor.py">
+<h2>src/core/hardware_advisor.py</h2>
+<p class="summary">Module: hardware_advisor.py</p>
+<h3>Classes</h3><ul>
+<li><code>HardwareModelAdvisor</code> (line 77)
+ &mdash; Compute a VRAM-based parameter budget and a tailored model stack.
+<ul><li><code>get_hardware_profile(self)</code> (line 91)</li></ul>
+<ul><li><code>_detect_laptop_cpu()</code> (line 147)</li></ul>
+<ul><li><code>_detect_gpu_name()</code> (line 172)</li></ul>
+<ul><li><code>calculate_vram_budget(vram_gb)</code> (line 198)</li></ul>
+<ul><li><code>get_recommendations(self)</code> (line 222)</li></ul>
+<ul><li><code>scan_sota_models(self, timeout)</code> (line 258)</li></ul>
+<ul><li><code>_scan_ollama_tags(timeout)</code> (line 305)</li></ul>
+<ul><li><code>_scan_openrouter_models(self, timeout)</code> (line 329)</li></ul>
+<ul><li><code>render_recommendations(self)</code> (line 371)</li></ul>
+<ul><li><code>get_role_based_matrix(self)</code> (line 462)</li></ul>
+<ul><li><code>render_role_matrix(self)</code> (line 528)</li></ul>
+<ul><li><code>apply_recommended_models(self)</code> (line 572)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>get_hardware_advisor()</code> (line 633)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+<li>src/core/hardware.py</li>
+<li>src/core/profile_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/core/hierarchical_evaluator.py">
+<h2>src/core/hierarchical_evaluator.py</h2>
+<p class="summary">Module: hierarchical_evaluator.py</p>
+<h3>Classes</h3><ul>
+<li><code>HierarchicalEvaluationEngine</code> (line 77)
+ &mdash; Two-tier paper evaluation engine with an escalation gate.
+<ul><li><code>__init__(self, ai_manager, escalation_threshold)</code> (line 88)</li></ul>
+<ul><li><code>_extract_relevance(evaluation)</code> (line 105)</li></ul>
+<ul><li><code>_extract_quality(evaluation, fallback_relevance)</code> (line 132)</li></ul>
+<ul><li><code>_paper_content(paper)</code> (line 156)</li></ul>
+<ul><li><code>_calibrate_relevance(deep_evaluation, fallback)</code> (line 170)</li></ul>
+<ul><li><code>_appraise_quality(self, paper, s_rel_calibrated)</code> (line 192)</li></ul>
+<ul><li><code>_map_quadrant(relevance, quality)</code> (line 231)</li></ul>
+<ul><li><code>evaluate_paper(self, paper, escalation_threshold)</code> (line 261)</li></ul>
+<ul><li><code>evaluate_batch(self, papers, threshold)</code> (line 348)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+<li>src/prisma/quality_appraisal.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/core/model_benchmark_client.py">
+<h2>src/core/model_benchmark_client.py</h2>
+<p class="summary">Module: model_benchmark_client.py</p>
+<h3>Dependencies</h3><ul>
+<li>src/services/cognitive_mesh/benchmarks.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/core/notifier.py">
+<h2>src/core/notifier.py</h2>
+<p class="summary">Module: notifier.py (v1.0)</p>
+<h3>Classes</h3><ul>
+<li><code>TalosNotifier</code> (line 64)
+ &mdash; Multi-channel notification sender for the TALOS autonomous daemon.
+<ul><li><code>__init__(self)</code> (line 79)</li></ul>
+<ul><li><code>telegram_send(self, paper, score, action_taken)</code> (line 112)</li></ul>
+<ul><li><code>discord_send(self, paper, score, action_taken)</code> (line 181)</li></ul>
+<ul><li><code>email_send(self, subject, body)</code> (line 240)</li></ul>
+<ul><li><code>email_paper_alert(self, paper, score, action_taken)</code> (line 281)</li></ul>
+<ul><li><code>email_daily_digest(self, papers)</code> (line 340)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_paper_value(paper, key, default)</code> (line 41)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/core/profile_manager.py">
+<h2>src/core/profile_manager.py</h2>
+<p class="summary">Module: profile_manager.py</p>
+<h3>Classes</h3><ul>
+<li><code>ProfileManager</code> (line 78)
+ &mdash; Canonical multi-profile workspace manager (single source of truth).
+<ul><li><code>__init__(self, root)</code> (line 87)</li></ul>
+<ul><li><code>get_profiles_dir(self)</code> (line 99)</li></ul>
+<ul><li><code>get_active_profile_name(self)</code> (line 108)</li></ul>
+<ul><li><code>list_profiles(self)</code> (line 124)</li></ul>
+<ul><li><code>_root_config_path(self)</code> (line 134)</li></ul>
+<ul><li><code>_load_profile_config_to_root(self, name)</code> (line 141)</li></ul>
+<ul><li><code>_persist_root_config_to_profile(self, name)</code> (line 147)</li></ul>
+<ul><li><code>set_active_profile(self, name)</code> (line 156)</li></ul>
+<ul><li><code>create_profile(self, name, seed_config)</code> (line 180)</li></ul>
+<ul><li><code>get_active_db_path(self)</code> (line 214)</li></ul>
+<ul><li><code>get_active_config_path(self)</code> (line 225)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_validate_profile_name(name)</code> (line 73)</li>
+<li><code>ensure_profiles_dir()</code> (line 243)</li>
+<li><code>get_active_profile_name()</code> (line 248)</li>
+<li><code>set_active_profile_name(name)</code> (line 253)</li>
+<li><code>save_current_state_to_profile(profile_name)</code> (line 258)</li>
+<li><code>load_profile_to_root(profile_name)</code> (line 263)</li>
+<li><code>run_pythia_script()</code> (line 268)</li>
+<li><code>create_new_profile()</code> (line 287)</li>
+<li><code>switch_profile()</code> (line 308)</li>
+<li><code>configure_current_profile()</code> (line 335)</li>
+<li><code>main()</code> (line 348)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/core/provider_registry.py">
+<h2>src/core/provider_registry.py</h2>
+<p class="summary">Module: provider_registry.py</p>
+<h3>Dependencies</h3><ul>
+<li>src/services/cognitive_mesh/registry.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/daily_search.py">
+<h2>src/ingestion/daily_search.py</h2>
+<p class="summary">Module: daily_search.py (Quad-Layer &amp; Rate Limit Safe)</p>
+<h3>Functions</h3><ul>
+<li><code>_source_key(source)</code> (line 79)</li>
+<li><code>_source_query(source)</code> (line 84)</li>
+<li><code>_normalize_title(title)</code> (line 95)</li>
+<li><code>_title_hash(title)</code> (line 113)</li>
+<li><code>_deduplicate_papers(papers)</code> (line 125)</li>
+<li><code>_harvest_single_source(source, source_key, query, criteria, date_limit)</code> (line 154)</li>
+<li><code>_emit_visualizer_event(event_type, payload)</code> (line 215)</li>
+<li><code>_emit_router_decision_synapse(provider, task_type, prompt_length)</code> (line 237)</li>
+<li><code>route_evaluation_provider(ai_manager, content, task_type)</code> (line 258)</li>
+<li><code>build_sources(config, selected)</code> (line 280)</li>
+<li><code>generate_markdown_report(report_data)</code> (line 300)</li>
+<li><code>post_report_to_discord(config, markdown_content, filename)</code> (line 336)</li>
+<li><code>load_configuration()</code> (line 359)</li>
+<li><code>main(sources)</code> (line 381)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/ai/drl/llm_router_subagent.py</li>
+<li>src/core/ai_manager.py</li>
+<li>src/core/database_manager.py</li>
+<li>src/core/hierarchical_evaluator.py</li>
+<li>src/ingestion/resilient_gateway.py</li>
+<li>src/integration/synapse_client.py</li>
+<li>src/integration/visualizer_bridge.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/data_enricher.py">
+<h2>src/ingestion/data_enricher.py</h2>
+<p class="summary">Module: data_enricher.py (v4.8.1 — Graceful Degradation)</p>
+<h3>Functions</h3><ul>
+<li><code>get_enrichment_data(doi)</code> (line 87)</li>
+<li><code>process_paper(paper_data)</code> (line 112)</li>
+<li><code>force_reset_status(db_path)</code> (line 189)</li>
+<li><code>main()</code> (line 209)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/grey_literature_miner.py">
+<h2>src/ingestion/grey_literature_miner.py</h2>
+<p class="summary">Module: grey_literature_miner.py (v2.1 — Batch 3 hotfix)</p>
+<h3>Functions</h3><ul>
+<li><code>load_config()</code> (line 47)</li>
+<li><code>save_report(topic, content)</code> (line 60)</li>
+<li><code>run_miner()</code> (line 86)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/ai_manager.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/historic_search.py">
+<h2>src/ingestion/historic_search.py</h2>
+<p class="summary">Module: historic_search.py (v5.19.0 - Unified Hierarchical Historical Harvester)</p>
+<h3>Functions</h3><ul>
+<li><code>_source_key(source)</code> (line 72)</li>
+<li><code>_source_query(source)</code> (line 77)</li>
+<li><code>_emit_visualizer_event(event_type, payload)</code> (line 88)</li>
+<li><code>_normalize_title(title)</code> (line 109)</li>
+<li><code>_title_hash(title)</code> (line 127)</li>
+<li><code>_deduplicate_papers(papers)</code> (line 139)</li>
+<li><code>_harvest_single_source(source, source_key, query, criteria, date_limit)</code> (line 168)</li>
+<li><code>route_evaluation_provider(ai_manager, content, task_type)</code> (line 230)</li>
+<li><code>build_sources(config, selected)</code> (line 251)</li>
+<li><code>load_configuration()</code> (line 271)</li>
+<li><code>main(sources)</code> (line 296)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/ai/drl/llm_router_subagent.py</li>
+<li>src/core/ai_manager.py</li>
+<li>src/core/database_manager.py</li>
+<li>src/core/hierarchical_evaluator.py</li>
+<li>src/ingestion/resilient_gateway.py</li>
+<li>src/integration/visualizer_bridge.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/metadata_enricher.py">
+<h2>src/ingestion/metadata_enricher.py</h2>
+<p class="summary">Module: metadata_enricher.py (v2.0 - Multi-Source Fallback)</p>
+<h3>Classes</h3><ul>
+<li><code>MetadataEnricher</code> (line 48)
+ &mdash; Η κλάση που ενορχηστρώνει τη διαδικασία εμπλουτισμού των μεταδεδομένων.
+<ul><li><code>__init__(self, config)</code> (line 53)</li></ul>
+<ul><li><code>find_papers_to_enrich(self)</code> (line 74)</li></ul>
+<ul><li><code>update_paper_metadata(self, paper_id, new_data)</code> (line 87)</li></ul>
+<ul><li><code>_search_with_fallback(self, query)</code> (line 113)</li></ul>
+<ul><li><code>run(self)</code> (line 136)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>load_configuration()</code> (line 199)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_manager.py</li>
+<li>src/ingestion/sources/crossref_source.py</li>
+<li>src/ingestion/sources/dblp_source.py</li>
+<li>src/ingestion/sources/openalex_source.py</li>
+<li>src/ingestion/sources/semantic_scholar_source.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/pdf_harvester/__init__.py">
+<h2>src/ingestion/pdf_harvester/__init__.py</h2>
+<p class="summary">Module: __init__.py (src/ingestion/pdf_harvester)</p>
+<h3>Dependencies</h3><ul>
+<li>src/ingestion/pdf_harvester/harvester.py</li>
+<li>src/ingestion/pdf_harvester/resolvers.py</li>
+<li>src/ingestion/pdf_harvester/section_extractor.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/pdf_harvester/harvester.py">
+<h2>src/ingestion/pdf_harvester/harvester.py</h2>
+<p class="summary">Module: harvester.py</p>
+<h3>Classes</h3><ul>
+<li><code>AcademicPDFHarvester</code> (line 77)
+ &mdash; Download legal Open Access / preprint PDFs for elite candidate papers.
+<ul><li><code>__init__(self, cache_dir, timeout, max_file_size_mb, rate_limit_delay)</code> (line 87)</li></ul>
+<ul><li><code>validate_magic_bytes(data)</code> (line 117)</li></ul>
+<ul><li><code>compute_sha256(data)</code> (line 131)</li></ul>
+<ul><li><code>_atomic_write(self, pdf_id, data)</code> (line 143)</li></ul>
+<ul><li><code>_polite_wait(self)</code> (line 163)</li></ul>
+<ul><li><code>_fetch_pdf_bytes(self, url)</code> (line 174)</li></ul>
+<ul><li><code>_download_pdf(self, url, pdf_id)</code> (line 214)</li></ul>
+<ul><li><code>_active_db_path(self, active_profile)</code> (line 232)</li></ul>
+<ul><li><code>_candidate_papers(self, db_path, min_relevance)</code> (line 247)</li></ul>
+<ul><li><code>_update_paper_pdf(self, db_path, paper_id, local_pdf_path, pdf_sha256, pdf_status)</code> (line 268)</li></ul>
+<ul><li><code>harvest_candidates(self, min_relevance, active_profile)</code> (line 288)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_resolve_project_root()</code> (line 67)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_manager.py</li>
+<li>src/ingestion/pdf_harvester/resolvers.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/pdf_harvester/resolvers.py">
+<h2>src/ingestion/pdf_harvester/resolvers.py</h2>
+<p class="summary">Module: resolvers.py</p>
+<h3>Functions</h3><ul>
+<li><code>_headers()</code> (line 59)</li>
+<li><code>_http_get_json(url, params, timeout)</code> (line 64)</li>
+<li><code>_doi(paper)</code> (line 86)</li>
+<li><code>_url(paper)</code> (line 94)</li>
+<li><code>_resolve_arxiv(paper)</code> (line 103)</li>
+<li><code>_resolve_techrxiv(paper)</code> (line 127)</li>
+<li><code>_resolve_hal_inria(paper)</code> (line 142)</li>
+<li><code>_resolve_nasa_ntrs(paper)</code> (line 160)</li>
+<li><code>_resolve_elsevier_oa(paper)</code> (line 196)</li>
+<li><code>_resolve_plos(paper)</code> (line 231)</li>
+<li><code>_resolve_pmc(paper)</code> (line 246)</li>
+<li><code>_resolve_unpaywall(paper)</code> (line 269)</li>
+<li><code>_resolve_openalex(paper)</code> (line 293)</li>
+<li><code>_resolve_semantic_scholar(paper)</code> (line 323)</li>
+<li><code>_resolve_core(paper)</code> (line 348)</li>
+<li><code>_resolve_crossref_oa(paper)</code> (line 374)</li>
+<li><code>_resolve_ssrn(paper)</code> (line 398)</li>
+<li><code>resolve_oa_url(paper_dict)</code> (line 436)</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/pdf_harvester/section_extractor.py">
+<h2>src/ingestion/pdf_harvester/section_extractor.py</h2>
+<p class="summary">Module: section_extractor.py</p>
+<h3>Classes</h3><ul>
+<li><code>PDFSectionExtractor</code> (line 91)
+ &mdash; Extract and cache targeted section text windows from local PDFs.
+<ul><li><code>__init__(self, cache_dir)</code> (line 98)</li></ul>
+<ul><li><code>_extract_text_pypdf(pdf_path)</code> (line 113)</li></ul>
+<ul><li><code>_extract_text_fallback(pdf_path)</code> (line 137)</li></ul>
+<ul><li><code>_extract_text(self, pdf_path)</code> (line 154)</li></ul>
+<ul><li><code>_slice_sections(text)</code> (line 170)</li></ul>
+<ul><li><code>extract_sections(self, pdf_path, paper_id)</code> (line 204)</li></ul>
+<ul><li><code>load_sections(self, paper_id)</code> (line 229)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_resolve_project_root()</code> (line 81)</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/resilient_gateway.py">
+<h2>src/ingestion/resilient_gateway.py</h2>
+<p class="summary">Module: resilient_gateway.py</p>
+<h3>Classes</h3><ul>
+<li><code>ResilientIngestionGateway</code> (line 57)
+ &mdash; Overarching self-healing wrapper for all 18 academic source adapters.
+<ul><li><code>__init__(self, session)</code> (line 66)</li></ul>
+<ul><li><code>harvest_source(self, source_instance, query, criteria, date_limit, source_key, days_to_search, mailto)</code> (line 78)</li></ul>
+<ul><li><code>_detect_auth_error(self, stdout_text)</code> (line 171)</li></ul>
+<ul><li><code>_mirror_via_openalex(self, query, publisher, source_key, days_to_search, mailto)</code> (line 189)</li></ul>
+<ul><li><code>_reconstruct_abstract(inverted_index)</code> (line 239)</li></ul>
+<ul><li><code>_normalize_openalex_work(cls, work, source_key)</code> (line 257)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/__init__.py">
+<h2>src/ingestion/sources/__init__.py</h2>
+<p class="summary">Module: __init__.py</p>
+<h3>Dependencies</h3><ul>
+<li>src/ingestion/sources/arxiv_source.py</li>
+<li>src/ingestion/sources/core_source.py</li>
+<li>src/ingestion/sources/crossref_source.py</li>
+<li>src/ingestion/sources/dblp_source.py</li>
+<li>src/ingestion/sources/elsevier_source.py</li>
+<li>src/ingestion/sources/hal_inria_source.py</li>
+<li>src/ingestion/sources/ieee_source.py</li>
+<li>src/ingestion/sources/nasa_ntrs_source.py</li>
+<li>src/ingestion/sources/openaire_source.py</li>
+<li>src/ingestion/sources/openalex_source.py</li>
+<li>src/ingestion/sources/openarchives_source.py</li>
+<li>src/ingestion/sources/openreview_source.py</li>
+<li>src/ingestion/sources/osti_source.py</li>
+<li>src/ingestion/sources/plos_source.py</li>
+<li>src/ingestion/sources/pubmed_source.py</li>
+<li>src/ingestion/sources/scigov_source.py</li>
+<li>src/ingestion/sources/semantic_scholar_source.py</li>
+<li>src/ingestion/sources/springer_source.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/arxiv_source.py">
+<h2>src/ingestion/sources/arxiv_source.py</h2>
+<p class="summary">Module: arxiv_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>ArxivSource</code> (line 36)
+ &mdash; Search agent for the arXiv API.
+<ul><li><code>__init__(self, config)</code> (line 50)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 70)</li></ul>
+<ul><li><code>_format_paper(self, entry, ns, published_date)</code> (line 124)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/core_source.py">
+<h2>src/ingestion/sources/core_source.py</h2>
+<p class="summary">Module: core_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>CORESource</code> (line 35)
+ &mdash; Search agent for the CORE API.
+<ul><li><code>__init__(self, config)</code> (line 43)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 60)</li></ul>
+<ul><li><code>_format_paper(self, item)</code> (line 109)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/crossref_source.py">
+<h2>src/ingestion/sources/crossref_source.py</h2>
+<p class="summary">Module: crossref_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>CrossrefSource</code> (line 38)
+ &mdash; Search agent for the Crossref API.
+<ul><li><code>__init__(self, config)</code> (line 51)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 65)</li></ul>
+<ul><li><code>search_papers(self, query, limit)</code> (line 125)</li></ul>
+<ul><li><code>_format_paper(self, item)</code> (line 149)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/dblp_source.py">
+<h2>src/ingestion/sources/dblp_source.py</h2>
+<p class="summary">Module: dblp_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>DBLPSource</code> (line 47)
+ &mdash; Search agent for the DBLP API.
+<ul><li><code>__init__(self, config)</code> (line 60)</li></ul>
+<ul><li><code>_sanitize_dblp_query(query)</code> (line 74)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 96)</li></ul>
+<ul><li><code>search_papers(self, query, limit)</code> (line 158)</li></ul>
+<ul><li><code>_format_paper(self, info)</code> (line 186)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/elsevier_source.py">
+<h2>src/ingestion/sources/elsevier_source.py</h2>
+<p class="summary">Module: elsevier_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>ElsevierSource</code> (line 42)
+ &mdash; Search agent for the Elsevier Scopus API.
+<ul><li><code>__init__(self, config)</code> (line 54)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 79)</li></ul>
+<ul><li><code>_fetch_abstract(self, scopus_id)</code> (line 111)</li></ul>
+<ul><li><code>_format_paper(self, result)</code> (line 129)</li></ul>
+</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/hal_inria_source.py">
+<h2>src/ingestion/sources/hal_inria_source.py</h2>
+<p class="summary">Module: hal_inria_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>HalInriaSource</code> (line 45)
+ &mdash; Search agent for the HAL open science repository public REST API.
+<ul><li><code>__init__(self, config)</code> (line 68)</li></ul>
+<ul><li><code>_first(values, default)</code> (line 79)</li></ul>
+<ul><li><code>_as_list(value)</code> (line 97)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 112)</li></ul>
+<ul><li><code>search_papers(self, query, limit)</code> (line 166)</li></ul>
+<ul><li><code>_format_paper(self, item)</code> (line 190)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/ieee_source.py">
+<h2>src/ingestion/sources/ieee_source.py</h2>
+<p class="summary">Module: ieee_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>IEEEXploreSource</code> (line 37)
+ &mdash; Search agent for the IEEE Xplore API.
+<ul><li><code>__init__(self, config)</code> (line 49)</li></ul>
+<ul><li><code>_make_request(self, params, max_retries, initial_backoff)</code> (line 68)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 101)</li></ul>
+<ul><li><code>_format_paper(self, article)</code> (line 146)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/integration/visualizer_bridge.py</li>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/nasa_ntrs_source.py">
+<h2>src/ingestion/sources/nasa_ntrs_source.py</h2>
+<p class="summary">Module: nasa_ntrs_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>NasaNtrsSource</code> (line 45)
+ &mdash; Search agent for the NASA NTRS public REST API.
+<ul><li><code>__init__(self, config)</code> (line 62)</li></ul>
+<ul><li><code>_first(values, default)</code> (line 73)</li></ul>
+<ul><li><code>_as_list(value)</code> (line 91)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 106)</li></ul>
+<ul><li><code>search_papers(self, query, limit)</code> (line 158)</li></ul>
+<ul><li><code>_format_paper(self, item)</code> (line 182)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/openaire_source.py">
+<h2>src/ingestion/sources/openaire_source.py</h2>
+<p class="summary">Module: openaire.py</p>
+<h3>Classes</h3><ul>
+<li><code>OpenAIRESource</code> (line 48)
+ &mdash; Search agent for the OpenAIRE Research Graph API.
+<ul><li><code>__init__(self, config)</code> (line 72)</li></ul>
+<ul><li><code>_first(values, default)</code> (line 90)</li></ul>
+<ul><li><code>_normalize_keywords(query)</code> (line 118)</li></ul>
+<ul><li><code>_extract_result(self, item)</code> (line 138)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 152)</li></ul>
+<ul><li><code>search_papers(self, query, limit)</code> (line 218)</li></ul>
+<ul><li><code>_format_paper(self, item)</code> (line 247)</li></ul>
+<ul><li><code>_extract_funding(self, projects)</code> (line 309)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/openalex_source.py">
+<h2>src/ingestion/sources/openalex_source.py</h2>
+<p class="summary">Module: openalex_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>OpenAlexSource</code> (line 38)
+ &mdash; Search agent for the OpenAlex API.
+<ul><li><code>__init__(self, config)</code> (line 52)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 66)</li></ul>
+<ul><li><code>search_papers(self, query, limit)</code> (line 128)</li></ul>
+<ul><li><code>_reconstruct_abstract(self, inverted_index)</code> (line 152)</li></ul>
+<ul><li><code>_format_paper(self, work)</code> (line 172)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/openarchives_source.py">
+<h2>src/ingestion/sources/openarchives_source.py</h2>
+<p class="summary">Module: openarchives_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>OpenArchivesSource</code> (line 33)
+ &mdash; Search agent for OpenArchives.gr.
+<ul><li><code>__init__(self, config)</code> (line 35)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 50)</li></ul>
+<ul><li><code>_format_paper(self, item)</code> (line 75)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/openreview_source.py">
+<h2>src/ingestion/sources/openreview_source.py</h2>
+<p class="summary">Module: openreview_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>OpenReviewSource</code> (line 59)
+ &mdash; Search agent for the OpenReview API V2.
+<ul><li><code>__init__(self, config)</code> (line 76)</li></ul>
+<ul><li><code>_get_content_value(self, note, field, default)</code> (line 114)</li></ul>
+<ul><li><code>_query_notes(self, term, limit, offset, sort)</code> (line 141)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 182)</li></ul>
+<ul><li><code>search_papers(self, query, limit)</code> (line 241)</li></ul>
+<ul><li><code>_format_paper(self, note)</code> (line 265)</li></ul>
+</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/osti_source.py">
+<h2>src/ingestion/sources/osti_source.py</h2>
+<p class="summary">Module: osti_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>OSTISource</code> (line 31)
+ &mdash; Search agent for OSTI.gov.
+<ul><li><code>__init__(self, config)</code> (line 33)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 41)</li></ul>
+<ul><li><code>_format_paper(self, record)</code> (line 60)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/plos_source.py">
+<h2>src/ingestion/sources/plos_source.py</h2>
+<p class="summary">Module: plos_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>PLOSSource</code> (line 33)
+ &mdash; Search agent for the PLOS API (Open Access).
+<ul><li><code>__init__(self, config)</code> (line 35)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 43)</li></ul>
+<ul><li><code>_format_paper(self, doc)</code> (line 78)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/pubmed_source.py">
+<h2>src/ingestion/sources/pubmed_source.py</h2>
+<p class="summary">Module: pubmed_source.py </p>
+<h3>Classes</h3><ul>
+<li><code>PubMedSource</code> (line 35)
+ &mdash; Search agent for PubMed.
+<ul><li><code>__init__(self, config)</code> (line 37)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 51)</li></ul>
+<ul><li><code>_format_paper(self, article)</code> (line 70)</li></ul>
+</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/scigov_source.py">
+<h2>src/ingestion/sources/scigov_source.py</h2>
+<p class="summary">Module: scigov_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>ScienceGovSource</code> (line 55)
+ &mdash; Search agent for the Science.gov federal science portal API.
+<ul><li><code>__init__(self, config)</code> (line 58)</li></ul>
+<ul><li><code>_is_dns_failure(exc)</code> (line 78)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 98)</li></ul>
+<ul><li><code>_format_paper(self, record)</code> (line 146)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/semantic_scholar_source.py">
+<h2>src/ingestion/sources/semantic_scholar_source.py</h2>
+<p class="summary">Module: semantic_scholar_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>SemanticScholarSource</code> (line 36)
+ &mdash; Search agent for the Semantic Scholar API.
+<ul><li><code>__init__(self, config)</code> (line 49)</li></ul>
+<ul><li><code>_make_request(self, endpoint, params, max_retries, initial_backoff)</code> (line 63)</li></ul>
+<ul><li><code>_format_paper(self, paper)</code> (line 98)</li></ul>
+<ul><li><code>search_papers(self, query, limit)</code> (line 115)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 131)</li></ul>
+<ul><li><code>get_paper_details(self, paper_id, fields)</code> (line 165)</li></ul>
+<ul><li><code>_get_paginated_paper_list(self, url, limit)</code> (line 177)</li></ul>
+<ul><li><code>get_paper_references(self, paper_id, limit)</code> (line 202)</li></ul>
+<ul><li><code>get_paper_citations(self, paper_id, limit)</code> (line 215)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/integration/visualizer_bridge.py</li>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/sources/springer_source.py">
+<h2>src/ingestion/sources/springer_source.py</h2>
+<p class="summary">Module: springer_source.py</p>
+<h3>Classes</h3><ul>
+<li><code>SpringerNatureSource</code> (line 35)
+ &mdash; Search agent for the Springer Nature API.
+<ul><li><code>__init__(self, config)</code> (line 44)</li></ul>
+<ul><li><code>_make_request(self, params, max_retries, initial_backoff)</code> (line 63)</li></ul>
+<ul><li><code>fetch_new_papers(self)</code> (line 89)</li></ul>
+<ul><li><code>_format_paper(self, article)</code> (line 117)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/http_client.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/ingestion/zotero_connector.py">
+<h2>src/ingestion/zotero_connector.py</h2>
+<p class="summary">Module: zotero_connector.py (v2.1 - Graceful Import Degradation)</p>
+<h3>Functions</h3><ul>
+<li><code>main()</code> (line 52)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/ai_manager.py</li>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/integration/__init__.py">
+<h2>src/integration/__init__.py</h2>
+<p class="summary">Module: __init__.py</p>
+</section>
+<section class="card" data-search="src/integration/optica_client.py">
+<h2>src/integration/optica_client.py</h2>
+<p class="summary">Module: optica_client.py</p>
+<h3>Classes</h3><ul>
+<li><code>OpticaClient</code> (line 35)
+ &mdash; Lightweight REST client for the OPTICA visualization microservice.
+<ul><li><code>__init__(self, base_url, timeout)</code> (line 50)</li></ul>
+<ul><li><code>plot_generate_url(self)</code> (line 62)</li></ul>
+<ul><li><code>request_plot(self, plot_type, journal_template)</code> (line 66)</li></ul>
+<ul><li><code>_error(message, exc)</code> (line 123)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/integration/synapse_client.py">
+<h2>src/integration/synapse_client.py</h2>
+<p class="summary">Module: synapse_client.py</p>
+<h3>Classes</h3><ul>
+<li><code>EventEmitter</code> (line 85)
+ &mdash; Thread-safe, non-blocking emitter for the SYNAPSE Event-Driven Protocol.
+<ul><li><code>__init__(self, bus_url, source, timeout, max_retries)</code> (line 113)</li></ul>
+<ul><li><code>emit(self, event_type, payload, callback, blocking)</code> (line 170)</li></ul>
+<ul><li><code>_build_event(self, event_type, payload)</code> (line 219)</li></ul>
+<ul><li><code>_buffer_event(self, event)</code> (line 238)</li></ul>
+<ul><li><code>_do_emit(self, event, callback)</code> (line 260)</li></ul>
+<ul><li><code>close(self)</code> (line 395)</li></ul>
+<ul><li><code>__del__(self)</code> (line 407)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>get_emission_stats()</code> (line 54)</li>
+<li><code>_record_emission(counter)</code> (line 64)</li>
+</ul>
+</section>
+<section class="card" data-search="src/integration/visualizer_bridge.py">
+<h2>src/integration/visualizer_bridge.py</h2>
+<p class="summary">Module: visualizer_bridge.py</p>
+<h3>Functions</h3><ul>
+<li><code>push_visualizer_event(event_type, source, score, title, **extra)</code> (line 27)</li>
+</ul>
+</section>
+<section class="card" data-search="src/mcp_server.py">
+<h2>src/mcp_server.py</h2>
+<p class="summary">Module: mcp_server.py</p>
+<h3>Functions</h3><ul>
+<li><code>talos_system_status()</code> (line 60)</li>
+<li><code>talos_semantic_search(query, top_k)</code> (line 124)</li>
+<li><code>talos_get_paper_details(paper_id)</code> (line 199)</li>
+<li><code>talos_trigger_scrape(sources)</code> (line 325)</li>
+</ul>
+</section>
+<section class="card" data-search="src/prisma/__init__.py">
+<h2>src/prisma/__init__.py</h2>
+<p class="summary">Module: __init__.py</p>
+<h3>Dependencies</h3><ul>
+<li>src/prisma/dspy_modules.py</li>
+<li>src/prisma/dspy_signatures.py</li>
+<li>src/prisma/mermaid_generator.py</li>
+<li>src/prisma/quality_appraisal.py</li>
+<li>src/prisma/quality_swarm.py</li>
+<li>src/prisma/scoping_review_synthesizer.py</li>
+<li>src/prisma/swarm_evaluators.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/prisma/dspy_modules.py">
+<h2>src/prisma/dspy_modules.py</h2>
+<p class="summary">Module: dspy_modules.py</p>
+<h3>Classes</h3><ul>
+<li><code>PrismaPlanner</code> (line 171)
+ &mdash; Synthesize multi-database search protocols and query facets.
+<ul><li><code>__init__(self, ai_manager)</code> (line 179)</li></ul>
+<ul><li><code>plan(self, research_topic, domain_scope)</code> (line 187)</li></ul>
+<ul><li><code>_deterministic_plan(self, research_topic, domain_scope)</code> (line 214)</li></ul>
+</li>
+<li><code>PrismaEvaluator</code> (line 243)
+ &mdash; Perform structured Chain-of-Thought title/abstract screening.
+<ul><li><code>__init__(self, ai_manager, evaluation_mode)</code> (line 254)</li></ul>
+<ul><li><code>screen(self, title, abstract, inclusion_criteria, exclusion_criteria)</code> (line 269)</li></ul>
+<ul><li><code>_screen_swarm(self, title, abstract, inclusion_criteria, exclusion_criteria)</code> (line 309)</li></ul>
+<ul><li><code>_deterministic_screen(self, title, abstract, inclusion_criteria, exclusion_criteria)</code> (line 394)</li></ul>
+</li>
+<li><code>PrismaEligibilityJudge</code> (line 448)
+ &mdash; Assess full abstract/methodology suitability for inclusion.
+<ul><li><code>__init__(self, ai_manager)</code> (line 456)</li></ul>
+<ul><li><code>assess(self, title, abstract, methodology_tags, deep_criteria)</code> (line 464)</li></ul>
+<ul><li><code>_deterministic_assess(self, title, abstract, methodology_tags, deep_criteria)</code> (line 502)</li></ul>
+</li>
+<li><code>PrismaExecutor</code> (line 581)
+ &mdash; Orchestrate the 4-phase PRISMA-ScR flow end-to-end.
+<ul><li><code>__init__(self, ai_manager, db_manager, evaluation_mode)</code> (line 592)</li></ul>
+<ul><li><code>_ensure_ai_manager(self)</code> (line 620)</li></ul>
+<ul><li><code>_ensure_components(self)</code> (line 635)</li></ul>
+<ul><li><code>_collect_papers(self, papers, limit)</code> (line 642)</li></ul>
+<ul><li><code>_deduplicate(papers)</code> (line 670)</li></ul>
+<ul><li><code>run(self, research_topic, domain_scope, papers, max_papers, deep_criteria, evaluation_mode, render)</code> (line 695)</li></ul>
+<ul><li><code>_render_counters(self)</code> (line 838)</li></ul>
+<ul><li><code>_print_counters_plain(counts)</code> (line 870)</li></ul>
+<ul><li><code>_write_report(self, markdown, topic)</code> (line 886)</li></ul>
+<ul><li><code>run_interactive(self)</code> (line 905)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_resolve_project_root()</code> (line 53)</li>
+<li><code>_load_config()</code> (line 68)</li>
+<li><code>_keyword_hits(text, keywords)</code> (line 134)</li>
+<li><code>_criteria_keywords(criteria)</code> (line 150)</li>
+<li><code>main()</code> (line 958)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/ai_manager.py</li>
+<li>src/core/database_manager.py</li>
+<li>src/prisma/dspy_signatures.py</li>
+<li>src/prisma/mermaid_generator.py</li>
+<li>src/prisma/scoping_review_synthesizer.py</li>
+<li>src/prisma/swarm_evaluators.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/prisma/dspy_signatures.py">
+<h2>src/prisma/dspy_signatures.py</h2>
+<p class="summary">Module: dspy_signatures.py</p>
+<h3>Classes</h3><ul>
+<li><code>DspySignature</code> (line 118)
+ &mdash; Base class for typed declarative PRISMA-ScR signatures.
+<ul><li><code>_normalize(cls, data)</code> (line 130)</li></ul>
+<ul><li><code>parse_output(cls, text)</code> (line 142)</li></ul>
+</li>
+<li><code>PrismaPlanSignature</code> (line 165)
+ &mdash; Declarative signature synthesizing a multi-database search protocol.
+<ul><li><code>_normalize(cls, data)</code> (line 185)</li></ul>
+</li>
+<li><code>PrismaScreeningSignature</code> (line 202)
+ &mdash; Declarative signature for title/abstract screening with chain-of-thought.
+<ul><li><code>_normalize(cls, data)</code> (line 228)</li></ul>
+</li>
+<li><code>PrismaEligibilitySignature</code> (line 259)
+ &mdash; Declarative signature for full-abstract/methodology eligibility.
+<ul><li><code>_normalize(cls, data)</code> (line 281)</li></ul>
+</li>
+<li><code>PrismaSynthesisSignature</code> (line 302)
+ &mdash; Declarative signature for thematic synthesis of included studies.
+<ul><li><code>_normalize(cls, data)</code> (line 320)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>extract_json_payload(text)</code> (line 46)</li>
+<li><code>_string_list(value)</code> (line 91)</li>
+</ul>
+</section>
+<section class="card" data-search="src/prisma/mermaid_generator.py">
+<h2>src/prisma/mermaid_generator.py</h2>
+<p class="summary">Module: mermaid_generator.py</p>
+<h3>Functions</h3><ul>
+<li><code>_n(counts, key, default)</code> (line 25)</li>
+<li><code>generate_prisma_mermaid(counts)</code> (line 43)</li>
+<li><code>mermaid_to_markdown(mermaid, caption)</code> (line 98)</li>
+<li><code>mermaid_to_html(mermaid, title)</code> (line 114)</li>
+</ul>
+</section>
+<section class="card" data-search="src/prisma/quality_appraisal.py">
+<h2>src/prisma/quality_appraisal.py</h2>
+<p class="summary">Module: quality_appraisal.py</p>
+<h3>Classes</h3><ul>
+<li><code>KitchenhamRubric</code> (line 143)
+ &mdash; Standardized six-question Kitchenham et al.
+<ul><li><code>_coerce_ternary(cls, value)</code> (line 207)</li></ul>
+<ul><li><code>question_sum(self)</code> (line 219)</li></ul>
+<ul><li><code>quality_score(self)</code> (line 235)</li></ul>
+</li>
+<li><code>QualityAppraisalResult</code> (line 291)
+ &mdash; Structured result of a single Kitchenham quality appraisal.
+</li>
+<li><code>PrismaQualityAppraiser</code> (line 343)
+ &mdash; Standardized Kitchenham (2007) quality appraisal engine.
+<ul><li><code>__init__(self, ai_manager, db_manager, appraisal_mode)</code> (line 359)</li></ul>
+<ul><li><code>_ensure_ai_manager(self)</code> (line 378)</li></ul>
+<ul><li><code>_ensure_db_manager(self)</code> (line 392)</li></ul>
+<ul><li><code>_build_prompt(paper)</code> (line 407)</li></ul>
+<ul><li><code>appraise_paper(self, paper_dict, relevance_score)</code> (line 456)</li></ul>
+<ul><li><code>_appraise_paper_swarm(self, paper_dict, relevance_score)</code> (line 500)</li></ul>
+<ul><li><code>appraise_candidates_batch(self, min_relevance, active_profile, render, force_reappraise)</code> (line 550)</li></ul>
+<ul><li><code>_get_console(self)</code> (line 712)</li></ul>
+<ul><li><code>_render_existing_quadrant_distribution(self, db, min_relevance, render)</code> (line 723)</li></ul>
+<ul><li><code>render_quadrant_summary(self, results)</code> (line 780)</li></ul>
+<ul><li><code>run(self, min_relevance, active_profile, force_reappraise)</code> (line 839)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_resolve_project_root()</code> (line 65)</li>
+<li><code>_load_config()</code> (line 80)</li>
+<li><code>_normalize_ternary(value)</code> (line 102)</li>
+<li><code>map_evidence_quadrant(relevance_score, quality_score)</code> (line 259)</li>
+<li><code>_resolve_batch_concurrency()</code> (line 323)</li>
+<li><code>main(argv)</code> (line 865)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/ai_manager.py</li>
+<li>src/core/database_manager.py</li>
+<li>src/prisma/dspy_signatures.py</li>
+<li>src/prisma/quality_swarm.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/prisma/quality_swarm.py">
+<h2>src/prisma/quality_swarm.py</h2>
+<p class="summary">Module: quality_swarm.py</p>
+<h3>Classes</h3><ul>
+<li><code>SkillCompiler</code> (line 177)
+ &mdash; One-time compiler of domain-specialized auditor skill files.
+<ul><li><code>__init__(self, ai_manager, profile_name)</code> (line 195)</li></ul>
+<ul><li><code>_load_profile_config(self, profile_name)</code> (line 208)</li></ul>
+<ul><li><code>_inject_placeholders(template_text, config)</code> (line 235)</li></ul>
+<ul><li><code>_select_compiler_model(self)</code> (line 268)</li></ul>
+<ul><li><code>_polish_with_llm(self, skill_key, injected_text)</code> (line 289)</li></ul>
+<ul><li><code>compiled_skills_exist(self, profile_name)</code> (line 331)</li></ul>
+<ul><li><code>compile_profile_skills(self, profile_name, force_recompile)</code> (line 349)</li></ul>
+</li>
+<li><code>SmartSectionSlicer</code> (line 406)
+ &mdash; Extract targeted text slices from a paper record for each auditor.
+<ul><li><code>_cap_words(text, max_words)</code> (line 448)</li></ul>
+<ul><li><code>_extract_sections(self, text)</code> (line 463)</li></ul>
+<ul><li><code>_cached_section_dir(paper)</code> (line 511)</li></ul>
+<ul><li><code>_load_cached_sections(self, paper)</code> (line 529)</li></ul>
+<ul><li><code>slice_for_auditor(self, auditor_key, paper, max_words)</code> (line 553)</li></ul>
+</li>
+<li><code>TheoryAuditResult</code> (line 611)
+ &mdash; TheoryAuditor output for Kitchenham Q1 (aims/formulation/scope).
+<ul><li><code>_coerce(cls, value)</code> (line 624)</li></ul>
+<ul><li><code>mean_score(self)</code> (line 629)</li></ul>
+</li>
+<li><code>OperationalAuditResult</code> (line 634)
+ &mdash; OperationalAuditor output for Kitchenham Q2 (context realism).
+<ul><li><code>_coerce(cls, value)</code> (line 647)</li></ul>
+<ul><li><code>mean_score(self)</code> (line 652)</li></ul>
+</li>
+<li><code>BenchmarkAuditResult</code> (line 657)
+ &mdash; BenchmarkAuditor output for Kitchenham Q3 and Q4.
+<ul><li><code>_coerce(cls, value)</code> (line 673)</li></ul>
+<ul><li><code>mean_score(self)</code> (line 678)</li></ul>
+</li>
+<li><code>OpenScienceAuditResult</code> (line 684)
+ &mdash; OpenScienceAuditor output for Kitchenham Q5 and Q6.
+<ul><li><code>_coerce(cls, value)</code> (line 700)</li></ul>
+<ul><li><code>mean_score(self)</code> (line 705)</li></ul>
+</li>
+<li><code>SkillAuditor</code> (line 715)
+ &mdash; Base class for the four forensic quality auditor personas.
+<ul><li><code>__init__(self, skill_text, ai_manager)</code> (line 744)</li></ul>
+<ul><li><code>load_compiled_skill(cls, profile_name)</code> (line 756)</li></ul>
+<ul><li><code>_build_prompt(self, title, slice_text)</code> (line 787)</li></ul>
+<ul><li><code>_result_from_json(self, data)</code> (line 813)</li></ul>
+<ul><li><code>_deterministic_audit(self, text)</code> (line 829)</li></ul>
+<ul><li><code>audit(self, paper, slice_text)</code> (line 862)</li></ul>
+</li>
+<li><code>TheoryAuditor</code> (line 889)
+ &mdash; Forensic auditor for Kitchenham Q1 (formal problem formulation).
+</li>
+<li><code>OperationalAuditor</code> (line 915)
+ &mdash; Forensic auditor for Kitchenham Q2 (operational context realism).
+</li>
+<li><code>BenchmarkAuditor</code> (line 941)
+ &mdash; Forensic auditor for Kitchenham Q3 and Q4 (empirical rigor).
+</li>
+<li><code>OpenScienceAuditor</code> (line 971)
+ &mdash; Forensic auditor for Kitchenham Q5 and Q6 (open science).
+</li>
+<li><code>SwarmQualityVerdict</code> (line 1007)
+ &mdash; Aggregated result of the four-auditor forensic quality swarm.
+</li>
+<li><code>KitchenhamQualitySynthesizer</code> (line 1029)
+ &mdash; Concurrent dispatcher and consensus synthesizer of the Tier-2 swarm.
+<ul><li><code>__init__(self, ai_manager, profile_name)</code> (line 1048)</li></ul>
+<ul><li><code>_ensure_ai_manager(self)</code> (line 1060)</li></ul>
+<ul><li><code>_build_auditors(self, profile_name)</code> (line 1074)</li></ul>
+<ul><li><code>_score_band(cls, mean_score)</code> (line 1095)</li></ul>
+<ul><li><code>compute_kappa_qual(cls, audits)</code> (line 1111)</li></ul>
+<ul><li><code>_synthesize_narrative(audits, rubric, quadrant, kappa)</code> (line 1132)</li></ul>
+<ul><li><code>synthesize(self, paper, relevance_score, active_profile)</code> (line 1176)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_resolve_project_root()</code> (line 65)</li>
+<li><code>_templates_dir()</code> (line 102)</li>
+<li><code>_profile_skills_dir(profile_name)</code> (line 112)</li>
+<li><code>_default_profile_name()</code> (line 125)</li>
+<li><code>resolve_quality_swarm_workers()</code> (line 157)</li>
+<li><code>main(argv)</code> (line 1284)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/ai_manager.py</li>
+<li>src/core/hardware_advisor.py</li>
+<li>src/core/profile_manager.py</li>
+<li>src/prisma/dspy_signatures.py</li>
+<li>src/prisma/quality_appraisal.py</li>
+<li>src/prisma/swarm_evaluators.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/prisma/scoping_review_synthesizer.py">
+<h2>src/prisma/scoping_review_synthesizer.py</h2>
+<p class="summary">Module: scoping_review_synthesizer.py</p>
+<h3>Functions</h3><ul>
+<li><code>_title(paper)</code> (line 23)</li>
+<li><code>_authors(paper)</code> (line 35)</li>
+<li><code>_reference_line(paper, index)</code> (line 48)</li>
+<li><code>_methodology_map(included_papers)</code> (line 67)</li>
+<li><code>synthesize_scoping_review(included_papers, prisma_counts, topic)</code> (line 94)</li>
+<li><code>synthesize_scoping_review_latex(included_papers, prisma_counts, topic)</code> (line 204)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/prisma/mermaid_generator.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/prisma/skills/__init__.py">
+<h2>src/prisma/skills/__init__.py</h2>
+<p class="summary">Module: __init__.py (src/prisma/skills)</p>
+</section>
+<section class="card" data-search="src/prisma/swarm_evaluators.py">
+<h2>src/prisma/swarm_evaluators.py</h2>
+<p class="summary">Module: swarm_evaluators.py</p>
+<h3>Classes</h3><ul>
+<li><code>ReviewerVerdict</code> (line 87)
+ &mdash; A single reviewer persona's structured judgement of one study.
+</li>
+<li><code>ConsensusVerdict</code> (line 106)
+ &mdash; The aggregated result of the multi-agent consensus arbitration.
+</li>
+<li><code>ReviewerPersona</code> (line 251)
+ &mdash; Typed base persona for a specialized multi-agent reviewer.
+<ul><li><code>_build_prompt(self, title, abstract, inclusion_criteria, exclusion_criteria)</code> (line 268)</li></ul>
+<ul><li><code>_verdict_from_json(self, data)</code> (line 283)</li></ul>
+<ul><li><code>_deterministic_review(self, title, abstract)</code> (line 322)</li></ul>
+<ul><li><code>review(self, title, abstract, inclusion_criteria, exclusion_criteria, ai_manager)</code> (line 360)</li></ul>
+</li>
+<li><code>AlgorithmicReviewer</code> (line 396)
+ &mdash; Algorithmic rigor reviewer persona.
+</li>
+<li><code>EmpiricalReviewer</code> (line 429)
+ &mdash; Empirical rigor reviewer persona.
+</li>
+<li><code>OperationalReviewer</code> (line 459)
+ &mdash; Swarm operational reviewer persona.
+</li>
+<li><code>SwarmConsensusArbiter</code> (line 493)
+ &mdash; Aggregate individual reviewer verdicts into a consensus decision.
+<ul><li><code>__init__(self, ai_manager)</code> (line 505)</li></ul>
+<ul><li><code>adjudicate(self, verdicts)</code> (line 514)</li></ul>
+<ul><li><code>_unanimous_synthesis(self, decision, verdicts, consensus_score, kappa)</code> (line 564)</li></ul>
+<ul><li><code>_split_synthesis(self, decision, verdicts, counts, kappa)</code> (line 580)</li></ul>
+<ul><li><code>_adjudicate_split(self, votes, verdicts, counts)</code> (line 604)</li></ul>
+<ul><li><code>_cot_prompt(self, verdicts)</code> (line 640)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>resolve_swarm_workers()</code> (line 50)</li>
+<li><code>_keyword_hits(text, keywords)</code> (line 66)</li>
+<li><code>calculate_cohens_kappa(votes)</code> (line 132)</li>
+<li><code>cohens_kappa_pairwise(votes_a, votes_b)</code> (line 183)</li>
+<li><code>_review_prompt(persona_name, role, focus)</code> (line 226)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/prisma/dspy_signatures.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/search/__init__.py">
+<h2>src/search/__init__.py</h2>
+<p class="summary">Module: __init__.py</p>
+<h3>Dependencies</h3><ul>
+<li>src/search/citation_snowballing.py</li>
+<li>src/search/code_first_search.py</li>
+<li>src/search/neural_vector_search.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/search/citation_snowballing.py">
+<h2>src/search/citation_snowballing.py</h2>
+<p class="summary">Module: citation_snowballing.py</p>
+<h3>Classes</h3><ul>
+<li><code>CitationSnowballEngine</code> (line 75)
+ &mdash; Traverse the citation graph around a seed paper and import relevant nodes.
+<ul><li><code>__init__(self, ai_manager, db_manager, timeout)</code> (line 89)</li></ul>
+<ul><li><code>_get_json(self, url, params)</code> (line 104)</li></ul>
+<ul><li><code>_work_by_doi(self, doi)</code> (line 121)</li></ul>
+<ul><li><code>_works_by_ids(self, openalex_ids, limit)</code> (line 135)</li></ul>
+<ul><li><code>_citing_works(self, work_id, year_from, year_to, limit)</code> (line 152)</li></ul>
+<ul><li><code>_reconstruct_abstract(inverted_index)</code> (line 175)</li></ul>
+<ul><li><code>_normalize_openalex_work(work)</code> (line 193)</li></ul>
+<ul><li><code>_normalize_crossref_item(self, item)</code> (line 219)</li></ul>
+<ul><li><code>_crossref_references(self, doi, limit)</code> (line 239)</li></ul>
+<ul><li><code>_semantic_scholar_edges(self, doi, kind, limit)</code> (line 258)</li></ul>
+<ul><li><code>_dedupe(self, papers)</code> (line 292)</li></ul>
+<ul><li><code>_filter_relevant(self, papers, criteria)</code> (line 323)</li></ul>
+<ul><li><code>_deterministic_relevant(title, abstract)</code> (line 363)</li></ul>
+<ul><li><code>_import_papers(self, papers)</code> (line 382)</li></ul>
+<ul><li><code>resolve_seed(self, seed)</code> (line 417)</li></ul>
+<ul><li><code>_short_id(openalex_id)</code> (line 465)</li></ul>
+<ul><li><code>backward_snowball(self, seed, depth, limit)</code> (line 476)</li></ul>
+<ul><li><code>forward_snowball(self, seed, year_from, year_to, limit)</code> (line 512)</li></ul>
+<ul><li><code>generate_genealogy(seed, backward, forward)</code> (line 538)</li></ul>
+<ul><li><code>render_genealogy(self, results)</code> (line 572)</li></ul>
+<ul><li><code>export_snowball_report(self, seed, results, output_dir)</code> (line 639)</li></ul>
+<ul><li><code>run(self, seed, depth, year_from, year_to, import_to_db, criteria, render)</code> (line 723)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_md_escape(text)</code> (line 41)</li>
+<li><code>_format_link(doi, url)</code> (line 55)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_manager.py</li>
+<li>src/prisma/dspy_modules.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/search/code_first_search.py">
+<h2>src/search/code_first_search.py</h2>
+<p class="summary">Module: code_first_search.py</p>
+<h3>Classes</h3><ul>
+<li><code>CodeFirstSearchEngine</code> (line 81)
+ &mdash; Discover code-linked, reproducible research papers.
+<ul><li><code>__init__(self, timeout)</code> (line 93)</li></ul>
+<ul><li><code>_search_github_repos(self, query, limit)</code> (line 105)</li></ul>
+<ul><li><code>_is_reproducible(self, record)</code> (line 136)</li></ul>
+<ul><li><code>_search_paperswithcode(self, query, limit)</code> (line 151)</li></ul>
+<ul><li><code>run(self, query, limit, render)</code> (line 180)</li></ul>
+<ul><li><code>render_results(self, results)</code> (line 211)</li></ul>
+<ul><li><code>export_search_report(self, query, results, output_dir)</code> (line 293)</li></ul>
+<ul><li><code>_match_db_papers(self, query)</code> (line 385)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_md_escape(text)</code> (line 39)</li>
+<li><code>_format_link(doi, url)</code> (line 53)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/search/fulltext_search.py">
+<h2>src/search/fulltext_search.py</h2>
+<p class="summary">Module: fulltext_search.py</p>
+<h3>Classes</h3><ul>
+<li><code>FullTextSearchEngine</code> (line 65)
+ &mdash; SQLite FTS5 full-text search over cached paper full-text bodies.
+<ul><li><code>__init__(self, db_path)</code> (line 72)</li></ul>
+<ul><li><code>_resolve_active_db_path()</code> (line 83)</li></ul>
+<ul><li><code>_connect(self)</code> (line 88)</li></ul>
+<ul><li><code>_ensure_fts_table(self)</code> (line 95)</li></ul>
+<ul><li><code>index_paper(self, paper_id, title, fulltext_content)</code> (line 105)</li></ul>
+<ul><li><code>index_from_cache(self)</code> (line 124)</li></ul>
+<ul><li><code>_paper_titles(self)</code> (line 161)</li></ul>
+<ul><li><code>search_fulltext(self, query, limit)</code> (line 168)</li></ul>
+<ul><li><code>_estimate_page(fulltext, snippet)</code> (line 209)</li></ul>
+<ul><li><code>render_results(self, results)</code> (line 231)</li></ul>
+<ul><li><code>run(self, query, limit)</code> (line 267)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_resolve_project_root()</code> (line 55)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/search/neural_vector_search.py">
+<h2>src/search/neural_vector_search.py</h2>
+<p class="summary">Module: neural_vector_search.py</p>
+<h3>Classes</h3><ul>
+<li><code>NeuralVectorSearchEngine</code> (line 67)
+ &mdash; Rank papers semantically using local dense embeddings and cosine similarity.
+<ul><li><code>__init__(self, model, base_url, timeout)</code> (line 84)</li></ul>
+<ul><li><code>embed(self, text)</code> (line 99)</li></ul>
+<ul><li><code>_extract_vector(data)</code> (line 128)</li></ul>
+<ul><li><code>cosine_similarity(u, v)</code> (line 144)</li></ul>
+<ul><li><code>rank(self, query, candidates)</code> (line 162)</li></ul>
+<ul><li><code>_lexical_rank(query, candidates)</code> (line 193)</li></ul>
+<ul><li><code>_load_cached_embeddings(self)</code> (line 219)</li></ul>
+<ul><li><code>_index_uncached(self, uncached, batch_size, max_workers)</code> (line 232)</li></ul>
+<ul><li><code>_matrix_rank(self, query, candidates, cached)</code> (line 287)</li></ul>
+<ul><li><code>_snippet(text, query, width)</code> (line 337)</li></ul>
+<ul><li><code>render_results(self, results, query)</code> (line 366)</li></ul>
+<ul><li><code>_md_escape(text)</code> (line 403)</li></ul>
+<ul><li><code>_format_link(doi, url)</code> (line 418)</li></ul>
+<ul><li><code>export_search_report(self, query, results, output_dir, corpus_size)</code> (line 437)</li></ul>
+<ul><li><code>search(self, query, candidates, top_k)</code> (line 520)</li></ul>
+<ul><li><code>run(self, query, top_k, render)</code> (line 534)</li></ul>
+<ul><li><code>_load_candidates(self)</code> (line 576)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>dump_result(results)</code> (line 608)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/services/__init__.py">
+<h2>src/services/__init__.py</h2>
+<p class="summary">TALOS in-tree microservices package.</p>
+</section>
+<section class="card" data-search="src/services/cognitive_mesh/__init__.py">
+<h2>src/services/cognitive_mesh/__init__.py</h2>
+<p class="summary">Module: __init__.py</p>
+<h3>Dependencies</h3><ul>
+<li>src/services/cognitive_mesh/benchmarks.py</li>
+<li>src/services/cognitive_mesh/buffer_sync.py</li>
+<li>src/services/cognitive_mesh/client.py</li>
+<li>src/services/cognitive_mesh/dto.py</li>
+<li>src/services/cognitive_mesh/rate_limiter.py</li>
+<li>src/services/cognitive_mesh/registry.py</li>
+<li>src/services/cognitive_mesh/reporter.py</li>
+<li>src/services/cognitive_mesh/router.py</li>
+<li>src/services/cognitive_mesh/scavenger.py</li>
+<li>src/services/cognitive_mesh/self_healing.py</li>
+<li>src/services/cognitive_mesh/xai_ledger.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/services/cognitive_mesh/benchmarks.py">
+<h2>src/services/cognitive_mesh/benchmarks.py</h2>
+<p class="summary">Module: benchmarks.py</p>
+<h3>Classes</h3><ul>
+<li><code>ModelBenchmarkClient</code> (line 198)
+ &mdash; Scientific benchmark client with a local cache and role-based pairing.
+<ul><li><code>__init__(self, cache_path)</code> (line 205)</li></ul>
+<ul><li><code>_load_cache(self)</code> (line 215)</li></ul>
+<ul><li><code>_save_cache(self)</code> (line 228)</li></ul>
+<ul><li><code>_ensure_cache(self)</code> (line 245)</li></ul>
+<ul><li><code>refresh(self, online)</code> (line 258)</li></ul>
+<ul><li><code>_fetch_remote_benchmarks(self)</code> (line 283)</li></ul>
+<ul><li><code>_merge_records(self, records)</code> (line 310)</li></ul>
+<ul><li><code>ingest_remote_records(self, records)</code> (line 318)</li></ul>
+<ul><li><code>get_top_models_by_role(self)</code> (line 342)</li></ul>
+<ul><li><code>reconcile_local_budget(self)</code> (line 373)</li></ul>
+<ul><li><code>render_discovery_table(self)</code> (line 409)</li></ul>
+<ul><li><code>_render_plain(self)</code> (line 450)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>fuzzy_enrich_benchmarks(model_id, developer)</code> (line 163)</li>
+<li><code>run_discover_llms(online)</code> (line 464)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/hardware_advisor.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/services/cognitive_mesh/buffer_sync.py">
+<h2>src/services/cognitive_mesh/buffer_sync.py</h2>
+<p class="summary">Module: buffer_sync.py</p>
+<h3>Classes</h3><ul>
+<li><code>BufferSyncEngine</code> (line 38)
+ &mdash; Store-and-forward JSONL sync between remote workers and the cache.
+<ul><li><code>__init__(self, cache_path)</code> (line 41)</li></ul>
+<ul><li><code>_resolve_root()</code> (line 48)</li></ul>
+<ul><li><code>ingest_jsonl_buffer(self, file_path)</code> (line 58)</li></ul>
+<ul><li><code>export_worker_buffer(self, models, output_path)</code> (line 85)</li></ul>
+<ul><li><code>_parse_jsonl(self, file_path)</code> (line 109)</li></ul>
+<ul><li><code>_deduplicate(records)</code> (line 134)</li></ul>
+<ul><li><code>_merge_into_cache(self, records)</code> (line 143)</li></ul>
+<ul><li><code>_cache_record_count(self)</code> (line 150)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/services/cognitive_mesh/benchmarks.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/services/cognitive_mesh/client.py">
+<h2>src/services/cognitive_mesh/client.py</h2>
+<p class="summary">Module: client.py</p>
+<h3>Classes</h3><ul>
+<li><code>CognitiveMeshClient</code> (line 49)
+ &mdash; Unified facade for in-process and HTTP Cognitive Mesh consumption.
+<ul><li><code>__init__(self, base_url, router)</code> (line 59)</li></ul>
+<ul><li><code>dispatch(self, request)</code> (line 71)</li></ul>
+<ul><li><code>_dispatch_http(self, request)</code> (line 84)</li></ul>
+<ul><li><code>providers(self)</code> (line 104)</li></ul>
+<ul><li><code>scavenge(self, window_days)</code> (line 128)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/services/cognitive_mesh/dto.py</li>
+<li>src/services/cognitive_mesh/registry.py</li>
+<li>src/services/cognitive_mesh/router.py</li>
+<li>src/services/cognitive_mesh/scavenger.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/services/cognitive_mesh/dto.py">
+<h2>src/services/cognitive_mesh/dto.py</h2>
+<p class="summary">Module: dto.py</p>
+<h3>Classes</h3><ul>
+<li><code>RoutingStrategy</code> (line 48)
+ &mdash; The five named cognitive routing strategies.
+</li>
+<li><code>ProviderHealthState</code> (line 65)
+ &mdash; The six-state self-healing circuit-breaker health machine.
+</li>
+<li><code>AccessTier</code> (line 90)
+ &mdash; The four explicit model/endpoint access tiers for zero-config failover.
+</li>
+<li><code>TaskComplexity</code> (line 109)
+ &mdash; The four civilian task-complexity bands used by the dynamic swarm sizer.
+</li>
+<li><code>RouterTaskRequest</code> (line 129)
+ &mdash; Standalone Pydantic v2 request DTO for a cognitive routing dispatch.
+</li>
+<li><code>RouterTaskResponse</code> (line 155)
+ &mdash; Standalone Pydantic v2 response DTO for a cognitive routing dispatch.
+</li>
+<li><code>ModelSpec</code> (line 183)
+ &mdash; Canonical model identity shared across routing, discovery, and reporting.
+</li>
+<li><code>ProviderSpec</code> (line 205)
+ &mdash; Provider identity and runtime status DTO (Pydantic mirror of the registry).
+</li>
+<li><code>BenchmarkScorecard</code> (line 231)
+ &mdash; Benchmark metrics for a single model.
+</li>
+<li><code>ScavengedModel</code> (line 255)
+ &mdash; A single discovered model with market and hardware metadata.
+</li>
+<li><code>MarketIntelligenceReport</code> (line 302)
+ &mdash; Aggregate autonomous scavenging report.
+</li>
+<li><code>ProviderHealthReport</code> (line 338)
+ &mdash; Single provider health probe result produced by ApiHealthProbeEngine.
+</li>
+<li><code>MeshDiagnosticReport</code> (line 363)
+ &mdash; Aggregate self-healing mesh diagnostic produced by ApiHealthProbeEngine.
+</li>
+<li><code>XAiDecisionRecord</code> (line 385)
+ &mdash; Append-only Explainable AI (XAI) audit record for a routing decision.
+</li>
+<li><code>SwarmSizingRecommendation</code> (line 418)
+ &mdash; Dynamic swarm-sizing recommendation produced by ``DynamicSwarmSizer``.
+</li>
+</ul>
+</section>
+<section class="card" data-search="src/services/cognitive_mesh/rate_limiter.py">
+<h2>src/services/cognitive_mesh/rate_limiter.py</h2>
+<p class="summary">Module: rate_limiter.py</p>
+<h3>Classes</h3><ul>
+<li><code>TokenBucketRateLimiter</code> (line 61)
+ &mdash; Proactive smooth micro-throttling token bucket for LLM providers.
+<ul><li><code>__init__(self, sleep_fn, clock)</code> (line 76)</li></ul>
+<ul><li><code>acquire(self, provider_name, tokens)</code> (line 90)</li></ul>
+<ul><li><code>get_provider_status(self)</code> (line 127)</li></ul>
+<ul><li><code>_normalize(provider_name)</code> (line 157)</li></ul>
+<ul><li><code>_rpm(key)</code> (line 161)</li></ul>
+<ul><li><code>_refill_rate(rpm)</code> (line 165)</li></ul>
+<ul><li><code>_capacity(r)</code> (line 169)</li></ul>
+<ul><li><code>_is_unbounded(r)</code> (line 173)</li></ul>
+<ul><li><code>_ensure_bucket(self, key, r, now)</code> (line 176)</li></ul>
+<ul><li><code>_refill(self, bucket, r, now)</code> (line 183)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>get_rate_specs()</code> (line 52)</li>
+</ul>
+</section>
+<section class="card" data-search="src/services/cognitive_mesh/registry.py">
+<h2>src/services/cognitive_mesh/registry.py</h2>
+<p class="summary">Module: registry.py</p>
+<h3>Classes</h3><ul>
+<li><code>LLMProvider</code> (line 86)
+ &mdash; Canonical enumeration of the sixteen registered inference providers.
+</li>
+<li><code>ProviderDescriptor</code> (line 114)
+ &mdash; Value object describing a single inference provider adapter.
+</li>
+<li><code>ProviderRegistry</code> (line 142)
+ &mdash; Extensible registry of LLM provider descriptors.
+<ul><li><code>__init__(self)</code> (line 157)</li></ul>
+<ul><li><code>_register_defaults(self)</code> (line 165)</li></ul>
+<ul><li><code>register(self, descriptor)</code> (line 309)</li></ul>
+<ul><li><code>_refresh(self, descriptor)</code> (line 320)</li></ul>
+<ul><li><code>_evaluate_active(self, descriptor)</code> (line 339)</li></ul>
+<ul><li><code>_is_port_open(base_url, timeout)</code> (line 358)</li></ul>
+<ul><li><code>get(self, name)</code> (line 383)</li></ul>
+<ul><li><code>list_all(self)</code> (line 398)</li></ul>
+<ul><li><code>list_active(self)</code> (line 406)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>get_provider_registry()</code> (line 419)</li>
+<li><code>get_available_providers()</code> (line 431)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/services/cognitive_mesh/reporter.py">
+<h2>src/services/cognitive_mesh/reporter.py</h2>
+<p class="summary">Module: reporter.py</p>
+<h3>Classes</h3><ul>
+<li><code>IntelligenceReporter</code> (line 40)
+ &mdash; Render dual market-intelligence reports (Markdown and standalone HTML).
+<ul><li><code>generate_reports(self, report_data, output_dir)</code> (line 45)</li></ul>
+<ul><li><code>_render_markdown(self, report)</code> (line 72)</li></ul>
+<ul><li><code>_md_cell(value)</code> (line 209)</li></ul>
+<ul><li><code>_finops_cost(prompt_usd, completion_usd, screening)</code> (line 218)</li></ul>
+<ul><li><code>_select_champions(cls, report)</code> (line 245)</li></ul>
+<ul><li><code>_render_html(self, report)</code> (line 321)</li></ul>
+<ul><li><code>_render_card(model)</code> (line 394)</li></ul>
+<ul><li><code>_render_champion_cards(report)</code> (line 427)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_badge(vram_class)</code> (line 458)</li>
+<li><code>_tier_badge(tier)</code> (line 475)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/services/cognitive_mesh/dto.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/services/cognitive_mesh/router.py">
+<h2>src/services/cognitive_mesh/router.py</h2>
+<p class="summary">Module: router.py</p>
+<h3>Classes</h3><ul>
+<li><code>ProviderHttpError</code> (line 147)
+ &mdash; Transport error carrying an HTTP status code.
+<ul><li><code>__init__(self, provider, status_code, message)</code> (line 155)</li></ul>
+</li>
+<li><code>_ProviderMetrics</code> (line 161)
+ &mdash; Per-provider runtime telemetry tracked by the router.
+<ul><li><code>__init__(self)</code> (line 164)</li></ul>
+</li>
+<li><code>DynamicSwarmSizer</code> (line 172)
+ &mdash; Dynamic swarm cardinality selector mapping task complexity to K.
+<ul><li><code>__init__(self, registry, ledger)</code> (line 213)</li></ul>
+<ul><li><code>recommend_swarm(self, task_type, input_payload)</code> (line 221)</li></ul>
+<ul><li><code>_compute_complexity(self, task_type, payload)</code> (line 274)</li></ul>
+<ul><li><code>_reasoning_depth(cls, task_type)</code> (line 283)</li></ul>
+<ul><li><code>_token_score(payload)</code> (line 291)</li></ul>
+<ul><li><code>_safety_score(payload)</code> (line 299)</li></ul>
+<ul><li><code>_band_for_complexity(complexity)</code> (line 308)</li></ul>
+<ul><li><code>_swarm_size_for_band(band)</code> (line 318)</li></ul>
+<ul><li><code>_build_rationale(task_type, complexity, swarm_size, band)</code> (line 327)</li></ul>
+<ul><li><code>_safety_flags(payload)</code> (line 337)</li></ul>
+<ul><li><code>_active_provider_names(self)</code> (line 349)</li></ul>
+<ul><li><code>_free_tier_frontier(self, active)</code> (line 355)</li></ul>
+<ul><li><code>_ordered_model_chain(self, active, k)</code> (line 364)</li></ul>
+<ul><li><code>_chain_slot(self, provider)</code> (line 392)</li></ul>
+</li>
+<li><code>CognitiveMetaRouter</code> (line 402)
+ &mdash; Decoupled multi-strategy cognitive meta-router with circuit breaking.
+<ul><li><code>__init__(self, registry, transport, local_semaphore_limit, ema_alpha, breaker, rate_limiter, swarm_sizer, ledger)</code> (line 421)</li></ul>
+<ul><li><code>dispatch(self, task_type, strategy, payload, **kwargs)</code> (line 448)</li></ul>
+<ul><li><code>recommend_swarm(self, task_type, input_payload)</code> (line 480)</li></ul>
+<ul><li><code>_get_swarm_sizer(self)</code> (line 499)</li></ul>
+<ul><li><code>record_result(self, provider, latency_ms, prompt_tokens, completion_tokens, http_status)</code> (line 505)</li></ul>
+<ul><li><code>latch_provider(self, provider, reason)</code> (line 537)</li></ul>
+<ul><li><code>release_provider(self, provider)</code> (line 546)</li></ul>
+<ul><li><code>get_metrics(self)</code> (line 556)</li></ul>
+<ul><li><code>_execute(self, request)</code> (line 577)</li></ul>
+<ul><li><code>_zero_config_free_failover(self, active)</code> (line 643)</li></ul>
+<ul><li><code>_invoke(self, provider_name, request)</code> (line 667)</li></ul>
+<ul><li><code>_transport_call(self, provider_name, model, request)</code> (line 710)</li></ul>
+<ul><li><code>_candidates_for_strategy(self, strategy, active)</code> (line 727)</li></ul>
+<ul><li><code>_ema_ttft(self, provider)</code> (line 749)</li></ul>
+<ul><li><code>_quality(self, provider)</code> (line 753)</li></ul>
+<ul><li><code>_combined_cost(self, provider)</code> (line 756)</li></ul>
+<ul><li><code>_estimate_cost(self, provider, prompt_tokens, completion_tokens)</code> (line 760)</li></ul>
+<ul><li><code>_record_success(self, provider, latency_ms, prompt_tokens, completion_tokens)</code> (line 768)</li></ul>
+<ul><li><code>_record_error(self, provider)</code> (line 783)</li></ul>
+<ul><li><code>_latch(self, provider, reason)</code> (line 786)</li></ul>
+<ul><li><code>_is_latched(self, provider)</code> (line 791)</li></ul>
+<ul><li><code>_active_provider_names(self)</code> (line 794)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/services/cognitive_mesh/dto.py</li>
+<li>src/services/cognitive_mesh/rate_limiter.py</li>
+<li>src/services/cognitive_mesh/registry.py</li>
+<li>src/services/cognitive_mesh/self_healing.py</li>
+<li>src/services/cognitive_mesh/xai_ledger.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/services/cognitive_mesh/scavenger.py">
+<h2>src/services/cognitive_mesh/scavenger.py</h2>
+<p class="summary">Module: scavenger.py</p>
+<h3>Classes</h3><ul>
+<li><code>ModelScoutAgent</code> (line 154)
+ &mdash; Autonomous Model Scout reconciling LLM catalogues against the RTX 4070 budget.
+<ul><li><code>__init__(self, vram_gb)</code> (line 166)</li></ul>
+<ul><li><code>scavenge_market(self, window_days, fetch_all)</code> (line 173)</li></ul>
+<ul><li><code>_forage_huggingface(self)</code> (line 246)</li></ul>
+<ul><li><code>_parse_huggingface_payload(payload)</code> (line 257)</li></ul>
+<ul><li><code>_forage_openrouter(self, window_days, fetch_all)</code> (line 298)</li></ul>
+<ul><li><code>_parse_openrouter_payload(payload, window_days, fetch_all)</code> (line 309)</li></ul>
+<ul><li><code>_forage_ollama(self)</code> (line 368)</li></ul>
+<ul><li><code>_parse_ollama_payload(payload)</code> (line 382)</li></ul>
+<ul><li><code>_load_cached_benchmarks(self)</code> (line 420)</li></ul>
+<ul><li><code>_has_token(name, token)</code> (line 462)</li></ul>
+<ul><li><code>_classify_model(model_id, params, price, context, source)</code> (line 481)</li></ul>
+<ul><li><code>_classify_vram(self, model)</code> (line 542)</li></ul>
+<ul><li><code>_recommend_role(model)</code> (line 563)</li></ul>
+<ul><li><code>_apply_fuzzy_benchmarks(model)</code> (line 589)</li></ul>
+<ul><li><code>_compute_summary(self, report)</code> (line 618)</li></ul>
+<ul><li><code>_http_get_json(url, params)</code> (line 657)</li></ul>
+<ul><li><code>_active_provider_count(self)</code> (line 670)</li></ul>
+<ul><li><code>_parse_param_count(text)</code> (line 678)</li></ul>
+<ul><li><code>_extract_license(item)</code> (line 688)</li></ul>
+<ul><li><code>_iso_date(item)</code> (line 700)</li></ul>
+<ul><li><code>_price_per_1m(value)</code> (line 708)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/services/cognitive_mesh/benchmarks.py</li>
+<li>src/services/cognitive_mesh/dto.py</li>
+<li>src/services/cognitive_mesh/registry.py</li>
+<li>src/services/cognitive_mesh/self_healing.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/services/cognitive_mesh/self_healing.py">
+<h2>src/services/cognitive_mesh/self_healing.py</h2>
+<p class="summary">Module: self_healing.py</p>
+<h3>Classes</h3><ul>
+<li><code>SelfHealingCircuitBreaker</code> (line 138)
+ &mdash; Six-state self-healing circuit breaker with exponential backoff.
+<ul><li><code>__init__(self, initial_backoff_seconds, max_backoff_seconds)</code> (line 159)</li></ul>
+<ul><li><code>state(self, provider)</code> (line 175)</li></ul>
+<ul><li><code>error_count(self, provider)</code> (line 187)</li></ul>
+<ul><li><code>backoff_until(self, provider)</code> (line 199)</li></ul>
+<ul><li><code>should_attempt(self, provider)</code> (line 211)</li></ul>
+<ul><li><code>record_success(self, provider)</code> (line 247)</li></ul>
+<ul><li><code>record_http_status(self, provider, status)</code> (line 258)</li></ul>
+<ul><li><code>record_timeout(self, provider)</code> (line 279)</li></ul>
+<ul><li><code>record_unreachable(self, provider)</code> (line 287)</li></ul>
+<ul><li><code>force_probe(self, provider)</code> (line 297)</li></ul>
+<ul><li><code>_set_backoff(self, provider, state)</code> (line 314)</li></ul>
+</li>
+<li><code>ApiHealthProbeEngine</code> (line 335)
+ &mdash; Concurrent lightweight health probe over all sixteen providers.
+<ul><li><code>__init__(self, registry, breaker, timeout, max_workers, probe_fn)</code> (line 353)</li></ul>
+<ul><li><code>probe_all(self)</code> (line 373)</li></ul>
+<ul><li><code>_list_all(self)</code> (line 416)</li></ul>
+<ul><li><code>_probe_one(self, descriptor)</code> (line 427)</li></ul>
+<ul><li><code>_run_probe(self, descriptor)</code> (line 453)</li></ul>
+<ul><li><code>_build_report(self, descriptor, tier, status, latency)</code> (line 473)</li></ul>
+<ul><li><code>_inert_report(descriptor)</code> (line 504)</li></ul>
+<ul><li><code>_tcp_reachable(base_url, timeout)</code> (line 521)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>classify_access_tier(provider_name)</code> (line 103)</li>
+<li><code>classify_model_access_tier(source, provider)</code> (line 118)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/services/cognitive_mesh/dto.py</li>
+<li>src/services/cognitive_mesh/registry.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/services/cognitive_mesh/server.py">
+<h2>src/services/cognitive_mesh/server.py</h2>
+<p class="summary">Module: server.py</p>
+<h3>Classes</h3><ul>
+<li><code>ScavengeRequest</code> (line 86)
+ &mdash; Request body for the autonomous scavenge endpoint.
+</li>
+<li><code>SwarmRecommendRequest</code> (line 142)
+ &mdash; Request body for the dynamic swarm-recommendation endpoint.
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_get_ledger()</code> (line 69)</li>
+<li><code>_get_router()</code> (line 77)</li>
+<li><code>dispatch(request)</code> (line 93)</li>
+<li><code>providers()</code> (line 106)</li>
+<li><code>benchmarks()</code> (line 116)</li>
+<li><code>scavenge(request)</code> (line 130)</li>
+<li><code>swarm_recommend(request)</code> (line 152)</li>
+<li><code>xai_trail(limit)</code> (line 165)</li>
+<li><code>_normalize_sync_payload(payload)</code> (line 183)</li>
+<li><code>mesh_sync(raw_request)</code> (line 204)</li>
+<li><code>health()</code> (line 244)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/services/cognitive_mesh/benchmarks.py</li>
+<li>src/services/cognitive_mesh/buffer_sync.py</li>
+<li>src/services/cognitive_mesh/dto.py</li>
+<li>src/services/cognitive_mesh/registry.py</li>
+<li>src/services/cognitive_mesh/router.py</li>
+<li>src/services/cognitive_mesh/scavenger.py</li>
+<li>src/services/cognitive_mesh/xai_ledger.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/services/cognitive_mesh/xai_ledger.py">
+<h2>src/services/cognitive_mesh/xai_ledger.py</h2>
+<p class="summary">Module: xai_ledger.py</p>
+<h3>Classes</h3><ul>
+<li><code>XAiDecisionLedger</code> (line 50)
+ &mdash; Append-only Explainable AI (XAI) decision audit ledger.
+<ul><li><code>__init__(self, log_path)</code> (line 62)</li></ul>
+<ul><li><code>append(self, record)</code> (line 70)</li></ul>
+<ul><li><code>latest(self, limit)</code> (line 94)</li></ul>
+<ul><li><code>explain(self, record)</code> (line 117)</li></ul>
+<ul><li><code>_coerce(record)</code> (line 158)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_iso_now()</code> (line 176)</li>
+<li><code>_ensure_dir(path)</code> (line 185)</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/academic_export.py">
+<h2>src/utils/academic_export.py</h2>
+<p class="summary">Module: academic_export.py</p>
+<h3>Functions</h3><ul>
+<li><code>_escape_latex(text)</code> (line 52)</li>
+<li><code>_escape_bibtex(text)</code> (line 59)</li>
+<li><code>_authors(paper)</code> (line 66)</li>
+<li><code>_first_author_surname(authors_str)</code> (line 71)</li>
+<li><code>_make_citation_key(paper, used_keys)</code> (line 80)</li>
+<li><code>_paper_entry_type(paper)</code> (line 96)</li>
+<li><code>export_bibtex(papers, output_path)</code> (line 104)</li>
+<li><code>export_latex_table(papers, output_path, caption)</code> (line 139)</li>
+<li><code>export_prisma_candidate_table(candidate_sets, output_path)</code> (line 173)</li>
+<li><code>_load_elite_papers(min_score)</code> (line 198)</li>
+<li><code>main(argv)</code> (line 218)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/ai_strategy_selector.py">
+<h2>src/utils/ai_strategy_selector.py</h2>
+<p class="summary">Module: ai_strategy_selector.py</p>
+<h3>Functions</h3><ul>
+<li><code>_current_strategy()</code> (line 49)</li>
+<li><code>_render_confirmation(strategy_key)</code> (line 62)</li>
+<li><code>select_ai_execution_strategy(target_strategy)</code> (line 77)</li>
+<li><code>_recommendation_stack()</code> (line 127)</li>
+<li><code>_active_provider_names()</code> (line 140)</li>
+<li><code>_persist_stack(exec_strategy, screening_local, screening_cloud, reasoning_local, reasoning_cloud)</code> (line 149)</li>
+<li><code>_render_apply_confirmation(strategy, ok)</code> (line 210)</li>
+<li><code>apply_optimal_models(strategy)</code> (line 221)</li>
+<li><code>_render_impact_matrix(recs)</code> (line 270)</li>
+<li><code>configure_ai_strategy()</code> (line 314)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/hardware_advisor.py</li>
+<li>src/core/profile_manager.py</li>
+<li>src/services/cognitive_mesh/registry.py</li>
+<li>src/utils/research_setup_wizard.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/api_health_check.py">
+<h2>src/utils/api_health_check.py</h2>
+<p class="summary">Module: api_health_check.py (v1.1)</p>
+<h3>Functions</h3><ul>
+<li><code>ping_api(url, headers, timeout)</code> (line 24)</li>
+<li><code>_format_result(name, status, detail)</code> (line 33)</li>
+<li><code>check_source(source_name, key_env_var, ping_url, headers_fn, pbar)</code> (line 47)</li>
+<li><code>check_ai_provider(provider_name, env_var, pbar)</code> (line 81)</li>
+<li><code>run_diagnostics()</code> (line 121)</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/bibtex_exporter.py">
+<h2>src/utils/bibtex_exporter.py</h2>
+<p class="summary">Module: bibtex_exporter.py</p>
+<h3>Classes</h3><ul>
+<li><code>BibTeXExporter</code> (line 97)
+ &mdash; Automated BibTeX / LaTeX scientific library exporter.
+<ul><li><code>__init__(self)</code> (line 116)</li></ul>
+<ul><li><code>_first_author_surname(authors_str)</code> (line 126)</li></ul>
+<ul><li><code>_first_title_keyword(title)</code> (line 142)</li></ul>
+<ul><li><code>_build_cite_key(self, paper, used_keys)</code> (line 160)</li></ul>
+<ul><li><code>_entry_type(paper)</code> (line 188)</li></ul>
+<ul><li><code>_venue(paper)</code> (line 206)</li></ul>
+<ul><li><code>_rigor_label(quality_score)</code> (line 227)</li></ul>
+<ul><li><code>_format_entry(self, paper, used_keys)</code> (line 245)</li></ul>
+<ul><li><code>export_library(self, output_path, min_score, only_prisma_included, active_profile, min_quality, quadrant)</code> (line 305)</li></ul>
+<ul><li><code>render_export_summary(self, filepath, count)</code> (line 380)</li></ul>
+<ul><li><code>export_and_render(self, output_path, min_score, only_prisma_included, active_profile, min_quality, quadrant)</code> (line 400)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_escape_bibtex(text)</code> (line 69)</li>
+<li><code>_clean_key_token(text)</code> (line 83)</li>
+<li><code>main(argv)</code> (line 427)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/codebase_documenter/__init__.py">
+<h2>src/utils/codebase_documenter/__init__.py</h2>
+<p class="summary">Module: __init__.py</p>
+<h3>Dependencies</h3><ul>
+<li>src/utils/codebase_documenter/architecture_ledger.py</li>
+<li>src/utils/codebase_documenter/ast_analyzer.py</li>
+<li>src/utils/codebase_documenter/markdown_html_generator.py</li>
+<li>src/utils/codebase_documenter/relay_orchestrator.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/codebase_documenter/architecture_ledger.py">
+<h2>src/utils/codebase_documenter/architecture_ledger.py</h2>
+<p class="summary">Module: architecture_ledger.py</p>
+<h3>Classes</h3><ul>
+<li><code>ArchitectureLedger</code> (line 43)
+ &mdash; Living architectural decision ledger with a global symbol table.
+<ul><li><code>__init__(self, ledger_path)</code> (line 50)</li></ul>
+<ul><li><code>load(self)</code> (line 58)</li></ul>
+<ul><li><code>save(self, data)</code> (line 80)</li></ul>
+<ul><li><code>_empty_state()</code> (line 98)</li></ul>
+<ul><li><code>record_decision(self, module, decision, rationale)</code> (line 111)</li></ul>
+<ul><li><code>decisions(self)</code> (line 131)</li></ul>
+<ul><li><code>mark_documented(self, module_path)</code> (line 143)</li></ul>
+<ul><li><code>documented_modules(self)</code> (line 155)</li></ul>
+<ul><li><code>register_symbols(self, module_path, classes, functions)</code> (line 163)</li></ul>
+<ul><li><code>symbol_table(self)</code> (line 182)</li></ul>
+<ul><li><code>get_undocumented(self, discovered_modules)</code> (line 190)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_iso_now()</code> (line 203)</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/codebase_documenter/ast_analyzer.py">
+<h2>src/utils/codebase_documenter/ast_analyzer.py</h2>
+<p class="summary">Module: ast_analyzer.py</p>
+<h3>Classes</h3><ul>
+<li><code>FunctionSymbol</code> (line 34)
+ &mdash; A single function or method symbol extracted from a module.
+</li>
+<li><code>ClassSymbol</code> (line 51)
+ &mdash; A single class symbol extracted from a module.
+</li>
+<li><code>ModuleBlueprint</code> (line 68)
+ &mdash; Static analysis result for one source module.
+</li>
+<li><code>CodebaseAstAnalyzer</code> (line 90)
+ &mdash; AST parser that extracts a documentation blueprint for every module.
+<ul><li><code>__init__(self, root_dir, include_roots, exclude_dirs)</code> (line 99)</li></ul>
+<ul><li><code>_resolve_root()</code> (line 123)</li></ul>
+<ul><li><code>discover_modules(self)</code> (line 134)</li></ul>
+<ul><li><code>_relative(self, path)</code> (line 160)</li></ul>
+<ul><li><code>analyze_file(self, rel_path)</code> (line 167)</li></ul>
+<ul><li><code>_extract_classes(tree)</code> (line 206)</li></ul>
+<ul><li><code>_extract_functions(tree)</code> (line 230)</li></ul>
+<ul><li><code>analyze_all(self)</code> (line 248)</li></ul>
+<ul><li><code>build_dependency_graph(self, analyses)</code> (line 261)</li></ul>
+<ul><li><code>_file_index(self, paths)</code> (line 287)</li></ul>
+<ul><li><code>to_serializable(self, analyses)</code> (line 305)</li></ul>
+<ul><li><code>_blueprint_to_dict(blueprint)</code> (line 319)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_format_args(node)</code> (line 355)</li>
+<li><code>_first_sentence(docstring)</code> (line 377)</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/codebase_documenter/markdown_html_generator.py">
+<h2>src/utils/codebase_documenter/markdown_html_generator.py</h2>
+<p class="summary">Module: markdown_html_generator.py</p>
+<h3>Classes</h3><ul>
+<li><code>CodebaseDocGenerator</code> (line 38)
+ &mdash; Compile codebase blueprints into Markdown and standalone HTML.
+<ul><li><code>__init__(self, output_dir, version)</code> (line 46)</li></ul>
+<ul><li><code>generate(self, records, llm_contents, graph)</code> (line 56)</li></ul>
+<ul><li><code>_build_markdown(self, records, llm_contents, graph)</code> (line 97)</li></ul>
+<ul><li><code>_markdown_section(self, record, llm_contents, graph)</code> (line 128)</li></ul>
+<ul><li><code>_stats(records, graph)</code> (line 190)</li></ul>
+<ul><li><code>_build_html(self, records, llm_contents, graph)</code> (line 207)</li></ul>
+<ul><li><code>_render_module_card(self, record, llm_contents, graph)</code> (line 232)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_html_page(body)</code> (line 299)</li>
+<li><code>_iso_now()</code> (line 384)</li>
+<li><code>_anchor(path)</code> (line 389)</li>
+<li><code>_escape(text)</code> (line 401)</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/codebase_documenter/relay_orchestrator.py">
+<h2>src/utils/codebase_documenter/relay_orchestrator.py</h2>
+<p class="summary">Module: relay_orchestrator.py</p>
+<h3>Classes</h3><ul>
+<li><code>MultiLlmRelayOrchestrator</code> (line 53)
+ &mdash; Stateful multi-LLM relay orchestrator with XAI tracking.
+<ul><li><code>__init__(self, analyzer, architecture_ledger, xai_ledger, router, generator)</code> (line 64)</li></ul>
+<ul><li><code>run(self, mode, dry_run, limit)</code> (line 82)</li></ul>
+<ul><li><code>_build_prompt(self, blueprint, prior_paths, handoff_memo)</code> (line 168)</li></ul>
+<ul><li><code>_handoff(path, blueprint)</code> (line 197)</li></ul>
+<ul><li><code>_extract_content(response)</code> (line 203)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/services/cognitive_mesh/dto.py</li>
+<li>src/services/cognitive_mesh/router.py</li>
+<li>src/services/cognitive_mesh/xai_ledger.py</li>
+<li>src/utils/codebase_documenter/architecture_ledger.py</li>
+<li>src/utils/codebase_documenter/ast_analyzer.py</li>
+<li>src/utils/codebase_documenter/markdown_html_generator.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/console_dashboard/__init__.py">
+<h2>src/utils/console_dashboard/__init__.py</h2>
+<p class="summary">Module: __init__.py</p>
+<h3>Dependencies</h3><ul>
+<li>src/utils/console_dashboard/hud_renderer.py</li>
+<li>src/utils/console_dashboard/layout_builder.py</li>
+<li>src/utils/console_dashboard/progress_monitors.py</li>
+<li>src/utils/console_dashboard/submenu_renderer.py</li>
+<li>src/utils/console_dashboard/terminal_previewer.py</li>
+<li>src/utils/console_dashboard/tree_views.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/console_dashboard/hud_renderer.py">
+<h2>src/utils/console_dashboard/hud_renderer.py</h2>
+<p class="summary">Module: hud_renderer.py</p>
+<h3>Classes</h3><ul>
+<li><code>HudRenderer</code> (line 64)
+ &mdash; Render the persistent telemetry HUD as a compact Rich Panel.
+<ul><li><code>__init__(self)</code> (line 76)</li></ul>
+<ul><li><code>build_hud(self)</code> (line 84)</li></ul>
+<ul><li><code>_vault_status(self)</code> (line 175)</li></ul>
+<ul><li><code>_rate_limiter_status(self)</code> (line 191)</li></ul>
+<ul><li><code>_profile_name(self)</code> (line 205)</li></ul>
+<ul><li><code>_paper_metrics(self)</code> (line 220)</li></ul>
+<ul><li><code>_gpu_name(self)</code> (line 248)</li></ul>
+<ul><li><code>_vram_gb(self)</code> (line 267)</li></ul>
+<ul><li><code>_ollama_status(self, host, port)</code> (line 280)</li></ul>
+<ul><li><code>_mesh_health(self)</code> (line 296)</li></ul>
+<ul><li><code>_strategy_label(self)</code> (line 331)</li></ul>
+<ul><li><code>_model_metrics(self)</code> (line 349)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_re_first_int(pattern, text)</code> (line 45)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+<li>src/core/database_manager.py</li>
+<li>src/core/database_vault.py</li>
+<li>src/core/hardware.py</li>
+<li>src/core/profile_manager.py</li>
+<li>src/services/cognitive_mesh/dto.py</li>
+<li>src/services/cognitive_mesh/rate_limiter.py</li>
+<li>src/services/cognitive_mesh/registry.py</li>
+<li>src/services/cognitive_mesh/self_healing.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/console_dashboard/layout_builder.py">
+<h2>src/utils/console_dashboard/layout_builder.py</h2>
+<p class="summary">Module: layout_builder.py</p>
+<h3>Classes</h3><ul>
+<li><code>DashboardLayoutBuilder</code> (line 39)
+ &mdash; Construct the 4-panel Scientific Terminal Dashboard layout.
+<ul><li><code>__init__(self, hud_panel)</code> (line 51)</li></ul>
+<ul><li><code>build_dashboard(self, hud_panel)</code> (line 64)</li></ul>
+<ul><li><code>_placeholder_header(self)</code> (line 107)</li></ul>
+<ul><li><code>_panel(self, title, body, border_style)</code> (line 123)</li></ul>
+<ul><li><code>_panel_cognitive(self)</code> (line 136)</li></ul>
+<ul><li><code>_panel_discovery(self)</code> (line 154)</li></ul>
+<ul><li><code>_panel_prisma(self)</code> (line 172)</li></ul>
+<ul><li><code>_panel_system(self)</code> (line 190)</li></ul>
+<ul><li><code>_footer(self)</code> (line 208)</li></ul>
+</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/console_dashboard/progress_monitors.py">
+<h2>src/utils/console_dashboard/progress_monitors.py</h2>
+<p class="summary">Module: progress_monitors.py</p>
+<h3>Classes</h3><ul>
+<li><code>MultiMetricProgress</code> (line 46)
+ &mdash; Convenience wrapper around the multi-metric scientific Progress.
+<ul><li><code>__init__(self, progress)</code> (line 53)</li></ul>
+<ul><li><code>add_metric_task(self, description, total, rate, vram)</code> (line 61)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>create_scientific_progress()</code> (line 29)</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/console_dashboard/submenu_renderer.py">
+<h2>src/utils/console_dashboard/submenu_renderer.py</h2>
+<p class="summary">Module: submenu_renderer.py</p>
+<h3>Classes</h3><ul>
+<li><code>RichSubmenuRenderer</code> (line 44)
+ &mdash; Render a strict ISO/IEC 25010 three-tier Rich sub-menu.
+<ul><li><code>__init__(self, title, subtitle, border_style, domain)</code> (line 60)</li></ul>
+<ul><li><code>build(self, entries, context_shortcuts, back_label)</code> (line 71)</li></ul>
+<ul><li><code>prompt_choice(self, valid_range, default)</code> (line 96)</li></ul>
+<ul><li><code>_build_header(self)</code> (line 144)</li></ul>
+<ul><li><code>_build_body(self, entries, back_label)</code> (line 163)</li></ul>
+<ul><li><code>_build_footer(self, item_count, context_shortcuts)</code> (line 213)</li></ul>
+<ul><li><code>_items(entries)</code> (line 242)</li></ul>
+<ul><li><code>_cell(number, label, status)</code> (line 256)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>render_submenu(title, subtitle, entries, border_style, domain, context_shortcuts)</code> (line 275)</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/console_dashboard/terminal_previewer.py">
+<h2>src/utils/console_dashboard/terminal_previewer.py</h2>
+<p class="summary">Module: terminal_previewer.py</p>
+<h3>Classes</h3><ul>
+<li><code>TerminalPreviewer</code> (line 27)
+ &mdash; Preview Markdown and syntax-highlighted files in the terminal.
+<ul><li><code>__init__(self, console)</code> (line 34)</li></ul>
+<ul><li><code>preview_markdown(self, file_path)</code> (line 47)</li></ul>
+<ul><li><code>render_markdown(self, file_path)</code> (line 60)</li></ul>
+<ul><li><code>preview_syntax(self, file_path, lexer)</code> (line 82)</li></ul>
+<ul><li><code>render_syntax(self, file_path, lexer)</code> (line 100)</li></ul>
+</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/console_dashboard/tree_views.py">
+<h2>src/utils/console_dashboard/tree_views.py</h2>
+<p class="summary">Module: tree_views.py</p>
+<h3>Classes</h3><ul>
+<li><code>ScientificTreeViewer</code> (line 40)
+ &mdash; Render scientific knowledge as styled Rich Trees.
+<ul><li><code>render_architecture_tree(self)</code> (line 48)</li></ul>
+<ul><li><code>render_research_taxonomy_tree(self)</code> (line 62)</li></ul>
+<ul><li><code>render_mesh_health_tree(self)</code> (line 80)</li></ul>
+<ul><li><code>_provider_descriptors(self)</code> (line 106)</li></ul>
+</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/services/cognitive_mesh/registry.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/daemon_autostart.py">
+<h2>src/utils/daemon_autostart.py</h2>
+<p class="summary">Module: daemon_autostart.py</p>
+<h3>Functions</h3><ul>
+<li><code>_project_root()</code> (line 50)</li>
+<li><code>generate_boot_batch(profile_name)</code> (line 55)</li>
+<li><code>select_daemon_profile()</code> (line 104)</li>
+<li><code>install_windows_autostart(profile_name)</code> (line 153)</li>
+<li><code>persist_daemon_config(profile_name, strategy, sources)</code> (line 204)</li>
+<li><code>main()</code> (line 256)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/profile_manager.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/db_stats.py">
+<h2>src/utils/db_stats.py</h2>
+<p class="summary">Module: db_stats.py (v1.0 - The Metrics Update)</p>
+<h3>Functions</h3><ul>
+<li><code>print_header(title)</code> (line 33)</li>
+<li><code>optimize_database(db_path)</code> (line 38)</li>
+<li><code>main()</code> (line 98)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_manager.py</li>
+<li>src/utils/snapshot_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/desktop_shortcut.py">
+<h2>src/utils/desktop_shortcut.py</h2>
+<p class="summary">Module: desktop_shortcut.py</p>
+<h3>Functions</h3><ul>
+<li><code>_project_root()</code> (line 34)</li>
+<li><code>_desktop_dir()</code> (line 49)</li>
+<li><code>_icon_location(root)</code> (line 67)</li>
+<li><code>create_desktop_shortcut()</code> (line 82)</li>
+<li><code>_render_result(success, shortcut_path, detail)</code> (line 129)</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/evaluation_history.py">
+<h2>src/utils/evaluation_history.py</h2>
+<p class="summary">Module: evaluation_history.py</p>
+<h3>Functions</h3><ul>
+<li><code>_history_dir()</code> (line 33)</li>
+<li><code>_history_path()</code> (line 43)</li>
+<li><code>verdict_for_score(score)</code> (line 52)</li>
+<li><code>normalize_authors(paper)</code> (line 70)</li>
+<li><code>record_evaluation(title, authors, source, score, verdict, provider, timestamp)</code> (line 155)</li>
+<li><code>read_evaluation_history(limit)</code> (line 185)</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/frontend_provisioner.py">
+<h2>src/utils/frontend_provisioner.py</h2>
+<p class="summary">Module: frontend_provisioner.py</p>
+<h3>Functions</h3><ul>
+<li><code>_detect_architecture()</code> (line 93)</li>
+<li><code>_fetch_latest_release_assets()</code> (line 119)</li>
+<li><code>_get_cherry_version_from_release(release_json)</code> (line 146)</li>
+<li><code>_arch_matches(combined, target_arch)</code> (line 178)</li>
+<li><code>_match_asset_for_os(assets, os_name)</code> (line 197)</li>
+<li><code>_match_windows_asset(assets, arch)</code> (line 229)</li>
+<li><code>_match_linux_asset(assets, arch)</code> (line 285)</li>
+<li><code>_match_macos_asset(assets, arch)</code> (line 330)</li>
+<li><code>_resolve_download_urls()</code> (line 385)</li>
+<li><code>get_os_name()</code> (line 426)</li>
+<li><code>resolve_target_dir(project_root)</code> (line 445)</li>
+<li><code>generate_mcp_config(output_path)</code> (line 465)</li>
+<li><code>download_cherry_studio(target_dir, force)</code> (line 511)</li>
+<li><code>provision_full(target_dir, force)</code> (line 613)</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/generate_docs.py">
+<h2>src/utils/generate_docs.py</h2>
+<p class="summary">Module: generate_docs.py (v2.0)</p>
+<h3>Functions</h3><ul>
+<li><code>check_ollama(url)</code> (line 110)</li>
+<li><code>load_configuration()</code> (line 129)</li>
+<li><code>_is_excluded(path_str)</code> (line 153)</li>
+<li><code>get_code_files(selected_dirs)</code> (line 177)</li>
+<li><code>estimate_file_info(file_paths)</code> (line 218)</li>
+<li><code>generate_documentation(source_code, file_path, model, ollama_url, language_keyword)</code> (line 246)</li>
+<li><code>save_documentation(file_path, content, output_dir, lang_code)</code> (line 291)</li>
+<li><code>main()</code> (line 326)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/utils/logger.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/help_system.py">
+<h2>src/utils/help_system.py</h2>
+<p class="summary">Module: help_system.py</p>
+<h3>Functions</h3><ul>
+<li><code>_section_a_sop_runbooks()</code> (line 66)</li>
+<li><code>_section_b_command_matrix()</code> (line 126)</li>
+<li><code>_section_c_diagnostics()</code> (line 196)</li>
+<li><code>_section_d_environment()</code> (line 231)</li>
+<li><code>_build_manual_group()</code> (line 276)</li>
+<li><code>_open_web_manual()</code> (line 290)</li>
+<li><code>render_help_manual(interactive)</code> (line 344)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/http_client.py">
+<h2>src/utils/http_client.py</h2>
+<p class="summary">Module: http_client.py</p>
+<h3>Functions</h3><ul>
+<li><code>build_session(pool_connections, pool_maxsize, timeout, user_agent)</code> (line 24)</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/interactive_dashboard.py">
+<h2>src/utils/interactive_dashboard.py</h2>
+<p class="summary">Module: interactive_dashboard.py (v2.2 - Soft Shutdown)</p>
+<h3>Functions</h3><ul>
+<li><code>load_configuration()</code> (line 40)</li>
+<li><code>index()</code> (line 63)</li>
+<li><code>get_data()</code> (line 69)</li>
+<li><code>get_paper_details(paper_id)</code> (line 75)</li>
+<li><code>update_zotero_status()</code> (line 89)</li>
+<li><code>semantic_search()</code> (line 101)</li>
+<li><code>shutdown()</code> (line 125)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/ai_manager.py</li>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/logger.py">
+<h2>src/utils/logger.py</h2>
+<p class="summary">Module: logger.py</p>
+<h3>Functions</h3><ul>
+<li><code>_configure()</code> (line 45)</li>
+<li><code>get_logger(name)</code> (line 84)</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/migrate_database_schema.py">
+<h2>src/utils/migrate_database_schema.py</h2>
+<p class="summary">Module: migrate_database_schema.py (v2.2 - Final Migration Fix)</p>
+<h3>Functions</h3><ul>
+<li><code>extract_from_old_analysis(analysis_text, field)</code> (line 40)</li>
+<li><code>migrate_schema()</code> (line 61)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_manager.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/model_provisioner.py">
+<h2>src/utils/model_provisioner.py</h2>
+<p class="summary">Module: model_provisioner.py</p>
+<h3>Classes</h3><ul>
+<li><code>ModelProvisioner</code> (line 77)
+ &mdash; Universal model provisioner with deterministic protocol detection and a
+<ul><li><code>__init__(self, project_root, models_dir)</code> (line 113)</li></ul>
+<ul><li><code>detect_protocol(self, model_name)</code> (line 122)</li></ul>
+<ul><li><code>_sanitize(self, model_name)</code> (line 155)</li></ul>
+<ul><li><code>_has_valid_artifacts(self, directory)</code> (line 159)</li></ul>
+<ul><li><code>resolve_local_model_path(self, model_name)</code> (line 169)</li></ul>
+<ul><li><code>_ollama_list(self)</code> (line 202)</li></ul>
+<ul><li><code>_ollama_has_model(self, model_name)</code> (line 220)</li></ul>
+<ul><li><code>_ollama_pull(self, model_name)</code> (line 226)</li></ul>
+<ul><li><code>_cloud_key_for(self, model_name)</code> (line 246)</li></ul>
+<ul><li><code>check_available(self, model_name)</code> (line 258)</li></ul>
+<ul><li><code>ensure_model_available(self, model_name, silent)</code> (line 280)</li></ul>
+<ul><li><code>_ensure_cloud(self, model_name)</code> (line 300)</li></ul>
+<ul><li><code>_ensure_ollama(self, model_name)</code> (line 310)</li></ul>
+<ul><li><code>_ensure_huggingface(self, model_name)</code> (line 317)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_report(model_name, protocol, available)</code> (line 353)</li>
+<li><code>main(argv)</code> (line 359)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+<li>src/utils/logger.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/recalculate_scores.py">
+<h2>src/utils/recalculate_scores.py</h2>
+<p class="summary">Module: recalculate_scores.py (v2.0 - Recalibration Tool)</p>
+<h3>Functions</h3><ul>
+<li><code>recalculate_database_scores()</code> (line 42)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_manager.py</li>
+<li>src/utils/snapshot_manager.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/reevaluate_database.py">
+<h2>src/utils/reevaluate_database.py</h2>
+<p class="summary">Module: reevaluate_database.py (v5.13.0 - Concurrent Cognitive Re-Evaluation Pool)</p>
+<h3>Functions</h3><ul>
+<li><code>load_configuration()</code> (line 41)</li>
+<li><code>_apply_evaluation_batch(db_manager, updates)</code> (line 53)</li>
+<li><code>main()</code> (line 88)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/ai_manager.py</li>
+<li>src/core/database_manager.py</li>
+<li>src/utils/snapshot_manager.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/research_setup_wizard.py">
+<h2>src/utils/research_setup_wizard.py</h2>
+<p class="summary">Module: research_setup_wizard.py</p>
+<h3>Functions</h3><ul>
+<li><code>_project_root()</code> (line 237)</li>
+<li><code>_load_config(project_root)</code> (line 242)</li>
+<li><code>_save_config(config, path)</code> (line 259)</li>
+<li><code>_profiles_dir(project_root)</code> (line 274)</li>
+<li><code>_active_profile_file(project_root)</code> (line 291)</li>
+<li><code>_list_profiles(project_root)</code> (line 304)</li>
+<li><code>_get_active_profile(project_root)</code> (line 320)</li>
+<li><code>_set_active_profile(project_root, name)</code> (line 336)</li>
+<li><code>_validate_profile_name(name)</code> (line 351)</li>
+<li><code>_seed_profile_config(project_root, name)</code> (line 367)</li>
+<li><code>_load_profile_config_to_root(project_root, name)</code> (line 397)</li>
+<li><code>_persist_active_config(project_root, name)</code> (line 417)</li>
+<li><code>_port_reachable(host, port, timeout)</code> (line 442)</li>
+<li><code>_spawn_local_ai()</code> (line 460)</li>
+<li><code>_ensure_local_ai_runtime()</code> (line 481)</li>
+<li><code>_get_ai_manager()</code> (line 522)</li>
+<li><code>_call_llm_text(prompt, timeout)</code> (line 533)</li>
+<li><code>_analyze_scope_heuristic(topic)</code> (line 562)</li>
+<li><code>_suggest_subdomains_heuristic(topic)</code> (line 590)</li>
+<li><code>_analyze_scope_with_llm(topic)</code> (line 607)</li>
+<li><code>_extract_salient_terms(topic, max_terms)</code> (line 647)</li>
+<li><code>_generate_queries_heuristic(topic, config)</code> (line 682)</li>
+<li><code>_generate_queries_llm(topic, config)</code> (line 721)</li>
+<li><code>_update_env_key(env_path, key, value)</code> (line 780)</li>
+<li><code>_apply_execution_strategy(strategy_key, project_root)</code> (line 796)</li>
+<li><code>_write_search_window(config, path, strategy_key, days)</code> (line 831)</li>
+<li><code>_sentinel_path(project_root)</code> (line 867)</li>
+<li><code>_sentinel_exists(project_root)</code> (line 873)</li>
+<li><code>_create_sentinel(project_root)</code> (line 878)</li>
+<li><code>_api_is_alive()</code> (line 890)</li>
+<li><code>_ensure_api_server()</code> (line 895)</li>
+<li><code>_trigger_test_search()</code> (line 932)</li>
+<li><code>_run_first_flight()</code> (line 949)</li>
+<li><code>_step0_profile_selection(project_root)</code> (line 968)</li>
+<li><code>_render_header(target_profile)</code> (line 1056)</li>
+<li><code>_render_query_preview(config)</code> (line 1092)</li>
+<li><code>_step1_research_topic(active_llm, config, config_path)</code> (line 1134)</li>
+<li><code>_step2_execution_strategy(project_root)</code> (line 1205)</li>
+<li><code>_prompt_custom_days()</code> (line 1238)</li>
+<li><code>_step3_search_window(config, config_path)</code> (line 1258)</li>
+<li><code>_step4_first_flight()</code> (line 1300)</li>
+<li><code>_render_summary(topic, strategy_key, window_key, first_flight, config)</code> (line 1323)</li>
+<li><code>_render_cancelled()</code> (line 1352)</li>
+<li><code>main()</code> (line 1366)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/ai/llm/query_translator.py</li>
+<li>src/core/ai_manager.py</li>
+<li>src/core/profile_manager.py</li>
+<li>src/utils/logger.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/snapshot_manager.py">
+<h2>src/utils/snapshot_manager.py</h2>
+<p class="summary">Module: snapshot_manager.py</p>
+<h3>Functions</h3><ul>
+<li><code>_resolve_backup_dir(db_path)</code> (line 34)</li>
+<li><code>_prune_snapshots(backup_dir, keep)</code> (line 49)</li>
+<li><code>snapshot_database(db_path, backup_dir, keep)</code> (line 72)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/system_diagnostics.py">
+<h2>src/utils/system_diagnostics.py</h2>
+<p class="summary">Module: system_diagnostics.py</p>
+<h3>Classes</h3><ul>
+<li><code>SystemDiagnosticsEngine</code> (line 121)
+ &mdash; Executes and renders the 8-point TALOS diagnostic health scan.
+<ul><li><code>__init__(self)</code> (line 134)</li></ul>
+<ul><li><code>check_python_environment(self)</code> (line 141)</li></ul>
+<ul><li><code>check_database_integrity(self)</code> (line 183)</li></ul>
+<ul><li><code>check_local_ai_runtime(self)</code> (line 255)</li></ul>
+<ul><li><code>_port_listening(port, host)</code> (line 304)</li></ul>
+<ul><li><code>check_port_availability(self)</code> (line 324)</li></ul>
+<ul><li><code>check_filesystem_permissions(self)</code> (line 370)</li></ul>
+<ul><li><code>check_environment_credentials(self)</code> (line 410)</li></ul>
+<ul><li><code>check_daemon_status(self)</code> (line 448)</li></ul>
+<ul><li><code>_probe_single_endpoint(name, url)</code> (line 489)</li></ul>
+<ul><li><code>check_network_endpoints(self)</code> (line 539)</li></ul>
+<ul><li><code>run_diagnostics(self, verbose)</code> (line 568)</li></ul>
+<ul><li><code>_flatten_results(results)</code> (line 590)</li></ul>
+<ul><li><code>render_report(self, results)</code> (line 608)</li></ul>
+<ul><li><code>run_and_render(self)</code> (line 645)</li></ul>
+</li>
+</ul>
+<h3>Functions</h3><ul>
+<li><code>_result(component, target, status, detail, remediation)</code> (line 55)</li>
+<li><code>_status(ok)</code> (line 77)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+<li>src/core/database_manager.py</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/tray_icon.py">
+<h2>src/utils/tray_icon.py</h2>
+<p class="summary">Module: tray_icon.py</p>
+<h3>Functions</h3><ul>
+<li><code>_project_root()</code> (line 61)</li>
+<li><code>_open_path(path)</code> (line 81)</li>
+<li><code>_is_api_alive(port)</code> (line 98)</li>
+<li><code>_ensure_api_server()</code> (line 117)</li>
+<li><code>_build_tray_icon_image()</code> (line 162)</li>
+<li><code>_get_console_window_handle()</code> (line 184)</li>
+<li><code>_toggle_console_visibility()</code> (line 197)</li>
+<li><code>_log_minimized_to_tray()</code> (line 228)</li>
+<li><code>enable_close_to_tray()</code> (line 243)</li>
+<li><code>launch_tray_icon_async(on_show_hide, on_open_visualizer, on_exit)</code> (line 315)</li>
+</ul>
+</section>
+<section class="card" data-search="src/utils/ui_theme.py">
+<h2>src/utils/ui_theme.py</h2>
+<p class="summary">Module: ui_theme.py</p>
+</section>
+<section class="card" data-search="src/utils/verify_dependency_map.py">
+<h2>src/utils/verify_dependency_map.py</h2>
+<p class="summary">Module: verify_dependency_map.py (v1.1)</p>
+<h3>Functions</h3><ul>
+<li><code>parse_section_7(map_path)</code> (line 154)</li>
+<li><code>extract_actual_imports(py_file, project_root)</code> (line 226)</li>
+<li><code>scan_all_files(project_root)</code> (line 293)</li>
+<li><code>normalize_dep(dep)</code> (line 318)</li>
+<li><code>compare_dependencies(documented, actual)</code> (line 330)</li>
+<li><code>generate_console_summary(results, label)</code> (line 453)</li>
+<li><code>generate_html_report(results, output_path, title)</code> (line 462)</li>
+<li><code>generate_markdown_report(results, output_path, title)</code> (line 576)</li>
+<li><code>generate_json_report(results, output_path)</code> (line 639)</li>
+<li><code>parse_function_docs(map_path)</code> (line 661)</li>
+<li><code>extract_actual_functions(py_file)</code> (line 763)</li>
+<li><code>scan_all_functions(project_root)</code> (line 799)</li>
+<li><code>compare_functions(documented, actual)</code> (line 837)</li>
+<li><code>main()</code> (line 886)</li>
+</ul>
+</section>
+<section class="card" data-search="talos.py">
+<h2>talos.py</h2>
+<p class="summary">Module: talos.py</p>
+<h3>Functions</h3><ul>
+<li><code>_make_clickable_path(path_str)</code> (line 459)</li>
+<li><code>_enable_windows_vt100()</code> (line 491)</li>
+<li><code>_maybe_generate_focus_summary(config_path)</code> (line 520)</li>
+<li><code>safe_select(message, choices, style, **kwargs)</code> (line 655)</li>
+<li><code>safe_pause(msg)</code> (line 675)</li>
+<li><code>prompt_source_selection()</code> (line 697)</li>
+<li><code>_resolve_script_path(script_name)</code> (line 713)</li>
+<li><code>_build_info_panel(title, message, border_style)</code> (line 734)</li>
+<li><code>_build_results_table(papers, title)</code> (line 762)</li>
+<li><code>run_script(script_name, python_exe, args, capture)</code> (line 817)</li>
+<li><code>check_first_run(python_exe)</code> (line 861)</li>
+<li><code>author_tools_menu(python_exe)</code> (line 884)</li>
+<li><code>database_data_menu(python_exe)</code> (line 918)</li>
+<li><code>system_health_menu(python_exe)</code> (line 972)</li>
+<li><code>api_keys_menu(python_exe)</code> (line 1071)</li>
+<li><code>_current_strategy_key()</code> (line 1151)</li>
+<li><code>_launch_strategy_selector()</code> (line 1164)</li>
+<li><code>_run_ai_strategy_configurator()</code> (line 1173)</li>
+<li><code>profile_settings_menu(python_exe)</code> (line 1182)</li>
+<li><code>_read_active_focus()</code> (line 1254)</li>
+<li><code>_build_status_table()</code> (line 1276)</li>
+<li><code>_view_and_pivot_research_focus(python_exe, project_root)</code> (line 1364)</li>
+<li><code>_configure_daemon_autostart(project_root)</code> (line 1527)</li>
+<li><code>_launch_daemon_in_new_console(project_root, python_exe)</code> (line 1611)</li>
+<li><code>_launch_visualizer()</code> (line 1652)</li>
+<li><code>_generate_optica_plots()</code> (line 1733)</li>
+<li><code>_show_drl_status(project_root)</code> (line 1804)</li>
+<li><code>_show_evaluation_history(limit)</code> (line 1854)</li>
+<li><code>_run_hardware_advisor()</code> (line 1912)</li>
+<li><code>_run_discover_llms()</code> (line 1931)</li>
+<li><code>_render_scavenge_summary(report)</code> (line 1937)</li>
+<li><code>_run_scavenge_models(days, fetch_all, report_only)</code> (line 1969)</li>
+<li><code>_run_model_discovery()</code> (line 1999)</li>
+<li><code>_probe_api_backend()</code> (line 2044)</li>
+<li><code>_open_capabilities_viewer()</code> (line 2068)</li>
+<li><code>_open_d3_architecture_graph(python_exe, project_root)</code> (line 2109)</li>
+<li><code>_launch_gwo_dashboard(python_exe)</code> (line 2130)</li>
+<li><code>search_ingestion_menu(python_exe)</code> (line 2159)</li>
+<li><code>analysis_visualization_menu(python_exe)</code> (line 2265)</li>
+<li><code>drl_gwo_menu(python_exe)</code> (line 2439)</li>
+<li><code>main_menu()</code> (line 2532)</li>
+<li><code>_cli_help_table()</code> (line 2631)</li>
+<li><code>_parse_strategy_flag(argv)</code> (line 2645)</li>
+<li><code>_flag_value(argv, flag)</code> (line 2663)</li>
+<li><code>_render_harvest_summary(summary)</code> (line 2679)</li>
+<li><code>_open_local_pdf(paper_id)</code> (line 2708)</li>
+<li><code>_run_api_probe()</code> (line 2748)</li>
+<li><code>_render_vault_verify(result)</code> (line 2796)</li>
+<li><code>_render_sync_summary(result)</code> (line 2823)</li>
+<li><code>_run_codebase_documentation(argv)</code> (line 2845)</li>
+<li><code>_render_xai_log(limit)</code> (line 2891)</li>
+<li><code>_dispatch_slash_command(raw, python_exe)</code> (line 2930)</li>
+<li><code>_render_tree(which)</code> (line 3010)</li>
+<li><code>_render_preview(path)</code> (line 3029)</li>
+<li><code>_handle_cli_flags(argv)</code> (line 3048)</li>
+</ul>
+<h3>Dependencies</h3><ul>
+<li>config/settings.py</li>
+<li>src/ai/llm/model_discovery.py</li>
+<li>src/ai/llm/model_manager.py</li>
+<li>src/ai/testing/red_tester.py</li>
+<li>src/core/ai_manager.py</li>
+<li>src/core/database_manager.py</li>
+<li>src/core/database_vault.py</li>
+<li>src/core/hardware_advisor.py</li>
+<li>src/core/model_benchmark_client.py</li>
+<li>src/core/profile_manager.py</li>
+<li>src/ingestion/pdf_harvester/harvester.py</li>
+<li>src/integration/optica_client.py</li>
+<li>src/prisma/dspy_modules.py</li>
+<li>src/prisma/quality_appraisal.py</li>
+<li>src/prisma/quality_swarm.py</li>
+<li>src/search/citation_snowballing.py</li>
+<li>src/search/code_first_search.py</li>
+<li>src/search/fulltext_search.py</li>
+<li>src/search/neural_vector_search.py</li>
+<li>src/services/cognitive_mesh/buffer_sync.py</li>
+<li>src/services/cognitive_mesh/reporter.py</li>
+<li>src/services/cognitive_mesh/router.py</li>
+<li>src/services/cognitive_mesh/scavenger.py</li>
+<li>src/services/cognitive_mesh/self_healing.py</li>
+<li>src/services/cognitive_mesh/xai_ledger.py</li>
+<li>src/utils/ai_strategy_selector.py</li>
+<li>src/utils/bibtex_exporter.py</li>
+<li>src/utils/daemon_autostart.py</li>
+<li>src/utils/desktop_shortcut.py</li>
+<li>src/utils/evaluation_history.py</li>
+<li>src/utils/help_system.py</li>
+<li>src/utils/logger.py</li>
+<li>src/utils/system_diagnostics.py</li>
+<li>src/utils/ui_theme.py</li>
+</ul>
+</section>
+</div>
+<script>
+(function () {
+  var input = document.getElementById("search");
+  var cards = Array.prototype.slice.call(document.querySelectorAll(".card"));
+  input.addEventListener("input", function () {
+    var q = input.value.trim().toLowerCase();
+    cards.forEach(function (card) {
+      var hay = card.getAttribute("data-search") + " " + card.textContent;
+      card.classList.toggle("hidden", q !== "" && hay.toLowerCase().indexOf(q) === -1);
+    });
+  });
+})();
+</script>
+</body>
+</html>

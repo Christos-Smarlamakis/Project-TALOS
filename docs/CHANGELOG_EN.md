@@ -2,6 +2,30 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.25.0] - 2026-10-04 -- Autonomous Multi-LLM Relay, XAI Decision Ledger & Dynamic Swarm Sizing (ISO/IEC 25010)
+
+### Added
+
+- **XAI Decision Ledger** (`src/services/cognitive_mesh/xai_ledger.py`): `XAiDecisionLedger.append(record) -> dict`, `.latest(limit) -> list`, and `.explain(record) -> str` persist append-only JSONL audit records to `data/cache/xai_decision_log.jsonl` with fields `timestamp`, `decision_id` (UUID4), `task_type`, `complexity_score`, `swarm_size`, `candidate_models`, `pareto_rationale`, `safety_flags`, and `fallback_cascade`. Thread-safe (re-entrant lock) and tamper-evident.
+
+- **Dynamic Swarm Sizer & AUTO Execution Mode** (`src/services/cognitive_mesh/router.py`): `DynamicSwarmSizer.recommend_swarm(task_type, input_payload) -> SwarmSizingRecommendation` computes composite complexity `C = 0.8 D + 0.15 T + 0.05 S` and maps `C` to the optimal swarm cardinality `K in {1, 2, 3, 5}`. `RoutingStrategy.AUTO_SWARM_CASCADE` transparently invokes the sizer, logs an XAI record, and relays across the free-tier frontier cascade.
+
+- **Field-Station Ready Endpoints** (`src/services/cognitive_mesh/server.py`): `POST /mesh/swarm-recommend` returns the recommended `K` and ordered model chain; `GET /mesh/xai-trail` returns the latest XAI decision records for external Robotic Operations Stations and MEMEX.
+
+- **Codebase Documentation Subsystem** (`src/utils/codebase_documenter/`): `CodebaseAstAnalyzer` (AST extraction of classes, functions, signatures, docstrings, imports, and dependencies across 112+ modules), `ArchitectureLedger` (living architectural decision log and global symbol table), `MultiLlmRelayOrchestrator` (stateful multi-LLM relay with XAI tracking), and `CodebaseDocGenerator` (master Markdown plus a standalone dark-theme HTML report with live search, zero CDN).
+
+- **CLI, Command Palette & TUI** (`talos.py`): `--document-codebase [--cascade|--local|--dry-run]`, `--show-xai-log [--limit N]`, and command-palette shortcuts `/doc-codebase` and `/xai`; System Health submenu entries 9-10.
+
+- **Rule 11 & Rule 12** (`.clinerules`): Mandatory Academic Dual-Use Neutrality Protocol and Mandatory Citation Integrity & Anti-Hallucination Protocol.
+
+- **Confidential Academic Dossier 13** (`docs/internal/academic/13_MULTI_LLM_STATEFUL_RELAY_CODEBASE_DOCUMENTATION_ISO25010.md`): seven-section Theory-to-Code dossier.
+
+### Changed
+
+- Version synchronicity to `5.25.0` across all 21 canonical documentation files, code entry points, `docker-compose.yml`, and `CITATION.cff`.
+
+---
+
 ## [v5.24.0] - 2026-10-04 -- Enterprise Data Vault, Proactive Token-Bucket Rate Limiter & Distributed JSONL Buffer Sync (ISO/IEC 25010)
 
 ### Added

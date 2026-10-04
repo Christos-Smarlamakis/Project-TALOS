@@ -1,4 +1,4 @@
-# Project TALOS (v5.24.0)
+# Project TALOS (v5.25.0)
 
 ### Tactical Agentic Literature Orchestration System
 
@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/License-AGPLv3-red?style=flat-square)](LICENSE)
 [![DOI](https://zenodo.org/badge/1191928488.svg)](https://doi.org/10.5281/zenodo.19224912)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker)](docs/DOCKER.md)
-![Version](https://img.shields.io/badge/Version-v5.24.0-006699?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v5.25.0-006699?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square)
 [![FastAPI](https://img.shields.io/badge/FastAPI-25_REST_Endpoints-009688?style=flat-square&logo=fastapi&logoColor=white)](src/api/main_api.py)
 [![Architecture](https://img.shields.io/badge/Architecture-100%25_Air--Gapped_%26_Local--First-111827?style=flat-square)](config/settings.py)
@@ -268,6 +268,15 @@ The architecture and algorithmic pipelines of Project TALOS are grounded in the 
 [12] B. Kitchenham et al., "Systematic literature reviews in software engineering -- a systematic literature review," *Inf. Softw. Technol.*, vol. 51, no. 1, pp. 7--15, Jan. 2009, doi: 10.1016/j.infsof.2008.09.009.
 [13] Y. Du, S. Li, A. Torralba, J. B. Tenenbaum, and I. Mordatch, "Improving factuality and reasoning in language models through multiagent debate," in *Proc. 41st Int. Conf. Mach. Learn. (ICML)*, PMLR vol. 235, 2024, arXiv:2305.14325.
 [14] C.-M. Chan et al., "ChatEval: Towards better LLM-based evaluators through multi-agent debate," in *Proc. Int. Conf. Learn. Represent. (ICLR)*, 2024, arXiv:2308.07201.
+
+The v5.25.0 multi-LLM relay, dynamic swarm sizing, and XAI decision ledger are grounded in the following verified references appended sequentially (RULE 13 -- cumulative preservation):
+
+[15] X. Ning, Z. Lin, Z. Zhou, Z. Wang, H. Yang, and Y. Wang, "Skeleton-of-Thought: Prompting LLMs for efficient parallel generation," in *Proc. Int. Conf. Learn. Represent. (ICLR)*, 2024, arXiv:2307.15337.
+[16] L. Wang, W. Xu, Y. Lan, Z. Hu, Y. Lan, R. K.-W. Lee, and E.-P. Lim, "Plan-and-Solve prompting: Improving zero-shot chain-of-thought reasoning by large language models," in *Proc. 61st Annu. Meeting Assoc. Comput. Linguistics (ACL)*, 2023, arXiv:2305.04091.
+[17] ISO/IEC 25010:2011, "Systems and software engineering -- Systems and software Quality Requirements and Evaluation (SQuaRE) -- System and software quality models," International Organization for Standardization, 2011.
+[18] P. Pirolli and S. Card, "Information foraging," *Psychol. Rev.*, vol. 106, no. 4, pp. 643--675, 1999, doi: 10.1037/0033-295X.106.4.643.
+[19] P. Velickovic, G. Cucurull, A. Casanova, A. Romero, P. Lio, and Y. Bengio, "Graph attention networks," in *Proc. Int. Conf. Learn. Represent. (ICLR)*, 2018, arXiv:1710.10903.
+[20] A. Adadi and M. Berrada, "Peeking inside the black-box: A survey on explainable artificial intelligence (XAI)," *IEEE Access*, vol. 6, pp. 52138--52160, 2018, doi: 10.1109/ACCESS.2018.2870052.
 
 ---
 

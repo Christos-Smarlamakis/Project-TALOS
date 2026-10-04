@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.24.0
+Project: TALOS v5.25.0
 Description:
     Main entry point for the TALOS Scientific Terminal Dashboard (HMI).
     Provides a Rich-powered, two-column, four-panel interactive console
@@ -31,6 +31,13 @@ Description:
     proactive per-provider token-bucket rate limiter eliminating HTTP 429s
     ahead of dispatch, and a store-and-forward JSONL buffer sync for remote
     HERMES workers (--sync-buffer, /sync, POST /api/v1/cognitive/mesh/sync).
+
+    v5.25.0: Autonomous Multi-LLM Relay, XAI Decision Ledger & Dynamic Swarm
+    Sizing (ISO/IEC 25010) -- a DynamicSwarmSizer maps task complexity to the
+    optimal swarm cardinality K, an XAiDecisionLedger persists append-only
+    JSONL audit records, and a stateful MultiLlmRelayOrchestrator documents
+    the full codebase into a master Markdown and standalone HTML report
+    (--document-codebase, --show-xai-log, /doc-codebase, /xai).
 
     v5.23.0: Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing
     API Mesh & Access-Tier Engine -- RichSubmenuRenderer enforces a strict
@@ -983,11 +990,13 @@ def system_health_menu(python_exe):
             ("Autonomous Red Tester (Chaos Engineering)", None),
             ("18-Language Documentation Builder", None),
             ("System Capabilities Master Viewer", None),
+            ("Codebase Documentation (Multi-LLM Relay)", None),
+            ("XAI Audit Trail", None),
         ],
-        context_shortcuts="/probe",
+        context_shortcuts="/doc-codebase /xai",
     ))
     project_root = os.path.dirname(os.path.abspath(__file__))
-    choice = renderer.prompt_choice((1, 8), default="01")
+    choice = renderer.prompt_choice((1, 10), default="01")
     if choice in ("00", "q"):
         return
     num = int(choice)
@@ -1053,6 +1062,10 @@ def system_health_menu(python_exe):
             run_script("generate_docs.py", python_exe)
     elif num == 8:
         _open_capabilities_viewer()
+    elif num == 9:
+        _run_codebase_documentation([])
+    elif num == 10:
+        _render_xai_log(20)
     console.print(); safe_pause("Press Enter...")
 
 def api_keys_menu(python_exe):
@@ -2829,6 +2842,96 @@ def _render_sync_summary(result):
     console.print(table)
 
 
+def _run_codebase_documentation(argv=None):
+    """Run the multi-LLM codebase documentation relay.
+
+    Args:
+        argv (list[str] or None): CLI arguments for mode selection.
+    """
+    argv = argv or []
+    dry_run = "--dry-run" in argv
+    if dry_run:
+        mode = "dry_run"
+    elif "--local" in argv:
+        mode = "local"
+    else:
+        mode = "cascade"
+
+    from src.services.cognitive_mesh.router import CognitiveMetaRouter
+    from src.utils.codebase_documenter import MultiLlmRelayOrchestrator
+
+    router = None
+    if not dry_run:
+        try:
+            router = CognitiveMetaRouter()
+        except Exception as exc:
+            console.print(
+                "[yellow]Router unavailable ({}); running decision-only.[/yellow]".format(exc)
+            )
+
+    orchestrator = MultiLlmRelayOrchestrator(router=router)
+    console.print(
+        "[bold cyan]Codebase Documentation Relay[/bold cyan] "
+        "(mode={}, dry_run={})".format(mode, dry_run)
+    )
+    result = orchestrator.run(mode=mode, dry_run=dry_run)
+
+    table = Table(
+        title="[bold bright_cyan]Codebase Documentation Complete[/bold bright_cyan]",
+        box=box.ROUNDED,
+        border_style="cyan",
+        header_style="bold bright_cyan",
+    )
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", style="white")
+    table.add_row("Mode", str(result.get("mode")))
+    table.add_row("Dry Run", str(result.get("dry_run")))
+    table.add_row("Modules", str(result.get("modules")))
+    table.add_row("XAI Records", str(result.get("xai_records")))
+    table.add_row("Markdown", str(result.get("markdown")))
+    table.add_row("HTML", str(result.get("html")))
+    console.print(table)
+
+
+def _render_xai_log(limit=20):
+    """Render the latest XAI decision records as a Rich table.
+
+    Args:
+        limit (int): Maximum number of records to display.
+    """
+    from src.services.cognitive_mesh.xai_ledger import XAiDecisionLedger
+
+    ledger = XAiDecisionLedger()
+    records = ledger.latest(limit)
+    if not records:
+        console.print(
+            "[yellow]No XAI decisions recorded yet. Run --document-codebase first.[/yellow]"
+        )
+        return
+    table = Table(
+        title="[bold bright_cyan]XAI Decision Ledger[/bold bright_cyan]",
+        box=box.ROUNDED,
+        border_style="cyan",
+        header_style="bold bright_cyan",
+    )
+    table.add_column("Timestamp", style="dim", no_wrap=True)
+    table.add_column("Decision ID", style="cyan", no_wrap=True)
+    table.add_column("Task", style="white", no_wrap=True)
+    table.add_column("C", style="yellow", justify="right")
+    table.add_column("K", style="magenta", justify="right")
+    table.add_column("Model Chain", style="green")
+    for record in records:
+        table.add_row(
+            str(record.get("timestamp", ""))[:19],
+            str(record.get("decision_id", ""))[:8],
+            str(record.get("task_type", "")),
+            "{:.3f}".format(float(record.get("complexity_score", 0.0))),
+            str(record.get("swarm_size", "")),
+            ", ".join(record.get("candidate_models", []))[:60],
+        )
+    console.print(table)
+
+
 def _dispatch_slash_command(raw, python_exe):
     """Dispatch a slash command from the interactive command palette.
 
@@ -2899,6 +3002,12 @@ def _dispatch_slash_command(raw, python_exe):
         from pathlib import Path
         from src.services.cognitive_mesh.buffer_sync import BufferSyncEngine
         _render_sync_summary(BufferSyncEngine().ingest_jsonl_buffer(Path(arg)))
+        return "handled"
+    if op == "/doc-codebase":
+        _run_codebase_documentation([])
+        return "handled"
+    if op == "/xai":
+        _render_xai_log(20)
         return "handled"
     return "unknown"
 
@@ -3174,6 +3283,18 @@ def _handle_cli_flags(argv):
         from pathlib import Path
         from src.services.cognitive_mesh.buffer_sync import BufferSyncEngine
         _render_sync_summary(BufferSyncEngine().ingest_jsonl_buffer(Path(path)))
+        return True
+    # -- v5.25.0: Multi-LLM codebase documentation relay and XAI audit trail. --
+    if "--document-codebase" in argv:
+        _run_codebase_documentation(argv)
+        return True
+    if "--show-xai-log" in argv:
+        raw_limit = _flag_value(argv, "--limit") or "20"
+        try:
+            limit = int(raw_limit)
+        except ValueError:
+            limit = 20
+        _render_xai_log(limit)
         return True
     return False
 
