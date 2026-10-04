@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.25.0
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.25.2
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-04
-> **Version:** v5.25.1 -- Segmented 3-Column Cockpit HUD, Visual Contrast Optimization & Zero-Scroll Bounding
+> **Version:** v5.25.2 -- Preserve All Information, Hierarchical 3-Tier AI Model Management & Interactive Candidate Selector
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -1423,6 +1423,22 @@ For each evaluated paper, the AI generates:
 - **Rule 11 & Rule 12** (`.clinerules`): Academic Dual-Use Neutrality and Citation Integrity & Anti-Hallucination.
 
 **Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.25.0), `pytest tests/test_xai_ledger.py tests/test_dynamic_swarm_sizer.py tests/test_codebase_documenter.py -q` (19 hermetic), `python talos.py --document-codebase --dry-run` / `--show-xai-log` (exit 0), `python src/utils/verify_dependency_map.py --ci` (0/0/0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD).
+
+### 15.61 Preserve All Information, Hierarchical 3-Tier AI Model Management & Interactive Candidate Selector (v5.25.2)
+
+**Overview:** v5.25.2 refactors the Option 6 AI Model Management menu into a hierarchical 3-tier Rich panel preserving 100% of the live status snapshot, purges the phantom port 11435 (unifying local execution on 11434 with `threading.Semaphore(2)`), and introduces an interactive model candidate selector for Option 10.
+
+- **Hierarchical 3-Tier AI Model Management Menu** (`src/ai/llm/model_manager.py`): `main()` renders a 3-tier Rich panel (header + two-column action grid + footer) with six actions: Configure Fast Edge Tier (Port 11434), Configure Heavy Reasoning Tier (Port 11434), Configure Cloud API Providers (child submenu), Configure Network & Hardware Strategies (child submenu), Select Local Embedding Model, Download / Pull Ollama Model. The duplicate vertical `questionary.select` list is replaced by `RichSubmenuRenderer` + `prompt_choice`.
+
+- **Hierarchical Child Submenus** (`model_manager.py`): `select_cloud_models()` renders the 10-provider Universal Cloud Mesh registry (Gemini Flash/Pro, DeepSeek, Groq, SambaNova, Hugging Face, NVIDIA NIM, Cerebras, GitHub Models, Mistral, OpenRouter) via `RichSubmenuRenderer` with a new `_configure_cloud_provider()` per-provider flow; `select_execution_mode()` renders Network Strategy and Hardware Strategy as two sequential 3-tier steps; `select_embedding_model()` renders the embedding model list via `RichSubmenuRenderer`.
+
+- **Interactive Model Candidate Selector** (`src/utils/ai_strategy_selector.py`): `_get_candidates_for_slot()` queries `data/cache/llm_benchmarks.json` and enriches records with VRAM, Cost/1k, TTFT, and Rigor; `_render_candidate_table()` and `_prompt_candidate_selection()` render per-slot tables and accept pick-by-number or ENTER-for-champion. `configure_ai_strategy()` manual modes (`02`-`05`) walk four sequential role-slot steps; `01 AUTO_PILOT` remains instant 1-click.
+
+- **Permanent Port 11435 Purge** (`model_manager.py`, `config/settings.py`): unified local execution on `http://127.0.0.1:11434` with concurrency bounded by `threading.Semaphore(2)`.
+
+- **Descriptive Naming & Markup Leak Fix** (`layout_builder.py`, `talos.py`): "Cognitive Mesh & FinOps" -> "AI Models, Strategy & Cost Control"; "FinOps Configurator" -> "Interactive AI Model Selector & Cost Optimizer"; `[dim]` leak in `_run_scavenge_models()` fixed to `console.print()`.
+
+**Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.25.2), `pytest tests/test_console_dashboard.py -q` (19 hermetic), port 11435 audit (0 in active menus), `python src/utils/verify_dependency_map.py --ci` (0/0/0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD), README [1]-[20] citations intact.
 
 ### 15.60 Segmented 3-Column Cockpit HUD, Visual Contrast Optimization & Zero-Scroll Bounding (v5.25.1)
 

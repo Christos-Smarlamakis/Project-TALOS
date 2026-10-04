@@ -108,7 +108,7 @@ def select_ai_execution_strategy(target_strategy=None):
         "AI Execution Strategy Switcher",
         f"Current AI Execution Strategy: {current_label}",
         border_style="#006699",
-        domain="Cognitive Mesh & FinOps Domain",
+        domain="AI Models, Strategy & Cost Control Domain",
     )
     labels = [s["label"] for s in EXECUTION_STRATEGIES.values()]
     console.print(renderer.build(entries=[(label, None) for label in labels]))
@@ -144,6 +144,233 @@ def _active_provider_names() -> list:
         return [d.name for d in get_available_providers()]
     except Exception:
         return []
+
+
+# ---------------------------------------------------------------------------
+# -- Interactive Model Candidate Selector (v5.25.2) --
+# ---------------------------------------------------------------------------
+
+_VRAM_LOOKUP = {
+    "qwen2.5:14b": 9.0,
+    "qwen2.5-coder:14b": 9.0,
+    "qwen2.5:3b": 2.5,
+    "qwen2.5:7b": 5.0,
+    "llama3.1:8b": 5.5,
+    "llama3.1:70b": 40.0,
+    "llama-3.3-70b-versatile": 40.0,
+    "nomic-embed-text": 0.3,
+    "fermionresearch/Neutrino-8B": 5.5,
+}
+
+
+def _estimate_vram(model_name, provider):
+    """Estimate the VRAM footprint of a model in GB (local) or None (cloud).
+
+    Args:
+        model_name (str): Model identifier.
+        provider (str): Provider key ('ollama' for local, otherwise cloud).
+
+    Returns:
+        float or None: Estimated VRAM in GB, or None for cloud models.
+    """
+    if provider != "ollama":
+        return None
+    if model_name in _VRAM_LOOKUP:
+        return _VRAM_LOOKUP[model_name]
+    import re as _re
+    match = _re.search(r"(\d+(?:\.\d+)?)b", (model_name or "").lower())
+    if match:
+        params_b = float(match.group(1))
+        return round(params_b * 0.65, 1)
+    return None
+
+
+def _rigor_band(mmlu_pro, human_eval):
+    """Map benchmark scores to a descriptive rigor band.
+
+    Args:
+        mmlu_pro (float): MMLU-Pro score (or None).
+        human_eval (float): HumanEval score (or None).
+
+    Returns:
+        str: One of 'Frontier', 'High', 'Medium', 'Low', or '-'.
+    """
+    score = mmlu_pro if mmlu_pro is not None else human_eval
+    if score is None:
+        return "-"
+    if score >= 85:
+        return "Frontier"
+    if score >= 75:
+        return "High"
+    if score >= 60:
+        return "Medium"
+    return "Low"
+
+
+def _load_benchmark_records():
+    """Load candidate model records from the air-gapped benchmark cache.
+
+    Returns:
+        list[dict]: Benchmark records with model, provider, roles, and metrics.
+    """
+    import json
+    import os
+
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
+    path = os.path.join(project_root, "data", "cache", "llm_benchmarks.json")
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data.get("records", [])
+    except Exception:
+        return []
+
+
+def _get_candidates_for_slot(slot_name, strategy):
+    """Return enriched candidate models for a role slot.
+
+    Queries ``data/cache/llm_benchmarks.json`` and enriches each record with
+    VRAM, cost-per-1k, TTFT, and rigor metrics for a candidate table.
+
+    Args:
+        slot_name (str): One of 'screening_local', 'screening_cloud',
+            'reasoning_local', 'reasoning_cloud'.
+        strategy (str): The selected execution mode (used to bias ordering).
+
+    Returns:
+        list[dict]: Candidate dicts with keys name, provider, vram_gb,
+            cost_per_1k_usd, ttft_ms, rigor.
+    """
+    records = _load_benchmark_records()
+    role = "fast_screening" if slot_name.startswith("screening") else "rigorous_audit"
+    deployment = "ollama" if slot_name.endswith("_local") else "cloud"
+
+    candidates = []
+    for r in records:
+        provider = (r.get("provider") or "").lower()
+        roles = r.get("roles") or []
+        if role not in roles:
+            continue
+        is_local = provider == "ollama"
+        if deployment == "ollama" and not is_local:
+            continue
+        if deployment == "cloud" and is_local:
+            continue
+        cost_1m = r.get("cost_per_1m_usd")
+        candidates.append({
+            "name": r.get("model", "?"),
+            "provider": provider,
+            "vram_gb": _estimate_vram(r.get("model"), provider),
+            "cost_per_1k_usd": round(cost_1m / 1000, 4) if cost_1m is not None else None,
+            "ttft_ms": r.get("ttft_ms"),
+            "rigor": _rigor_band(r.get("mmlu_pro"), r.get("human_eval")),
+        })
+
+    if strategy in ("CLOUD_BUDGET", "LOCAL_FIRST"):
+        candidates.sort(key=lambda c: (c["cost_per_1k_usd"] is None, c["cost_per_1k_usd"] or 0))
+    elif strategy == "FRONTIER":
+        order = {"Frontier": 0, "High": 1, "Medium": 2, "Low": 3, "-": 4}
+        candidates.sort(key=lambda c: order.get(c["rigor"], 4))
+
+    return candidates
+
+
+def _render_candidate_table(candidates, slot_name):
+    """Render a Rich candidate table with VRAM, Cost/1k, TTFT, and Rigor.
+
+    Args:
+        candidates (list[dict]): Candidate model dicts.
+        slot_name (str): The role slot label.
+    """
+    from rich.table import Table
+
+    table = Table(
+        title=f"Candidate Models -- {slot_name}",
+        header_style="bold bright_cyan",
+        border_style="cyan",
+    )
+    table.add_column("#", style="dim", width=3, justify="right")
+    table.add_column("Model", style="white")
+    table.add_column("Provider", style="cyan")
+    table.add_column("VRAM", justify="right", style="yellow")
+    table.add_column("Cost/1k", justify="right", style="magenta")
+    table.add_column("TTFT", justify="right", style="green")
+    table.add_column("Rigor", justify="right", style="bold")
+
+    for idx, c in enumerate(candidates, start=1):
+        vram = f"{c['vram_gb']}GB" if c["vram_gb"] is not None else "N/A"
+        cost = f"${c['cost_per_1k_usd']:.4f}" if c["cost_per_1k_usd"] is not None else "$0.0000"
+        ttft = f"{c['ttft_ms']}ms" if c["ttft_ms"] is not None else "-"
+        table.add_row(str(idx), c["name"], c["provider"], vram, cost, ttft, c["rigor"])
+
+    console.print(table)
+
+
+def _prompt_candidate_selection(candidates, slot_name, champion):
+    """Prompt the user to pick a candidate by number or accept the champion.
+
+    Args:
+        candidates (list[dict]): Candidate model dicts.
+        slot_name (str): The role slot label.
+        champion (str): Default champion model name (ENTER accepts it).
+
+    Returns:
+        str: The selected model name (or champion when ENTER pressed).
+    """
+    from rich.prompt import Prompt
+
+    if not candidates:
+        console.print(f"[yellow]No candidates for {slot_name}. Using champion.[/yellow]")
+        return champion
+
+    _render_candidate_table(candidates, slot_name)
+
+    default_idx = None
+    for idx, c in enumerate(candidates, start=1):
+        if c["name"] == champion:
+            default_idx = idx
+            break
+    default_token = str(default_idx) if default_idx else "1"
+
+    console.print(
+        f"[dim]Champion default: [bold]{champion}[/bold] "
+        f"(press ENTER to accept).[/dim]"
+    )
+    while True:
+        try:
+            raw = (Prompt.ask(
+                f"Pick model [01-{len(candidates):02d}] "
+                f"(ENTER = champion: {default_token})",
+                default=default_token,
+            ) or "").strip()
+        except (KeyboardInterrupt, EOFError):
+            return champion
+        if not raw:
+            raw = default_token
+        if raw.isdigit():
+            num = int(raw)
+            if 1 <= num <= len(candidates):
+                return candidates[num - 1]["name"]
+        console.print("[yellow]Invalid selection. Enter a number or press ENTER.[/yellow]")
+
+
+def _strategy_key(mode):
+    """Map an execution mode label to its canonical ai_execution_strategy key.
+
+    Args:
+        mode (str): One of LOCAL_FIRST, STRICT_LOCAL, CLOUD_BUDGET, FRONTIER.
+
+    Returns:
+        str: The canonical ai_execution_strategy key.
+    """
+    return {
+        "LOCAL_FIRST": "local_first",
+        "STRICT_LOCAL": "strict_local",
+        "CLOUD_BUDGET": "cloud_first",
+        "FRONTIER": "cloud_first",
+    }.get(mode, "local_first")
 
 
 def _persist_stack(
@@ -213,7 +440,7 @@ def _render_apply_confirmation(strategy: str, ok: bool) -> None:
     label = "Applied successfully" if ok else "Failed to persist configuration"
     console.print(Panel(
         Text(f"Strategy: {strategy}\n{label}", style=f"bold {style}"),
-        title="[bold]FINOps CONFIGURATION[/bold]",
+        title="[bold]AI MODEL & COST OPTIMIZATION[/bold]",
         border_style=style,
     ))
 
@@ -312,22 +539,25 @@ def _render_impact_matrix(recs: dict) -> None:
 
 
 def configure_ai_strategy() -> bool:
-    """Launch the Interactive Cognitive FinOps & Strategy Configurator.
+    """Launch the Interactive AI Model Selector & Cost Optimizer.
 
-    Screen 1 selects an execution mode ([0] AUTO_PILOT or [1-4] manual). Screen
-    2 (manual modes) renders the role-slot impact matrix. Screen 3 persists the
-    validated configuration to the active profile ``config.json``.
+    Screen 1 selects an execution mode ([1] AUTO_PILOT or [2-5] manual). For
+    manual modes, four sequential child steps render candidate tables for the
+    Screening (local), Screening (cloud), Reasoning (local), and Reasoning
+    (cloud) slots -- each with VRAM, Cost/1k, TTFT, and Rigor -- letting the
+    user pick by number or press ENTER for the champion default. A final step
+    renders the customized matrix and persists to the active profile.
 
     Returns:
         bool: True when a configuration was persisted.
     """
     console.print(Panel(
         Text(
-            "Interactive Cognitive FinOps & Strategy Configurator\n"
+            "Interactive AI Model Selector & Cost Optimizer\n"
             "ISO/IEC 25010: operability, user-error protection, modularity.",
             style="bold bright_cyan",
         ),
-        title="[bold]FINOps CONFIGURATOR[/bold]",
+        title="[bold]AI MODEL SELECTOR & COST OPTIMIZER[/bold]",
         border_style="#006699",
     ))
 
@@ -344,7 +574,7 @@ def configure_ai_strategy() -> bool:
         "Select Execution Mode",
         "ISO/IEC 25010: operability, user-error protection, modularity.",
         border_style="#006699",
-        domain="Cognitive Mesh & FinOps Domain",
+        domain="AI Models, Strategy & Cost Control Domain",
     )
     console.print(renderer.build(entries=[(label, None) for label in mode_labels]))
     choice = renderer.prompt_choice((1, 5), default="01")
@@ -354,6 +584,7 @@ def configure_ai_strategy() -> bool:
 
     num = int(choice)
     if num == 1:
+        # -- AUTO_PILOT: instant 1-click champion adoption. --
         ok = apply_optimal_models("AUTO")
         _render_apply_confirmation("AUTO_PILOT", ok)
         return ok
@@ -365,13 +596,54 @@ def configure_ai_strategy() -> bool:
         5: "FRONTIER",
     }[num]
 
-    # -- Screen 2: role-slot impact matrix (champion models pre-selected) --
+    # -- Screen 2: step-by-step role-slot customization (4 child steps). --
     recs = _recommendation_stack()
-    if recs:
-        _render_impact_matrix(recs)
+    champions = {
+        "screening_local": recs.get("screening_local", "qwen2.5:3b"),
+        "screening_cloud": recs.get("screening_cloud", "gemini-2.5-flash"),
+        "reasoning_local": recs.get("reasoning_local", "qwen2.5:14b"),
+        "reasoning_cloud": recs.get("reasoning_cloud", "deepseek-reasoner"),
+    }
+    slot_labels = {
+        "screening_local": "Screening (local)",
+        "screening_cloud": "Screening (cloud)",
+        "reasoning_local": "Reasoning (local)",
+        "reasoning_cloud": "Reasoning (cloud)",
+    }
 
-    # -- Screen 3: persist (1-click adoption) --
-    ok = apply_optimal_models(mode)
+    selected = {}
+    for slot in ("screening_local", "screening_cloud", "reasoning_local", "reasoning_cloud"):
+        candidates = _get_candidates_for_slot(slot, mode)
+        champion = champions[slot]
+        # -- Prepend the champion when it is absent from the candidate list. --
+        if champion and all(c["name"] != champion for c in candidates):
+            candidates.insert(0, {
+                "name": champion,
+                "provider": "ollama" if slot.endswith("_local") else "cloud",
+                "vram_gb": _estimate_vram(champion, "ollama" if slot.endswith("_local") else "cloud"),
+                "cost_per_1k_usd": 0.0 if slot.endswith("_local") else None,
+                "ttft_ms": None,
+                "rigor": "Champion",
+            })
+        selected[slot] = _prompt_candidate_selection(candidates, slot_labels[slot], champion)
+
+    # -- Screen 3: render the customized matrix and persist. --
+    custom_stack = {
+        "screening_local": selected["screening_local"],
+        "screening_cloud": selected["screening_cloud"],
+        "reasoning_local": selected["reasoning_local"],
+        "reasoning_cloud": selected["reasoning_cloud"],
+        "hardware_profile": recs.get("hardware_profile", {}),
+    }
+    _render_impact_matrix(custom_stack)
+
+    ok = _persist_stack(
+        _strategy_key(mode),
+        selected["screening_local"],
+        selected["screening_cloud"],
+        selected["reasoning_local"],
+        selected["reasoning_cloud"],
+    )
     _render_apply_confirmation(mode, ok)
     return ok
 

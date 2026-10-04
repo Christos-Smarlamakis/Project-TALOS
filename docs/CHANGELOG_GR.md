@@ -2,6 +2,30 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.25.2] - 2026-10-04 -- Διατήρηση Όλης της Πληροφορίας, Ιεραρχική Διαχείριση Μοντέλων ΤΝ 3 Επιπέδων & Διαδραστικός Επιλογέας Υποψηφίων (ISO/IEC 25010)
+
+### Προστέθηκαν
+
+- **Ιεραρχικό Μενού Διαχείρισης Μοντέλων ΤΝ 3 Επιπέδων** (`src/ai/llm/model_manager.py`): το μενού Επιλογής 6 (`main()`) αναδομήθηκε ως καθαρό πάνελ Rich 3 επιπέδων που διατηρεί το 100% του ζωντανού στιγμιότυπου κατάστασης (Κατάσταση Ollama, Στρατηγική Δικτύου, Στρατηγική Υλικού, Legacy Mode, Μοντέλο/URL Γρήγορης Ακμής, Βαρέα Συλλογιστική, Βασικό URL Ollama, Μοντέλο Ενσωμάτωσης, Gemini Flash/Pro, DeepSeek, Hugging Face) και αποστέλλει έξι ενέργειες. Η διπλή κατακόρυφη λίστα `questionary.select` αφαιρέθηκε υπέρ του `RichSubmenuRenderer` + μίας μόνο ασφαλούς προτροπής `prompt_choice`.
+
+- **Ιεραρχικά Υπομενού-Παιδιά** (`model_manager.py`): η `select_cloud_models()` αποδίδει πλέον το μητρώο παρόχων Universal Cloud Mesh (Gemini Flash/Pro, DeepSeek, Groq, SambaNova, Hugging Face, NVIDIA NIM, Cerebras, GitHub Models, Mistral, OpenRouter) ως υπομενού-παιδί Rich 3 επιπέδων με νέα ροή ανά πάροχο `_configure_cloud_provider()`· η `select_execution_mode()` αποδίδει τη Στρατηγική Δικτύου και τη Στρατηγική Υλικού ως δύο διαδοχικά βήματα Rich 3 επιπέδων· η `select_embedding_model()` αποδίδει τη λίστα μοντέλων ενσωμάτωσης μέσω `RichSubmenuRenderer`.
+
+- **Διαδραστικός Επιλογέας Υποψηφίων Μοντέλων** (`src/utils/ai_strategy_selector.py`): νέες `_get_candidates_for_slot()`, `_render_candidate_table()` και `_prompt_candidate_selection()` ερωτούν το `data/cache/llm_benchmarks.json` και αποδίδουν πίνακες υποψηφίων ανά ρόλο (Μοντέλο, Πάροχος, VRAM, Κόστος/1k, TTFT, Αυστηρότητα). Η `configure_ai_strategy()` στις χειροκίνητες λειτουργίες (`02`-`05`) διατρέχει πλέον τέσσερα διαδοχικά βήματα ρόλων (Screening τοπικό/νέφος, Reasoning τοπικό/νέφος), επιτρέποντας στον χρήστη να επιλέξει με αριθμό ή να πατήσει ENTER για την προεπιλογή πρωταθλητή· το `01 AUTO_PILOT` παραμένει άμεσο με 1 κλικ.
+
+### Άλλαξαν
+
+- **Μόνιμη Αφαίρεση Θύρας 11435** (`model_manager.py`, `config/settings.py`): όλη η τοπική εκτέλεση Γρήγορης Ακμής και Βαρέας Συλλογιστικής ενοποιείται στο `http://127.0.0.1:11434` με ταυτοχρονισμό που οριοθετείται από `threading.Semaphore(2)`. Μηδενικές αναφορές στη φανταστική θύρα CPU edge 11435 παραμένουν στα ενεργά μενού.
+
+- **Περιγραφική Λειτουργική Ονοματοδοσία**: το «Cognitive Mesh & FinOps» μετονομάζεται σε «AI Models, Strategy & Cost Control» (`layout_builder.py`), και το «FinOps Configurator» μετονομάζεται σε «Interactive AI Model Selector & Cost Optimizer» (`talos.py`, `ai_strategy_selector.py`).
+
+- **Διόρθωση Διαρροής Σήμανσης** (`talos.py`): το κείμενο κατάστασης `[dim]` στις `_run_scavenge_models()` και `_run_model_discovery()` αποδίδεται πλέον μέσω `console.print()` αντί να διαρρέει κυριολεκτικές ετικέτες `[dim]` μέσω της `_build_info_panel()`.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.25.2)· `pytest tests/test_console_dashboard.py -q` (19 ερμητικές)· έλεγχος θύρας 11435 (0 σε ενεργά μενού)· `python src/utils/verify_dependency_map.py --ci` (0/0/0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD)· αναφορές README [1]-[20] ανέπαφες.
+
+---
+
 ## [v5.25.1] - 2026-10-04 -- Τμηματοποιημένο Πιλοτήριο HUD 3 Στηλών, Βελτιστοποίηση Οπτικής Αντίθεσης & Περιορισμός Μηδενικής Κύλισης (ISO/IEC 25010)
 
 ### Προστέθηκαν

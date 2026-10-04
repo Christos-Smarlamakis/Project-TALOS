@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-10-04 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.25.1 -- Segmented 3-Column Cockpit HUD, Visual Contrast Optimization &amp; Zero-Scroll Bounding
+  <strong>Version:</strong> v5.25.2 -- Preserve All Information, Hierarchical 3-Tier AI Model Management &amp; Interactive Candidate Selector
 </div>
 
 <!-- ===================================================================== -->
@@ -1624,6 +1624,22 @@
 
 <hr>
 
+<h3 id="s15-61">15.61 Preserve All Information, Hierarchical 3-Tier AI Model Management &amp; Interactive Candidate Selector (v5.25.2)</h3>
+
+<p><strong>Overview:</strong> v5.25.2 refactors the Option 6 AI Model Management menu into a hierarchical 3-tier Rich panel preserving 100% of the live status snapshot, purges the phantom port 11435 (unifying local execution on 11434 with <code>threading.Semaphore(2)</code>), and introduces an interactive model candidate selector for Option 10.</p>
+
+<ul>
+  <li><strong>Hierarchical 3-Tier AI Model Management Menu</strong> (<code>src/ai/llm/model_manager.py</code>): <code>main()</code> renders a 3-tier Rich panel with six actions (Configure Fast Edge Tier, Configure Heavy Reasoning Tier, Configure Cloud API Providers, Configure Network &amp; Hardware Strategies, Select Local Embedding Model, Download / Pull Ollama Model). The duplicate vertical <code>questionary.select</code> list is replaced by <code>RichSubmenuRenderer</code> + <code>prompt_choice</code>.</li>
+  <li><strong>Hierarchical Child Submenus</strong> (<code>model_manager.py</code>): <code>select_cloud_models()</code> renders the 10-provider Universal Cloud Mesh registry (Gemini Flash/Pro, DeepSeek, Groq, SambaNova, Hugging Face, NVIDIA NIM, Cerebras, GitHub Models, Mistral, OpenRouter) with a new <code>_configure_cloud_provider()</code> flow; <code>select_execution_mode()</code> renders Network Strategy and Hardware Strategy as two sequential 3-tier steps; <code>select_embedding_model()</code> renders via <code>RichSubmenuRenderer</code>.</li>
+  <li><strong>Interactive Model Candidate Selector</strong> (<code>src/utils/ai_strategy_selector.py</code>): <code>_get_candidates_for_slot()</code> queries <code>data/cache/llm_benchmarks.json</code> and enriches records with VRAM, Cost/1k, TTFT, and Rigor; <code>_render_candidate_table()</code> and <code>_prompt_candidate_selection()</code> accept pick-by-number or ENTER-for-champion. <code>configure_ai_strategy()</code> manual modes (<code>02</code>-<code>05</code>) walk four sequential role-slot steps; <code>01 AUTO_PILOT</code> remains instant 1-click.</li>
+  <li><strong>Permanent Port 11435 Purge</strong> (<code>model_manager.py</code>, <code>config/settings.py</code>): unified local execution on <code>http://127.0.0.1:11434</code> with concurrency bounded by <code>threading.Semaphore(2)</code>.</li>
+  <li><strong>Descriptive Naming &amp; Markup Leak Fix</strong> (<code>layout_builder.py</code>, <code>talos.py</code>): "Cognitive Mesh &amp; FinOps" renamed to "AI Models, Strategy &amp; Cost Control"; "FinOps Configurator" renamed to "Interactive AI Model Selector &amp; Cost Optimizer"; <code>[dim]</code> leak in <code>_run_scavenge_models()</code> fixed to <code>console.print()</code>.</li>
+</ul>
+
+<p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.25.2), <code>test_console_dashboard.py -q</code> (19 hermetic), port 11435 audit (0 in active menus), <code>verify_dependency_map.py --ci</code> (0/0/0), <code>bash -n run_talos.sh</code>, strict UTF-8 scan (0 U+FFFD), README [1]-[20] citations intact.</p>
+
+<hr>
+
 <h3 id="s15-60">15.60 Segmented 3-Column Cockpit HUD, Visual Contrast Optimization &amp; Zero-Scroll Bounding (v5.25.1)</h3>
 
 <p><strong>Overview:</strong> v5.25.1 rebuilds the persistent telemetry HUD as a segmented three-column Rich cockpit grid with high-contrast bright-cyan styling, and bounds the responsive dashboard layout so the full HMI renders without horizontal truncation or vertical scrollbars.</p>
@@ -1654,7 +1670,7 @@
 <p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.22.1), scavenger + reporter + console dashboard (42 hermetic), <code>python talos.py --scout-models --all --report-only</code> (exit 0), <code>verify_dependency_map.py --ci</code> (0/0/0), <code>bash -n run_talos.sh</code>, strict UTF-8 scan (0 U+FFFD).</p>
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.25.1</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.25.2</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

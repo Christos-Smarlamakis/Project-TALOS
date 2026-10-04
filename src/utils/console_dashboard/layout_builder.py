@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
 Module: layout_builder.py
-Project: TALOS v5.25.1
+Project: TALOS v5.25.2
 Description:
     Builds the responsive two-column, four-panel terminal grid for the TALOS
     Scientific Terminal Dashboard using rich.layout.Layout. The layout is
     decomposed into a compact header HUD (segmented 3-column cockpit grid),
-    a two-column body (left: Cognitive Mesh & FinOps over PRISMA Swarm &
-    Full-Text; right: Discovery & Harvesting over System, Export &
+    a two-column body (left: AI Models, Strategy & Cost Control over PRISMA
+    Swarm & Full-Text; right: Discovery & Harvesting over System, Export &
     Diagnostics), and a footer command-palette bar. The header is sized to its
     exact content height and the body panels share the remaining space
     equally, guaranteeing the whole dashboard fits within a 26-28 line
@@ -29,7 +29,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 
-# -- v5.25.1: central tool-count badges (single source of truth). The four
+# -- v5.25.2: central tool-count badges (single source of truth). The four
 # -- main-cockpit panels render these counts in their titles so the operator
 # -- sees the tool surface at a glance. Edit here once to update all panels. --
 _PANEL_TOOL_COUNTS = {
@@ -117,7 +117,7 @@ class DashboardLayoutBuilder:
         return Panel(
             Align.center(
                 Text(
-                    "TALOS v5.25.1 -- Scientific Terminal Dashboard",
+                    "TALOS v5.25.2 -- Scientific Terminal Dashboard",
                     style="bold bright_cyan",
                 )
             ),
@@ -138,20 +138,20 @@ class DashboardLayoutBuilder:
         return Panel(body, title=title, border_style=border_style, padding=(0, 1))
 
     def _panel_cognitive(self) -> Panel:
-        """Panel 1 -- Cognitive Mesh & FinOps.
+        """Panel 1 -- AI Models, Strategy & Cost Control.
 
         Returns:
-            Panel: The Cognitive Mesh & FinOps panel.
+            Panel: The AI Models, Strategy & Cost Control panel.
         """
         body = (
-            "[bold bright_cyan]Cognitive Mesh & FinOps[/bold bright_cyan]\n"
-            "[dim]AI Strategy Configurator (Auto-Pilot FinOps)[/dim]\n"
+            "[bold bright_cyan]AI Models, Strategy & Cost Control[/bold bright_cyan]\n"
+            "[dim]Interactive AI Model Selector & Cost Optimizer[/dim]\n"
             "[dim]Model Scout (full multi-source catalog)[/dim]\n"
             "[dim]Discover Top LLMs & Live Benchmarks[/dim]\n"
             "[dim]Hardware SOTA Advisor[/dim]"
         )
         return self._panel(
-            "[1] Cognitive Mesh & FinOps ({} Tools)".format(_PANEL_TOOL_COUNTS["cognitive"]),
+            "[1] AI Models, Strategy & Cost Control ({} Tools)".format(_PANEL_TOOL_COUNTS["cognitive"]),
             body, "cyan",
         )
 

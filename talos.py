@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.25.1
+Project: TALOS v5.25.2
 Description:
     Main entry point for the TALOS Scientific Terminal Dashboard (HMI).
     Provides a Rich-powered, two-column, four-panel interactive console
@@ -23,6 +23,13 @@ Description:
     Research Search & Ingestion, Advanced Analysis & Visualizations, DRL
     Agents/Daemons & GWO Swarm, Database Maintenance & Data Tools, and
     System Health, Diagnostics & CI/CD.
+
+    v5.25.2: Preserve All Information, Hierarchical 3-Tier AI Model
+    Management & Interactive Candidate Selector (ISO/IEC 25010) -- Option 6
+    renders a clean 3-tier Rich panel with hierarchical cloud-provider and
+    strategy child submenus, the phantom port 11435 is permanently purged
+    (unified local execution on 11434), and Option 10 gains a step-by-step
+    interactive model candidate selector across the four role slots.
 
     v5.25.1: Segmented 3-Column Cockpit HUD, Visual Contrast Optimization &
     Zero-Scroll Bounding (ISO/IEC 25010) -- the persistent telemetry HUD is
@@ -1180,12 +1187,12 @@ def _launch_strategy_selector():
 
 
 def _run_ai_strategy_configurator():
-    """Launch the Interactive Cognitive FinOps & Strategy Configurator."""
+    """Launch the Interactive AI Model Selector & Cost Optimizer."""
     try:
         from src.utils.ai_strategy_selector import configure_ai_strategy
         configure_ai_strategy()
     except Exception as e:
-        console.print(f"[red]Error launching FinOps configurator: {e}[/red]")
+        console.print(f"[red]Error launching AI Model Selector: {e}[/red]")
 
 
 def profile_settings_menu(python_exe):
@@ -1208,11 +1215,11 @@ def profile_settings_menu(python_exe):
                 ("AI Execution Strategy Switcher", "Current: " + strategy_key),
                 ("Research Pivot Wizard", None),
                 ("Research Goal (Query Translator / Cognitive Query Compiler)", None),
-                ("AI Model Management (2D Matrix)", None),
+                ("AI Model Management (Fast / Heavy / Cloud Tiers)", None),
                 ("Model Discovery (Quality Scoring)", None),
                 ("Hardware-Aware Model Advisor (VRAM Budget & SOTA)", None),
                 ("Discover Top LLMs & Live Benchmarks", None),
-                ("Cognitive FinOps & Strategy Configurator (Auto-Pilot)", None),
+                ("Interactive AI Model Selector & Cost Optimizer", None),
                 ("Model Provisioning CLI", None),
                 ("API Keys Management", None),
                 ("API Key Diagnostics", None),
@@ -1992,10 +1999,10 @@ def _run_scavenge_models(days: int = 0, fetch_all: bool = False, report_only: bo
     window_label = "full catalog" if fetch_all else f"window: {days} days"
     console.print(_build_info_panel(
         "Autonomous Model Scout & Market Intelligence",
-        f"Foraging Hugging Face, OpenRouter, and Ollama ({window_label})...\n"
-        "[dim]Air-gapped offline fallback to cached benchmarks is guaranteed.[/dim]",
+        f"Foraging Hugging Face, OpenRouter, and Ollama ({window_label})...",
         border_style="bright_cyan",
     ))
+    console.print("[dim]Air-gapped offline fallback to cached benchmarks is guaranteed.[/dim]")
     report = ModelScoutAgent().scavenge_market(window_days=days, fetch_all=fetch_all)
     if not report_only:
         _render_scavenge_summary(report)
@@ -2009,10 +2016,10 @@ def _run_model_discovery():
     """Run the Model Discovery Engine in-process and render a Rich table."""
     console.print(_build_info_panel(
         "Model Discovery Engine",
-        "Discovering active models across the local Ollama tier and optional cloud providers.\n"
-        "[dim]Air-gapped fallback registry guarantees offline operation.[/dim]",
+        "Discovering active models across the local Ollama tier and optional cloud providers.",
         border_style="bright_blue",
     ))
+    console.print("[dim]Air-gapped fallback registry guarantees offline operation.[/dim]")
     try:
         from src.ai.llm.model_discovery import get_discovery_engine
         engine = get_discovery_engine()

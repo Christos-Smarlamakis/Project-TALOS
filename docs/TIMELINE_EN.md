@@ -4,7 +4,27 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-04 (v5.25.1 -- Segmented 3-Column Cockpit HUD, Visual Contrast Optimization & Zero-Scroll Bounding)
+> **Last Updated:** 2026-10-04 (v5.25.2 -- Preserve All Information, Hierarchical 3-Tier AI Model Management & Interactive Candidate Selector)
+
+---
+
+## Phase 88: Preserve All Information, Hierarchical 3-Tier AI Model Management & Interactive Candidate Selector (v5.25.2)
+
+- [x] **Status:** COMPLETED (2026-10-04).
+
+- [x] **Hierarchical 3-Tier AI Model Management Menu** -- `model_manager.py` (`main()`) rebuilt as a 3-tier Rich panel preserving the full live status snapshot (Ollama Status, Network/Hardware Strategy, Fast/Heavy/Embedding models, Gemini Flash/Pro, DeepSeek, Hugging Face) with six clean actions; duplicate `questionary.select` removed in favor of `RichSubmenuRenderer` + `prompt_choice`.
+
+- [x] **Hierarchical Child Submenus** -- `select_cloud_models()` (10-provider registry), `select_execution_mode()` (Network + Hardware steps), and `select_embedding_model()` all render via `RichSubmenuRenderer`.
+
+- [x] **Interactive Model Candidate Selector** -- `ai_strategy_selector.py` gains `_get_candidates_for_slot()`, `_render_candidate_table()`, `_prompt_candidate_selection()`; `configure_ai_strategy()` manual modes walk four role-slot steps (Screening local/cloud, Reasoning local/cloud) with VRAM/Cost/1k/TTFT/Rigor tables and ENTER-for-champion; AUTO_PILOT stays 1-click.
+
+- [x] **Permanent Port 11435 Purge** -- unified local execution on 11434 with `threading.Semaphore(2)`; zero 11435 in active menus.
+
+- [x] **Descriptive Naming & Markup Leak Fix** -- "Cognitive Mesh & FinOps" -> "AI Models, Strategy & Cost Control"; "FinOps Configurator" -> "Interactive AI Model Selector & Cost Optimizer"; `[dim]` leak in `_run_scavenge_models()` fixed to `console.print()`.
+
+- [x] **Version sync** -- `config/settings.py` (`TALOS_VERSION = "5.25.2"`), `main_api.py`, `talos.py`, launchers, `docker-compose.yml` (`talos:5.25.2`), `CITATION.cff` (5.25.2, 2026-10-04), `tests/test_multi_tier.py`, and all 21 canonical docs to v5.25.2 (2026-10-04).
+
+- [x] **Verification gates passed** -- compileall (0 errors), test_system_integrity, test_talos_version (5.25.2), test_console_dashboard (19), port 11435 audit (0), verify_dependency_map --ci (0/0/0), bash -n, UTF-8 scan (0 U+FFFD), README [1]-[20] intact.
 
 ---
 

@@ -1,6 +1,6 @@
 # TALOS Functional Architecture Map
 
-> **Project:** TALOS v5.25.1 -- Segmented 3-Column Cockpit HUD, Visual Contrast Optimization & Zero-Scroll Bounding (ISO/IEC 25010 Compliant)
+> **Project:** TALOS v5.25.2 -- Preserve All Information, Hierarchical 3-Tier AI Model Management & Interactive Candidate Selector (ISO/IEC 25010 Compliant)
 > **Classification:** Public Technical Reference
 > **Last Updated:** 2026-10-04
 > **Standard:** ISO/IEC 25010 (Functional Suitability, Performance Efficiency, Maintainability)

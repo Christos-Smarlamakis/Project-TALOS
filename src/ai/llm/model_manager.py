@@ -19,7 +19,7 @@ Description:
     OpenAI-compatible redundancy cascade) for cloud configuration.
 
     Key design decisions:
-    - Multi-tier architecture: Fast Edge Tier (port 11435, CPU-optimized), Heavy
+    - Multi-tier architecture: Fast Edge Tier (port 11434, CPU-optimized), Heavy
       Reasoning Tier (port 11434, GPU-optimized), Cloud API Tier (Gemini/DeepSeek/HF).
     - v5.9.4: 2D Execution Matrix replaces the old TALOS_EXECUTION_MODE with
       TALOS_NETWORK_STRATEGY (strict_local, local_first, cloud_first, strict_cloud)
@@ -99,6 +99,8 @@ from config.settings import (
     MISTRAL_BASE_URL,
     OPENROUTER_DEFAULT_MODEL as DEFAULT_OPENROUTER_MODEL,
     OPENROUTER_BASE_URL,
+    SAMBANOVA_DEFAULT_MODEL as DEFAULT_SAMBANOVA_MODEL,
+    SAMBANOVA_BASE_URL,
 )
 
 
@@ -801,7 +803,7 @@ def select_fast_edge_model(env_path):
     """
     os.system('cls' if os.name == 'nt' else 'clear')
     panel = Panel(
-        "[bold]Fast Edge Tier Configuration[/]\n[dim]CPU-Optimized | Port 11435 | Lightweight Pre-Screening[/]",
+        "[bold]Fast Edge Tier Configuration[/]\n[dim]CPU-Optimized | Port 11434 | Lightweight Pre-Screening[/]",
         border_style="cyan",
         box=box.ROUNDED,
         padding=(1, 2),
@@ -826,7 +828,7 @@ def select_fast_edge_model(env_path):
 
     values = dotenv_values(env_path)
     current_edge = values.get("FAST_EDGE_MODEL", "fermionresearch/Neutrino-8B")
-    current_edge_url = values.get("FAST_EDGE_BASE_URL", "http://127.0.0.1:11435/v1")
+    current_edge_url = values.get("FAST_EDGE_BASE_URL", "http://127.0.0.1:11434/v1")
     console.print(f"\n  [dim]Current Fast Edge Model:[/] [cyan]{current_edge}[/]")
     console.print(f"  [dim]Current Fast Edge URL:  [/] [cyan]{current_edge_url}[/]")
 
@@ -971,6 +973,7 @@ CLOUD_PROVIDER_CATALOG = [
     ("openrouter", "OpenRouter", "OPENROUTER_API_KEY", "OPENROUTER_DEFAULT_MODEL", DEFAULT_OPENROUTER_MODEL, OPENROUTER_BASE_URL),
     ("deepseek", "DeepSeek", "DEEPSEEK_API_KEY", "DEEPSEEK_MODEL_CHAT", DEFAULT_DEEPSEEK_MODEL, DEEPSEEK_BASE_URL),
     ("huggingface", "Hugging Face", "HF_TOKEN", "HF_MODEL_NAME", DEFAULT_HF_MODEL, HF_BASE_URL),
+    ("sambanova", "SambaNova", "SAMBANOVA_API_KEY", "SAMBANOVA_DEFAULT_MODEL", DEFAULT_SAMBANOVA_MODEL, SAMBANOVA_BASE_URL),
 ]
 
 
@@ -999,68 +1002,15 @@ def get_cloud_provider_rows(values):
     return rows
 
 
-def select_cloud_models(env_path):
-    """Interactive Universal Cloud Mesh configuration (v5.9.18).
-
-    Renders a Rich table of all nine cloud providers (Gemini primary plus the
-    8-provider OpenAI-compatible redundancy cascade) with columns: Provider Name,
-    Env Key, Status ([ACTIVE] green vs [UNCONFIGURED] yellow), Default Model, and
-    Base URL. Lets the user select any provider to view details, save its API key
-    to .env, or modify its default model. Implements explicit Cancel/Back
-    navigation guardrails.
+def _configure_cloud_provider(meta, env_path):
+    """Configure the API key and default model for a single cloud provider.
 
     Args:
+        meta: Provider metadata dict (provider, display_name, env_key,
+              model_env_key, status, model, base_url).
         env_path: Absolute path to the .env file.
     """
-    os.system('cls' if os.name == 'nt' else 'clear')
-    panel = Panel(
-        "[bold]Cloud Configuration -- Universal Cloud Mesh[/]\n[dim]Gemini primary + 8-provider OpenAI-compatible redundancy cascade[/]",
-        border_style="yellow",
-        box=box.ROUNDED,
-        padding=(1, 2),
-    )
-    console.print(panel)
-
     values = dotenv_values(env_path)
-
-    # -- Provider registry table --
-    rows = get_cloud_provider_rows(values)
-    table = Table(
-        box=box.ROUNDED,
-        show_header=True,
-        header_style="bold white",
-        title="[bold bright_yellow]Cloud Provider Registry[/bold bright_yellow]",
-        title_justify="center",
-    )
-    table.add_column("Provider Name", style="cyan")
-    table.add_column("Env Key", style="white")
-    table.add_column("Status", style="white")
-    table.add_column("Default Model", style="green")
-    table.add_column("Base URL", style="dim")
-
-    for r in rows:
-        status = "[bold green][ACTIVE][/]" if r["status"] == "ACTIVE" else "[bold yellow][UNCONFIGURED][/]"
-        table.add_row(r["display_name"], r["env_key"], status, r["model"], r["base_url"])
-
-    console.print()
-    console.print(table)
-
-    # -- Provider selection (any provider may be selected, configured or not) --
-    choices = [questionary.Choice(title=r["display_name"], value=r["provider"]) for r in rows]
-    choices.append(questionary.Separator())
-    choices.append(questionary.Choice(title="[Cancel / Back]", value="__cancel__"))
-    selected = questionary.select("Select a provider to view or configure:", choices=choices, style=TALOS_QUESTIONARY_STYLE).ask()
-
-    if not selected or selected in ("__cancel__", "Cancel", "[Cancel / Back]"):
-        console.input("\n[dim]Press Enter to return...[/]")
-        return
-
-    # -- Resolve the selected provider's metadata --
-    meta = next((r for r in rows if r["provider"] == selected), None)
-    if meta is None:
-        console.input("\n[dim]Press Enter to return...[/]")
-        return
-
     console.print(f"\n  [bold]{meta['display_name']}[/]")
     console.print(f"  [dim]Env Key:[/]      [cyan]{meta['env_key']}[/]")
     console.print(f"  [dim]Default Model:[/] [cyan]{meta['model']}[/]")
@@ -1087,26 +1037,62 @@ def select_cloud_models(env_path):
         else:
             console.print("  [dim][[CANCELLED]][/] No model entered.")
 
-    console.input("\n[dim]Press Enter to continue...[/]")
+
+def select_cloud_models(env_path):
+    """Cloud API Providers child submenu (3-tier Rich panel).
+
+    Renders the Universal Cloud Mesh provider registry (Gemini Flash/Pro,
+    DeepSeek, Groq, SambaNova, Hugging Face, NVIDIA NIM, Cerebras, GitHub
+    Models, Mistral, and OpenRouter) as a clean 3-tier Rich submenu. Selecting
+    a provider hands off to ``_configure_cloud_provider`` for API key and
+    default model editing. Implements explicit Cancel/Back guardrails with a
+    single type-safe prompt.
+
+    Args:
+        env_path: Absolute path to the .env file.
+    """
+    from src.utils.console_dashboard import RichSubmenuRenderer
+    values = dotenv_values(env_path)
+    rows = get_cloud_provider_rows(values)
+
+    while True:
+        os.system('cls' if os.name == 'nt' else 'clear')
+        renderer = RichSubmenuRenderer(
+            "Cloud API Providers",
+            "Configure API keys and default models for the Universal Cloud Mesh registry.",
+            border_style="yellow",
+            domain="AI Models, Strategy & Cost Control Domain",
+        )
+        entries = []
+        for r in rows:
+            status = "ACTIVE" if r["status"] == "ACTIVE" else "UNCONFIGURED"
+            entries.append((r["display_name"], status))
+        console.print(renderer.build(entries=entries))
+        choice = renderer.prompt_choice((1, len(rows)), default="01")
+        if choice in ("00", "q"):
+            return
+
+        index = int(choice) - 1
+        meta = rows[index]
+        _configure_cloud_provider(meta, env_path)
+        console.input("\n[dim]Press Enter to continue...[/]")
 
 
 def select_execution_mode(env_path):
-    """Configure the 2D Execution Matrix (Network Strategy & Hardware Strategy).
+    """Configure Network & Hardware Strategies (3-tier Rich child submenu).
 
-    v5.9.4: Replaces the old 4-Way Execution Mode Matrix with a richer 2D model.
-    Step 1: Select Network Strategy (strict_local, local_first, cloud_first,
-            strict_cloud). These determine air-gapped vs. cloud dependency and
-            automatic cross-environment fallback behavior.
-    Step 2: If the Network Strategy involves local compute (not strict_cloud),
-            select a Hardware Strategy (cpu_only, gpu_only, cpu_gpu_split) that
-            controls how requests are distributed across CPU and GPU endpoints.
+    Step 1 renders a 3-tier Rich panel for the Network Strategy (strict_local,
+    local_first, cloud_first, strict_cloud, auto_dynamic), which determines
+    air-gapped vs. cloud dependency and automatic cross-environment fallback.
+    Step 2 (when the network strategy involves local compute) renders a 3-tier
+    Rich panel for the Hardware Strategy (cpu_only, gpu_only, cpu_gpu_split).
 
     Sets TALOS_NETWORK_STRATEGY and TALOS_HARDWARE_STRATEGY in .env, plus
     backward-compatible legacy keys (TALOS_EXECUTION_MODE, TALOS_USE_LOCAL,
     TALOS_ALLOW_CLOUD_FALLBACK, TALOS_FAST_ROUTING, TALOS_HEAVY_ROUTING).
 
-    Displays an informational Rich Panel before each step and a summary
-    confirmation panel before writing.
+    Each step uses a single type-safe prompt; no duplicate vertical
+    questionary lists remain.
 
     Args:
         env_path: Absolute path to the .env file.
@@ -1115,7 +1101,7 @@ def select_execution_mode(env_path):
 
     # -- Header panel --
     header_panel = Panel(
-        "[bold]2D Execution Matrix Configuration[/]\n"
+        "[bold]Network & Hardware Strategies Configuration[/]\n"
         "[dim]Network Strategy x Hardware Strategy -- Cross-Environment Fallback Routing[/]",
         border_style="blue",
         box=box.ROUNDED,
@@ -1130,131 +1116,52 @@ def select_execution_mode(env_path):
     console.print(f"\n  [dim]Current Network Strategy:[/]  [cyan]{current_network}[/]")
     console.print(f"  [dim]Current Hardware Strategy:[/] [cyan]{current_hardware}[/]")
 
-    # -- Step 1: Network Strategy Selection --
-    network_table = Table(
-        box=box.ROUNDED,
-        show_header=True,
-        header_style="bold white",
-        title="[bold bright_cyan]Step 1: Network Strategy[/bold bright_cyan]",
-        title_justify="center",
+    # -- Step 1: Network Strategy Selection (3-tier Rich child step) --
+    from src.utils.console_dashboard import RichSubmenuRenderer
+    net_renderer = RichSubmenuRenderer(
+        "Step 1: Network Strategy",
+        f"Current: {current_network}",
+        border_style="bright_cyan",
+        domain="AI Models, Strategy & Cost Control Domain",
     )
-    network_table.add_column("#", style="dim", width=3, justify="right")
-    network_table.add_column("Strategy", style="cyan", no_wrap=True, width=18)
-    network_table.add_column("Description", style="white", width=40)
-    network_table.add_column("Fallback Behavior", style="green", width=30)
-
-    network_rows = [
-        ("1", "Strict Local", "Air-Gapped. Zero internet dependency. Maximum privacy.",
-         "None -- local only."),
-        ("2", "Local-First", "Local tiers primary. Cloud as safety net.",
-         "ConnectionError -> auto-reroute to Cloud."),
-        ("3", "Cloud-First", "Cloud providers primary. Local as fallback.",
-         "Auth/Rate/Timeout -> auto-reroute to Local."),
-        ("4", "Strict Cloud", "Pure cloud. No local models required.",
-         "None -- cloud only."),
-        ("5", "Auto-Dynamic", "Autonomous strategy selection with Privacy Guardrails.",
-         "Runtime resolve: offline/VRAM/task + consent gate."),
+    net_entries = [
+        ("Strict Local -- Air-Gapped (zero internet; local only)", "never cloud"),
+        ("Local-First -- local primary; cloud fallback on ConnectionError", None),
+        ("Cloud-First -- cloud primary; local fallback on auth/rate/timeout", None),
+        ("Strict Cloud -- cloud only; no local models", None),
+        ("Auto-Dynamic -- autonomous; Privacy Guardrails consent gate", None),
     ]
-    for row in network_rows:
-        network_table.add_row(*row)
-
-    console.print()
-    console.print(network_table)
-
-    network_choices = [
-        questionary.Choice(
-            title="[1] Strict Local -- Air-Gapped (local only, never cloud)",
-            value="strict_local"
-        ),
-        questionary.Choice(
-            title="[2] Local-First -- Local primary, auto-fallback to Cloud on ConnectionError",
-            value="local_first"
-        ),
-        questionary.Choice(
-            title="[3] Cloud-First -- Cloud primary, auto-fallback to Local on auth/rate/timeout failure",
-            value="cloud_first"
-        ),
-        questionary.Choice(
-            title="[4] Strict Cloud -- Cloud only, no local models",
-            value="strict_cloud"
-        ),
-        questionary.Choice(
-            title="[5] Auto-Dynamic Orchestration -- Autonomous strategy selection with Privacy Guardrails",
-            value="auto_dynamic"
-        ),
-        questionary.Separator(),
-        questionary.Choice(title="[Cancel / Return to Main Menu]", value="__cancel__"),
-    ]
-
-    selected_network = questionary.select(
-        "Select Network Strategy:",
-        choices=network_choices,
-        use_indicator=True,
-        style=TALOS_QUESTIONARY_STYLE,
-    ).ask()
-
-    if selected_network == "__cancel__" or selected_network is None:
+    console.print(net_renderer.build(entries=net_entries))
+    net_choice = net_renderer.prompt_choice((1, 5), default="01")
+    if net_choice in ("00", "q"):
         console.print("  [dim][[CANCELLED]][/] Returning to main menu.")
         console.input("\n[dim]Press Enter to continue...[/]")
         return
+    network_keys = ["strict_local", "local_first", "cloud_first", "strict_cloud", "auto_dynamic"]
+    selected_network = network_keys[int(net_choice) - 1]
 
-    # -- Step 2: Hardware Strategy (only if network involves local compute) --
+    # -- Step 2: Hardware Strategy (3-tier Rich child step; local-only) --
     selected_hardware = current_hardware  # default: keep current
     if selected_network != "strict_cloud":
-        hardware_table = Table(
-            box=box.ROUNDED,
-            show_header=True,
-            header_style="bold white",
-            title="[bold bright_magenta]Step 2: Hardware Strategy[/bold bright_magenta]",
-            title_justify="center",
+        hw_renderer = RichSubmenuRenderer(
+            "Step 2: Hardware Strategy",
+            f"Current: {current_hardware}",
+            border_style="bright_magenta",
+            domain="AI Models, Strategy & Cost Control Domain",
         )
-        hardware_table.add_column("#", style="dim", width=3, justify="right")
-        hardware_table.add_column("Strategy", style="magenta", no_wrap=True, width=18)
-        hardware_table.add_column("Description", style="white", width=40)
-        hardware_table.add_column("Routing Rule", style="yellow", width=30)
-
-        hardware_rows = [
-            ("1", "CPU Only", "All local inference on CPU (FAST_EDGE_BASE_URL, port 11435).",
-             "Fast and Heavy both -> CPU"),
-            ("2", "GPU Only", "All local inference on GPU (OLLAMA_BASE_URL, port 11434).",
-             "Fast and Heavy both -> GPU"),
-            ("3", "CPU-GPU Split", "Fast tier -> CPU (port 11435), Heavy tier -> GPU (port 11434).",
-             "Respects tier parameter."),
+        hw_entries = [
+            ("CPU Only -- all local inference on CPU (port 11434)", None),
+            ("GPU Only -- all local inference on GPU (port 11434)", None),
+            ("CPU-GPU Hybrid Split -- Fast on CPU / Heavy on GPU (default)", None),
         ]
-        for row in hardware_rows:
-            hardware_table.add_row(*row)
-
-        console.print()
-        console.print(hardware_table)
-
-        hardware_choices = [
-            questionary.Choice(
-                title="[1] CPU Only (Neutrino) -- All local requests on CPU endpoint",
-                value="cpu_only"
-            ),
-            questionary.Choice(
-                title="[2] GPU Only (Ollama) -- All local requests on GPU endpoint",
-                value="gpu_only"
-            ),
-            questionary.Choice(
-                title="[3] CPU+GPU Hybrid Split -- Fast on CPU, Heavy on GPU (default)",
-                value="cpu_gpu_split"
-            ),
-            questionary.Separator(),
-            questionary.Choice(title="[Cancel / Return to Main Menu]", value="__cancel__"),
-        ]
-
-        selected_hardware = questionary.select(
-            "Select Hardware Strategy:",
-            choices=hardware_choices,
-            use_indicator=True,
-            style=TALOS_QUESTIONARY_STYLE,
-        ).ask()
-
-        if selected_hardware == "__cancel__" or selected_hardware is None:
+        console.print(hw_renderer.build(entries=hw_entries))
+        hw_choice = hw_renderer.prompt_choice((1, 3), default="03")
+        if hw_choice in ("00", "q"):
             console.print("  [dim][[CANCELLED]][/] Returning to main menu.")
             console.input("\n[dim]Press Enter to continue...[/]")
             return
+        hardware_keys = ["cpu_only", "gpu_only", "cpu_gpu_split"]
+        selected_hardware = hardware_keys[int(hw_choice) - 1]
     else:
         # Strict Cloud: hardware strategy is irrelevant, force cpu_gpu_split (default)
         selected_hardware = "cpu_gpu_split"
@@ -1294,11 +1201,11 @@ def select_execution_mode(env_path):
     summary_text.append(f"{hardware_labels.get(selected_hardware, selected_hardware)}\n", style="bold magenta")
     summary_text.append(f"                     ", style="dim")
     if selected_hardware == "cpu_only":
-        summary_text.append("[ALL local requests -> CPU (port 11435). No GPU.]\n", style="dim yellow")
+        summary_text.append("[ALL local requests -> CPU (port 11434). No GPU.]\n", style="dim yellow")
     elif selected_hardware == "gpu_only":
         summary_text.append("[ALL local requests -> GPU (port 11434). No CPU edge.]\n", style="dim yellow")
     elif selected_hardware == "cpu_gpu_split":
-        summary_text.append("[Fast -> CPU (11435), Heavy -> GPU (11434).]\n", style="dim yellow")
+        summary_text.append("[Fast -> CPU (11434), Heavy -> GPU (11434).]\n", style="dim yellow")
 
     summary_text.append(f"\n  Previous Network:  [dim]{network_labels.get(current_network, current_network)}[/dim]\n", style="")
     summary_text.append(f"  Previous Hardware: [dim]{hardware_labels.get(current_hardware, current_hardware)}[/dim]\n", style="")
@@ -1419,37 +1326,28 @@ def select_embedding_model(env_path):
     ]
     installed = get_installed_models()
 
-    # -- Build Rich Table for embedding models --
-    emb_table = Table(box=box.ROUNDED, show_header=True, header_style="bold white")
-    emb_table.add_column("#", style="dim", width=4)
-    emb_table.add_column("Model Name", style="cyan")
-    emb_table.add_column("Installation State", style="white")
-
-    choices_map = {}
-    for idx, m in enumerate(embedding_models, start=1):
-        state = "[green][INSTALLED][/]" if m in installed else "[dim][Available][/]"
-        emb_table.add_row(str(idx), m, state)
-        choices_map[str(idx)] = m
-
-    console.print()
-    console.print(emb_table)
-
-    # -- Build questionary choices --
-    choices = []
-    for k, name in choices_map.items():
-        prefix = "[INSTALLED] " if name in installed else "[Available] "
-        choices.append(questionary.Choice(title=f"{prefix}{name}", value=name))
-    choices.append(questionary.Choice(title="Custom...", value="__custom__"))
-    choices.append(questionary.Separator())
-    choices.append(questionary.Choice(title="[Cancel / Return to Main Menu]", value="__cancel__"))
-
-    sel = questionary.select("Select embedding model:", choices=choices, style=TALOS_QUESTIONARY_STYLE).ask()
-    if sel == "__cancel__" or sel is None:
+    # -- 3-tier Rich child submenu for embedding model selection --
+    from src.utils.console_dashboard import RichSubmenuRenderer
+    emb_renderer = RichSubmenuRenderer(
+        "Select Local Embedding Model",
+        "Local Ollama models for vector search and semantic retrieval.",
+        border_style="green",
+        domain="AI Models, Strategy & Cost Control Domain",
+    )
+    emb_entries = [
+        (m, "INSTALLED" if m in installed else "Available")
+        for m in embedding_models
+    ]
+    emb_entries.append(("Custom model name...", None))
+    console.print(emb_renderer.build(entries=emb_entries))
+    emb_choice = emb_renderer.prompt_choice((1, len(emb_entries)), default="01")
+    if emb_choice in ("00", "q"):
         console.print("  [dim][[CANCELLED]][/] Returning to main menu.")
         console.input("\n[dim]Press Enter to continue...[/]")
         return
 
-    if sel == "__custom__":
+    if int(emb_choice) == len(emb_entries):
+        # -- Custom model name --
         model_name = questionary.text("Enter model name:", style=TALOS_QUESTIONARY_STYLE).ask()
         if not model_name or not model_name.strip():
             console.print("  [dim][[CANCELLED]][/] No model name entered.")
@@ -1457,7 +1355,7 @@ def select_embedding_model(env_path):
             return
         model_name = model_name.strip()
     else:
-        model_name = sel
+        model_name = embedding_models[int(emb_choice) - 1]
 
     # Check and pull if needed
     if model_name not in installed:
@@ -1481,20 +1379,23 @@ def select_embedding_model(env_path):
 # ---------------------------------------------------------------------------
 
 def main():
-    """Main TUI loop for multi-tier model management.
+    """Main TUI loop for the hierarchical 3-tier AI model management menu.
 
-    Presents a 7-option menu for configuring:
-    1. Fast Edge Tier (CPU, Port 11435)
-    2. Heavy Reasoning Tier (GPU, Port 11434)
-    3. Cloud API Tier (Gemini / DeepSeek / HF)
-    4. System Execution Mode (Local / Hybrid / Cloud)
-    5. Local Embedding Model
-    6. Manual Ollama Pull
-    7. Exit
+    Presents a 3-tier Rich panel preserving the full live status snapshot
+    (Ollama Status, Network Strategy, Hardware Strategy, Legacy Mode, Fast
+    Edge Model/URL, Heavy Reasoning, Ollama Base URL, Embedding Model, Gemini
+    Flash/Pro, DeepSeek, and Hugging Face) and dispatches six clean actions:
+
+    1. Configure Fast Edge Tier (Port 11434)
+    2. Configure Heavy Reasoning Tier (Port 11434)
+    3. Configure Cloud API Providers (Gemini / DeepSeek / Groq / SambaNova / HF)
+    4. Configure Network & Hardware Strategies
+    5. Select Local Embedding Model (Ollama)
+    6. Download / Pull Ollama Model to Disk
 
     Ensures .env exists (copies from example.env if needed). All sub-menus
-    handle cancellation (questionary.select -> Cancel) gracefully with
-    explicit Cancel/Back navigation guardrails.
+    handle cancellation gracefully through a single type-safe prompt; no
+    duplicate vertical questionary lists remain.
     """
     env_path = _ENV_PATH
 
@@ -1512,7 +1413,7 @@ def main():
 
         # -- Main menu header panel --
         header_panel = Panel(
-            f"[bold white]TALOS v{TALOS_VERSION}[/]\n[dim]Multi-Tier AI Model Management | 2D Execution Matrix | Safety Locks Active[/]",
+            f"[bold white]TALOS v{TALOS_VERSION}[/]\n[dim]AI Model Management | Unified Local Runtime (Port 11434) | Safety Locks Active[/]",
             border_style="bright_blue",
             box=box.ROUNDED,
             padding=(1, 2),
@@ -1537,7 +1438,7 @@ def main():
         status_table.add_row("Hardware Strategy:", f"{hw_strat} ({hw_labels.get(hw_strat, hw_strat)})")
         status_table.add_row("Legacy Mode:", values.get('TALOS_EXECUTION_MODE', 'local'))
         status_table.add_row("Fast Edge Model:", values.get('FAST_EDGE_MODEL', 'fermionresearch/Neutrino-8B'))
-        status_table.add_row("Fast Edge URL:", values.get('FAST_EDGE_BASE_URL', 'http://127.0.0.1:11435/v1'))
+        status_table.add_row("Fast Edge URL:", values.get('FAST_EDGE_BASE_URL', 'http://127.0.0.1:11434/v1'))
         status_table.add_row("Heavy Reasoning:", values.get('HEAVY_REASONING_MODEL', 'qwen2.5:14b'))
         status_table.add_row("Ollama Base URL:", values.get('OLLAMA_BASE_URL', 'http://127.0.0.1:11434'))
         status_table.add_row("Embedding Model:", values.get('LOCAL_EMBEDDING_MODEL', 'Not set'))
@@ -1548,46 +1449,41 @@ def main():
 
         console.print(status_table)
 
-        # -- Menu options --
-        console.print("\n" + "-" * 62)
-        console.print("  [bold cyan][1][/] Configure Fast Edge Tier (CPU / Port 11435)")
-        console.print("  [bold magenta][2][/] Configure Heavy Reasoning Tier (GPU / Port 11434)")
-        console.print("  [bold yellow][3][/] Configure Cloud API Tier (Gemini / DeepSeek / HF)")
-        console.print("  [bold blue][4][/] Select 2D Execution Matrix (Network x Hardware Strategies)")
-        console.print("  [bold green][5][/] Select Local Embedding Model (Ollama)")
-        console.print("  [bold white][6][/] Pull Ollama Model Manually")
-        console.print("  [dim][7][/] Exit")
-
-        choice = questionary.select(
-            "Select action:",
-            choices=[
-                "1. Configure Fast Edge Tier (CPU / Port 11435)",
-                "2. Configure Heavy Reasoning Tier (GPU / Port 11434)",
-                "3. Configure Cloud API Tier (Gemini / DeepSeek / HF)",
-                "4. Select 2D Execution Matrix (Network x Hardware Strategies)",
-                "5. Select Local Embedding Model (Ollama)",
-                "6. Pull Ollama Model Manually",
-                "7. Exit",
+        # -- Tier 2/3: 3-tier Rich action submenu (no duplicate vertical list) --
+        from src.utils.console_dashboard import RichSubmenuRenderer
+        renderer = RichSubmenuRenderer(
+            "AI Model Management Actions",
+            "Unified local execution on port 11434 (concurrency bounded by threading.Semaphore(2)).",
+            border_style="bright_blue",
+            domain="AI Models, Strategy & Cost Control Domain",
+        )
+        console.print(renderer.build(
+            entries=[
+                ("Configure Fast Edge Tier (Port 11434)", None),
+                ("Configure Heavy Reasoning Tier (Port 11434)", None),
+                ("Configure Cloud API Providers (Gemini / DeepSeek / Groq / SambaNova / HF)", None),
+                ("Configure Network & Hardware Strategies", None),
+                ("Select Local Embedding Model (Ollama)", None),
+                ("Download / Pull Ollama Model to Disk", None),
             ],
-            use_indicator=True,
-            style=TALOS_QUESTIONARY_STYLE,
-        ).ask()
-
-        if not choice or choice.startswith("7"):
+        ))
+        choice = renderer.prompt_choice((1, 6), default="01")
+        if choice in ("00", "q"):
             console.print("\n  [dim]Exiting Model Manager. Configuration changes saved.[/]")
             break
 
-        if choice.startswith("1"):
+        num = int(choice)
+        if num == 1:
             select_fast_edge_model(env_path)
-        elif choice.startswith("2"):
+        elif num == 2:
             select_heavy_model(env_path)
-        elif choice.startswith("3"):
+        elif num == 3:
             select_cloud_models(env_path)
-        elif choice.startswith("4"):
+        elif num == 4:
             select_execution_mode(env_path)
-        elif choice.startswith("5"):
+        elif num == 5:
             select_embedding_model(env_path)
-        elif choice.startswith("6"):
+        elif num == 6:
             model = questionary.text("Enter model to pull (e.g., gemma3:12b):", style=TALOS_QUESTIONARY_STYLE).ask()
             if model and model.strip():
                 _provision_model(model.strip())

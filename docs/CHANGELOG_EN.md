@@ -2,6 +2,30 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.25.2] - 2026-10-04 -- Preserve All Information, Hierarchical 3-Tier AI Model Management & Interactive Candidate Selector (ISO/IEC 25010)
+
+### Added
+
+- **Hierarchical 3-Tier AI Model Management Menu** (`src/ai/llm/model_manager.py`): the Option 6 menu (`main()`) is rebuilt as a clean 3-tier Rich panel preserving 100% of the live status snapshot (Ollama Status, Network Strategy, Hardware Strategy, Legacy Mode, Fast Edge Model/URL, Heavy Reasoning, Ollama Base URL, Embedding Model, Gemini Flash/Pro, DeepSeek, Hugging Face) and dispatching six actions. The duplicate vertical `questionary.select` list is removed in favor of `RichSubmenuRenderer` + a single type-safe `prompt_choice`.
+
+- **Hierarchical Child Submenus** (`model_manager.py`): `select_cloud_models()` renders the Universal Cloud Mesh provider registry (Gemini Flash/Pro, DeepSeek, Groq, SambaNova, Hugging Face, NVIDIA NIM, Cerebras, GitHub Models, Mistral, OpenRouter) as a 3-tier Rich child submenu with a new `_configure_cloud_provider()` per-provider flow; `select_execution_mode()` renders the Network Strategy and Hardware Strategy as two sequential 3-tier Rich steps; `select_embedding_model()` renders the embedding model list via `RichSubmenuRenderer`.
+
+- **Interactive Model Candidate Selector** (`src/utils/ai_strategy_selector.py`): new `_get_candidates_for_slot()`, `_render_candidate_table()`, and `_prompt_candidate_selection()` query `data/cache/llm_benchmarks.json` and render per-slot candidate tables (Model, Provider, VRAM, Cost/1k, TTFT, Rigor). `configure_ai_strategy()` manual modes (`02`-`05`) walk four sequential role-slot steps (Screening local/cloud, Reasoning local/cloud) with pick-by-number or ENTER-for-champion; `01 AUTO_PILOT` remains instant 1-click.
+
+### Changed
+
+- **Permanent Port 11435 Purge** (`model_manager.py`, `config/settings.py`): all Fast Edge and Heavy Reasoning local execution is unified on `http://127.0.0.1:11434` with concurrency bounded by `threading.Semaphore(2)`. Zero references to the phantom CPU edge port 11435 remain in active menus.
+
+- **Descriptive Functional Naming**: "Cognitive Mesh & FinOps" is renamed to "AI Models, Strategy & Cost Control" (`layout_builder.py`), and "FinOps Configurator" is renamed to "Interactive AI Model Selector & Cost Optimizer" (`talos.py`, `ai_strategy_selector.py`).
+
+- **Markup Leak Fix** (`talos.py`): the `[dim]` status text in `_run_scavenge_models()` and `_run_model_discovery()` now renders via `console.print()` instead of leaking literal `[dim]` tags through `_build_info_panel()`.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.25.2); `pytest tests/test_console_dashboard.py -q` (19 hermetic); port 11435 audit (0 in active menus); `python src/utils/verify_dependency_map.py --ci` (0/0/0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD); README [1]-[20] citations intact.
+
+---
+
 ## [v5.25.1] - 2026-10-04 -- Segmented 3-Column Cockpit HUD, Visual Contrast Optimization & Zero-Scroll Bounding (ISO/IEC 25010)
 
 ### Added

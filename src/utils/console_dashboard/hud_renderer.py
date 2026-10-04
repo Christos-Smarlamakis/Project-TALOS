@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: hud_renderer.py
-Project: TALOS v5.25.1
+Project: TALOS v5.25.2
 Description:
     Persistent telemetry HUD renderer for the TALOS Scientific Terminal
     Dashboard. Builds a compact three-column Rich Panel (Research Corpus,
@@ -160,7 +160,7 @@ class HudRenderer:
 
         return Panel(
             table,
-            title="[bold bright_cyan]TALOS TELEMETRY & SYSTEM COCKPIT (v5.25.1)[/]",
+            title="[bold bright_cyan]TALOS TELEMETRY & SYSTEM COCKPIT (v5.25.2)[/]",
             border_style="bright_cyan",
             box=box.ROUNDED,
             padding=(0, 1),

@@ -1,12 +1,20 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.25.1
+Project: TALOS v5.25.2
 Description:
-    Canonical configuration hub for TALOS v5.25.1. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.25.2. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
+
+    v5.25.2: Preserve All Information, Hierarchical 3-Tier AI Model Management
+    & Interactive Candidate Selector (ISO/IEC 25010) -- Option 6 renders a
+    clean 3-tier Rich panel with hierarchical cloud-provider and strategy child
+    submenus, the phantom port 11435 is permanently purged (unified local
+    execution on 11434 with threading.Semaphore(2) concurrency), and Option 10
+    gains a step-by-step interactive model candidate selector across the four
+    role slots.
 
     v5.25.1: Segmented 3-Column Cockpit HUD, Visual Contrast Optimization &
     Zero-Scroll Bounding (ISO/IEC 25010) -- the telemetry HUD renders as a
@@ -303,7 +311,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.25.1"
+TALOS_VERSION = "5.25.2"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.
