@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: server.py
-Project: TALOS v5.25.0
+Project: TALOS v5.25.1
 Description:
     FastAPI mini-application for the Cognitive Mesh in-tree microservice. It
     exposes the cognitive router dispatch, the sixteen-provider registry
@@ -251,7 +251,7 @@ def health() -> dict:
     return {
         "status": "ok",
         "service": "cognitive_mesh",
-        "version": "5.25.0",
+        "version": "5.25.1",
         "local_gpu": {"name": "RTX 4070", "vram_gb": 12.0},
         "active_provider_count": len(active),
         "active_providers": [d.name for d in active],
@@ -265,7 +265,7 @@ app = FastAPI(
         "Extraction-ready in-tree cognitive microservice: meta-routing, "
         "provider registry, benchmark matrix, and autonomous model scavenging."
     ),
-    version="5.25.0",
+    version="5.25.1",
 )
 app.include_router(cognitive_router_app)
 

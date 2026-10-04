@@ -4,7 +4,7 @@
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-04
-> **Version:** v5.25.0 -- Autonomous Multi-LLM Relay, XAI Decision Ledger & Dynamic Swarm Sizing
+> **Version:** v5.25.1 -- Segmented 3-Column Cockpit HUD, Visual Contrast Optimization & Zero-Scroll Bounding
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -1423,6 +1423,18 @@ For each evaluated paper, the AI generates:
 - **Rule 11 & Rule 12** (`.clinerules`): Academic Dual-Use Neutrality and Citation Integrity & Anti-Hallucination.
 
 **Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.25.0), `pytest tests/test_xai_ledger.py tests/test_dynamic_swarm_sizer.py tests/test_codebase_documenter.py -q` (19 hermetic), `python talos.py --document-codebase --dry-run` / `--show-xai-log` (exit 0), `python src/utils/verify_dependency_map.py --ci` (0/0/0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD).
+
+### 15.60 Segmented 3-Column Cockpit HUD, Visual Contrast Optimization & Zero-Scroll Bounding (v5.25.1)
+
+**Overview:** v5.25.1 rebuilds the persistent telemetry HUD as a segmented three-column Rich cockpit grid with high-contrast bright-cyan styling, and bounds the responsive dashboard layout so the full HMI renders without horizontal truncation or vertical scrollbars.
+
+- **Segmented 3-Column Cockpit HUD** (`src/utils/console_dashboard/hud_renderer.py`): `HudRenderer.build_hud()` renders a three-column `Table` (RESEARCH CORPUS | LOCAL EDGE & COMPUTE | COGNITIVE AI MESH) under a `[bold bright_cyan]TALOS TELEMETRY & SYSTEM COCKPIT (v5.25.1)[/]` panel title; `_strategy_compact()` maps the network strategy to LOCAL_FIRST / AIRGAPPED / CLOUD_BUDGET / AUTO_SWARM; `_compact_gpu_name()` strips vendor prefixes; natural-width columns guarantee zero truncation and zero ellipses.
+
+- **Responsive Layout Bounding** (`src/utils/console_dashboard/layout_builder.py`): header HUD region sized to exact content height and the four body panels given deterministic `ratio=1` splits; the full dashboard (Header HUD + 4-Panel Grid + Console HMI footer) fits within a 26-28 line terminal.
+
+- **HUD unit tests** (`tests/test_console_dashboard.py`): three-column grid, bright-cyan cockpit title, and zero-truncation assertions (19 hermetic).
+
+**Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.25.1), `pytest tests/test_console_dashboard.py -q` (19 hermetic), `python talos.py --show-dashboard` (exit 0), `python src/utils/verify_dependency_map.py --ci` (0/0/0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD).
 
 ### 15.56 Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization (v5.22.1)
 

@@ -1,6 +1,6 @@
 # TALOS Functional Architecture Map
 
-> **Project:** TALOS v5.25.0 -- Autonomous Multi-LLM Relay, XAI Decision Ledger & Dynamic Swarm Sizing (ISO/IEC 25010 Compliant)
+> **Project:** TALOS v5.25.1 -- Segmented 3-Column Cockpit HUD, Visual Contrast Optimization & Zero-Scroll Bounding (ISO/IEC 25010 Compliant)
 > **Classification:** Public Technical Reference
 > **Last Updated:** 2026-10-04
 > **Standard:** ISO/IEC 25010 (Functional Suitability, Performance Efficiency, Maintainability)

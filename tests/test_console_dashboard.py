@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_console_dashboard.py
-Project: TALOS v5.22.1
+Project: TALOS v5.25.1
 Description:
     Unit tests for the modular console dashboard subsystem
-    (src/utils/console_dashboard/). Verifies HUD panel generation, the
-    two-column / four-panel layout construction, the three scientific tree
+    (src/utils/console_dashboard/). Verifies the segmented 3-column HUD panel
+    generation (bright-cyan cockpit title, three-column grid, zero truncation),
+    the two-column / four-panel layout construction, the three scientific tree
     renderables, the terminal Markdown/syntax previewers, the multi-metric
     progress monitor, and the slash-command palette dispatcher. Every test is
     air-gapped and side-effect free (no network, no filesystem mutation beyond
@@ -34,11 +35,33 @@ from src.utils.console_dashboard import (
 
 
 class TestHudRenderer:
-    """Persistent telemetry HUD generation."""
+    """Segmented three-column telemetry HUD generation."""
 
     def test_build_hud_returns_panel(self):
         panel = HudRenderer().build_hud()
         assert isinstance(panel, Panel)
+
+    def test_build_hud_has_three_columns(self):
+        from rich.table import Table
+        panel = HudRenderer().build_hud()
+        table = panel.renderable
+        assert isinstance(table, Table)
+        assert len(table.columns) == 3
+
+    def test_build_hud_title_is_bright_cyan_cockpit(self):
+        panel = HudRenderer().build_hud()
+        assert panel.title is not None
+        title_text = str(panel.title)
+        assert "TALOS TELEMETRY & SYSTEM COCKPIT" in title_text
+        assert "v5.25.1" in title_text
+
+    def test_build_hud_no_truncation(self):
+        from rich.console import Console
+        console = Console(width=105, record=True)
+        console.print(HudRenderer().build_hud())
+        rendered = console.export_text()
+        assert "\u2026" not in rendered
+        assert "..." not in rendered
 
 
 class TestDashboardLayoutBuilder:

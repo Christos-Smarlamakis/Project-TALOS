@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-10-04 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.25.0 -- Autonomous Multi-LLM Relay, XAI Decision Ledger &amp; Dynamic Swarm Sizing
+  <strong>Version:</strong> v5.25.1 -- Segmented 3-Column Cockpit HUD, Visual Contrast Optimization &amp; Zero-Scroll Bounding
 </div>
 
 <!-- ===================================================================== -->
@@ -1624,6 +1624,20 @@
 
 <hr>
 
+<h3 id="s15-60">15.60 Segmented 3-Column Cockpit HUD, Visual Contrast Optimization &amp; Zero-Scroll Bounding (v5.25.1)</h3>
+
+<p><strong>Overview:</strong> v5.25.1 rebuilds the persistent telemetry HUD as a segmented three-column Rich cockpit grid with high-contrast bright-cyan styling, and bounds the responsive dashboard layout so the full HMI renders without horizontal truncation or vertical scrollbars.</p>
+
+<ul>
+  <li><strong>Segmented 3-Column Cockpit HUD</strong> (<code>src/utils/console_dashboard/hud_renderer.py</code>): <code>HudRenderer.build_hud()</code> renders a three-column <code>Table</code> (RESEARCH CORPUS | LOCAL EDGE &amp; COMPUTE | COGNITIVE AI MESH) under a <code>[bold bright_cyan]TALOS TELEMETRY &amp; SYSTEM COCKPIT (v5.25.1)[/]</code> panel title; <code>_strategy_compact()</code> maps the network strategy to LOCAL_FIRST / AIRGAPPED / CLOUD_BUDGET / AUTO_SWARM; <code>_compact_gpu_name()</code> strips vendor prefixes; natural-width columns guarantee zero truncation and zero ellipses.</li>
+  <li><strong>Responsive Layout Bounding</strong> (<code>src/utils/console_dashboard/layout_builder.py</code>): header HUD region sized to exact content height and the four body panels given deterministic <code>ratio=1</code> splits; the full dashboard fits within a 26-28 line terminal.</li>
+  <li><strong>HUD unit tests</strong> (<code>tests/test_console_dashboard.py</code>): three-column grid, bright-cyan cockpit title, and zero-truncation assertions (19 hermetic).</li>
+</ul>
+
+<p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.25.1), <code>test_console_dashboard.py -q</code> (19 hermetic), <code>python talos.py --show-dashboard</code> (exit 0), <code>verify_dependency_map.py --ci</code> (0/0/0), <code>bash -n run_talos.sh</code>, strict UTF-8 scan (0 U+FFFD).</p>
+
+<hr>
+
 <h3 id="s15-56">15.56 Rich Sub-Menu Modernization, Daemon Profile Binding &amp; Model Scout Terminology Formalization (v5.22.1)</h3>
 
 <p><strong>Overview:</strong> v5.22.1 modernizes the Scientific Terminal Dashboard sub-menus, enforces strict SSOT daemon profile binding, consolidates orphan databases, and formalizes the Model Scout terminology across the Cognitive Mesh.</p>
@@ -1640,7 +1654,7 @@
 <p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.22.1), scavenger + reporter + console dashboard (42 hermetic), <code>python talos.py --scout-models --all --report-only</code> (exit 0), <code>verify_dependency_map.py --ci</code> (0/0/0), <code>bash -n run_talos.sh</code>, strict UTF-8 scan (0 U+FFFD).</p>
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.25.0</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.25.1</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

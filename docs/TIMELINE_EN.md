@@ -4,7 +4,23 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-04 (v5.25.0 -- Autonomous Multi-LLM Relay, XAI Decision Ledger & Dynamic Swarm Sizing)
+> **Last Updated:** 2026-10-04 (v5.25.1 -- Segmented 3-Column Cockpit HUD, Visual Contrast Optimization & Zero-Scroll Bounding)
+
+---
+
+## Phase 87: Segmented 3-Column Cockpit HUD, Visual Contrast Optimization & Zero-Scroll Bounding (v5.25.1)
+
+- [x] **Status:** COMPLETED (2026-10-04).
+
+- [x] **Segmented 3-Column Cockpit HUD** -- `hud_renderer.py` (`HudRenderer.build_hud`) rebuilt as a three-column Rich table (RESEARCH CORPUS | LOCAL EDGE & COMPUTE | COGNITIVE AI MESH) under a bright-cyan `TALOS TELEMETRY & SYSTEM COCKPIT (v5.25.1)` title; `_strategy_compact()` (LOCAL_FIRST / AIRGAPPED / CLOUD_BUDGET / AUTO_SWARM) and `_compact_gpu_name()`; zero truncation, zero ellipses.
+
+- [x] **Responsive Layout Bounding** -- `layout_builder.py` header resized to exact content height and the four panels given `ratio=1` splits; full dashboard fits within 26-28 lines, zero scrollbars.
+
+- [x] **HUD unit tests** -- `tests/test_console_dashboard.py` (3-column grid, bright-cyan title, zero truncation).
+
+- [x] **Version sync** -- `config/settings.py` (`TALOS_VERSION = "5.25.1"`), `main_api.py`, `talos.py`, launchers, `docker-compose.yml` (`talos:5.25.1`), `CITATION.cff` (5.25.1, 2026-10-04), `tests/test_multi_tier.py`, and all 21 canonical docs to v5.25.1 (2026-10-04).
+
+- [x] **Verification gates passed** -- compileall (0 errors), test_system_integrity, test_talos_version (5.25.1), test_console_dashboard (19), `--show-dashboard` (exit 0, 3-column HUD, unclipped), verify_dependency_map --ci (0/0/0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ---
 

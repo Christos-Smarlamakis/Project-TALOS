@@ -1,15 +1,18 @@
 # -*- coding: utf-8 -*-
 """
 Module: hud_renderer.py
-Project: TALOS v5.24.0
+Project: TALOS v5.25.1
 Description:
     Persistent telemetry HUD renderer for the TALOS Scientific Terminal
-    Dashboard. Builds a compact multi-row Rich Panel summarising the active
-    research profile, the paper corpus metrics (total, elite foundational,
+    Dashboard. Builds a compact three-column Rich Panel (Research Corpus,
+    Local Edge & Compute, Cognitive AI Mesh) summarising the active research
+    profile, the paper corpus metrics (total, elite foundational,
     Kitchenham-appraised), the hardware footprint (GPU name and VRAM), the
     local Ollama runtime status on port 11434, the live self-healing mesh
-    telemetry (provider count, active, zero-config free, latched), the active
-    AI execution strategy, and the scavenged model count. Every probe is
+    telemetry (provider count, active, zero-config free), the compact AI
+    execution strategy token, and the scavenged model count. The HUD is
+    capped at a fixed vertical footprint so the whole dashboard renders
+    without horizontal truncation or vertical scrolling. Every probe is
     best-effort and air-gapped: a failed lookup degrades to a neutral
     placeholder rather than raising, honouring the never-crash guarantee of
     Constitution II and III.
@@ -17,8 +20,7 @@ Description:
 Dependencies:
     - os, subprocess, socket, json: environment lookup and local port/GPU probing.
     - pathlib.Path: cache file resolution for the scavenged model count.
-    - rich.panel.Panel, rich.table.Table, rich.text.Text, rich.align.Align,
-      rich.box: styled rendering primitives.
+    - rich.panel.Panel, rich.table.Table, rich.box: styled rendering primitives.
     - config.settings: canonical network/hardware strategy constants.
     - src.core.profile_manager (lazy): active profile name resolution.
     - src.core.database_manager (lazy): paper corpus statistics.
@@ -33,10 +35,8 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from rich import box
-from rich.align import Align
 from rich.panel import Panel
 from rich.table import Table
-from rich.text import Text
 
 # -- Project root (canonical _P walk-up pattern shared across src/*.py) ---------
 _P = Path(__file__).resolve().parents[3]
@@ -65,9 +65,10 @@ class HudRenderer:
     """Render the persistent telemetry HUD as a compact Rich Panel.
 
     The HUD is the always-visible header of the Scientific Terminal Dashboard.
-    It synthesises four classes of telemetry -- profile, corpus, hardware, and
-    routing -- into a single two-row panel so the operator can read the entire
-    system state at a glance without vertical scrolling.
+    It synthesises three classes of telemetry -- research corpus, local edge
+    & compute, and the cognitive AI mesh -- into a single three-column panel
+    so the operator can read the entire system state at a glance without
+    vertical scrolling.
 
     Attributes:
         profile_name (str): Cached active profile identifier.
@@ -82,88 +83,85 @@ class HudRenderer:
     # ------------------------------------------------------------------
 
     def build_hud(self) -> Panel:
-        """Build and return the two-row telemetry HUD panel.
+        """Build and return the segmented three-column cockpit HUD panel.
+
+        The HUD is laid out as a three-column Rich table (Research Corpus,
+        Local Edge & Compute, Cognitive AI Mesh) inside a bright-cyan Panel.
+        Each column carries three labelled telemetry rows, keeping the total
+        vertical footprint fixed so the whole dashboard renders without
+        horizontal truncation or vertical scrolling.
 
         Returns:
-            Panel: A styled Rich Panel containing the profile/corpus row and
-                the hardware/routing row.
+            Panel: A styled Rich Panel containing the three-column cockpit grid.
         """
         profile = self._profile_name()
         metrics = self._paper_metrics()
         gpu = self._gpu_name()
         vram = self._vram_gb()
         ollama = self._ollama_status()
-        strategy = self._strategy_label()
+        strategy = self._strategy_compact()
         models = self._model_metrics()
         mesh = self._mesh_health()
-
-        # -- Row 1: profile and paper corpus metrics --
-        row1 = Text(no_wrap=True)
-        row1.append("Profile: ", style="dim white")
-        row1.append(profile, style="bold bright_cyan")
-        row1.append("  |  Papers: ", style="dim white")
-        row1.append(str(metrics["total"]), style="bold white")
-        row1.append("  Elite Foundational: ", style="dim white")
-        row1.append(str(metrics["elite"]), style="bold bright_green")
-        row1.append("  Kitchenham Appraised: ", style="dim white")
-        row1.append(
-            str(metrics["appraised"]) if metrics["appraised"] is not None else "-",
-            style="bold bright_magenta",
-        )
-
-        # -- Row 2: hardware, Ollama, strategy, scavenged models --
-        row2 = Text(no_wrap=True)
-        row2.append("GPU: ", style="dim white")
-        row2.append(gpu or "N/A", style="bold white")
-        if vram:
-            row2.append(f" ({vram:.0f} GB VRAM)", style="bold cyan")
-        row2.append("  |  Ollama :11434: ", style="dim white")
-        row2.append(
-            "ONLINE" if ollama else "OFFLINE",
-            style="bold green" if ollama else "bold red",
-        )
-        row2.append("  |  Mesh: ", style="dim white")
-        row2.append(
-            f"{mesh['total']} Providers (Active: {mesh['active']} | "
-            f"Free: {mesh['free']} | Latched: {mesh['latched']})",
-            style="bold bright_cyan",
-        )
-        row2.append("  |  Strategy: ", style="dim white")
-        row2.append(strategy, style="bold yellow")
-        row2.append("  |  Models: ", style="dim white")
-        if models.get("total") is not None:
-            row2.append(str(models["total"]), style="bold cyan")
-            local = models.get("local")
-            frontier = models.get("frontier")
-            if local is not None and frontier is not None:
-                row2.append(
-                    f" ({local} Local | {frontier} Frontier)",
-                    style="bold bright_cyan",
-                )
-        else:
-            row2.append("-", style="bold cyan")
-        row2.append("  |  Vault: ", style="dim white")
         vault = self._vault_status()
-        row2.append(
-            vault,
-            style="bold green" if vault == "INTEGRITY OK" else "bold red",
+
+        # -- Column 1: Research Corpus telemetry. --
+        corpus_total = metrics["total"]
+        corpus_elite = metrics["elite"]
+        corpus_appraised = (
+            metrics["appraised"] if metrics["appraised"] is not None else "-"
         )
-        row2.append("  |  Rate Limiter: ", style="dim white")
-        rate = self._rate_limiter_status()
-        row2.append(
-            rate,
-            style="bold green" if rate == "ACTIVE" else "bold red",
+        col_profile = f"Profile: [cyan]{profile}[/]"
+        col_papers = (
+            f"Papers: [bold white]{corpus_total}[/] "
+            f"([green]{corpus_elite} elite[/])"
+        )
+        col_quality = f"Quality: [magenta]{corpus_appraised} Appraised[/]"
+
+        # -- Column 2: Local Edge & Compute telemetry. --
+        gpu_label = self._compact_gpu_name(gpu)
+        gpu_cell = (
+            f"GPU: [green]{gpu_label} ({int(vram)} GB)[/]"
+            if vram
+            else f"GPU: [green]{gpu_label}[/]"
+        )
+        ollama_label = "ONLINE" if ollama else "OFFLINE"
+        ollama_style = "bold green" if ollama else "bold red"
+        ollama_cell = f"Ollama: [{ollama_style}]{ollama_label}[/] :11434"
+        models_total = models.get("total")
+        models_cell = (
+            f"Scouted: [bold cyan]{models_total} Models[/]"
+            if models_total is not None
+            else "Scouted: [bold cyan]- Models[/]"
         )
 
-        table = Table(show_header=False, box=None, padding=(0, 1), expand=False)
-        table.add_column(justify="left", no_wrap=True)
-        table.add_row(row1)
-        table.add_row(row2)
+        # -- Column 3: Cognitive AI Mesh telemetry. --
+        strategy_cell = f"Strategy: [yellow]{strategy}[/]"
+        providers_cell = (
+            f"Providers: [bold green]{mesh['active']}/{mesh['total']} Active[/] "
+            f"([cyan]{mesh['free']} Free[/])"
+        )
+        vault_style = "bold green" if vault == "INTEGRITY OK" else "bold red"
+        vault_cell = f"Vault: [{vault_style}]{vault}[/]"
+
+        # -- Three-column cockpit grid (borderless, fixed three-row body). --
+        table = Table(
+            show_header=True,
+            header_style="bold white",
+            box=None,
+            padding=(0, 2),
+            expand=False,
+        )
+        table.add_column("RESEARCH CORPUS", no_wrap=True)
+        table.add_column("LOCAL EDGE & COMPUTE", no_wrap=True)
+        table.add_column("COGNITIVE AI MESH", no_wrap=True)
+        table.add_row(col_profile, gpu_cell, strategy_cell)
+        table.add_row(col_papers, ollama_cell, providers_cell)
+        table.add_row(col_quality, models_cell, vault_cell)
 
         return Panel(
-            Align.center(table),
-            title="[bold]TALOS Telemetry HUD[/bold]",
-            border_style="#006699",
+            table,
+            title="[bold bright_cyan]TALOS TELEMETRY & SYSTEM COCKPIT (v5.25.1)[/]",
+            border_style="bright_cyan",
             box=box.ROUNDED,
             padding=(0, 1),
         )
@@ -264,6 +262,24 @@ class HudRenderer:
             pass
         return None
 
+    @staticmethod
+    def _compact_gpu_name(name: Optional[str]) -> str:
+        """Return a compact GPU label by stripping vendor prefixes.
+
+        Args:
+            name (Optional[str]): Raw GPU product name from nvidia-smi.
+
+        Returns:
+            str: A compact product label such as ``RTX 4070``.
+        """
+        if not name:
+            return "N/A"
+        compact = name.strip()
+        for prefix in ("NVIDIA ", "GeForce ", "AMD ", "Radeon "):
+            if compact.startswith(prefix):
+                compact = compact[len(prefix):]
+        return compact or name
+
     def _vram_gb(self) -> Optional[float]:
         """Return total GPU VRAM in GB, or ``None`` when undetectable.
 
@@ -345,6 +361,35 @@ class HudRenderer:
             return f"{str(net).upper()}/{str(hw).upper()}"
         except Exception:
             return "UNKNOWN"
+
+    def _strategy_compact(self) -> str:
+        """Return the compact four-token AI execution strategy label.
+
+        Maps the canonical 2D network strategy onto one of four compact
+        cockpit tokens: LOCAL_FIRST (local-first fallback), AIRGAPPED
+        (strict-local), CLOUD_BUDGET (cloud-first or strict-cloud), and
+        AUTO_SWARM (auto-dynamic). Any unknown strategy degrades to UNKNOWN.
+
+        Returns:
+            str: One of LOCAL_FIRST, AIRGAPPED, CLOUD_BUDGET, AUTO_SWARM, UNKNOWN.
+        """
+        try:
+            from config.settings import TALOS_NETWORK_STRATEGY
+
+            net = str(
+                os.environ.get("TALOS_NETWORK_STRATEGY", TALOS_NETWORK_STRATEGY)
+            ).lower()
+        except Exception:
+            net = "unknown"
+
+        mapping = {
+            "strict_local": "AIRGAPPED",
+            "local_first": "LOCAL_FIRST",
+            "cloud_first": "CLOUD_BUDGET",
+            "strict_cloud": "CLOUD_BUDGET",
+            "auto_dynamic": "AUTO_SWARM",
+        }
+        return mapping.get(net, "UNKNOWN")
 
     def _model_metrics(self) -> Dict[str, Optional[int]]:
         """Return the model-catalog telemetry (total, local, frontier).

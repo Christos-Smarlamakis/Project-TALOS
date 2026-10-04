@@ -2,6 +2,26 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.25.1] - 2026-10-04 -- Segmented 3-Column Cockpit HUD, Visual Contrast Optimization & Zero-Scroll Bounding (ISO/IEC 25010)
+
+### Added
+
+- **Segmented 3-Column Cockpit HUD** (`src/utils/console_dashboard/hud_renderer.py`): `HudRenderer.build_hud()` refactored from a two-row pipe-delimited layout into a structured three-column Rich `Table` grid (RESEARCH CORPUS | LOCAL EDGE & COMPUTE | COGNITIVE AI MESH) under a high-contrast `[bold bright_cyan]TALOS TELEMETRY & SYSTEM COCKPIT (v5.25.1)[/]` panel title; compact strategy token mapping `_strategy_compact()` (LOCAL_FIRST / AIRGAPPED / CLOUD_BUDGET / AUTO_SWARM); GPU label compaction `_compact_gpu_name()`; natural-width columns guaranteeing zero horizontal truncation and zero ellipses.
+
+- **Responsive Layout Bounding** (`src/utils/console_dashboard/layout_builder.py`): the header HUD region is resized to its exact content height and the four body panels are given deterministic `ratio=1` splits so the full dashboard (Header HUD + 4-Panel Grid + Console HMI footer) fits within a 26-28 line terminal with zero vertical scrollbars.
+
+- **HUD Unit Tests** (`tests/test_console_dashboard.py`): three-column grid generation, bright-cyan cockpit title, and zero-truncation assertions (19 hermetic total).
+
+### Changed
+
+- Version synchronicity to `5.25.1` across all 21 canonical documentation files, code entry points, `docker-compose.yml`, and `CITATION.cff`.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.25.1); `pytest tests/test_console_dashboard.py -q` (19 hermetic); `python talos.py --show-dashboard` (exit 0, 3-column HUD, unclipped); `python src/utils/verify_dependency_map.py --ci` (0/0/0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
+---
+
 ## [v5.25.0] - 2026-10-04 -- Autonomous Multi-LLM Relay, XAI Decision Ledger & Dynamic Swarm Sizing (ISO/IEC 25010)
 
 ### Added

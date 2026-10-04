@@ -2,6 +2,26 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.25.1] - 2026-10-04 -- Τμηματοποιημένο Πιλοτήριο HUD 3 Στηλών, Βελτιστοποίηση Οπτικής Αντίθεσης & Περιορισμός Μηδενικής Κύλισης (ISO/IEC 25010)
+
+### Προστέθηκαν
+
+- **Τμηματοποιημένο Πιλοτήριο HUD 3 Στηλών** (`src/utils/console_dashboard/hud_renderer.py`): η `HudRenderer.build_hud()` αναδιαρθρώθηκε από διάταξη δύο σειρών με διαχωριστικά pipe σε δομημένο πλέγμα τριών στηλών `Table` του Rich (RESEARCH CORPUS | LOCAL EDGE & COMPUTE | COGNITIVE AI MESH) κάτω από τίτλο πάνελ υψηλής αντίθεσης `[bold bright_cyan]TALOS TELEMETRY & SYSTEM COCKPIT (v5.25.1)[/]`· συμπαγής αντιστοίχιση token στρατηγικής `_strategy_compact()` (LOCAL_FIRST / AIRGAPPED / CLOUD_BUDGET / AUTO_SWARM)· συμπίεση ετικέτας GPU `_compact_gpu_name()`· στήλες φυσικού πλάτους που εγγυώνται μηδενική οριζόντια περικοπή και μηδέν αποσιωπητικά.
+
+- **Περιορισμός Αποκριτικής Διάταξης** (`src/utils/console_dashboard/layout_builder.py`): η περιοχή κεφαλίδας HUD ρυθμίστηκε στο ακριβές ύψος περιεχομένου της και στα τέσσερα πάνελ σώματος δόθηκαν ντετερμινιστικοί διαχωρισμοί `ratio=1`, ώστε το πλήρες ταμπλό (Κεφαλίδα HUD + Πλέγμα 4 Πάνελ + Υποσέλιδο Console HMI) να χωρά σε τερματικό 26-28 γραμμών με μηδενικές κάθετες γραμμές κύλισης.
+
+- **Μοναδιαίες Δοκιμές HUD** (`tests/test_console_dashboard.py`): δημιουργία πλέγματος τριών στηλών, τίτλος πιλοτηρίου bright-cyan και ισχυρισμοί μηδενικής περικοπής (19 ερμητικές συνολικά).
+
+### Άλλαξαν
+
+- Συγχρονισμός έκδοσης σε `5.25.1` σε όλα τα 21 κανονικά αρχεία τεκμηρίωσης, σημεία εισόδου κώδικα, `docker-compose.yml` και `CITATION.cff`.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.25.1)· `pytest tests/test_console_dashboard.py -q` (19 ερμητικές)· `python talos.py --show-dashboard` (έξοδος 0, HUD 3 στηλών, χωρίς περικοπή)· `python src/utils/verify_dependency_map.py --ci` (0/0/0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
+---
+
 ## [v5.25.0] - 2026-10-04 -- Αυτόνομος Πολυ-Μοντέλος Αναμετάδοσης (Multi-LLM Relay), Μητρώο Αποφάσεων Εξηγήσιμης ΤΝ (XAI) & Δυναμική Διαστασιολόγηση Σμήνους (ISO/IEC 25010)
 
 ### Προστέθηκαν

@@ -4,7 +4,7 @@
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-10-04 (v5.25.0 -- Autonomous Multi-LLM Relay, XAI Decision Ledger & Dynamic Swarm Sizing)
+> **Last Updated:** 2026-10-04 (v5.25.1 -- Segmented 3-Column Cockpit HUD, Visual Contrast Optimization & Zero-Scroll Bounding)
 
 ---
 
@@ -346,8 +346,8 @@ src/core/hierarchical_evaluator.py
 
 ---
 
-> **Last Updated:** 2026-10-04 (v5.25.0 -- Autonomous Multi-LLM Relay, XAI Decision Ledger & Dynamic Swarm Sizing)
-> **Project Version:** v5.25.0
+> **Last Updated:** 2026-10-04 (v5.25.1 -- Segmented 3-Column Cockpit HUD, Visual Contrast Optimization & Zero-Scroll Bounding)
+> **Project Version:** v5.25.1
 > **Total .py modules under src/:** 115 (core 8 + services 12 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 6 + ingestion/sources 18 + search 3 + integration 3 + utils 23 + api 4 + prisma 8 + mcp_server 1)
 
 

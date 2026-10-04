@@ -10,19 +10,28 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.25.0
+Project: TALOS v5.25.1
 Description:
     Main entry point for the TALOS Scientific Terminal Dashboard (HMI).
     Provides a Rich-powered, two-column, four-panel interactive console
     (ISO/IEC 25010 compliant) built on src/utils/console_dashboard/:
-    a persistent telemetry HUD, a responsive Layout grid, scientific
-    trees, a multi-metric progress monitor, and terminal previewers.
-    A command palette (/scavenge, /audit, /fts, /config, /tree, /view,
-    /probe, /help, /quit) augments the retained 6-group hierarchical menu
-    covering 100% of the executable codebase: Configuration & Profiles,
+    a persistent segmented 3-column telemetry HUD, a responsive Layout grid,
+    scientific trees, a multi-metric progress monitor, and terminal
+    previewers. A command palette (/scavenge, /audit, /fts, /config, /tree,
+    /view, /probe, /help, /quit) augments the retained 6-group hierarchical
+    menu covering 100% of the executable codebase: Configuration & Profiles,
     Research Search & Ingestion, Advanced Analysis & Visualizations, DRL
     Agents/Daemons & GWO Swarm, Database Maintenance & Data Tools, and
     System Health, Diagnostics & CI/CD.
+
+    v5.25.1: Segmented 3-Column Cockpit HUD, Visual Contrast Optimization &
+    Zero-Scroll Bounding (ISO/IEC 25010) -- the persistent telemetry HUD is
+    rebuilt as a high-contrast three-column Rich table (Research Corpus,
+    Local Edge & Compute, Cognitive AI Mesh) under a bright-cyan cockpit
+    title, the compact strategy token mapping (LOCAL_FIRST / AIRGAPPED /
+    CLOUD_BUDGET / AUTO_SWARM) is introduced, and the responsive layout is
+    bounded so the full dashboard fits within a 26-28 line terminal with
+    zero truncation and zero vertical scrollbars.
 
     v5.24.0: Enterprise Data Vault, Proactive Token-Bucket Rate Limiter &
     Distributed JSONL Buffer Sync (ISO/IEC 25010) -- an automated SQLite

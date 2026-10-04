@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 """
 Module: layout_builder.py
-Project: TALOS v5.22.1
+Project: TALOS v5.25.1
 Description:
     Builds the responsive two-column, four-panel terminal grid for the TALOS
     Scientific Terminal Dashboard using rich.layout.Layout. The layout is
-    decomposed into a header HUD, a two-column body (left: Cognitive Mesh &
-    FinOps over PRISMA Swarm & Full-Text; right: Discovery & Harvesting over
-    System, Export & Diagnostics), and a footer command-palette bar. Panel
-    bodies are static descriptive content; the interactive dispatcher in
-    talos.py owns every state-changing route, keeping this module a pure
-    renderable factory (Constitution III, strict modularity).
+    decomposed into a compact header HUD (segmented 3-column cockpit grid),
+    a two-column body (left: Cognitive Mesh & FinOps over PRISMA Swarm &
+    Full-Text; right: Discovery & Harvesting over System, Export &
+    Diagnostics), and a footer command-palette bar. The header is sized to its
+    exact content height and the body panels share the remaining space
+    equally, guaranteeing the whole dashboard fits within a 26-28 line
+    terminal without vertical scrolling. Panel bodies are static descriptive
+    content; the interactive dispatcher in talos.py owns every state-changing
+    route, keeping this module a pure renderable factory (Constitution III,
+    strict modularity).
 
 Dependencies:
     - rich.layout.Layout: the named-region grid primitive.
@@ -25,7 +29,7 @@ from rich.panel import Panel
 from rich.text import Text
 
 
-# -- v5.22.1: central tool-count badges (single source of truth). The four
+# -- v5.25.1: central tool-count badges (single source of truth). The four
 # -- main-cockpit panels render these counts in their titles so the operator
 # -- sees the tool surface at a glance. Edit here once to update all panels. --
 _PANEL_TOOL_COUNTS = {
@@ -74,7 +78,7 @@ class DashboardLayoutBuilder:
 
         layout = Layout(name="root")
         layout.split(
-            Layout(name="header", size=7),
+            Layout(name="header", size=6),
             Layout(name="body"),
             Layout(name="footer", size=4),
         )
@@ -84,12 +88,12 @@ class DashboardLayoutBuilder:
             Layout(name="right", ratio=1),
         )
         layout["left"].split(
-            Layout(name="panel1"),
-            Layout(name="panel3"),
+            Layout(name="panel1", ratio=1),
+            Layout(name="panel3", ratio=1),
         )
         layout["right"].split(
-            Layout(name="panel2"),
-            Layout(name="panel4"),
+            Layout(name="panel2", ratio=1),
+            Layout(name="panel4", ratio=1),
         )
 
         layout["header"].update(header)
@@ -113,7 +117,7 @@ class DashboardLayoutBuilder:
         return Panel(
             Align.center(
                 Text(
-                    "TALOS v5.22.1 -- Scientific Terminal Dashboard",
+                    "TALOS v5.25.1 -- Scientific Terminal Dashboard",
                     style="bold bright_cyan",
                 )
             ),
