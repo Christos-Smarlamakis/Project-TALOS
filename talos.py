@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.22.1
+Project: TALOS v5.23.0
 Description:
     Main entry point for the TALOS Scientific Terminal Dashboard (HMI).
     Provides a Rich-powered, two-column, four-panel interactive console
@@ -18,11 +18,22 @@ Description:
     a persistent telemetry HUD, a responsive Layout grid, scientific
     trees, a multi-metric progress monitor, and terminal previewers.
     A command palette (/scavenge, /audit, /fts, /config, /tree, /view,
-    /help, /quit) augments the retained 6-group hierarchical menu covering
-    100% of the executable codebase: Configuration & Profiles, Research
-    Search & Ingestion, Advanced Analysis & Visualizations, DRL
+    /probe, /help, /quit) augments the retained 6-group hierarchical menu
+    covering 100% of the executable codebase: Configuration & Profiles,
+    Research Search & Ingestion, Advanced Analysis & Visualizations, DRL
     Agents/Daemons & GWO Swarm, Database Maintenance & Data Tools, and
     System Health, Diagnostics & CI/CD.
+
+    v5.23.0: Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing
+    API Mesh & Access-Tier Engine -- RichSubmenuRenderer enforces a strict
+    three-tier layout (header panel, column-major two-column body grid, and a
+    contextual navigation footer) with a single type-safe prompt_choice(),
+    eliminating every duplicate questionary list across primary and nested
+    menus; a six-state SelfHealingCircuitBreaker with exponential backoff and
+    an ApiHealthProbeEngine protect the router; the AccessTier taxonomy
+    (LOCAL_NO_KEY / CLOUD_ZERO_CONFIG_FREE / CLOUD_FREE_TIER_WITH_KEY /
+    CLOUD_PAID_API) drives zero-config failover; and --probe-apis / /probe
+    surface live mesh telemetry in the CLI and HUD.
 
     v5.22.1: Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout
     Terminology Formalization -- a unified RichSubmenuRenderer upgrades the
@@ -859,19 +870,29 @@ def author_tools_menu(python_exe):
     """Author-centric analysis tools: profiler, trajectory, and full report."""
     os.system('cls' if os.name == 'nt' else 'clear')
     sys.stdout.flush()
-    console.print(Panel("[bold cyan]Author & Researcher Tools[/bold cyan]\n[dim]Scientometric profiling and ORCID career trajectory mapping[/dim]", style="cyan", border_style="cyan"))
-    choice = safe_select("Select author analysis tool:", choices=[
-        "1. Author Profiler (Publication History)",
-        "2. Author Trajectory Analyzer (ORCID Career Flow)",
-        "3. Full Report (Profiler -> Trajectory)",
-        "4. Back / Return to Previous Menu"
-    ])
-    if not choice or "Back" in choice: return
-    if choice.startswith("1.") or choice.startswith("2."):
+    from src.utils.console_dashboard import RichSubmenuRenderer
+    renderer = RichSubmenuRenderer(
+        "Author & Researcher Tools",
+        "Scientometric profiling and ORCID career trajectory mapping",
+        border_style="cyan",
+        domain="Bibliometrics & Intelligence Domain",
+    )
+    console.print(renderer.build(
+        entries=[
+            ("Author Profiler (Publication History)", None),
+            ("Author Trajectory Analyzer (ORCID Career Flow)", None),
+            ("Full Report (Profiler -> Trajectory)", None),
+        ],
+    ))
+    choice = renderer.prompt_choice((1, 3), default="01")
+    if choice in ("00", "q"):
+        return
+    num = int(choice)
+    if num == 1 or num == 2:
         aid = questionary.text("Enter author name or ORCID iD:", style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask()
-        scr = "author_profiler.py" if "1." in choice else "author_trajectory_analyzer.py"
+        scr = "author_profiler.py" if num == 1 else "author_trajectory_analyzer.py"
         if aid: run_script(scr, python_exe, args=[aid.strip()])
-    elif choice.startswith("3."):
+    elif num == 3:
         an = questionary.text("Enter author name:", style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask()
         if an:
             result = run_script("author_profiler.py", python_exe, args=an.strip().split(), capture=True)
@@ -883,60 +904,48 @@ def database_data_menu(python_exe):
     """Database maintenance, embeddings, scoring and enrichment sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
     sys.stdout.flush()
-    from src.utils.console_dashboard import render_submenu
-    console.print(render_submenu(
+    from src.utils.console_dashboard import RichSubmenuRenderer
+    renderer = RichSubmenuRenderer(
         "Database Maintenance & Data Tools",
         "Database optimization, enrichment, and persistent storage utilities",
+        border_style="cyan",
+        domain="Database & Persistent Storage Domain",
+    )
+    console.print(renderer.build(
         entries=[
-            "Integrity & Scoring",
             ("Database Health & VACUUM Optimizer", None),
             ("Database Schema Migration", None),
             ("Recalculate Overall Scores", None),
             ("Re-evaluate Database with LLM", None),
-            "Embeddings & Enrichment",
             ("Batch Vector Embedding Generation", None),
             ("Vector Embedding Schema Migration", None),
             ("Metadata Enrichment", None),
             ("Unpaywall Data Enricher", None),
-            "Storage & Export",
             ("Zotero Cloud Connector", None),
             ("View Recent Evaluation History", None),
             ("Export Curated Papers to BibTeX / LaTeX (.bib)", None),
-            "PRISMA & PDF Tools",
             ("Harvest Open Access Full-Text PDFs (12 Cascading Sources)", None),
         ],
-        border_style="cyan",
+        context_shortcuts="/fts /audit",
     ))
-    choice = safe_select("Select database utility:", choices=[
-        "1. Database Health & VACUUM Optimizer",
-        "2. Database Schema Migration",
-        "3. Recalculate Overall Scores",
-        "4. Re-evaluate Database with LLM",
-        "5. Batch Vector Embedding Generation",
-        "6. Vector Embedding Schema Migration",
-        "7. Metadata Enrichment",
-        "8. Unpaywall Data Enricher",
-        "9. Zotero Cloud Connector",
-        "10. View Recent Evaluation History",
-        "11. Export Curated Papers to BibTeX / LaTeX (.bib)",
-        "12. Harvest Open Access Full-Text PDFs (12 Cascading Sources)",
-        "13. Back / Return to Main Menu"
-    ])
-    if not choice or "Back" in choice: return
-    if choice.startswith("1."): run_script("db_stats.py", python_exe, args=["--optimize"])
-    elif choice.startswith("2."): run_script("migrate_database_schema.py", python_exe)
-    elif choice.startswith("3."): run_script("recalculate_scores.py", python_exe)
-    elif choice.startswith("4."): run_script("reevaluate_database.py", python_exe)
-    elif choice.startswith("5."): run_script("embedding_generator.py", python_exe)
-    elif choice.startswith("6."): run_script("db_embedding_upgrade.py", python_exe)
-    elif choice.startswith("7."): run_script("metadata_enricher.py", python_exe)
-    elif choice.startswith("8."): run_script("data_enricher.py", python_exe)
-    elif choice.startswith("9."): run_script("zotero_connector.py", python_exe)
-    elif choice.startswith("10."): _show_evaluation_history()
-    elif choice.startswith("11."):
+    choice = renderer.prompt_choice((1, 12), default="01")
+    if choice in ("00", "q"):
+        return
+    num = int(choice)
+    if num == 1: run_script("db_stats.py", python_exe, args=["--optimize"])
+    elif num == 2: run_script("migrate_database_schema.py", python_exe)
+    elif num == 3: run_script("recalculate_scores.py", python_exe)
+    elif num == 4: run_script("reevaluate_database.py", python_exe)
+    elif num == 5: run_script("embedding_generator.py", python_exe)
+    elif num == 6: run_script("db_embedding_upgrade.py", python_exe)
+    elif num == 7: run_script("metadata_enricher.py", python_exe)
+    elif num == 8: run_script("data_enricher.py", python_exe)
+    elif num == 9: run_script("zotero_connector.py", python_exe)
+    elif num == 10: _show_evaluation_history()
+    elif num == 11:
         from src.utils.bibtex_exporter import BibTeXExporter
         BibTeXExporter().export_and_render()
-    elif choice.startswith("12."):
+    elif num == 12:
         try:
             from src.ingestion.pdf_harvester.harvester import AcademicPDFHarvester
             summary = AcademicPDFHarvester().harvest_candidates(min_relevance=7.0)
@@ -949,27 +958,38 @@ def system_health_menu(python_exe):
     """System health, diagnostics, chaos engineering and CI/CD sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
     sys.stdout.flush()
-    console.print(Panel("[bold cyan]System Health, Diagnostics & CI/CD[/bold cyan]\n[dim]Stress testing, dependency verification, and test suites[/dim]", style="cyan", border_style="cyan"))
+    from src.utils.console_dashboard import RichSubmenuRenderer
+    renderer = RichSubmenuRenderer(
+        "System Health, Diagnostics & CI/CD",
+        "Stress testing, dependency verification, and test suites",
+        border_style="cyan",
+        domain="System Health & Export Domain",
+    )
+    console.print(renderer.build(
+        entries=[
+            ("System Health & Diagnostic Analyzer", None),
+            ("Code Integrity Check", None),
+            ("API Backend Health Check", None),
+            ("Dependency Map & Import Audit", None),
+            ("DRL Agent Status", None),
+            ("Autonomous Red Tester (Chaos Engineering)", None),
+            ("18-Language Documentation Builder", None),
+            ("System Capabilities Master Viewer", None),
+        ],
+        context_shortcuts="/probe",
+    ))
     project_root = os.path.dirname(os.path.abspath(__file__))
-    choice = safe_select("Select health/CI operation:", choices=[
-        "1. System Health & Diagnostic Analyzer",
-        "2. Code Integrity Check",
-        "3. API Backend Health Check",
-        "4. Dependency Map & Import Audit",
-        "5. DRL Agent Status",
-        "6. Autonomous Red Tester (Chaos Engineering)",
-        "7. 18-Language Documentation Builder",
-        "8. System Capabilities Master Viewer",
-        "9. Back / Return to Main Menu"
-    ])
-    if not choice or "Back" in choice: return
-    if choice.startswith("1."):
+    choice = renderer.prompt_choice((1, 8), default="01")
+    if choice in ("00", "q"):
+        return
+    num = int(choice)
+    if num == 1:
         try:
             from src.utils.system_diagnostics import SystemDiagnosticsEngine
             SystemDiagnosticsEngine().run_and_render()
         except Exception as e:
             console.print(f"[red]Error running System Diagnostics Analyzer: {e}[/red]")
-    elif choice.startswith("2."):
+    elif num == 2:
         tp = os.path.join(project_root, 'tests', 'test_system_integrity.py')
         if not os.path.exists(tp):
             tp = os.path.join(project_root, 'test_system_integrity.py')  # legacy fallback
@@ -981,18 +1001,18 @@ def system_health_menu(python_exe):
                 logger.warning("System Integrity verification exited with code %s.", r.returncode)
         else:
             logger.warning("System Integrity verification not found at tests/test_system_integrity.py")
-    elif choice.startswith("3."):
+    elif num == 3:
         _probe_api_backend()
-    elif choice.startswith("4."):
+    elif num == 4:
         mode = safe_select("Dependency audit mode:", choices=[
             "--ci (CI exit-code-only)", "--all (full report)", "Back"
         ])
         if mode is not None and "Back" not in mode:
             flag = "--ci" if "--ci" in mode else "--all"
             run_script("verify_dependency_map.py", python_exe, args=[flag])
-    elif choice.startswith("5."):
+    elif num == 5:
         _show_drl_status(project_root)
-    elif choice.startswith("6."):
+    elif num == 6:
         console.print(_build_info_panel(
             "Autonomous Red Tester (RL-Driven Chaos Engineering)",
             "Stress-tests TALOS system components using a Non-Stationary\n"
@@ -1013,7 +1033,7 @@ def system_health_menu(python_exe):
             run_red_tester(cycles=cycles)
         except Exception as e:
             console.print(f"[red]Error running Autonomous Red Tester: {e}[/red]")
-    elif choice.startswith("7."):
+    elif num == 7:
         console.print(_build_info_panel(
             "Codebase Documentation Generator (18 Languages)",
             "Uses LOCAL Ollama -- zero cloud cost, full privacy.\n"
@@ -1023,7 +1043,7 @@ def system_health_menu(python_exe):
         ))
         if questionary.confirm("Launch documentation generator?", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask():
             run_script("generate_docs.py", python_exe)
-    elif choice.startswith("8."):
+    elif num == 8:
         _open_capabilities_viewer()
     console.print(); safe_pause("Press Enter...")
 
@@ -1064,14 +1084,25 @@ def api_keys_menu(python_exe):
                 s = "[green][SET][/green]" if v.strip() else "[red][NOT SET][/red]"
                 keys_table.add_row(k, s, f"[magenta]{cat}[/magenta] | {d}")
         console.print(keys_table)
-        console.print("\n[1] Edit key  [2] API Diagnostics  [3] Back / Return to Previous Menu")
-        c = safe_select("Select API key operation:", [
-            "1. Edit a key",
-            "2. API Diagnostics",
-            "3. Back / Return to Previous Menu"
-        ])
-        if not c or "Back" in c: return
-        if c.startswith("1"):
+        from src.utils.console_dashboard import RichSubmenuRenderer
+        renderer = RichSubmenuRenderer(
+            "API Key Operations",
+            "Edit credentials or run provider diagnostics",
+            border_style="cyan",
+            domain="Access, Diagnostics & Tooling Domain",
+        )
+        console.print(renderer.build(
+            entries=[
+                ("Edit a key", None),
+                ("API Diagnostics", None),
+            ],
+            context_shortcuts="/probe",
+        ))
+        c = renderer.prompt_choice((1, 2), default="01")
+        if c in ("00", "q"):
+            return
+        num = int(c)
+        if num == 1:
             flat = []
             for cat, keys in ALL_KEYS:
                 flat.append(f"--- {cat} ---")
@@ -1091,7 +1122,7 @@ def api_keys_menu(python_exe):
                         logger.info("[%s] updated.", k)
                     except Exception as e:
                         logger.error("Error: %s", e)
-        elif c.startswith("2"):
+        elif num == 2:
             tp = _resolve_script_path("api_health_check.py")
             if os.path.exists(tp): subprocess.run([python_exe, tp], check=False)
         safe_pause("\nPress Enter...")
@@ -1132,76 +1163,61 @@ def profile_settings_menu(python_exe):
     while True:
         os.system('cls' if os.name == 'nt' else 'clear')
         sys.stdout.flush()
-        from src.utils.console_dashboard import render_submenu
+        from src.utils.console_dashboard import RichSubmenuRenderer
         strategy_key = _current_strategy_key()
-        strategy_entry = f"3. AI Execution Strategy Switcher (Current: {strategy_key})"
-        console.print(render_submenu(
+        renderer = RichSubmenuRenderer(
             "Configuration & Profiles",
             "Manage research profiles, API keys, and model parameters",
+            border_style="cyan",
+            domain="Configuration & Profiles Domain",
+        )
+        console.print(renderer.build(
             entries=[
-                "Profiles & Research Focus",
                 ("Research Setup Wizard (Full Onboarding & Reconfiguration)", None),
                 ("Manage Profiles", None),
                 ("AI Execution Strategy Switcher", "Current: " + strategy_key),
                 ("Research Pivot Wizard", None),
                 ("Research Goal (Query Translator / Cognitive Query Compiler)", None),
-                "AI Models, Discovery & FinOps",
                 ("AI Model Management (2D Matrix)", None),
                 ("Model Discovery (Quality Scoring)", None),
                 ("Hardware-Aware Model Advisor (VRAM Budget & SOTA)", None),
                 ("Discover Top LLMs & Live Benchmarks", None),
                 ("Cognitive FinOps & Strategy Configurator (Auto-Pilot)", None),
                 ("Model Provisioning CLI", None),
-                "Access, Diagnostics & Tooling",
                 ("API Keys Management", None),
                 ("API Key Diagnostics", None),
                 ("Create Desktop Shortcut (1-Click Launcher)", None),
                 ("Autonomous Model Scout & Market Intelligence (MD/HTML)", None),
             ],
-            border_style="cyan",
+            context_shortcuts="/scout /config",
         ))
-        c = safe_select("Select profile setting:", choices=[
-            "1. Research Setup Wizard (Full Onboarding & Reconfiguration)",
-            "2. Manage Profiles",
-            strategy_entry,
-            "4. Research Pivot Wizard",
-            "5. Research Goal (Query Translator / Cognitive Query Compiler)",
-            "6. AI Model Management (2D Matrix)",
-            "7. Model Discovery (Quality Scoring)",
-            "8. Hardware-Aware Model Advisor (VRAM Budget & SOTA)",
-            "9. Discover Top LLMs & Live Benchmarks",
-            "10. Cognitive FinOps & Strategy Configurator (Auto-Pilot)",
-            "11. Model Provisioning CLI",
-            "12. API Keys Management",
-            "13. API Key Diagnostics",
-            "14. Create Desktop Shortcut (1-Click Launcher)",
-            "15. Autonomous Model Scout & Market Intelligence (MD/HTML)",
-            "16. Back / Return to Main Menu"
-        ])
-        if not c or "Back" in c: return
-        if c == "1. Research Setup Wizard (Full Onboarding & Reconfiguration)": run_script("research_setup_wizard.py", python_exe)
-        elif c == "2. Manage Profiles": run_script("profile_manager.py", python_exe)
-        elif "AI Execution Strategy Switcher" in c: _launch_strategy_selector()
-        elif c == "4. Research Pivot Wizard": run_script("research_pivot.py", python_exe)
-        elif c == "5. Research Goal (Query Translator / Cognitive Query Compiler)": run_script("query_translator.py", python_exe)
-        elif c == "6. AI Model Management (2D Matrix)":
+        c = renderer.prompt_choice((1, 15), default="01")
+        if c in ("00", "q"):
+            return
+        num = int(c)
+        if num == 1: run_script("research_setup_wizard.py", python_exe)
+        elif num == 2: run_script("profile_manager.py", python_exe)
+        elif num == 3: _launch_strategy_selector()
+        elif num == 4: run_script("research_pivot.py", python_exe)
+        elif num == 5: run_script("query_translator.py", python_exe)
+        elif num == 6:
             console.print("\n[bold bright_cyan]Launching AI Model Manager...[/bold bright_cyan]\n")
             try:
                 from src.ai.llm.model_manager import main as mm_main
                 mm_main()
             except Exception as e:
                 console.print(f"[red]Error launching Model Manager: {e}[/red]")
-        elif c == "7. Model Discovery (Quality Scoring)": _run_model_discovery()
-        elif c == "8. Hardware-Aware Model Advisor (VRAM Budget & SOTA)": _run_hardware_advisor()
-        elif c == "9. Discover Top LLMs & Live Benchmarks": _run_discover_llms()
-        elif "Cognitive FinOps" in c: _run_ai_strategy_configurator()
-        elif "Autonomous Model Scout" in c or "Autonomous Model Scavenger" in c: _run_scavenge_models()
-        elif c == "11. Model Provisioning CLI": run_script("model_provisioner.py", python_exe)
-        elif c == "12. API Keys Management": api_keys_menu(python_exe)
-        elif c == "13. API Key Diagnostics": run_script("api_health_check.py", python_exe)
-        elif c == "14. Create Desktop Shortcut (1-Click Launcher)":
+        elif num == 7: _run_model_discovery()
+        elif num == 8: _run_hardware_advisor()
+        elif num == 9: _run_discover_llms()
+        elif num == 10: _run_ai_strategy_configurator()
+        elif num == 11: run_script("model_provisioner.py", python_exe)
+        elif num == 12: api_keys_menu(python_exe)
+        elif num == 13: run_script("api_health_check.py", python_exe)
+        elif num == 14:
             from src.utils.desktop_shortcut import create_desktop_shortcut
             create_desktop_shortcut()
+        elif num == 15: _run_scavenge_models()
         safe_pause("\nPress Enter...")
 
 # -- v5.9.15: Silent Fast Boot --
@@ -2123,44 +2139,33 @@ def search_ingestion_menu(python_exe):
     """Research search and ingestion sub-menu (Universal Search Hub)."""
     os.system('cls' if os.name == 'nt' else 'clear')
     sys.stdout.flush()
-    from src.utils.console_dashboard import render_submenu
-    console.print(render_submenu(
+    from src.utils.console_dashboard import RichSubmenuRenderer
+    renderer = RichSubmenuRenderer(
         "Universal Search Hub",
         "Daily harvesting, deep archives, citation graphs, dense retrieval, and reproducible code",
+        border_style="cyan",
+        domain="Discovery & Harvesting Mesh Domain",
+    )
+    console.print(renderer.build(
         entries=[
-            "Discovery Pipelines",
             ("Daily Concurrent Harvester (18 APIs in Parallel)", None),
             ("Historical Deep Window Search (Days Window)", None),
             ("Autonomous Citation Snowballing Search (Graph Traversal)", None),
-            "Retrieval & Code",
             ("Neural Vector Semantic Search (Local nomic-embed-text)", None),
             ("Reproducible Code-First Search (GitHub / Benchmark Linked)", None),
             ("PRISMA-ScR Swarm Declarative Pipeline (Stanford DSPy)", None),
-            "Literature & Full-Text",
             ("Grey Literature Miner", None),
             ("Zotero Cloud Sync", None),
             ("Interactive Dashboard (Flask)", None),
             ("SQLite FTS5 Full-Text Search (Search Inside PDF Bodies)", None),
         ],
-        border_style="cyan",
+        context_shortcuts="/fts /scout",
     ))
-    choice = safe_select("Select search operation:", choices=[
-        "1. Daily Concurrent Harvester (18 APIs in Parallel)",
-        "2. Historical Deep Window Search (Days Window)",
-        "3. Autonomous Citation Snowballing Search (Graph Traversal)",
-        "4. Neural Vector Semantic Search (Local nomic-embed-text)",
-        "5. Reproducible Code-First Search (GitHub / Benchmark Linked)",
-        "6. PRISMA-ScR Swarm Declarative Pipeline (Stanford DSPy)",
-        questionary.Separator(),
-        "7. Grey Literature Miner",
-        "8. Zotero Cloud Sync",
-        "9. Interactive Dashboard (Flask)",
-        "10. SQLite FTS5 Full-Text Search (Search Inside PDF Bodies)",
-        questionary.Separator(),
-        "11. Back / Return to Main Menu"
-    ])
-    if not choice or "Back" in choice: return
-    if choice.startswith("1."):
+    choice = renderer.prompt_choice((1, 10), default="01")
+    if choice in ("00", "q"):
+        return
+    num = int(choice)
+    if num == 1:
         selected = prompt_source_selection()
         if selected is None:
             console.print("[dim]Source selection cancelled.[/dim]")
@@ -2168,7 +2173,7 @@ def search_ingestion_menu(python_exe):
             console.print("[yellow]No sources selected.[/yellow]")
         else:
             run_script("daily_search.py", python_exe, args=["--sources"] + selected)
-    elif choice.startswith("2."):
+    elif num == 2:
         if questionary.confirm("This may take a long time. Proceed?", default=False, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_CONFIRM).ask():
             selected = prompt_source_selection()
             if selected is None:
@@ -2177,7 +2182,7 @@ def search_ingestion_menu(python_exe):
                 console.print("[yellow]No sources selected.[/yellow]")
             else:
                 run_script("historic_search.py", python_exe, args=["--sources"] + selected)
-    elif choice.startswith("3."):
+    elif num == 3:
         seed = questionary.text("Seed paper (DOI, database ID, or title):", style=TALOS_QUESTIONARY_STYLE).ask()
         if seed and seed.strip():
             try:
@@ -2186,7 +2191,7 @@ def search_ingestion_menu(python_exe):
             except Exception as e:
                 console.print(f"[red]Citation snowballing error: {e}[/red]")
         safe_pause()
-    elif choice.startswith("4."):
+    elif num == 4:
         query = questionary.text("Research query (semantic):", style=TALOS_QUESTIONARY_STYLE).ask()
         if query and query.strip():
             try:
@@ -2195,7 +2200,7 @@ def search_ingestion_menu(python_exe):
             except Exception as e:
                 console.print(f"[red]Neural vector search error: {e}[/red]")
         safe_pause()
-    elif choice.startswith("5."):
+    elif num == 5:
         query = questionary.text("Research query (code-first):", style=TALOS_QUESTIONARY_STYLE).ask()
         if query and query.strip():
             try:
@@ -2204,7 +2209,7 @@ def search_ingestion_menu(python_exe):
             except Exception as e:
                 console.print(f"[red]Code-first search error: {e}[/red]")
         safe_pause()
-    elif choice.startswith("6."):
+    elif num == 6:
         mode_choice = safe_select("Select Screening Mode:", choices=[
             "1. Fast Single Screener",
             "2. Rigorous Multi-Agent Review Swarm (3-Agent Consensus & Cohen's Kappa)",
@@ -2219,13 +2224,13 @@ def search_ingestion_menu(python_exe):
         except Exception as e:
             console.print(f"[red]PRISMA pipeline error: {e}[/red]")
         safe_pause()
-    elif choice.startswith("7."):
+    elif num == 7:
         run_script("grey_literature_miner.py", python_exe)
-    elif choice.startswith("8."):
+    elif num == 8:
         run_script("zotero_connector.py", python_exe)
-    elif choice.startswith("9."):
+    elif num == 9:
         run_script("interactive_dashboard.py", python_exe)
-    elif choice.startswith("10."):
+    elif num == 10:
         query = questionary.text("Full-text query (SQLite FTS5):", style=TALOS_QUESTIONARY_STYLE).ask()
         if query and query.strip():
             try:
@@ -2240,70 +2245,55 @@ def analysis_visualization_menu(python_exe):
     """Advanced analysis and visualization sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
     sys.stdout.flush()
-    from src.utils.console_dashboard import render_submenu
-    console.print(render_submenu(
+    from src.utils.console_dashboard import RichSubmenuRenderer
+    renderer = RichSubmenuRenderer(
         "Advanced Analysis & Visualizations",
         "Explore knowledge constellations, citation graphs, and bibliometrics",
+        border_style="cyan",
+        domain="Advanced Analysis & PRISMA Domain",
+    )
+    console.print(renderer.build(
         entries=[
-            "Visualization & Graphs",
             ("3D Knowledge Constellation Visualizer", None),
             ("Graphify AST Knowledge Graph", None),
             ("Dynamic D3 Architecture Graph", None),
             ("OPTICA Scientific Visualizations", None),
             ("Knowledge Path Generator", None),
-            "Bibliometrics & Intelligence",
             ("Citation Network Analyzer", None),
             ("Strategic Reading Recommender", None),
             ("Author Profiler & ORCID Trajectory", None),
             ("Scientometrics & Trend Analyzer", None),
             ("Architecture Intelligence Report", None),
-            "Reports & Export",
             ("Baseline Report (Standard)", None),
             ("Baseline Report (Academic -- 600 DPI)", None),
             ("Academic Export (BibTeX & LaTeX Tables)", None),
-            "PRISMA Engine",
             ("PRISMA-ScR Declarative Synthesis Pipeline (Stanford DSPy Engine)", None),
             ("PRISMA Scientific Quality Appraisal & 2D Quadrant Analysis (Kitchenham 2007)", None),
         ],
-        border_style="cyan",
+        context_shortcuts="/tree /audit",
     ))
     project_root = os.path.dirname(os.path.abspath(__file__))
     ap = get_active_profile_name()
     pdb = ProfileManager().get_active_db_path()
     rdb = os.path.join(project_root, 'data', 'talos_research.db')
     tdb = pdb if os.path.exists(pdb) else rdb
-    choice = safe_select("Select analysis tool:", choices=[
-        "1. 3D Knowledge Constellation Visualizer",
-        "2. Graphify AST Knowledge Graph",
-        "3. Dynamic D3 Architecture Graph",
-        "4. OPTICA Scientific Visualizations",
-        "5. Knowledge Path Generator",
-        "6. Citation Network Analyzer",
-        "7. Strategic Reading Recommender",
-        "8. Author Profiler & ORCID Trajectory",
-        "9. Scientometrics & Trend Analyzer",
-        "10. Architecture Intelligence Report",
-        "11. Baseline Report (Standard)",
-        "12. Baseline Report (Academic -- 600 DPI)",
-        "13. Academic Export (BibTeX & LaTeX Tables)",
-        "14. PRISMA-ScR Declarative Synthesis Pipeline (Stanford DSPy Engine)",
-        "15. PRISMA Scientific Quality Appraisal & 2D Quadrant Analysis (Kitchenham 2007)",
-        "16. Back / Return to Main Menu"
-    ])
-    if not choice or "Back" in choice: return
-    if choice.startswith("1."): _launch_visualizer()
-    elif choice.startswith("2."): run_script("graphify_adapter.py", python_exe)
-    elif choice.startswith("3."): _open_d3_architecture_graph(python_exe, project_root)
-    elif choice.startswith("4."): _generate_optica_plots()
-    elif choice.startswith("5."): run_script("knowledge_path_generator.py", python_exe)
-    elif choice.startswith("6."): run_script("citation_analyzer.py", python_exe)
-    elif choice.startswith("7."): run_script("recommender.py", python_exe)
-    elif choice.startswith("8."): author_tools_menu(python_exe)
-    elif choice.startswith("9."): run_script("trend_analyzer.py", python_exe, args=[tdb])
-    elif choice.startswith("10."):
+    choice = renderer.prompt_choice((1, 15), default="01")
+    if choice in ("00", "q"):
+        return
+    num = int(choice)
+    if num == 1: _launch_visualizer()
+    elif num == 2: run_script("graphify_adapter.py", python_exe)
+    elif num == 3: _open_d3_architecture_graph(python_exe, project_root)
+    elif num == 4: _generate_optica_plots()
+    elif num == 5: run_script("knowledge_path_generator.py", python_exe)
+    elif num == 6: run_script("citation_analyzer.py", python_exe)
+    elif num == 7: run_script("recommender.py", python_exe)
+    elif num == 8: author_tools_menu(python_exe)
+    elif num == 9: run_script("trend_analyzer.py", python_exe, args=[tdb])
+    elif num == 10:
         if questionary.confirm("Start now? (may take 60s)", default=True, style=TALOS_QUESTIONARY_STYLE, instruction=NAV_SELECT).ask():
             run_script("architecture_intelligence_report.py", python_exe)
-    elif choice.startswith("11."):
+    elif num == 11:
         console.print(_build_info_panel(
             "Baseline Report (Standard)",
             "Generates a standard baseline report with score distribution,\n"
@@ -2311,7 +2301,7 @@ def analysis_visualization_menu(python_exe):
             border_style="green",
         ))
         run_script("generate_baseline_report.py", python_exe)
-    elif choice.startswith("12."):
+    elif num == 12:
         console.print(_build_info_panel(
             "Baseline Report (Academic -- 600 DPI)",
             "Generates a publication-quality academic baseline report\n"
@@ -2320,7 +2310,7 @@ def analysis_visualization_menu(python_exe):
             border_style="yellow",
         ))
         run_script("generate_baseline_report.py", python_exe, args=["--academic"])
-    elif choice.startswith("13."):
+    elif num == 13:
         console.print(_build_info_panel(
             "Academic Export (BibTeX & LaTeX Tables)",
             "Exports the elite literature set (overall_score >= 7) as\n"
@@ -2329,7 +2319,7 @@ def analysis_visualization_menu(python_exe):
             border_style="green",
         ))
         run_script("academic_export.py", python_exe, args=["--elite", "--bib", "--tex"])
-    elif choice.startswith("14."):
+    elif num == 14:
         console.print(_build_info_panel(
             "PRISMA-ScR Declarative Synthesis Pipeline (Stanford DSPy Engine)",
             "Runs the 4-phase PRISMA 2020 scoping review pipeline (Identification,\n"
@@ -2352,7 +2342,7 @@ def analysis_visualization_menu(python_exe):
         except Exception as e:
             console.print(f"[red]PRISMA pipeline error: {e}[/red]")
         safe_pause()
-    elif choice.startswith("15."):
+    elif num == 15:
         console.print(_build_info_panel(
             "PRISMA Scientific Quality Appraisal & 2D Quadrant Analysis (Kitchenham 2007)",
             "Runs the standardized Kitchenham et al. (2007) six-question quality\n"
@@ -2429,48 +2419,39 @@ def drl_gwo_menu(python_exe):
     """DRL agents, daemons and GWO swarm sub-menu."""
     os.system('cls' if os.name == 'nt' else 'clear')
     sys.stdout.flush()
-    from src.utils.console_dashboard import render_submenu
-    console.print(render_submenu(
+    from src.utils.console_dashboard import RichSubmenuRenderer
+    renderer = RichSubmenuRenderer(
         "DRL Agents, Daemons & GWO Swarm",
         "Autonomous foraging, reinforcement learning, and swarm optimization",
+        border_style="cyan",
+        domain="DRL Agents & GWO Swarm Domain",
+    )
+    console.print(renderer.build(
         entries=[
-            "Autonomous Service",
             ("24/7 Autonomous Daemon (new console)", None),
             ("Live DRL Agent (API Fetching)", None),
             ("Configure Daemon Autostart", None),
-            "Reinforcement Learning",
             ("Train DRL Agent (Simulated)", None),
             ("Offline DRL Training (Real DB Scores)", None),
-            "GWO Swarm",
             ("GWO Hyperparameter Tuner", None),
             ("GWO LLM Router Reward Shaper", None),
             ("GWO 3D Swarm Live Dashboard", None),
-            "Status",
             ("DRL Agent Status", None),
         ],
-        border_style="cyan",
+        context_shortcuts="/scout",
     ))
     project_root = os.path.dirname(os.path.abspath(__file__))
-    choice = safe_select("Select DRL/GWO operation:", choices=[
-        "1. 24/7 Autonomous Daemon (new console)",
-        "2. Live DRL Agent (API Fetching)",
-        "3. Configure Daemon Autostart",
-        "4. Train DRL Agent (Simulated)",
-        "5. Offline DRL Training (Real DB Scores)",
-        "6. GWO Hyperparameter Tuner",
-        "7. GWO LLM Router Reward Shaper",
-        "8. GWO 3D Swarm Live Dashboard",
-        "9. DRL Agent Status",
-        "10. Back / Return to Main Menu"
-    ])
-    if not choice or "Back" in choice: return
-    if choice.startswith("1."):
+    choice = renderer.prompt_choice((1, 9), default="01")
+    if choice in ("00", "q"):
+        return
+    num = int(choice)
+    if num == 1:
         _launch_daemon_in_new_console(project_root, python_exe)
-    elif choice.startswith("2."):
+    elif num == 2:
         run_script("talos_live_agent.py", python_exe, args=["--verbose"])
-    elif choice.startswith("3."):
+    elif num == 3:
         _configure_daemon_autostart(project_root)
-    elif choice.startswith("4."):
+    elif num == 4:
         episodes = questionary.text(
             "Number of episodes:", default="500",
             validate=lambda t: t.isdigit() and int(t) > 0,
@@ -2478,7 +2459,7 @@ def drl_gwo_menu(python_exe):
         ).ask()
         if episodes:
             run_script("drl_trainer.py", python_exe, args=["--episodes", episodes])
-    elif choice.startswith("5."):
+    elif num == 5:
         episodes = questionary.text(
             "Number of episodes:", default="500",
             validate=lambda t: t.isdigit() and int(t) > 0,
@@ -2491,7 +2472,7 @@ def drl_gwo_menu(python_exe):
         ).ask()
         if episodes and iters:
             run_script("train_agent.py", python_exe, args=["--episodes", episodes, "--iters", iters])
-    elif choice.startswith("6."):
+    elif num == 6:
         wolves = questionary.text(
             "Number of wolves:", default="12",
             validate=lambda t: t.isdigit() and int(t) > 0,
@@ -2508,7 +2489,7 @@ def drl_gwo_menu(python_exe):
             if live:
                 args.append("--live")
             run_script("gwo_foraging_hyperparameter_tuner.py", python_exe, args=args)
-    elif choice.startswith("7."):
+    elif num == 7:
         wolves = questionary.text(
             "Number of wolves:", default="12",
             validate=lambda t: t.isdigit() and int(t) > 0,
@@ -2521,9 +2502,9 @@ def drl_gwo_menu(python_exe):
         ).ask()
         if wolves and iterations:
             run_script("gwo_llm_router_reward_shaper.py", python_exe, args=["--wolves", wolves, "--iterations", iterations])
-    elif choice.startswith("8."):
+    elif num == 8:
         _launch_gwo_dashboard(python_exe)
-    elif choice.startswith("9."):
+    elif num == 9:
         _show_drl_status(project_root)
 
 
@@ -2743,6 +2724,54 @@ def _open_local_pdf(paper_id):
 # -- v5.22.0: Command Palette Dispatcher & Scientific Console Previewers --
 # ---------------------------------------------------------------------------
 
+def _run_api_probe():
+    """Probe all sixteen mesh providers and render a Rich diagnostic table.
+
+    Runs the ApiHealthProbeEngine concurrently, renders a provider health
+    table with latency, HTTP status, and access tier, and prints an aggregate
+    summary line. Used by the ``--probe-apis`` CLI flag and the ``/probe``
+    command-palette shortcut.
+    """
+    from src.services.cognitive_mesh.self_healing import ApiHealthProbeEngine
+    report = ApiHealthProbeEngine().probe_all()
+    table = Table(
+        title="[bold bright_cyan]TALOS API Mesh Health Probe[/bold bright_cyan]",
+        box=box.ROUNDED,
+        border_style="cyan",
+        header_style="bold bright_cyan",
+    )
+    table.add_column("Provider", style="cyan")
+    table.add_column("State", style="yellow")
+    table.add_column("Latency (ms)", justify="right", style="white")
+    table.add_column("HTTP", justify="right", style="dim")
+    table.add_column("Access Tier", style="magenta")
+    _state_colors = {
+        "HEALTHY": "green",
+        "RATE_LIMITED": "yellow",
+        "LATCHED": "red",
+        "UNAUTHORIZED": "red",
+        "UNREACHABLE": "yellow",
+        "HALF_OPEN": "blue",
+    }
+    for probe in report.probes:
+        color = _state_colors.get(probe.state, "white")
+        http = str(probe.http_status) if probe.http_status is not None else "-"
+        table.add_row(
+            probe.provider,
+            f"[{color}]{probe.state}[/{color}]",
+            f"{probe.latency_ms:.2f}",
+            http,
+            probe.access_tier,
+        )
+    console.print(table)
+    console.print(
+        "[bold]Mesh: "
+        f"{report.total_providers} Providers "
+        f"(Active: {report.active_providers} | Free: {report.free} | "
+        f"Latched: {report.latched})[/bold]"
+    )
+
+
 def _dispatch_slash_command(raw, python_exe):
     """Dispatch a slash command from the interactive command palette.
 
@@ -2784,6 +2813,9 @@ def _dispatch_slash_command(raw, python_exe):
     if op == "/config":
         from src.utils.ai_strategy_selector import configure_ai_strategy
         configure_ai_strategy()
+        return "handled"
+    if op == "/probe":
+        _run_api_probe()
         return "handled"
     if op == "/tree":
         _render_tree(arg or "arch")
@@ -3014,6 +3046,10 @@ def _handle_cli_flags(argv):
         from src.utils.desktop_shortcut import create_desktop_shortcut
         if not create_desktop_shortcut():
             sys.exit(1)
+        return True
+    # -- v5.23.0: Self-Healing API Mesh probe (--probe-apis / --diagnose-mesh). --
+    if "--probe-apis" in argv or "--diagnose-mesh" in argv:
+        _run_api_probe()
         return True
     # -- v5.22.0: Scientific Terminal Dashboard fast-dispatch flags. --
     if "--show-dashboard" in argv:

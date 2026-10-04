@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.22.1
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.23.0
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-10-03
-> **Version:** v5.22.1 -- Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization
+> **Last Updated:** 2026-10-04
+> **Version:** v5.23.0 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.22.1" | `config/settings.py` |
+| TALOS_VERSION | "5.23.0" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1378,6 +1378,17 @@ For each evaluated paper, the AI generates:
 - **Command palette**: `rich.prompt.Prompt.ask()` + `_dispatch_slash_command()` (`/scavenge`, `/audit`, `/fts`, `/config`, `/tree`, `/view`, `/help`, `/quit`); CLI flags `--show-dashboard`, `--show-tree`, `--preview-report`.
 
 **Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.22.0), `pytest tests/test_console_dashboard.py -q` (16 hermetic), `python talos.py --show-dashboard` / `--show-tree arch|phd|mesh` / `--preview-report` (exit 0), `python src/utils/verify_dependency_map.py --ci` (0/0/0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD).
+
+### 15.57 Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine (v5.23.0)
+
+**Overview:** v5.23.0 enforces a strict ISO/IEC 25010 three-tier sub-menu layout, introduces a six-state self-healing circuit breaker with exponential backoff, an API health probe engine, and a four-tier Access-Tier taxonomy with zero-config free-cloud failover.
+
+- **Universal 3-Tier Sub-Menu Engine** (`submenu_renderer.py`): `RichSubmenuRenderer.build()` emits a Header Summary Panel, a Column-Major two-column body grid (`[01]..[ceil(N/2)]` left / `[ceil(N/2)+1]..[N]` right), and a Contextual Navigation Footer; `prompt_choice(valid_range, default)` is the single type-safe prompt.
+- **Self-Healing Circuit Breaker** (`self_healing.py`): six states `HEALTHY`, `RATE_LIMITED` [429], `LATCHED` [402], `UNAUTHORIZED` [401], `UNREACHABLE` [5xx/timeout], `HALF_OPEN`; backoff `T_backoff = min(T0*2^k, Tmax)` (T0=60s, Tmax=600s).
+- **API Health Probe Engine** (`self_healing.py`): `ApiHealthProbeEngine.probe_all()` concurrently probes all 16 providers and emits `MeshDiagnosticReport`; `--probe-apis` / `--diagnose-mesh` CLI and `/probe` palette; HUD renders `Mesh: 16 Providers (Active: X | Free: Y | Latched: Z)`.
+- **Access-Tier Engine** (`dto.py`, `scavenger.py`, `reporter.py`): `AccessTier` (`LOCAL_NO_KEY`, `CLOUD_ZERO_CONFIG_FREE`, `CLOUD_FREE_TIER_WITH_KEY`, `CLOUD_PAID_API`); `CognitiveMetaRouter` auto-fails over to free-tier candidates; reporter emits tier badges, filter buttons, and a zero-config free models section.
+
+**Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.23.0), `pytest tests/test_self_healing.py -q` (21 hermetic), `python talos.py --probe-apis` (exit 0), `python src/utils/verify_dependency_map.py --ci` (0/0/0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD).
 
 ### 15.56 Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization (v5.22.1)
 

@@ -4,7 +4,27 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-03 (v5.22.1 -- Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization)
+> **Last Updated:** 2026-10-04 (v5.23.0 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine)
+
+---
+
+## Phase 84: Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine (v5.23.0)
+
+- [x] **Status:** COMPLETED (2026-10-04).
+
+- [x] **Universal 3-Tier Sub-Menu Engine** -- `submenu_renderer.py` enforces the ISO/IEC 25010 three-tier layout (Header Summary Panel -> Column-Major two-column body grid with `[01]..[ceil(N/2)]` left / `[ceil(N/2)+1]..[N]` right -> Contextual Navigation Footer) plus a single type-safe `prompt_choice()`; eliminates every duplicate vertical `questionary` list across `talos.py` and `ai_strategy_selector.py`.
+
+- [x] **Self-Healing Circuit Breaker** -- `src/services/cognitive_mesh/self_healing.py` implements the six-state `SelfHealingCircuitBreaker` (`HEALTHY`, `RATE_LIMITED`, `LATCHED`, `UNAUTHORIZED`, `UNREACHABLE`, `HALF_OPEN`) with exponential backoff `T_backoff = min(T0*2^k, Tmax)` (T0=60s, Tmax=600s).
+
+- [x] **API Health Probe Engine** -- `ApiHealthProbeEngine.probe_all()` concurrently pings all 16 providers and emits a `MeshDiagnosticReport`; `--probe-apis` / `--diagnose-mesh` CLI flags and `/probe` palette shortcut surface live telemetry; the HUD renders `Mesh: 16 Providers (Active: X | Free: Y | Latched: Z)`.
+
+- [x] **Access-Tier Engine** -- the four-tier `AccessTier` taxonomy (`LOCAL_NO_KEY`, `CLOUD_ZERO_CONFIG_FREE`, `CLOUD_FREE_TIER_WITH_KEY`, `CLOUD_PAID_API`) classifies all models and endpoints; `CognitiveMetaRouter` auto-fails over to free-tier candidates; the reporter emits tier badges, filter buttons, and a zero-config free models section.
+
+- [x] **Confidential Academic Dossier 11** -- `docs/internal/academic/11_SELF_HEALING_API_MESH_RESILIENCE_ISO25010.md` (7 sections).
+
+- [x] **Version sync** -- `config/settings.py` (`TALOS_VERSION = "5.23.0"`), `main_api.py`, `server.py`, `talos.py`, launchers, `docker-compose.yml` (`talos:5.23.0`), `CITATION.cff` (5.23.0, 2026-10-04), `tests/test_multi_tier.py`, and all 21 canonical docs to v5.23.0 (2026-10-04).
+
+- [x] **Verification gates passed** -- compileall (0 errors), test_system_integrity, test_talos_version (5.23.0), test_self_healing (21), cognitive-mesh suite (62), `--probe-apis` (exit 0), verify_dependency_map --ci (0/0/0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ---
 

@@ -1,27 +1,35 @@
 # -*- coding: utf-8 -*-
 """
 Module: dto.py
-Project: TALOS v5.22.1
+Project: TALOS v5.23.0
 Description:
     Standalone Pydantic v2 data-transfer objects for the Cognitive Mesh in-tree
     microservice. This module is the single interchange surface consumed by the
     cognitive router (router.py), the provider registry (registry.py), the
-    benchmark client (benchmarks.py), the autonomous model scavenger
-    (scavenger.py), and the dual intelligence reporter (reporter.py). Every
-    schema is self-contained and imports only the Python standard library and
-    Pydantic, so the whole package can be extracted verbatim into a standalone
-    SYNAPSE (:8000) microservice shared by TALOS and MEMEX with zero dependency
-    surgery.
+    self-healing circuit breaker (self_healing.py), the benchmark client
+    (benchmarks.py), the autonomous model scavenger (scavenger.py), and the
+    dual intelligence reporter (reporter.py). Every schema is self-contained
+    and imports only the Python standard library and Pydantic, so the whole
+    package can be extracted verbatim into a standalone SYNAPSE (:8000)
+    microservice shared by TALOS and MEMEX with zero dependency surgery.
 
     Key design decisions:
     - RoutingStrategy is a str-based Enum so it serializes directly in JSON
       payloads and remains comparable with provider-name string keys.
+    - ProviderHealthState is a str-based Enum modelling the six-state
+      self-healing circuit-breaker machine (HEALTHY, RATE_LIMITED, LATCHED,
+      UNAUTHORIZED, UNREACHABLE, HALF_OPEN) introduced in v5.23.0.
+    - AccessTier is a str-based Enum modelling the four explicit access tiers
+      (LOCAL_NO_KEY, CLOUD_ZERO_CONFIG_FREE, CLOUD_FREE_TIER_WITH_KEY,
+      CLOUD_PAID_API) used for zero-config failover routing.
     - RouterTaskRequest / RouterTaskResponse mirror the decoupled cognitive
       router contract (task type, strategy, messages, payload, telemetry).
     - ModelSpec / ProviderSpec / BenchmarkScorecard model the market-discovery,
       provider-status, and benchmark domains.
     - ScavengedModel / MarketIntelligenceReport model the autonomous foraging
       output and its summary statistics.
+    - ProviderHealthReport / MeshDiagnosticReport model the ApiHealthProbeEngine
+      probe result and the aggregate mesh diagnostic.
 
 Dependencies:
     - typing: type annotations (List, Dict, Optional, Any).
@@ -49,6 +57,50 @@ class RoutingStrategy(str, Enum):
     LOWEST_COST = "lowest_cost"
     LOCAL_AIRGAPPED = "local_airgapped"
     LOCAL_FIRST_CLOUD_BACKUP = "local_first_cloud_backup"
+
+
+class ProviderHealthState(str, Enum):
+    """The six-state self-healing circuit-breaker health machine.
+
+    Members subclass ``str`` so they serialize directly in JSON and remain
+    comparable with provider-name string keys. The states model the full
+    resilience lifecycle mandated by ISO/IEC 25010 Reliability:
+
+    - ``HEALTHY``: Provider answered HTTP 200 and is fully routable.
+    - ``RATE_LIMITED``: Provider returned HTTP 429; backoff window applied.
+    - ``LATCHED``: Provider returned HTTP 402 (quota depleted); bypassed for
+      the session unless explicitly probed.
+    - ``UNAUTHORIZED``: Provider returned HTTP 401 (invalid credentials).
+    - ``UNREACHABLE``: Timeout or 5xx (temporary network/upstream fault).
+    - ``HALF_OPEN``: An expired backoff window permits a single probe attempt
+      before the breaker re-closes or restores to HEALTHY.
+    """
+
+    HEALTHY = "HEALTHY"
+    RATE_LIMITED = "RATE_LIMITED"
+    LATCHED = "LATCHED"
+    UNAUTHORIZED = "UNAUTHORIZED"
+    UNREACHABLE = "UNREACHABLE"
+    HALF_OPEN = "HALF_OPEN"
+
+
+class AccessTier(str, Enum):
+    """The four explicit model/endpoint access tiers for zero-config failover.
+
+    Members subclass ``str`` for direct JSON serialization and badge rendering.
+
+    - ``LOCAL_NO_KEY``: Local runtime (Ollama); no key and no cloud egress.
+    - ``CLOUD_ZERO_CONFIG_FREE``: Cloud endpoint usable with zero configuration
+      and no API key (e.g. public inference endpoints).
+    - ``CLOUD_FREE_TIER_WITH_KEY``: Cloud endpoint with a free tier gated by an
+      API key.
+    - ``CLOUD_PAID_API``: Paid cloud endpoint requiring a funded key.
+    """
+
+    LOCAL_NO_KEY = "LOCAL_NO_KEY"
+    CLOUD_ZERO_CONFIG_FREE = "CLOUD_ZERO_CONFIG_FREE"
+    CLOUD_FREE_TIER_WITH_KEY = "CLOUD_FREE_TIER_WITH_KEY"
+    CLOUD_PAID_API = "CLOUD_PAID_API"
 
 
 class RouterTaskRequest(BaseModel):
@@ -139,6 +191,8 @@ class ProviderSpec(BaseModel):
         is_openai_compatible (bool): Whether the provider speaks the
             OpenAI-compatible ``/v1/chat/completions`` protocol.
         is_active (bool): Runtime availability flag.
+        access_tier (str): AccessTier classification (default
+            CLOUD_PAID_API).
     """
 
     name: str = ""
@@ -148,6 +202,7 @@ class ProviderSpec(BaseModel):
     category: str = ""
     is_openai_compatible: bool = True
     is_active: bool = False
+    access_tier: str = "CLOUD_PAID_API"
 
 
 class BenchmarkScorecard(BaseModel):
@@ -196,6 +251,9 @@ class ScavengedModel(BaseModel):
         mmlu_pro (float): MMLU-Pro score (0..100).
         human_eval (float): HumanEval score (0..100).
         ttft_ms (float): Time-to-first-token in milliseconds.
+        access_tier (str): AccessTier classification (LOCAL_NO_KEY,
+            CLOUD_ZERO_CONFIG_FREE, CLOUD_FREE_TIER_WITH_KEY, or
+            CLOUD_PAID_API).
     """
 
     model: str = ""
@@ -215,6 +273,7 @@ class ScavengedModel(BaseModel):
     mmlu_pro: float = 0.0
     human_eval: float = 0.0
     ttft_ms: float = 0.0
+    access_tier: str = "LOCAL_NO_KEY"
 
 
 class MarketIntelligenceReport(BaseModel):
@@ -247,4 +306,55 @@ class MarketIntelligenceReport(BaseModel):
     cloud_cost_effective_count: int = 0
     frontier_reasoning_count: int = 0
     offline_fallback: bool = False
+    local_no_key_count: int = 0
+    cloud_zero_config_free_count: int = 0
+    cloud_free_tier_with_key_count: int = 0
+    cloud_paid_api_count: int = 0
+
+
+class ProviderHealthReport(BaseModel):
+    """Single provider health probe result produced by ApiHealthProbeEngine.
+
+    Attributes:
+        provider (str): Canonical provider identifier.
+        state (str): ProviderHealthState value after the probe.
+        latency_ms (float): Probe round-trip latency in milliseconds.
+        http_status (Optional[int]): HTTP status (None on timeout/network fault).
+        access_tier (str): AccessTier classification.
+        error_count (int): Consecutive error counter in the breaker.
+        backoff_until (Optional[float]): Monotonic timestamp when the backoff
+            window expires (None when HEALTHY).
+        is_active (bool): Registry availability flag at probe time.
+    """
+
+    provider: str = ""
+    state: str = "HEALTHY"
+    latency_ms: float = 0.0
+    http_status: Optional[int] = None
+    access_tier: str = "CLOUD_PAID_API"
+    error_count: int = 0
+    backoff_until: Optional[float] = None
+    is_active: bool = False
+
+
+class MeshDiagnosticReport(BaseModel):
+    """Aggregate self-healing mesh diagnostic produced by ApiHealthProbeEngine.
+
+    Attributes:
+        generated_at (str): ISO 8601 generation timestamp.
+        total_providers (int): Registered provider count.
+        active_providers (int): Providers active in the registry.
+        healthy (int): Providers in HEALTHY state.
+        free (int): Providers with zero-config free access tier.
+        latched (int): Providers in LATCHED state.
+        probes (list[ProviderHealthReport]): Per-provider probe results.
+    """
+
+    generated_at: str = ""
+    total_providers: int = 0
+    active_providers: int = 0
+    healthy: int = 0
+    free: int = 0
+    latched: int = 0
+    probes: List[ProviderHealthReport] = Field(default_factory=list)
 

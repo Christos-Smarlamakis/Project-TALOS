@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 Module: router.py
-Project: TALOS v5.22.1
+Project: TALOS v5.23.0
 Description:
     Decoupled, extraction-ready Cognitive Meta-Router. This module selects an
     inference provider for a scientific task using one of four named routing
-    strategies and protects the runtime with a session-scoped circuit breaker
-    and quota-latching state machine. It is deliberately isolated from TALOS
+    strategies and protects the runtime with a self-healing six-state circuit
+    breaker (SelfHealingCircuitBreaker), a session-scoped quota-latching state
+    machine, and dynamic zero-config failover to free-tier endpoints. It is
+    deliberately isolated from TALOS
     storage, PRISMA evaluation, and CLI concerns so that, in v6.0.0, the module
     can be lifted verbatim into a standalone SYNAPSE (:8000) microservice shared
     between TALOS and MEMEX with zero dependency surgery.
@@ -31,6 +33,10 @@ Description:
     - HTTP 401 / 402 / 429 responses latch a provider offline for the current
       process session and transparently fail over to the next candidate in the
       same tier.
+    - The SelfHealingCircuitBreaker adds a six-state machine with exponential
+      backoff; when every primary candidate is latched, rate-limited, or
+      unreachable, the router auto-fails over to the top available
+      LOCAL_NO_KEY or CLOUD_ZERO_CONFIG_FREE candidate (v5.23.0).
     - Local (Ollama) invocations are serialized behind a semaphore of width two
       to protect the RTX 4070 (12 GB VRAM) budget from OOM collisions.
     - Inference is performed through an injectable transport callable so the
@@ -40,9 +46,11 @@ Dependencies:
     - threading, time, collections: concurrency arbiter, timing, and metric
       storage.
     - src.services.cognitive_mesh.dto: RoutingStrategy / RouterTaskRequest /
-      RouterTaskResponse standalone Pydantic v2 DTOs.
+      RouterTaskResponse / AccessTier standalone Pydantic v2 DTOs.
     - src.services.cognitive_mesh.registry: decoupled provider catalogue
       (config-only).
+    - src.services.cognitive_mesh.self_healing: SelfHealingCircuitBreaker and
+      classify_access_tier (six-state resilience + access-tier taxonomy).
 """
 
 import os
@@ -111,9 +119,14 @@ _PROVIDER_QUALITY: Dict[str, float] = {
 
 
 from src.services.cognitive_mesh.dto import (  # noqa: E402
+    AccessTier,
     RoutingStrategy,
     RouterTaskRequest,
     RouterTaskResponse,
+)
+from src.services.cognitive_mesh.self_healing import (  # noqa: E402
+    SelfHealingCircuitBreaker,
+    classify_access_tier,
 )
 
 
@@ -154,6 +167,8 @@ class CognitiveMetaRouter:
         local_semaphore (threading.Semaphore): Concurrency arbiter for local
             GPU calls (default width two).
         ema_alpha (float): Smoothing factor for time-to-first-token EMA.
+        breaker (Optional[SelfHealingCircuitBreaker]): Injected six-state
+            breaker (default: a fresh instance).
     """
 
     def __init__(
@@ -162,12 +177,14 @@ class CognitiveMetaRouter:
         transport: Optional[Callable[[str, str, RouterTaskRequest], Dict[str, Any]]] = None,
         local_semaphore_limit: int = 2,
         ema_alpha: float = 0.2,
+        breaker: Optional[SelfHealingCircuitBreaker] = None,
     ) -> None:
         self._registry = registry if registry is not None else get_provider_registry()
         self._transport = transport
         self._local_semaphore = threading.Semaphore(local_semaphore_limit)
         self._ema_alpha = ema_alpha
         self._metrics: Dict[str, _ProviderMetrics] = defaultdict(_ProviderMetrics)
+        self._breaker = breaker if breaker is not None else SelfHealingCircuitBreaker()
 
     # ------------------------------------------------------------------
     # -- Public dispatch API -------------------------------------------
@@ -228,11 +245,14 @@ class CognitiveMetaRouter:
         """
         if http_status in LATCH_STATUSES:
             self._latch(provider, http_status)
+            self._breaker.record_http_status(provider, http_status)
             return
         if http_status is not None and http_status >= 400:
             self._record_error(provider)
+            self._breaker.record_http_status(provider, http_status)
             return
         self._record_success(provider, latency_ms, prompt_tokens, completion_tokens)
+        self._breaker.record_success(provider)
 
     def latch_provider(self, provider: str, reason: int = 429) -> None:
         """Manually latch a provider offline for the current session.
@@ -280,12 +300,8 @@ class CognitiveMetaRouter:
         latched: List[str] = []
         last_error: Optional[Exception] = None
 
-        for provider_name in candidates:
-            if provider_name not in active:
-                continue
-            if self._is_latched(provider_name):
-                latched.append(provider_name)
-                continue
+        def _attempt(provider_name: str) -> Optional[RouterTaskResponse]:
+            """Invoke one provider, folding outcomes into the breaker."""
             try:
                 result = self._invoke(provider_name, request)
                 if latched:
@@ -293,6 +309,7 @@ class CognitiveMetaRouter:
                     result.latched_providers = list(latched)
                 return result
             except ProviderHttpError as exc:
+                self._breaker.record_http_status(provider_name, exc.status_code)
                 if exc.status_code in LATCH_STATUSES:
                     self._latch(provider_name, exc.status_code)
                     latched.append(provider_name)
@@ -300,8 +317,35 @@ class CognitiveMetaRouter:
                     self._record_error(provider_name)
                 last_error = exc
             except Exception as exc:  # pragma: no cover - defensive
+                self._breaker.record_timeout(provider_name)
                 self._record_error(provider_name)
                 last_error = exc
+            return None
+
+        for provider_name in candidates:
+            if provider_name not in active:
+                continue
+            if self._is_latched(provider_name):
+                latched.append(provider_name)
+                continue
+            if not self._breaker.should_attempt(provider_name):
+                latched.append(provider_name)
+                continue
+            result = _attempt(provider_name)
+            if result is not None:
+                return result
+
+        # -- v5.23.0: dynamic zero-config failover to free-tier candidates. --
+        for provider_name in self._zero_config_free_failover(active):
+            if provider_name in candidates:
+                continue
+            if self._is_latched(provider_name):
+                continue
+            if not self._breaker.should_attempt(provider_name):
+                continue
+            result = _attempt(provider_name)
+            if result is not None:
+                return result
 
         return RouterTaskResponse(
             provider="",
@@ -311,6 +355,30 @@ class CognitiveMetaRouter:
             fallback_occurred=bool(latched) or last_error is not None,
             latched_providers=latched,
         )
+
+    def _zero_config_free_failover(self, active: List[str]) -> List[str]:
+        """Return free-tier candidates for dynamic zero-config failover.
+
+        Providers whose access tier is LOCAL_NO_KEY or CLOUD_ZERO_CONFIG_FREE
+        are preferred fallback targets when paid endpoints are latched or
+        rate-limited. Local Ollama is always ranked first for air-gapped
+        operation.
+
+        Args:
+            active (list[str]): Currently active provider names.
+
+        Returns:
+            list[str]: Free-tier provider names in failover priority order.
+        """
+        free = [
+            p for p in active
+            if classify_access_tier(p) in (
+                AccessTier.LOCAL_NO_KEY.value,
+                AccessTier.CLOUD_ZERO_CONFIG_FREE.value,
+            )
+        ]
+        ordered = [p for p in free if p == "ollama"] + [p for p in free if p != "ollama"]
+        return ordered
 
     def _invoke(self, provider_name: str, request: RouterTaskRequest) -> RouterTaskResponse:
         descriptor = self._registry.get(provider_name)
@@ -333,6 +401,7 @@ class CognitiveMetaRouter:
         prompt_tokens = int(result.get("prompt_tokens", 0) or 0)
         completion_tokens = int(result.get("completion_tokens", 0) or 0)
         self._record_success(provider_name, latency_ms, prompt_tokens, completion_tokens)
+        self._breaker.record_success(provider_name)
 
         return RouterTaskResponse(
             provider=provider_name,

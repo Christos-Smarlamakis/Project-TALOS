@@ -178,6 +178,9 @@ def _section_b_command_matrix() -> Panel:
     table.add_row("System Management", "--diagnostics | --doctor",
                   "8-point ISO/IEC 25010 diagnostics analyzer.")
     table.add_row("System Management", "--stats", "Database statistics report.")
+    table.add_row("System Management", "--probe-apis | --diagnose-mesh",
+                  "Self-healing API mesh health probe (16 providers, latency, "
+                  "HTTP status, access tier).")
     table.add_row("System Management", "--help, -h",
                   "Display this enterprise manual.")
 

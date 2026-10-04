@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.22.1
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.23.0
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-10-03 (v5.22.1 -- Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization)
+> **Last Updated:** 2026-10-04 (v5.23.0 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine)
 
 ---
 
@@ -346,8 +346,8 @@ src/core/hierarchical_evaluator.py
 
 ---
 
-> **Last Updated:** 2026-10-03 (v5.22.1 -- Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization)
-> **Project Version:** v5.22.1
+> **Last Updated:** 2026-10-04 (v5.23.0 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine)
+> **Project Version:** v5.23.0
 > **Total .py modules under src/:** 113 (core 7 + services 10 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 6 + ingestion/sources 18 + search 3 + integration 3 + utils 23 + api 4 + prisma 8 + mcp_server 1)
 
 

@@ -146,7 +146,7 @@ app = FastAPI(
         "Extraction-ready in-tree cognitive microservice: meta-routing, "
         "provider registry, benchmark matrix, and autonomous model scavenging."
     ),
-    version="5.22.1",
+    version="5.23.0",
 )
 app.include_router(cognitive_router_app)
 

@@ -129,8 +129,8 @@ async def lifespan(app: FastAPI):
 # -- FastAPI App & CORS -------------------------------------------------------
 app = FastAPI(
     title="TALOS Research API",
-    description="Facade REST API for the TALOS autonomous research platform (v5.22.1 -- Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization)",
-    version="5.22.1",
+    description="Facade REST API for the TALOS autonomous research platform (v5.23.0 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine)",
+    version="5.23.0",
     lifespan=lifespan,
 )
 app.add_middleware(

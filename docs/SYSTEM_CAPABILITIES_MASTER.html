@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.22.1</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.23.0</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -302,8 +302,8 @@
   <strong>Document ID:</strong> TALOS-SYS-CAP-001 &nbsp;|&nbsp;
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
-  <strong>Last Updated:</strong> 2026-10-03 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.22.0 -- Full-Spectrum Rich Terminal Dashboard 2.0 &amp; Scientific Console Architecture
+  <strong>Last Updated:</strong> 2026-10-04 &nbsp;|&nbsp;
+  <strong>Version:</strong> v5.23.0 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh &amp; Access-Tier Engine
 </div>
 
 <!-- ===================================================================== -->
@@ -1576,6 +1576,21 @@
 
 <p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.22.0), <code>test_console_dashboard.py -q</code> (16 hermetic), <code>python talos.py --show-dashboard</code> / <code>--show-tree arch|phd|mesh</code> / <code>--preview-report</code> (exit 0), <code>verify_dependency_map.py --ci</code> (0/0/0), <code>bash -n run_talos.sh</code>, strict UTF-8 scan (0 U+FFFD).</p>
 
+<h3 id="s15-57">15.57 Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh &amp; Access-Tier Engine (v5.23.0)</h3>
+
+<p><strong>Overview:</strong> v5.23.0 enforces a strict ISO/IEC 25010 three-tier sub-menu layout, introduces a six-state self-healing circuit breaker with exponential backoff, an API health probe engine, and a four-tier Access-Tier taxonomy with zero-config free-cloud failover.</p>
+
+<ul>
+  <li><strong>Universal 3-Tier Sub-Menu Engine</strong> (<code>submenu_renderer.py</code>): <code>RichSubmenuRenderer.build()</code> emits a Header Summary Panel, a Column-Major two-column body grid (<code>[01]..[ceil(N/2)]</code> left / <code>[ceil(N/2)+1]..[N]</code> right), and a Contextual Navigation Footer; <code>prompt_choice(valid_range, default)</code> is the single type-safe prompt.</li>
+  <li><strong>Self-Healing Circuit Breaker</strong> (<code>self_healing.py</code>): six states (<code>HEALTHY</code>, <code>RATE_LIMITED</code>, <code>LATCHED</code>, <code>UNAUTHORIZED</code>, <code>UNREACHABLE</code>, <code>HALF_OPEN</code>); backoff <code>T_backoff = min(T0*2^k, Tmax)</code> (T0=60s, Tmax=600s).</li>
+  <li><strong>API Health Probe Engine</strong> (<code>self_healing.py</code>): <code>ApiHealthProbeEngine.probe_all()</code> probes all 16 providers; <code>--probe-apis</code> / <code>--diagnose-mesh</code> CLI and <code>/probe</code> palette; HUD renders <code>Mesh: 16 Providers (Active: X | Free: Y | Latched: Z)</code>.</li>
+  <li><strong>Access-Tier Engine</strong> (<code>dto.py</code>, <code>scavenger.py</code>, <code>reporter.py</code>): <code>AccessTier</code> (<code>LOCAL_NO_KEY</code>, <code>CLOUD_ZERO_CONFIG_FREE</code>, <code>CLOUD_FREE_TIER_WITH_KEY</code>, <code>CLOUD_PAID_API</code>); <code>CognitiveMetaRouter</code> auto-fails over to free-tier candidates; reporter emits tier badges, filter buttons, and a zero-config free models section.</li>
+</ul>
+
+<p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.23.0), <code>test_self_healing.py -q</code> (21 hermetic), <code>python talos.py --probe-apis</code> (exit 0), <code>verify_dependency_map.py --ci</code> (0/0/0), <code>bash -n run_talos.sh</code>, strict UTF-8 scan (0 U+FFFD).</p>
+
+<hr>
+
 <h3 id="s15-56">15.56 Rich Sub-Menu Modernization, Daemon Profile Binding &amp; Model Scout Terminology Formalization (v5.22.1)</h3>
 
 <p><strong>Overview:</strong> v5.22.1 modernizes the Scientific Terminal Dashboard sub-menus, enforces strict SSOT daemon profile binding, consolidates orphan databases, and formalizes the Model Scout terminology across the Cognitive Mesh.</p>
@@ -1592,7 +1607,7 @@
 <p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.22.1), scavenger + reporter + console dashboard (42 hermetic), <code>python talos.py --scout-models --all --report-only</code> (exit 0), <code>verify_dependency_map.py --ci</code> (0/0/0), <code>bash -n run_talos.sh</code>, strict UTF-8 scan (0 U+FFFD).</p>
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.22.1</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.23.0</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

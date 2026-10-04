@@ -2,6 +2,32 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.23.0] - 2026-10-04 -- Καθολική Αρχιτεκτονική Υπομενού 3 Επιπέδων, Αυτόνομο Αυτοθεραπευόμενο Δίκτυο API & Μηχανή Βαθμίδων Πρόσβασης (ISO/IEC 25010)
+
+### Προστέθηκε
+
+- **Καθολική Μηχανή Υπομενού 3 Επιπέδων** (`src/utils/console_dashboard/submenu_renderer.py`): το `RichSubmenuRenderer` επιβάλλει πλέον μια αυστηρή διάταξη τριών επιπέδων ISO/IEC 25010 -- (1) Πίνακας Κεφαλίδας με τίτλο, υπότιτλο και περιγραφή ενεργού τομέα· (2) Δίστηλο Πλέγμα Σώματος με αυστηρή αρίθμηση κατά στήλη (`[01]..[ceil(N/2)]` αριστερά, `[ceil(N/2)+1]..[N]` δεξιά) και κεντραρισμένη γραμμή `[00] Back`· (3) Συμπαγές Υποσέλιδο Πλοήγησης. Το νέο βοηθητικό `prompt_choice(valid_range, default)` αντικαθιστά κάθε παλαιά λίστα `questionary.select` με ένα μοναδικό, ασφαλές ως προς τον τύπο `rich.prompt.Prompt.ask`.
+
+- **Αυτοθεραπευόμενος Διακόπτης Κυκλώματος** (`src/services/cognitive_mesh/self_healing.py`): νέος εξασταδιακός `SelfHealingCircuitBreaker` (`HEALTHY`, `RATE_LIMITED` [429], `LATCHED` [402], `UNAUTHORIZED` [401], `UNREACHABLE` [5xx/timeout], `HALF_OPEN`) με εκθετικό χρονοδιακόπτη `T_backoff = min(T0 * 2^k, Tmax)` (T0=60s, Tmax=600s). Μηδενικές εισαγωγές από SQLite/PRISMA/CLI (Σύνταγμα III).
+
+- **Μηχανή Ελέγχου Υγείας API** (`src/services/cognitive_mesh/self_healing.py`): το `ApiHealthProbeEngine.probe_all()` ελέγχει ταυτόχρονα και τους δεκαέξι παρόχους και εκδίδει `MeshDiagnosticReport` με καθυστέρηση (ms), κατάσταση HTTP και ενεργή βαθμίδα πρόσβασης.
+
+- **Μηχανή Βαθμίδων Πρόσβασης** (`dto.py`, `scavenger.py`, `reporter.py`): η τετραβαθμιδωτή `AccessTier` (`LOCAL_NO_KEY`, `CLOUD_ZERO_CONFIG_FREE`, `CLOUD_FREE_TIER_WITH_KEY`, `CLOUD_PAID_API`) ταξινομεί όλα τα 576+ μοντέλα και όλα τα endpoints. Οι αναφορές Markdown και HTML αποκτούν κουμπιά φίλτρου βαθμίδων, έγχρωμα σήματα και ενότητα «Zero-Config Free Models».
+
+- **Δυναμική Εναλλαγή Μηδενικής Ρύθμισης** (`router.py`): ο `CognitiveMetaRouter` συνδέει τον `SelfHealingCircuitBreaker` και μεταπηδά αυτόματα στον κορυφαίο διαθέσιμο υποψήφιο `CLOUD_ZERO_CONFIG_FREE` ή `LOCAL_NO_KEY` όταν τα endpoints επί πληρωμή είναι μανδαλωμένα ή περιορισμένα.
+
+- **Ενσωμάτωση CLI & HUD** (`talos.py`, `hud_renderer.py`, `layout_builder.py`, `help_system.py`): νέα σημαία `--probe-apis` / `--diagnose-mesh`, συντόμευση `/probe` στην παλέτα εντολών και ζωντανή τηλεμετρία υγείας παρόχων στο μόνιμο HUD (`Mesh: 16 Providers (Active: X | Free: Y | Latched: Z)`).
+
+- **Εμπιστευτικός Ακαδημαϊκός Φάκελος 11** (`docs/internal/academic/11_SELF_HEALING_API_MESH_RESILIENCE_ISO25010.md`): φάκελος 7 ενοτήτων Θεωρίας-προς-Κώδικα.
+
+### Άλλαξε
+
+- **Καθολική Αναδόμηση Υπομενού** (`talos.py`, `ai_strategy_selector.py`): όλα τα κύρια υπομενού και όλα τα ένθετα υπομενού αποδίδονται πλέον αποκλειστικά μέσω του `RichSubmenuRenderer` 3 επιπέδων + `prompt_choice()`, εξαλείφοντας κάθε διπλότυπη κάθετη λίστα `questionary` κάτω από πίνακα Rich.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.23.0)· `pytest tests/test_self_healing.py -q` (21 ερμητικές)· `pytest tests/test_cognitive_router.py tests/test_quota_latching.py tests/test_model_scavenger.py tests/test_intelligence_reporter.py tests/test_provider_registry.py -q` (62 ερμητικές)· `python talos.py --probe-apis` (κωδικός 0)· `python src/utils/verify_dependency_map.py --ci` (0/0/0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.22.1] - 2026-10-03 -- Εκσυγχρονισμός Πλούσιων Υπομενού, Δέσμευση Προφίλ Δαίμονα & Τυποποίηση Ορολογίας Model Scout
 
 ### Προστέθηκε

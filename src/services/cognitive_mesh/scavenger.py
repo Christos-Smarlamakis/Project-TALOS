@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: scavenger.py
-Project: TALOS v5.22.1
+Project: TALOS v5.23.0
 Description:
     Autonomous Model Scavenger Agent for the Cognitive Mesh in-tree
     microservice. The agent forages three public catalogues -- the Hugging Face
@@ -54,8 +54,12 @@ if _P:
     sys.path.insert(0, _P)
 
 from src.services.cognitive_mesh.dto import (  # noqa: E402
+    AccessTier,
     MarketIntelligenceReport,
     ScavengedModel,
+)
+from src.services.cognitive_mesh.self_healing import (  # noqa: E402
+    classify_model_access_tier,
 )
 
 # -- Canonical endpoint surface -----------------------------------------------
@@ -227,6 +231,7 @@ class ModelScoutAgent:
                 model.source,
             )
             model.vram_class = vram
+            model.access_tier = classify_model_access_tier(model.source, model.developer)
             if not model.recommended_role:
                 model.recommended_role = role
             self._apply_fuzzy_benchmarks(model)
@@ -620,6 +625,20 @@ class ModelScoutAgent:
         )
         report.frontier_reasoning_count = sum(
             1 for m in report.models if m.vram_class == VRAM_FRONTIER_REASONING
+        )
+        report.local_no_key_count = sum(
+            1 for m in report.models if m.access_tier == AccessTier.LOCAL_NO_KEY.value
+        )
+        report.cloud_zero_config_free_count = sum(
+            1 for m in report.models
+            if m.access_tier == AccessTier.CLOUD_ZERO_CONFIG_FREE.value
+        )
+        report.cloud_free_tier_with_key_count = sum(
+            1 for m in report.models
+            if m.access_tier == AccessTier.CLOUD_FREE_TIER_WITH_KEY.value
+        )
+        report.cloud_paid_api_count = sum(
+            1 for m in report.models if m.access_tier == AccessTier.CLOUD_PAID_API.value
         )
         prices = [
             (m.pricing_prompt_per_1m_usd + m.pricing_completion_per_1m_usd)

@@ -1,16 +1,18 @@
 # -*- coding: utf-8 -*-
 """
 Module: hud_renderer.py
-Project: TALOS v5.22.1
+Project: TALOS v5.23.0
 Description:
     Persistent telemetry HUD renderer for the TALOS Scientific Terminal
-    Dashboard. Builds a compact two-row Rich Panel summarising the active
+    Dashboard. Builds a compact multi-row Rich Panel summarising the active
     research profile, the paper corpus metrics (total, elite foundational,
     Kitchenham-appraised), the hardware footprint (GPU name and VRAM), the
-    local Ollama runtime status on port 11434, the active AI execution
-    strategy, and the scavenged model count. Every probe is best-effort and
-    air-gapped: a failed lookup degrades to a neutral placeholder rather than
-    raising, honouring the never-crash guarantee of Constitution II and III.
+    local Ollama runtime status on port 11434, the live self-healing mesh
+    telemetry (provider count, active, zero-config free, latched), the active
+    AI execution strategy, and the scavenged model count. Every probe is
+    best-effort and air-gapped: a failed lookup degrades to a neutral
+    placeholder rather than raising, honouring the never-crash guarantee of
+    Constitution II and III.
 
 Dependencies:
     - os, subprocess, socket, json: environment lookup and local port/GPU probing.
@@ -93,6 +95,7 @@ class HudRenderer:
         ollama = self._ollama_status()
         strategy = self._strategy_label()
         models = self._model_metrics()
+        mesh = self._mesh_health()
 
         # -- Row 1: profile and paper corpus metrics --
         row1 = Text(no_wrap=True)
@@ -118,6 +121,12 @@ class HudRenderer:
         row2.append(
             "ONLINE" if ollama else "OFFLINE",
             style="bold green" if ollama else "bold red",
+        )
+        row2.append("  |  Mesh: ", style="dim white")
+        row2.append(
+            f"{mesh['total']} Providers (Active: {mesh['active']} | "
+            f"Free: {mesh['free']} | Latched: {mesh['latched']})",
+            style="bold bright_cyan",
         )
         row2.append("  |  Strategy: ", style="dim white")
         row2.append(strategy, style="bold yellow")
@@ -241,6 +250,41 @@ class HudRenderer:
                 return True
         except OSError:
             return False
+
+    def _mesh_health(self) -> Dict[str, int]:
+        """Return self-healing mesh telemetry (total, active, free, latched).
+
+        Uses the provider registry for instant, air-gapped counts with zero
+        network I/O. ``latched`` reflects the current-process circuit breaker
+        (always zero at a fresh start); the ``/probe`` command and
+        ``--probe-apis`` flag provide full live per-provider health telemetry.
+
+        Returns:
+            dict: Keys ``total``, ``active``, ``free``, and ``latched``.
+        """
+        result: Dict[str, int] = {
+            "total": 0, "active": 0, "free": 0, "latched": 0,
+        }
+        try:
+            from src.services.cognitive_mesh.dto import AccessTier
+            from src.services.cognitive_mesh.registry import get_provider_registry
+            from src.services.cognitive_mesh.self_healing import classify_access_tier
+
+            registry = get_provider_registry()
+            all_providers = registry.list_all()
+            active = registry.list_active()
+            free_tiers = {
+                AccessTier.LOCAL_NO_KEY.value,
+                AccessTier.CLOUD_ZERO_CONFIG_FREE.value,
+            }
+            result["total"] = len(all_providers)
+            result["active"] = len(active)
+            result["free"] = sum(
+                1 for d in active if classify_access_tier(d.name) in free_tiers
+            )
+        except Exception:
+            pass
+        return result
 
     def _strategy_label(self) -> str:
         """Return the active AI execution strategy label.

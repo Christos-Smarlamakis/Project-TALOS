@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: reporter.py
-Project: TALOS v5.22.1
+Project: TALOS v5.23.0
 Description:
     Dual Intelligence Reporter for the Cognitive Mesh in-tree microservice. It
     renders a MarketIntelligenceReport into two deliverables under
@@ -16,6 +16,10 @@ Description:
     - The HTML dashboard exposes client-side filter buttons and colored VRAM
       badges (green for local fit, amber for cloud, blue for frontier) driven
       by a tiny inline script with zero external dependencies.
+    - v5.23.0 adds the four-tier AccessTier taxonomy: each model carries a
+      colored access-tier badge (LOCAL_NO_KEY, CLOUD_ZERO_CONFIG_FREE,
+      CLOUD_FREE_TIER_WITH_KEY, CLOUD_PAID_API), tier filter buttons, and a
+      dedicated zero-config free models section.
     - The output directory is created idempotently; filenames are date-stamped
       as ``llm_market_intelligence_YYYYMMDD.{md,html}``.
 
@@ -102,6 +106,14 @@ class IntelligenceReporter:
             f"| Cloud Cost-Effective | {report.cloud_cost_effective_count} |"
         )
         lines.append(f"| Frontier Reasoning | {report.frontier_reasoning_count} |")
+        lines.append(f"| Local No-Key Models | {report.local_no_key_count} |")
+        lines.append(
+            f"| Cloud Zero-Config Free Models | {report.cloud_zero_config_free_count} |"
+        )
+        lines.append(
+            f"| Cloud Free Tier (Key) Models | {report.cloud_free_tier_with_key_count} |"
+        )
+        lines.append(f"| Cloud Paid API Models | {report.cloud_paid_api_count} |")
         lines.append("")
         lines.append("## Executive Optimal Selection Matrix & FinOps")
         lines.append("")
@@ -130,9 +142,12 @@ class IntelligenceReporter:
         lines.append("")
         lines.append(
             "| Model | Developer | Parameters | Context | Pricing ($/1M) | "
-            "MMLU-Pro | HumanEval | TTFT (ms) | Recommended Role | VRAM Class |"
+            "MMLU-Pro | HumanEval | TTFT (ms) | Recommended Role | VRAM Class | "
+            "Access Tier |"
         )
-        lines.append("| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |")
+        lines.append(
+            "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"
+        )
         for model in report.models:
             price = (
                 f"{model.pricing_prompt_per_1m_usd + model.pricing_completion_per_1m_usd:.4f}"
@@ -144,8 +159,30 @@ class IntelligenceReporter:
                 f"| {model.parameter_count_label or '-'} | {model.context_window or '-'} "
                 f"| {price} | {model.mmlu_pro or '-'} | {model.human_eval or '-'} "
                 f"| {model.ttft_ms or '-'} | {model.recommended_role or '-'} "
-                f"| {model.vram_class} |"
+                f"| {model.vram_class} | {model.access_tier} |"
             )
+        lines.append("")
+        lines.append("## Zero-Config Free Models (Air-Gapped Ready)")
+        lines.append("")
+        lines.append(
+            "Models in the LOCAL_NO_KEY or CLOUD_ZERO_CONFIG_FREE access tiers "
+            "require no API key and no paid cloud account. They are the preferred "
+            "dynamic-failover targets when paid endpoints are latched or "
+            "rate-limited."
+        )
+        lines.append("")
+        free_models = [
+            m for m in report.models
+            if m.access_tier in ("LOCAL_NO_KEY", "CLOUD_ZERO_CONFIG_FREE")
+        ]
+        if free_models:
+            for model in free_models[:20]:
+                lines.append(
+                    f"- {model.model} [{model.access_tier}] "
+                    f"({model.recommended_role or 'unclassified'})"
+                )
+        else:
+            lines.append("- No zero-config free models discovered in this window.")
         lines.append("")
         lines.append("## Hardware Recommendations (RTX 4070, 12 GB VRAM)")
         lines.append("")
@@ -334,6 +371,16 @@ class IntelligenceReporter:
             '<button class="filter" data-filter="FRONTIER_REASONING" '
             'onclick="filterModels(\'FRONTIER_REASONING\')">Deep '
             "Reasoning</button>\n"
+            '<button class="filter" data-filter="LOCAL_NO_KEY" '
+            'onclick="filterModels(\'LOCAL_NO_KEY\')">Local No-Key</button>\n'
+            '<button class="filter" data-filter="CLOUD_ZERO_CONFIG_FREE" '
+            'onclick="filterModels(\'CLOUD_ZERO_CONFIG_FREE\')">Zero-Config '
+            "Free</button>\n"
+            '<button class="filter" data-filter="CLOUD_FREE_TIER_WITH_KEY" '
+            'onclick="filterModels(\'CLOUD_FREE_TIER_WITH_KEY\')">Free Tier '
+            "(Key)</button>\n"
+            '<button class="filter" data-filter="CLOUD_PAID_API" '
+            'onclick="filterModels(\'CLOUD_PAID_API\')">Paid API</button>\n'
             "</section>\n"
             '<main class="grid">\n'
             f"{cards}\n"
@@ -346,6 +393,7 @@ class IntelligenceReporter:
     @staticmethod
     def _render_card(model: ScavengedModel) -> str:
         label, cls = _badge(model.vram_class)
+        tier_label, tier_cls = _tier_badge(model.access_tier)
         price = (
             model.pricing_prompt_per_1m_usd + model.pricing_completion_per_1m_usd
         )
@@ -355,10 +403,12 @@ class IntelligenceReporter:
         )
         return (
             f'<article class="card" data-vram="{model.vram_class}" '
+            f'data-tier="{model.access_tier}" '
             f'data-search="{searchable}">\n'
             '<div class="card-head">\n'
             f"<h3>{_html.escape(model.model or 'Unnamed')}</h3>\n"
             f'<span class="badge {cls}">{label}</span>\n'
+            f'<span class="badge {tier_cls}">{tier_label}</span>\n'
             "</div>\n"
             f'<p class="dev">{_html.escape(model.developer or "Unknown")}</p>\n'
             "<ul>\n"
@@ -422,6 +472,25 @@ def _badge(vram_class: str) -> Tuple[str, str]:
     return "Cloud API", "badge-cloud"
 
 
+def _tier_badge(tier: str) -> Tuple[str, str]:
+    """Map an AccessTier to a (label, css-class) badge pair.
+
+    Args:
+        tier (str): LOCAL_NO_KEY, CLOUD_ZERO_CONFIG_FREE,
+            CLOUD_FREE_TIER_WITH_KEY, or CLOUD_PAID_API.
+
+    Returns:
+        tuple[str, str]: The human-readable label and CSS badge class.
+    """
+    if tier == "LOCAL_NO_KEY":
+        return "Local (No Key)", "badge-tier-local"
+    if tier == "CLOUD_ZERO_CONFIG_FREE":
+        return "Zero-Config Free", "badge-tier-free"
+    if tier == "CLOUD_FREE_TIER_WITH_KEY":
+        return "Free Tier (Key)", "badge-tier-freetier"
+    return "Paid API", "badge-tier-paid"
+
+
 # -- Embedded Dark Theme CSS (zero external dependencies) ----------------------
 _HTML_CSS = """
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -469,6 +538,10 @@ body {
 .badge-local { background: #0f3d2e; color: #6ee7a8; border: 1px solid #1f7a52; }
 .badge-cloud { background: #4a3410; color: #f3c46b; border: 1px solid #8a6a1f; }
 .badge-frontier { background: #102a4a; color: #6fb8ff; border: 1px solid #2a6aa8; }
+.badge-tier-local { background: #0d2b1f; color: #9ef0c0; border: 1px solid #1f7a52; }
+.badge-tier-free { background: #1b2c14; color: #c6f68f; border: 1px solid #4a7a2f; }
+.badge-tier-freetier { background: #241f0a; color: #f5d98a; border: 1px solid #8a7a2f; }
+.badge-tier-paid { background: #3a1020; color: #f79ec0; border: 1px solid #8a2f4a; }
 .champions { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-bottom: 2rem; max-width: 1200px; margin-left: auto; margin-right: auto; }
 .champion-card { background: #101a2e; border: 1px solid #2a3a5c; border-radius: 14px; padding: 1.1rem 1.3rem; min-width: 260px; flex: 1 1 260px; }
 .champion-card h3 { color: #7fd1ff; font-size: 1rem; margin-bottom: 0.5rem; }
@@ -491,10 +564,11 @@ var activeQuery = '';
 function applyFilters() {
   document.querySelectorAll('.card').forEach(function (card) {
     var vram = card.getAttribute('data-vram');
+    var tier = card.getAttribute('data-tier');
     var text = (card.getAttribute('data-search') || '').toLowerCase();
-    var vramMatch = activeFilter === 'all' || vram === activeFilter;
+    var match = activeFilter === 'all' || vram === activeFilter || tier === activeFilter;
     var textMatch = activeQuery === '' || text.indexOf(activeQuery) !== -1;
-    card.style.display = (vramMatch && textMatch) ? '' : 'none';
+    card.style.display = (match && textMatch) ? '' : 'none';
   });
 }
 function filterModels(cls) {

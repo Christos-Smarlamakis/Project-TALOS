@@ -214,6 +214,6 @@ class DashboardLayoutBuilder:
         body = (
             "[bold bright_cyan]Command Palette[/bold bright_cyan]  "
             "[dim]/scavenge|/scout  /audit  /fts <q>  /config  /tree <arch|phd|mesh>  "
-            "/view <path>  /help  /quit[/dim]"
+            "/probe  /view <path>  /help  /quit[/dim]"
         )
         return Panel(body, title="[bold]Console HMI[/bold]", border_style="yellow", padding=(0, 1))

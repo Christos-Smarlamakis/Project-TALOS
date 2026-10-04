@@ -1,8 +1,8 @@
 # TALOS Functional Architecture Map
 
-> **Project:** TALOS v5.22.1 -- Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization (ISO/IEC 25010 Compliant)
+> **Project:** TALOS v5.23.0 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine (ISO/IEC 25010 Compliant)
 > **Classification:** Public Technical Reference
-> **Last Updated:** 2026-10-03
+> **Last Updated:** 2026-10-04
 > **Standard:** ISO/IEC 25010 (Functional Suitability, Performance Efficiency, Maintainability)
 
 ---

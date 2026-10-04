@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: ai_strategy_selector.py
-Project: TALOS v5.20.0
+Project: TALOS v5.23.0
 Description:
     Lightweight interactive and headless switcher for the TALOS 5-strategy AI
     execution matrix. It exposes the canonical strategy hierarchy
@@ -103,28 +103,25 @@ def select_ai_execution_strategy(target_strategy=None):
     current = _current_strategy()
     current_label = EXECUTION_STRATEGIES.get(current, {}).get(
         "label", "Not configured")
-    console.print(Panel(
-        Text(f"Current AI Execution Strategy: {current_label}",
-             style="bold bright_cyan"),
-        title="[bold]AI Execution Strategy Switcher[/bold]",
+    from src.utils.console_dashboard import RichSubmenuRenderer
+    renderer = RichSubmenuRenderer(
+        "AI Execution Strategy Switcher",
+        f"Current AI Execution Strategy: {current_label}",
         border_style="#006699",
-    ))
-
-    choice = questionary.select(
-        "Select AI execution strategy:",
-        choices=[s["label"] for s in EXECUTION_STRATEGIES.values()],
-        style=TALOS_QUESTIONARY_STYLE,
-    ).ask()
-    if choice is None:
+        domain="Cognitive Mesh & FinOps Domain",
+    )
+    labels = [s["label"] for s in EXECUTION_STRATEGIES.values()]
+    console.print(renderer.build(entries=[(label, None) for label in labels]))
+    choice = renderer.prompt_choice((1, len(labels)), default="01")
+    if choice in ("00", "q"):
         console.print("[dim]Strategy switch cancelled.[/dim]")
         return False
 
-    for key, strategy in EXECUTION_STRATEGIES.items():
-        if strategy["label"] == choice:
-            _apply_execution_strategy(key)
-            _render_confirmation(key)
-            return True
-    return False
+    keys = list(EXECUTION_STRATEGIES.keys())
+    key = keys[int(choice) - 1]
+    _apply_execution_strategy(key)
+    _render_confirmation(key)
+    return True
 
 
 def _recommendation_stack() -> dict:
@@ -335,32 +332,38 @@ def configure_ai_strategy() -> bool:
     ))
 
     # -- Screen 1: execution mode selection --
-    choice = questionary.select(
-        "Select execution mode:",
-        choices=[
-            "[0] AUTO_PILOT (Auto-Choose) -- 1-click optimal hybrid strategy",
-            "[1] LOCAL_FIRST_CLOUD_BACKUP -- local Ollama with cloud failover",
-            "[2] STRICT_LOCAL_AIRGAPPED -- zero outbound egress",
-            "[3] CLOUD_COST_OPTIMIZED -- DeepSeek / Groq / Gemini Flash",
-            "[4] CLOUD_FRONTIER_RIGOR -- Claude / GPT frontier reasoning",
-        ],
-        style=TALOS_QUESTIONARY_STYLE,
-    ).ask()
-    if choice is None:
+    from src.utils.console_dashboard import RichSubmenuRenderer
+    mode_labels = [
+        "AUTO_PILOT (Auto-Choose) -- 1-click optimal hybrid strategy",
+        "LOCAL_FIRST_CLOUD_BACKUP -- local Ollama with cloud failover",
+        "STRICT_LOCAL_AIRGAPPED -- zero outbound egress",
+        "CLOUD_COST_OPTIMIZED -- DeepSeek / Groq / Gemini Flash",
+        "CLOUD_FRONTIER_RIGOR -- Claude / GPT frontier reasoning",
+    ]
+    renderer = RichSubmenuRenderer(
+        "Select Execution Mode",
+        "ISO/IEC 25010: operability, user-error protection, modularity.",
+        border_style="#006699",
+        domain="Cognitive Mesh & FinOps Domain",
+    )
+    console.print(renderer.build(entries=[(label, None) for label in mode_labels]))
+    choice = renderer.prompt_choice((1, 5), default="01")
+    if choice in ("00", "q"):
         console.print("[dim]Configurator cancelled.[/dim]")
         return False
 
-    if choice.startswith("[0]"):
+    num = int(choice)
+    if num == 1:
         ok = apply_optimal_models("AUTO")
         _render_apply_confirmation("AUTO_PILOT", ok)
         return ok
 
     mode = {
-        "[1]": "LOCAL_FIRST",
-        "[2]": "STRICT_LOCAL",
-        "[3]": "CLOUD_BUDGET",
-        "[4]": "FRONTIER",
-    }.get(choice[:3], "AUTO")
+        2: "LOCAL_FIRST",
+        3: "STRICT_LOCAL",
+        4: "CLOUD_BUDGET",
+        5: "FRONTIER",
+    }[num]
 
     # -- Screen 2: role-slot impact matrix (champion models pre-selected) --
     recs = _recommendation_stack()

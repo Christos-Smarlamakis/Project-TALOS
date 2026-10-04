@@ -2,6 +2,32 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.23.0] - 2026-10-04 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine (ISO/IEC 25010)
+
+### Added
+
+- **Universal 3-Tier Sub-Menu Engine** (`src/utils/console_dashboard/submenu_renderer.py`): `RichSubmenuRenderer` now enforces a strict ISO/IEC 25010 three-tier layout -- (1) a Header Summary Panel with title, subtitle, and active domain description; (2) a two-column Body Grid with strict Column-Major sequential numbering (`[01]..[ceil(N/2)]` left, `[ceil(N/2)+1]..[N]` right) and a centered `[00] Back` footer row; (3) a compact Contextual Navigation Footer (`Input: 01-NN | Navigation: 00/b = Back, q = Quit | Shortcuts: ...`). A new `prompt_choice(valid_range, default)` helper replaces every legacy `questionary.select` list with a single type-safe `rich.prompt.Prompt.ask` that tolerates single-digit, zero-padded, `0`, `00`, `b`, and `q` inputs.
+
+- **Self-Healing Circuit Breaker** (`src/services/cognitive_mesh/self_healing.py`): a new six-state `SelfHealingCircuitBreaker` (`HEALTHY`, `RATE_LIMITED` [429], `LATCHED` [402], `UNAUTHORIZED` [401], `UNREACHABLE` [5xx/timeout], `HALF_OPEN`) with an exponential-backoff timer `T_backoff = min(T0 * 2^k, Tmax)` (T0=60s, Tmax=600s). `should_attempt()` auto-transitions expired backoffs to `HALF_OPEN`; `record_success()` restores `HEALTHY`. Zero imports from SQLite/PRISMA/CLI (Constitution III).
+
+- **API Health Probe Engine** (`src/services/cognitive_mesh/self_healing.py`): `ApiHealthProbeEngine.probe_all()` concurrently pings all sixteen providers with lightweight probe requests and emits a `MeshDiagnosticReport` with per-provider latency (ms), HTTP status, and active Access-Tier.
+
+- **Access-Tier Engine** (`dto.py`, `scavenger.py`, `reporter.py`): the four-tier `AccessTier` enumeration (`LOCAL_NO_KEY`, `CLOUD_ZERO_CONFIG_FREE`, `CLOUD_FREE_TIER_WITH_KEY`, `CLOUD_PAID_API`) classifies all 576+ models and all endpoints. The Markdown and dark-theme HTML reports gain Access-Tier filter buttons, colored badges, and a "Zero-Config Free Models (Air-Gapped Ready)" section.
+
+- **Dynamic Zero-Config Failover** (`router.py`): `CognitiveMetaRouter` wires the `SelfHealingCircuitBreaker` and auto-fails over to the top available `CLOUD_ZERO_CONFIG_FREE` or `LOCAL_NO_KEY` candidate when paid endpoints are latched or rate-limited.
+
+- **CLI & HUD Integration** (`talos.py`, `hud_renderer.py`, `layout_builder.py`, `help_system.py`): new `--probe-apis` / `--diagnose-mesh` CLI flag, `/probe` command-palette shortcut, and live provider health telemetry in the persistent HUD (`Mesh: 16 Providers (Active: X | Free: Y | Latched: Z)`).
+
+- **Confidential Academic Dossier 11** (`docs/internal/academic/11_SELF_HEALING_API_MESH_RESILIENCE_ISO25010.md`): 7-section Theory-to-Code dossier (ISO/IEC 25010 formulation, half-open state machine & exponential backoff mathematics, column-major scan-path proof, Access-Tier taxonomy, PRISMA-ScR availability, PhD Ch.2 + HOU ICBE 2026 extension, IP notice).
+
+### Changed
+
+- **Universal Sub-Menu Refactor** (`talos.py`, `ai_strategy_selector.py`): all primary sub-menus (`profile_settings_menu`, `search_ingestion_menu`, `analysis_visualization_menu`, `drl_gwo_menu`, `database_data_menu`, `system_health_menu`) and all nested child menus (`api_keys_menu`, `author_tools_menu`, strategy switcher, FinOps configurator) now render exclusively through the 3-Tier `RichSubmenuRenderer` + `prompt_choice()`, eliminating every duplicate vertical `questionary` list below a Rich panel.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.23.0); `pytest tests/test_self_healing.py -q` (21 hermetic); `pytest tests/test_cognitive_router.py tests/test_quota_latching.py tests/test_model_scavenger.py tests/test_intelligence_reporter.py tests/test_provider_registry.py -q` (62 hermetic); `python talos.py --probe-apis` (exit 0, Rich diagnostic table); `python src/utils/verify_dependency_map.py --ci` (0 matched / 0 stale / 0 missing); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.22.1] - 2026-10-03 -- Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization
 
 ### Added
