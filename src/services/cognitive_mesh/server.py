@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: server.py
-Project: TALOS v5.22.1
+Project: TALOS v5.24.0
 Description:
     FastAPI mini-application for the Cognitive Mesh in-tree microservice. It
     exposes the cognitive router dispatch, the sixteen-provider registry
@@ -26,7 +26,11 @@ Dependencies:
       scavenger: the microservice submodules.
 """
 
+import json
 import os
+import tempfile
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 # -- Resolve project root (same pattern as all src/*.py modules) --------------
 _P = os.path.abspath(os.path.dirname(__file__))
@@ -36,10 +40,11 @@ if _P:
     import sys
     sys.path.insert(0, _P)
 
-from fastapi import APIRouter, FastAPI  # noqa: E402
+from fastapi import APIRouter, FastAPI, Request  # noqa: E402
 from pydantic import BaseModel, Field  # noqa: E402
 
 from src.services.cognitive_mesh.benchmarks import ModelBenchmarkClient  # noqa: E402
+from src.services.cognitive_mesh.buffer_sync import BufferSyncEngine  # noqa: E402
 from src.services.cognitive_mesh.dto import (  # noqa: E402
     MarketIntelligenceReport,
     RouterTaskRequest,
@@ -121,6 +126,66 @@ def scavenge(request: ScavengeRequest) -> MarketIntelligenceReport:
     return ModelScoutAgent().scavenge_market(window_days=request.window_days)
 
 
+def _normalize_sync_payload(payload: Any) -> List[Dict[str, Any]]:
+    """Normalize a JSON sync payload into a flat list of record dicts.
+
+    Args:
+        payload (Any): A parsed JSON document (list or dict).
+
+    Returns:
+        list[dict]: The flattened, dict-only records.
+    """
+    if isinstance(payload, list):
+        return [r for r in payload if isinstance(r, dict)]
+    if isinstance(payload, dict):
+        records = (
+            payload.get("records") or payload.get("models") or payload.get("entries")
+        )
+        if isinstance(records, list):
+            return [r for r in records if isinstance(r, dict)]
+    return []
+
+
+@cognitive_router_app.post("/mesh/sync")
+async def mesh_sync(raw_request: Request) -> dict:
+    """Ingest a remote worker buffer into the benchmark cache.
+
+    Accepts either a JSON payload (``{"records": [...]}`` or a JSON array) or
+    a raw JSONL stream, deduplicates by model identifier, and merges into
+    ``data/cache/llm_benchmarks.json`` with zero database locking.
+
+    Args:
+        raw_request (Request): The raw HTTP request carrying the payload.
+
+    Returns:
+        dict: The ingestion summary from ``BufferSyncEngine``.
+    """
+    body = await raw_request.body()
+    text = body.decode("utf-8", errors="replace")
+    engine = BufferSyncEngine()
+
+    fd, spool_name = tempfile.mkstemp(suffix=".jsonl", prefix="hermes_spool_")
+    spool = Path(spool_name)
+    try:
+        # -- Prefer a single JSON document; fall back to a raw JSONL stream. --
+        try:
+            payload = json.loads(text)
+            records = _normalize_sync_payload(payload)
+            spool_text = "".join(
+                json.dumps(r, ensure_ascii=False) + "\n" for r in records
+            )
+        except ValueError:
+            spool_text = text
+        with os.fdopen(fd, "w", encoding="utf-8") as fh:
+            fh.write(spool_text)
+        return engine.ingest_jsonl_buffer(spool)
+    finally:
+        try:
+            spool.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
 @cognitive_router_app.get("/health")
 def health() -> dict:
     """Report service health with local GPU and active provider telemetry.
@@ -132,7 +197,7 @@ def health() -> dict:
     return {
         "status": "ok",
         "service": "cognitive_mesh",
-        "version": "5.22.1",
+        "version": "5.24.0",
         "local_gpu": {"name": "RTX 4070", "vram_gb": 12.0},
         "active_provider_count": len(active),
         "active_providers": [d.name for d in active],
@@ -146,7 +211,7 @@ app = FastAPI(
         "Extraction-ready in-tree cognitive microservice: meta-routing, "
         "provider registry, benchmark matrix, and autonomous model scavenging."
     ),
-    version="5.23.0",
+    version="5.24.0",
 )
 app.include_router(cognitive_router_app)
 

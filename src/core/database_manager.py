@@ -5,7 +5,7 @@
 #  This program is free software...
 """
 Module: database_manager.py (v5.0 - Multi-Provider Hybrid Embeddings)
-Project: TALOS v5.22.1
+Project: TALOS v5.24.0
 """
 import sqlite3
 import os
@@ -41,6 +41,34 @@ def get_active_profile_db_path():
 # interpreter lifetime, regardless of how many DatabaseManager instances are
 # constructed (the daemon, the API server, and the CLI all share it).
 _ORPHAN_MERGE_DONE = False
+
+# -- Enterprise Database Vault integrity sentinel (v5.24.0) --------------------
+# Runs the SQLite integrity PRAGMAs exactly once per process, mirroring the
+# orphan-merge sentinel so the daemon, the API server, and the CLI share a
+# single startup check instead of rescanning the file on every construction.
+_VAULT_VERIFY_DONE = False
+
+
+def _run_vault_verify_once():
+    """Run the DatabaseVault integrity sentinel once per interpreter lifetime.
+
+    The vault is invoked only after the database file is created (see
+    ``DatabaseManager.__init__``), so the check always targets a real file and
+    never fabricates a passing verdict on an empty database. A failure logs a
+    warning and never crashes startup (Constitution II / III).
+    """
+    global _VAULT_VERIFY_DONE
+    if _VAULT_VERIFY_DONE:
+        return
+    _VAULT_VERIFY_DONE = True
+    try:
+        from src.core.database_vault import DatabaseVault
+        verdict = DatabaseVault().verify_integrity()
+        if not verdict.get("ok"):
+            detail = verdict.get("error") or verdict.get("integrity_check")
+            print("[VAULT] Database integrity check failed: {}".format(detail))
+    except Exception as exc:
+        print("[VAULT] Integrity sentinel unavailable: {}".format(exc))
 
 # Minimal base schema used to guarantee a valid ``papers`` table exists in the
 # merge target before any rows are copied. The full schema is created lazily by
@@ -262,6 +290,9 @@ class DatabaseManager:
             self.db_path = db_path
 
         self.create_table()
+        # -- v5.24.0: Enterprise Database Vault integrity sentinel (once per
+        #    process, after the database file has been created). --
+        _run_vault_verify_once()
         self._embedding_ids: List[int] = []
         self._embedding_vectors: Union[np.ndarray, None] = None
         self._loaded_model = None

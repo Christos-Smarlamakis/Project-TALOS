@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: router.py
-Project: TALOS v5.23.0
+Project: TALOS v5.24.0
 Description:
     Decoupled, extraction-ready Cognitive Meta-Router. This module selects an
     inference provider for a scientific task using one of four named routing
@@ -128,6 +128,9 @@ from src.services.cognitive_mesh.self_healing import (  # noqa: E402
     SelfHealingCircuitBreaker,
     classify_access_tier,
 )
+from src.services.cognitive_mesh.rate_limiter import (  # noqa: E402
+    TokenBucketRateLimiter,
+)
 
 
 class ProviderHttpError(Exception):
@@ -178,6 +181,7 @@ class CognitiveMetaRouter:
         local_semaphore_limit: int = 2,
         ema_alpha: float = 0.2,
         breaker: Optional[SelfHealingCircuitBreaker] = None,
+        rate_limiter: Optional[TokenBucketRateLimiter] = None,
     ) -> None:
         self._registry = registry if registry is not None else get_provider_registry()
         self._transport = transport
@@ -185,6 +189,9 @@ class CognitiveMetaRouter:
         self._ema_alpha = ema_alpha
         self._metrics: Dict[str, _ProviderMetrics] = defaultdict(_ProviderMetrics)
         self._breaker = breaker if breaker is not None else SelfHealingCircuitBreaker()
+        self._rate_limiter = (
+            rate_limiter if rate_limiter is not None else TokenBucketRateLimiter()
+        )
 
     # ------------------------------------------------------------------
     # -- Public dispatch API -------------------------------------------
@@ -384,6 +391,12 @@ class CognitiveMetaRouter:
         descriptor = self._registry.get(provider_name)
         model = descriptor.default_model if descriptor else provider_name
         is_local = provider_name == "ollama"
+
+        # -- v5.24.0: proactive token-bucket throttle before outbound dispatch. --
+        # Decision-only dispatch (no transport) skips the throttle so hermetic
+        # unit tests never incur real wall-clock sleeps.
+        if self._transport is not None:
+            self._rate_limiter.acquire(provider_name, tokens=1)
 
         start = time.perf_counter()
         if is_local:

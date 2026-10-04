@@ -1,10 +1,10 @@
-# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.23.0
+# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.24.0
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-10-04 (v5.23.0 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine)
+> **Last Updated:** 2026-10-04 (v5.24.0 -- Enterprise Data Vault, Proactive Token-Bucket Rate Limiter & Distributed JSONL Buffer Sync)
 
 ---
 
@@ -20,8 +20,8 @@ USER INTERFACES
         v
 
 SRC PACKAGES
-  src/core/          (7 files)  ai_manager, database_manager, hardware, notifier, profile_manager, provider_registry, hardware_advisor
-  src/services/      (10 files) cognitive_mesh/ (dto, registry, router, benchmarks, scavenger, reporter, server, client) -- extraction-ready for SYNAPSE
+  src/core/          (8 files)  ai_manager, database_manager, database_vault, hardware, notifier, profile_manager, provider_registry, hardware_advisor
+  src/services/      (12 files) cognitive_mesh/ (dto, registry, router, rate_limiter, benchmarks, buffer_sync, scavenger, reporter, server, client) -- extraction-ready for SYNAPSE
   src/ai/drl/       (10 files)  drl_agent, drl_networks, talos_env, train_agent, live_agent_*
   src/ai/optimizers/ (3 files)  gwo_foraging_hyperparameter_tuner, gwo_live_dashboard, gwo_llm_router_reward_shaper
   src/ai/embeddings/ (2 files)  embedding_generator, db_embedding_upgrade
@@ -346,8 +346,8 @@ src/core/hierarchical_evaluator.py
 
 ---
 
-> **Last Updated:** 2026-10-04 (v5.23.0 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine)
-> **Project Version:** v5.23.0
-> **Total .py modules under src/:** 113 (core 7 + services 10 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 6 + ingestion/sources 18 + search 3 + integration 3 + utils 23 + api 4 + prisma 8 + mcp_server 1)
+> **Last Updated:** 2026-10-04 (v5.24.0 -- Enterprise Data Vault, Proactive Token-Bucket Rate Limiter & Distributed JSONL Buffer Sync)
+> **Project Version:** v5.24.0
+> **Total .py modules under src/:** 115 (core 8 + services 12 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 6 + ingestion/sources 18 + search 3 + integration 3 + utils 23 + api 4 + prisma 8 + mcp_server 1)
 
 

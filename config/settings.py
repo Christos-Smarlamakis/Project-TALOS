@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.23.0
+Project: TALOS v5.24.0
 Description:
-    Canonical configuration hub for TALOS v5.23.0. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.24.0. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
+
+    v5.24.0: Proactive Token-Bucket Rate Limiter provider RPM ceilings and
+    Enterprise Database Vault defaults are consumed by the Cognitive Mesh and
+    core subsystems (see src/services/cognitive_mesh/rate_limiter.py and
+    src/core/database_vault.py).
 
     Key design decisions:
     - Reads from environment variables with sensible defaults for air-gapped operation.
@@ -288,7 +293,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.23.0"
+TALOS_VERSION = "5.24.0"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.

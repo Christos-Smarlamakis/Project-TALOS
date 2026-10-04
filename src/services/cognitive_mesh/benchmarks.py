@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: benchmarks.py
-Project: TALOS v5.22.1
+Project: TALOS v5.24.0
 Description:
     Scientific model benchmark client. Maintains a local, air-gapped cache of
     SOTA inference-model benchmark metrics (MMLU-Pro, HumanEval, cost per 1M
@@ -314,6 +314,26 @@ class ModelBenchmarkClient:
             if isinstance(record, dict) and record.get("model"):
                 existing[record["model"]] = record
         self._records = list(existing.values())
+
+    def ingest_remote_records(self, records: List[Dict[str, Any]]) -> int:
+        """Merge remote worker records and persist, returning the new-model count.
+
+        Args:
+            records (list[dict]): Model records from a remote JSONL buffer.
+
+        Returns:
+            int: Number of genuinely new model identifiers merged.
+        """
+        existing = {r.get("model") for r in self._records}
+        new_count = sum(
+            1
+            for r in records
+            if isinstance(r, dict) and r.get("model") and r.get("model") not in existing
+        )
+        self._merge_records(records)
+        self._last_refreshed = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+        self._save_cache()
+        return new_count
 
     # ------------------------------------------------------------------
     # -- Role-based top-model pairing ----------------------------------

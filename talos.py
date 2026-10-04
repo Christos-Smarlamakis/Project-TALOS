@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.23.0
+Project: TALOS v5.24.0
 Description:
     Main entry point for the TALOS Scientific Terminal Dashboard (HMI).
     Provides a Rich-powered, two-column, four-panel interactive console
@@ -23,6 +23,14 @@ Description:
     Research Search & Ingestion, Advanced Analysis & Visualizations, DRL
     Agents/Daemons & GWO Swarm, Database Maintenance & Data Tools, and
     System Health, Diagnostics & CI/CD.
+
+    v5.24.0: Enterprise Data Vault, Proactive Token-Bucket Rate Limiter &
+    Distributed JSONL Buffer Sync (ISO/IEC 25010) -- an automated SQLite
+    integrity vault with atomic VACUUM INTO snapshots and 7-day rotation
+    (--backup-db / --verify-db / --restore-backup, /backup / /verify), a
+    proactive per-provider token-bucket rate limiter eliminating HTTP 429s
+    ahead of dispatch, and a store-and-forward JSONL buffer sync for remote
+    HERMES workers (--sync-buffer, /sync, POST /api/v1/cognitive/mesh/sync).
 
     v5.23.0: Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing
     API Mesh & Access-Tier Engine -- RichSubmenuRenderer enforces a strict
@@ -2772,6 +2780,55 @@ def _run_api_probe():
     )
 
 
+def _render_vault_verify(result):
+    """Render the Database Vault integrity verdict as a Rich table.
+
+    Args:
+        result (dict): The verdict dictionary from ``DatabaseVault.verify_integrity``.
+    """
+    table = Table(
+        title="[bold bright_cyan]TALOS Database Vault Integrity Check[/bold bright_cyan]",
+        box=box.ROUNDED,
+        border_style="cyan",
+        header_style="bold bright_cyan",
+    )
+    table.add_column("Check", style="cyan")
+    table.add_column("Result", style="white")
+    table.add_row("Path", str(result.get("path", "-")))
+    table.add_row("Integrity Check", str(result.get("integrity_check", "-")))
+    table.add_row("Quick Check", str(result.get("quick_check", "-")))
+    table.add_row("Foreign Key Violations", str(result.get("foreign_key_check", 0)))
+    if result.get("error"):
+        table.add_row("Error", str(result["error"]))
+    console.print(table)
+    if result.get("ok"):
+        console.print("[bold green]Vault: INTEGRITY OK[/bold green]")
+    else:
+        console.print("[bold red]Vault: INTEGRITY FAILED[/bold red]")
+
+
+def _render_sync_summary(result):
+    """Render the JSONL buffer sync summary as a compact Rich table.
+
+    Args:
+        result (dict): The summary dictionary from ``BufferSyncEngine``.
+    """
+    table = Table(
+        title="[bold bright_cyan]TALOS JSONL Buffer Sync[/bold bright_cyan]",
+        box=box.ROUNDED,
+        border_style="cyan",
+        header_style="bold bright_cyan",
+    )
+    table.add_column("Metric", style="cyan")
+    table.add_column("Value", style="white")
+    table.add_row("Records Parsed", str(result.get("parsed", 0)))
+    table.add_row("Unique Models", str(result.get("deduplicated", 0)))
+    table.add_row("Skipped Duplicates", str(result.get("skipped", 0)))
+    table.add_row("New Models Merged", str(result.get("merged", 0)))
+    table.add_row("Cache Record Count", str(result.get("record_count", 0)))
+    console.print(table)
+
+
 def _dispatch_slash_command(raw, python_exe):
     """Dispatch a slash command from the interactive command palette.
 
@@ -2825,6 +2882,23 @@ def _dispatch_slash_command(raw, python_exe):
             console.print("[yellow]Usage: /view <path>[/yellow]")
             return "handled"
         _render_preview(arg)
+        return "handled"
+    if op == "/backup":
+        from src.core.database_vault import DatabaseVault
+        snapshot = DatabaseVault().create_atomic_snapshot()
+        console.print(f"[green][OK] Atomic snapshot created: {snapshot}[/green]")
+        return "handled"
+    if op == "/verify":
+        from src.core.database_vault import DatabaseVault
+        _render_vault_verify(DatabaseVault().verify_integrity())
+        return "handled"
+    if op == "/sync":
+        if not arg:
+            console.print("[yellow]Usage: /sync <hermes_buffer.jsonl>[/yellow]")
+            return "handled"
+        from pathlib import Path
+        from src.services.cognitive_mesh.buffer_sync import BufferSyncEngine
+        _render_sync_summary(BufferSyncEngine().ingest_jsonl_buffer(Path(arg)))
         return "handled"
     return "unknown"
 
@@ -3067,6 +3141,39 @@ def _handle_cli_flags(argv):
             console.print("[yellow]Usage: python talos.py --preview-report <path>[/yellow]")
             return True
         _render_preview(path)
+        return True
+    # -- v5.24.0: Enterprise Database Vault (--backup-db / --verify-db /
+    #    --restore-backup) and Distributed JSONL Buffer Sync (--sync-buffer). --
+    if "--backup-db" in argv:
+        from src.core.database_vault import DatabaseVault
+        snapshot = DatabaseVault().create_atomic_snapshot()
+        console.print(f"[green][OK] Atomic snapshot created: {snapshot}[/green]")
+        return True
+    if "--verify-db" in argv:
+        from src.core.database_vault import DatabaseVault
+        _render_vault_verify(DatabaseVault().verify_integrity())
+        return True
+    if "--restore-backup" in argv:
+        path = _flag_value(argv, "--restore-backup")
+        if not path:
+            console.print("[yellow]Usage: python talos.py --restore-backup <snapshot.db>[/yellow]")
+            return True
+        from pathlib import Path
+        from src.core.database_vault import DatabaseVault
+        if DatabaseVault().restore_snapshot(Path(path)):
+            console.print(f"[green][OK] Database restored from: {path}[/green]")
+        else:
+            console.print(f"[red][FAIL] Could not restore from: {path}[/red]")
+            sys.exit(1)
+        return True
+    if "--sync-buffer" in argv:
+        path = _flag_value(argv, "--sync-buffer")
+        if not path:
+            console.print("[yellow]Usage: python talos.py --sync-buffer <hermes_buffer.jsonl>[/yellow]")
+            return True
+        from pathlib import Path
+        from src.services.cognitive_mesh.buffer_sync import BufferSyncEngine
+        _render_sync_summary(BufferSyncEngine().ingest_jsonl_buffer(Path(path)))
         return True
     return False
 

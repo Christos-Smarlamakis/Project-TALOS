@@ -4,7 +4,29 @@
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή έκδοσης, αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται με το νέο ορόσημο και την κατάστασή του.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-04 (v5.23.0 -- Καθολική Αρχιτεκτονική Υπομενού 3 Επιπέδων, Αυτόνομο Αυτοθεραπευόμενο Δίκτυο API & Μηχανή Βαθμίδων Πρόσβασης)
+> **Τελευταία Ενημέρωση:** 2026-10-04 (v5.24.0 -- Επιχειρηματικό Θησαυροφυλάκιο Δεδομένων, Προληπτικός Περιοριστής Ρυθμού Token-Bucket & Κατανεμημένος Συγχρονισμός Προσωρινής Μνήμης JSONL)
+
+---
+
+## Φάση 85: Επιχειρηματικό Θησαυροφυλάκιο Δεδομένων, Προληπτικός Περιοριστής Ρυθμού Token-Bucket & Κατανεμημένος Συγχρονισμός Προσωρινής Μνήμης JSONL (v5.24.0)
+
+- [x] **Κατάσταση:** ΟΛΟΚΛΗΡΩΘΗΚΕ (2026-10-04).
+
+- [x] **Προληπτικός Περιοριστής Ρυθμού Token-Bucket** -- `rate_limiter.py` (`TokenBucketRateLimiter.acquire` / `get_provider_status`), αναπλήρωση `r = RPM/60`, χωρητικότητα `B`, ομαλός μικρο-ύπνος, Ollama `inf`· ενσωματώθηκε στον `CognitiveMetaRouter`.
+
+- [x] **Κατανεμημένος Συγχρονισμός JSONL** -- `buffer_sync.py` (`BufferSyncEngine.ingest_jsonl_buffer` / `export_worker_buffer`) συν `POST /api/v1/cognitive/mesh/sync`.
+
+- [x] **Επιχειρηματικό Θησαυροφυλάκιο Δεδομένων** -- `database_vault.py` (`verify_integrity` / `create_atomic_snapshot` VACUUM INTO / `restore_snapshot`) συν τον σκοπό εκκίνησης στον `DatabaseManager.__init__`.
+
+- [x] **CLI & HUD** -- `--backup-db` / `--verify-db` / `--restore-backup` / `--sync-buffer`, `/backup` / `/verify` / `/sync`, σήματα HUD `Vault: INTEGRITY OK` και `Rate Limiter: ACTIVE`.
+
+- [x] **Κανόνας 9** -- το Πρότυπο Ποιότητας Λογισμικού 8 Πυλώνων ISO/IEC 25010 κωδικοποιήθηκε στο `.clinerules`.
+
+- [x] **Απόρρητος Ακαδημαϊκός Φάκελος 12** -- `docs/internal/academic/12_ENTERPRISE_DATA_VAULT_PROACTIVE_RATE_LIMITING_ISO25010.md` (7 ενότητες).
+
+- [x] **Συγχρονισμός έκδοσης** -- `config/settings.py` (`TALOS_VERSION = "5.24.0"`), `main_api.py`, `talos.py`, εκκινητές, `docker-compose.yml` (`talos:5.24.0`), `CITATION.cff` (5.24.0, 2026-10-04), `tests/test_multi_tier.py` και όλα τα 21 κανονικά έγγραφα σε v5.24.0 (2026-10-04).
+
+- [x] **Πέρασαν οι πύλες επαλήθευσης** -- compileall (0 σφάλματα), test_system_integrity, test_talos_version (5.24.0), test_rate_limiter + test_buffer_sync + test_database_vault (16), `--verify-db` / `--backup-db` (έξοδος 0), verify_dependency_map --ci (0/0/0), bash -n, σάρωση UTF-8 (0 U+FFFD).
 
 ---
 

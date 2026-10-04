@@ -1,10 +1,10 @@
-# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.23.0
+# TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.24.0
 
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
 > **Last Updated:** 2026-10-04
-> **Version:** v5.23.0 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine
+> **Version:** v5.24.0 -- Enterprise Data Vault, Proactive Token-Bucket Rate Limiter & Distributed JSONL Buffer Sync
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026)
 
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.23.0" | `config/settings.py` |
+| TALOS_VERSION | "5.24.0" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -1389,6 +1389,22 @@ For each evaluated paper, the AI generates:
 - **Access-Tier Engine** (`dto.py`, `scavenger.py`, `reporter.py`): `AccessTier` (`LOCAL_NO_KEY`, `CLOUD_ZERO_CONFIG_FREE`, `CLOUD_FREE_TIER_WITH_KEY`, `CLOUD_PAID_API`); `CognitiveMetaRouter` auto-fails over to free-tier candidates; reporter emits tier badges, filter buttons, and a zero-config free models section.
 
 **Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.23.0), `pytest tests/test_self_healing.py -q` (21 hermetic), `python talos.py --probe-apis` (exit 0), `python src/utils/verify_dependency_map.py --ci` (0/0/0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD).
+
+### 15.58 Enterprise Data Vault, Proactive Token-Bucket Rate Limiter & Distributed JSONL Buffer Sync (v5.24.0)
+
+**Overview:** v5.24.0 codifies the 8-Pillar ISO/IEC 25010 Quality Standard (Rule 9), adds a proactive token-bucket rate limiter that eliminates HTTP 429s a priori, a store-and-forward JSONL buffer sync for remote HERMES workers, and an Enterprise Database Vault with atomic VACUUM INTO snapshots and 7-day rotation.
+
+- **Proactive Token-Bucket Rate Limiter** (`src/services/cognitive_mesh/rate_limiter.py`): `TokenBucketRateLimiter.acquire(provider_name, tokens=1)` computes the smooth micro-sleep `dt = deficit / r` (r = RPM/60, B = max(1.0, r)) and sleeps before dispatch; `get_provider_status()` reports remaining tokens and fill percentage. Ceilings: Groq 30, Cerebras 60, Gemini 15, SambaNova 20, DeepSeek 60, OpenRouter 20, Ollama inf. Wired into `CognitiveMetaRouter`.
+
+- **Distributed JSONL Buffer Sync** (`src/services/cognitive_mesh/buffer_sync.py`): `BufferSyncEngine.ingest_jsonl_buffer(file_path)` parses `hermes_buffer.jsonl`, deduplicates by model identifier, merges into `data/cache/llm_benchmarks.json`; `export_worker_buffer(models, output_path)` serializes for offline transport; `POST /api/v1/cognitive/mesh/sync` accepts JSON or raw JSONL.
+
+- **Enterprise Database Vault** (`src/core/database_vault.py`): `verify_integrity()` runs `PRAGMA integrity_check` / `quick_check` / `foreign_key_check`; `create_atomic_snapshot()` issues `VACUUM INTO 'data/backups/talos_backup_YYYYMMDD_HHMMSS.db'` with 7-day rotation; `restore_snapshot()` verifies before rollback. Startup sentinel wired into `DatabaseManager.__init__`.
+
+- **CLI, Palette & HUD** (`talos.py`, `hud_renderer.py`): `--backup-db` / `--verify-db` / `--restore-backup` / `--sync-buffer` flags; `/backup` / `/verify` / `/sync` palette; HUD `Vault: INTEGRITY OK` and `Rate Limiter: ACTIVE`.
+
+- **Rule 9** (`.clinerules`): the complete 8-Pillar ISO/IEC 25010 Software Product Quality Standard.
+
+**Verification surface:** `python -m compileall src config tests talos.py` (0 errors), `pytest tests/test_system_integrity.py -q`, `pytest tests/test_multi_tier.py -k test_talos_version` (5.24.0), `pytest tests/test_rate_limiter.py tests/test_buffer_sync.py tests/test_database_vault.py -q` (16 hermetic), `python talos.py --verify-db` / `--backup-db` (exit 0), `python src/utils/verify_dependency_map.py --ci` (0/0/0), `bash -n run_talos.sh`, strict UTF-8 scan (0 U+FFFD).
 
 ### 15.56 Rich Sub-Menu Modernization, Daemon Profile Binding & Model Scout Terminology Formalization (v5.22.1)
 

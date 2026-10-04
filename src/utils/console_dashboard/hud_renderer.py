@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: hud_renderer.py
-Project: TALOS v5.23.0
+Project: TALOS v5.24.0
 Description:
     Persistent telemetry HUD renderer for the TALOS Scientific Terminal
     Dashboard. Builds a compact multi-row Rich Panel summarising the active
@@ -142,6 +142,18 @@ class HudRenderer:
                 )
         else:
             row2.append("-", style="bold cyan")
+        row2.append("  |  Vault: ", style="dim white")
+        vault = self._vault_status()
+        row2.append(
+            vault,
+            style="bold green" if vault == "INTEGRITY OK" else "bold red",
+        )
+        row2.append("  |  Rate Limiter: ", style="dim white")
+        rate = self._rate_limiter_status()
+        row2.append(
+            rate,
+            style="bold green" if rate == "ACTIVE" else "bold red",
+        )
 
         table = Table(show_header=False, box=None, padding=(0, 1), expand=False)
         table.add_column(justify="left", no_wrap=True)
@@ -159,6 +171,36 @@ class HudRenderer:
     # ------------------------------------------------------------------
     # -- Telemetry probes (all best-effort, air-gapped) ----------------
     # ------------------------------------------------------------------
+
+    def _vault_status(self) -> str:
+        """Return the Database Vault integrity status label.
+
+        Uses the lightweight ``quick_status`` probe (``PRAGMA quick_check``
+        only) so the HUD render never blocks on a full integrity scan.
+
+        Returns:
+            str: ``"INTEGRITY OK"`` or ``"CHECK FAILED"``.
+        """
+        try:
+            from src.core.database_vault import DatabaseVault
+
+            return "INTEGRITY OK" if DatabaseVault().quick_status() else "CHECK FAILED"
+        except Exception:
+            return "UNKNOWN"
+
+    def _rate_limiter_status(self) -> str:
+        """Return the proactive token-bucket rate limiter status label.
+
+        Returns:
+            str: ``"ACTIVE"`` when the limiter is importable, else ``"INACTIVE"``.
+        """
+        try:
+            from src.services.cognitive_mesh.rate_limiter import TokenBucketRateLimiter
+
+            TokenBucketRateLimiter()
+            return "ACTIVE"
+        except Exception:
+            return "INACTIVE"
 
     def _profile_name(self) -> str:
         """Return the active profile name, defaulting to 'default'.

@@ -2,6 +2,32 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.24.0] - 2026-10-04 -- Enterprise Data Vault, Proactive Token-Bucket Rate Limiter & Distributed JSONL Buffer Sync (ISO/IEC 25010)
+
+### Added
+
+- **Proactive Token-Bucket Rate Limiter** (`src/services/cognitive_mesh/rate_limiter.py`): `TokenBucketRateLimiter.acquire(provider_name, tokens=1) -> float` computes the smooth micro-sleep delay `dt = deficit / r` (refill rate `r = RPM/60`, capacity `B = max(1.0, r)`) and sleeps before dispatch, eliminating HTTP 429s a priori. `get_provider_status() -> dict` reports remaining tokens and fill percentage. Per-provider ceilings: Groq 30, Cerebras 60, Gemini 15, SambaNova 20, DeepSeek 60, OpenRouter 20, Ollama `inf`. Injectable clock/sleep for hermetic tests. Wired into `CognitiveMetaRouter.dispatch()`.
+
+- **Distributed Store-and-Forward JSONL Sync Engine** (`src/services/cognitive_mesh/buffer_sync.py`): `BufferSyncEngine.ingest_jsonl_buffer(file_path) -> dict` parses an append-only `hermes_buffer.jsonl` from a remote HERMES worker, deduplicates by model identifier, and merges into `data/cache/llm_benchmarks.json`; `export_worker_buffer(models, output_path) -> Path` serializes discoveries for offline transport. Pure JSON/JSONL, zero external queue dependency.
+
+- **Enterprise Database Vault** (`src/core/database_vault.py`): `DatabaseVault.verify_integrity(db_path=None) -> dict` runs `PRAGMA integrity_check` / `quick_check` / `foreign_key_check`; `create_atomic_snapshot(backup_dir=..., max_retention_days=7) -> Path` produces a `VACUUM INTO` atomic snapshot with 7-day rotation; `restore_snapshot(snapshot_path) -> bool` verifies snapshot integrity before rollback. Startup sentinel wired into `DatabaseManager.__init__`.
+
+- **Mesh sync endpoint** (`src/services/cognitive_mesh/server.py`): `POST /api/v1/cognitive/mesh/sync` accepts a JSON payload or a raw JSONL stream and delegates to `BufferSyncEngine.ingest_jsonl_buffer()`.
+
+- **CLI, Command Palette & HUD Integration** (`talos.py`, `hud_renderer.py`): new `--backup-db`, `--verify-db`, `--restore-backup [path]`, `--sync-buffer [path]` flags; `/backup`, `/verify`, `/sync [path]` command-palette shortcuts; persistent HUD badges `Vault: INTEGRITY OK` and `Rate Limiter: ACTIVE`.
+
+- **Rule 9** (`.clinerules`): the complete 8-Pillar ISO/IEC 25010 Software Product Quality Standard codified as a mandatory, non-negotiable quality gate.
+
+- **Confidential Academic Dossier 12** (`docs/internal/academic/12_ENTERPRISE_DATA_VAULT_PROACTIVE_RATE_LIMITING_ISO25010.md`): 7-section Theory-to-Code dossier.
+
+### Changed
+
+- `CognitiveMetaRouter.__init__` gains an injectable `rate_limiter` and throttles before outbound dispatch; `ModelBenchmarkClient` gains `ingest_remote_records(records) -> int`; `DatabaseVault` gains an injectable `db_path` for hermetic testing.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.24.0); `pytest tests/test_rate_limiter.py tests/test_buffer_sync.py tests/test_database_vault.py -q` (16 hermetic); `python talos.py --verify-db` / `--backup-db` (exit 0); `python src/utils/verify_dependency_map.py --ci` (0/0/0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD).
+
 ## [v5.23.0] - 2026-10-04 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine (ISO/IEC 25010)
 
 ### Added

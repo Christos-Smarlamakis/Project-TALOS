@@ -2,6 +2,32 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.24.0] - 2026-10-04 -- Επιχειρηματικό Θησαυροφυλάκιο Δεδομένων, Προληπτικός Περιοριστής Ρυθμού Token-Bucket & Κατανεμημένος Συγχρονισμός Προσωρινής Μνήμης JSONL (ISO/IEC 25010)
+
+### Προστέθηκαν
+
+- **Προληπτικός Περιοριστής Ρυθμού Token-Bucket** (`src/services/cognitive_mesh/rate_limiter.py`): η `TokenBucketRateLimiter.acquire(provider_name, tokens=1) -> float` υπολογίζει την ομαλή καθυστέρηση μικρο-ύπνου `dt = έλλειμμα / r` (ρυθμός αναπλήρωσης `r = RPM/60`, χωρητικότητα `B = max(1.0, r)`) και κοιμάται πριν την αποστολή, εξαλείφοντας εκ των προτέρων τα σφάλματα HTTP 429. Η `get_provider_status() -> dict` αναφέρει τα εναπομείναντα tokens και το ποσοστό πλήρωσης. Όρια ανά πάροχο: Groq 30, Cerebras 60, Gemini 15, SambaNova 20, DeepSeek 60, OpenRouter 20, Ollama `inf`. Ενσωματώθηκε στον `CognitiveMetaRouter.dispatch()`.
+
+- **Κατανεμημένη Μηχανή Συγχρονισμού JSONL Store-and-Forward** (`src/services/cognitive_mesh/buffer_sync.py`): η `BufferSyncEngine.ingest_jsonl_buffer(file_path) -> dict` αναλύει ένα append-only `hermes_buffer.jsonl` από απομακρυσμένο worker HERMES, αφαιρεί τα διπλότυπα κατά αναγνωριστικό μοντέλου και συγχωνεύει στο `data/cache/llm_benchmarks.json`· η `export_worker_buffer(models, output_path) -> Path` σειριοποιεί τις ανακαλύψεις για μεταφορά εκτός σύνδεσης. Αμιγώς JSON/JSONL, χωρίς εξωτερική εξάρτηση ουράς.
+
+- **Επιχειρηματικό Θησαυροφυλάκιο Δεδομένων** (`src/core/database_vault.py`): η `DatabaseVault.verify_integrity(db_path=None) -> dict` εκτελεί `PRAGMA integrity_check` / `quick_check` / `foreign_key_check`· η `create_atomic_snapshot(backup_dir=..., max_retention_days=7) -> Path` παράγει ατομικό στιγμιότυπο `VACUUM INTO` με εναλλαγή 7 ημερών· η `restore_snapshot(snapshot_path) -> bool` επαληθεύει την ακεραιότητα πριν την επαναφορά. Σκοπός εκκίνησης ενσωματώθηκε στον `DatabaseManager.__init__`.
+
+- **Endpoint συγχρονισμού mesh** (`src/services/cognitive_mesh/server.py`): `POST /api/v1/cognitive/mesh/sync` δέχεται φορτίο JSON ή ακατέργαστη ροή JSONL και αναθέτει στην `BufferSyncEngine.ingest_jsonl_buffer()`.
+
+- **Ενσωμάτωση CLI, Παλέτας Εντολών & HUD** (`talos.py`, `hud_renderer.py`): νέες σημαίες `--backup-db`, `--verify-db`, `--restore-backup [path]`, `--sync-buffer [path]`· συντομεύσεις `/backup`, `/verify`, `/sync [path]`· μόνιμα σήματα HUD `Vault: INTEGRITY OK` και `Rate Limiter: ACTIVE`.
+
+- **Κανόνας 9** (`.clinerules`): το πλήρες Πρότυπο Ποιότητας Λογισμικού 8 Πυλώνων ISO/IEC 25010 κωδικοποιήθηκε ως υποχρεωτική, μη διαπραγματεύσιμη πύλη ποιότητας.
+
+- **Απόρρητος Ακαδημαϊκός Φάκελος 12** (`docs/internal/academic/12_ENTERPRISE_DATA_VAULT_PROACTIVE_RATE_LIMITING_ISO25010.md`): φάκελος Θεωρίας-σε-Κώδικα 7 ενοτήτων.
+
+### Άλλαξαν
+
+- Ο `CognitiveMetaRouter.__init__` απέκτησε έγχυση `rate_limiter` και επιβραδύνει πριν την εξερχόμενη αποστολή· ο `ModelBenchmarkClient` απέκτησε `ingest_remote_records(records) -> int`· ο `DatabaseVault` απέκτησε έγχυση `db_path` για ερμητικές δοκιμές.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.24.0)· `pytest tests/test_rate_limiter.py tests/test_buffer_sync.py tests/test_database_vault.py -q` (16 ερμητικές)· `python talos.py --verify-db` / `--backup-db` (έξοδος 0)· `python src/utils/verify_dependency_map.py --ci` (0/0/0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD).
+
 ## [v5.23.0] - 2026-10-04 -- Καθολική Αρχιτεκτονική Υπομενού 3 Επιπέδων, Αυτόνομο Αυτοθεραπευόμενο Δίκτυο API & Μηχανή Βαθμίδων Πρόσβασης (ISO/IEC 25010)
 
 ### Προστέθηκε

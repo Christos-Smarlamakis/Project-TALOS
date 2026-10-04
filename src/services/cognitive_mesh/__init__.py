@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: __init__.py
-Project: TALOS v5.23.0
+Project: TALOS v5.24.0
 Description:
     Public API surface for the Cognitive Mesh in-tree extraction-ready
     microservice. Re-exports the cognitive meta-router, the self-healing
@@ -58,6 +58,11 @@ from src.services.cognitive_mesh.scavenger import (  # noqa: F401
 )
 from src.services.cognitive_mesh.reporter import IntelligenceReporter  # noqa: F401
 from src.services.cognitive_mesh.client import CognitiveMeshClient  # noqa: F401
+from src.services.cognitive_mesh.rate_limiter import (  # noqa: F401
+    TokenBucketRateLimiter,
+    get_rate_specs,
+)
+from src.services.cognitive_mesh.buffer_sync import BufferSyncEngine  # noqa: F401
 
 __all__ = [
     "RoutingStrategy",
@@ -89,4 +94,7 @@ __all__ = [
     "ModelScavengerAgent",
     "IntelligenceReporter",
     "CognitiveMeshClient",
+    "TokenBucketRateLimiter",
+    "get_rate_specs",
+    "BufferSyncEngine",
 ]

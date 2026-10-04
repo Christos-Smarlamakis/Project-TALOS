@@ -1,10 +1,10 @@
-# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.23.0
+# PROJECT_MAP.md -- Πλήρης Χάρτης του Project TALOS v5.24.0
 
 > **Σκοπός:** Αυτό το αρχείο είναι η "μνήμη" του project. Διαβάζεται υποχρεωτικά από κάθε νέο chat ώστε ο AI agent να γνωρίζει ακριβώς τι υπάρχει, πού, και πώς συνδέεται -- χωρίς να ξαναδιαβάζει όλα τα αρχεία.
 >
 > **Κανόνας:** Μετά από ΚΑΘΕ αλλαγή κώδικα (νέα συνάρτηση, τροποποίηση υπογραφής, νέο/διαγραμμένο αρχείο), αυτό το αρχείο ΠΡΕΠΕΙ να ενημερώνεται.
 >
-> **Τελευταία Ενημέρωση:** 2026-10-04 (v5.23.0 -- Καθολική Αρχιτεκτονική Υπομενού 3 Επιπέδων, Αυτόνομο Αυτοθεραπευόμενο Δίκτυο API & Μηχανή Βαθμίδων Πρόσβασης)
+> **Τελευταία Ενημέρωση:** 2026-10-04 (v5.24.0 -- Επιχειρηματικό Θησαυροφυλάκιο Δεδομένων, Προληπτικός Περιοριστής Ρυθμού Token-Bucket & Κατανεμημένος Συγχρονισμός Προσωρινής Μνήμης JSONL)
 
 ---
 
@@ -20,8 +20,8 @@ USER INTERFACES
         v
 
 SRC PACKAGES
-  src/core/          (7 αρχεία)  ai_manager, database_manager, hardware, notifier, profile_manager, provider_registry, hardware_advisor
-  src/services/      (10 αρχεία) cognitive_mesh/ (dto, registry, router, benchmarks, scavenger, reporter, server, client) -- έτοιμο για εξαγωγή SYNAPSE
+  src/core/          (8 αρχεία)  ai_manager, database_manager, database_vault, hardware, notifier, profile_manager, provider_registry, hardware_advisor
+  src/services/      (12 αρχεία) cognitive_mesh/ (dto, registry, router, rate_limiter, benchmarks, buffer_sync, scavenger, reporter, server, client) -- έτοιμο για εξαγωγή SYNAPSE
   src/ai/drl/       (10 αρχεία)  drl_agent, drl_networks, talos_env, train_agent, live_agent_*
   src/ai/optimizers/ (3 αρχεία)  gwo_foraging_hyperparameter_tuner, gwo_live_dashboard, gwo_llm_router_reward_shaper
   src/ai/embeddings/ (2 αρχεία)  embedding_generator, db_embedding_upgrade
@@ -346,8 +346,8 @@ src/core/hierarchical_evaluator.py
 
 ---
 
-> **Τελευταία Ενημέρωση:** 2026-10-04 (v5.23.0 -- Καθολική Αρχιτεκτονική Υπομενού 3 Επιπέδων, Αυτόνομο Αυτοθεραπευόμενο Δίκτυο API & Μηχανή Βαθμίδων Πρόσβασης)
-> **Έκδοση Project:** v5.23.0
-> **Συνολικά .py modules στο src/:** 113 (core 7 + services 10 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 6 + ingestion/sources 18 + search 3 + integration 3 + utils 23 + api 4 + prisma 8 + mcp_server 1)
+> **Τελευταία Ενημέρωση:** 2026-10-04 (v5.24.0 -- Επιχειρηματικό Θησαυροφυλάκιο Δεδομένων, Προληπτικός Περιοριστής Ρυθμού Token-Bucket & Κατανεμημένος Συγχρονισμός Προσωρινής Μνήμης JSONL)
+> **Έκδοση Project:** v5.24.0
+> **Συνολικά .py modules στο src/:** 115 (core 8 + services 12 + ai/drl 10 + ai/optimizers 3 + ai/embeddings 2 + ai/llm 4 + ai/testing 1 + analysis 10 + ingestion 6 + ingestion/sources 18 + search 3 + integration 3 + utils 23 + api 4 + prisma 8 + mcp_server 1)
 
 

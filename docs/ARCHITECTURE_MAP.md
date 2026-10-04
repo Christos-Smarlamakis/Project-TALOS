@@ -1,6 +1,6 @@
 # TALOS Functional Architecture Map
 
-> **Project:** TALOS v5.23.0 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine (ISO/IEC 25010 Compliant)
+> **Project:** TALOS v5.24.0 -- Enterprise Data Vault, Proactive Token-Bucket Rate Limiter & Distributed JSONL Buffer Sync (ISO/IEC 25010 Compliant)
 > **Classification:** Public Technical Reference
 > **Last Updated:** 2026-10-04
 > **Standard:** ISO/IEC 25010 (Functional Suitability, Performance Efficiency, Maintainability)

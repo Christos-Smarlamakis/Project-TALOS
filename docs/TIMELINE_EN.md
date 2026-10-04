@@ -4,7 +4,29 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-04 (v5.23.0 -- Universal 3-Tier Sub-Menu Architecture, Autonomous Self-Healing API Mesh & Access-Tier Engine)
+> **Last Updated:** 2026-10-04 (v5.24.0 -- Enterprise Data Vault, Proactive Token-Bucket Rate Limiter & Distributed JSONL Buffer Sync)
+
+---
+
+## Phase 85: Enterprise Data Vault, Proactive Token-Bucket Rate Limiter & Distributed JSONL Buffer Sync (v5.24.0)
+
+- [x] **Status:** COMPLETED (2026-10-04).
+
+- [x] **Proactive Token-Bucket Rate Limiter** -- `rate_limiter.py` (`TokenBucketRateLimiter.acquire` / `get_provider_status`), refill `r = RPM/60`, capacity `B`, smooth micro-sleep, Ollama `inf`; wired into `CognitiveMetaRouter`.
+
+- [x] **Distributed JSONL Buffer Sync** -- `buffer_sync.py` (`BufferSyncEngine.ingest_jsonl_buffer` / `export_worker_buffer`) plus `POST /api/v1/cognitive/mesh/sync`.
+
+- [x] **Enterprise Database Vault** -- `database_vault.py` (`verify_integrity` / `create_atomic_snapshot` VACUUM INTO / `restore_snapshot`) plus the startup sentinel in `DatabaseManager.__init__`.
+
+- [x] **CLI & HUD** -- `--backup-db` / `--verify-db` / `--restore-backup` / `--sync-buffer`, `/backup` / `/verify` / `/sync`, HUD badges `Vault: INTEGRITY OK` and `Rate Limiter: ACTIVE`.
+
+- [x] **Rule 9** -- the 8-Pillar ISO/IEC 25010 Software Product Quality Standard codified in `.clinerules`.
+
+- [x] **Confidential Academic Dossier 12** -- `docs/internal/academic/12_ENTERPRISE_DATA_VAULT_PROACTIVE_RATE_LIMITING_ISO25010.md` (7 sections).
+
+- [x] **Version sync** -- `config/settings.py` (`TALOS_VERSION = "5.24.0"`), `main_api.py`, `talos.py`, launchers, `docker-compose.yml` (`talos:5.24.0`), `CITATION.cff` (5.24.0, 2026-10-04), `tests/test_multi_tier.py`, and all 21 canonical docs to v5.24.0 (2026-10-04).
+
+- [x] **Verification gates passed** -- compileall (0 errors), test_system_integrity, test_talos_version (5.24.0), test_rate_limiter + test_buffer_sync + test_database_vault (16), `--verify-db` / `--backup-db` (exit 0), verify_dependency_map --ci (0/0/0), bash -n, UTF-8 scan (0 U+FFFD).
 
 ---
 
