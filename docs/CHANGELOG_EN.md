@@ -2,6 +2,28 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.25.3] - 2026-10-07 -- Universal 3-Tier Sub-Menu Harmonization, Fixed 120x34 Geometry & Actionable Model Hyperlinks (ISO/IEC 25010)
+
+### Added
+
+- **Canonical Model Hyperlinks** (`src/services/cognitive_mesh/reporter.py`): new `_get_model_canonical_url()` maps each scavenged model to its authoritative catalog URL (Hugging Face -> `https://huggingface.co/{model_id}`, OpenRouter -> `https://openrouter.ai/models/{model_id}`, Ollama -> `https://ollama.com/library/{base_name}`). Every HTML model card title is wrapped in a clickable `<a class="model-title-link" target="_blank" rel="noopener noreferrer">` link and the Markdown champion table renders the model column as `[model_id](canonical_url)`.
+
+### Changed
+
+- **Fixed 120x34 Console Geometry** (`run_talos.bat`, `talos.py`): the Windows console is pinned to `mode con: cols=120 lines=34` at launcher and programmatic-initialization time, guaranteeing the 3-column HUD, 4-panel body grid, footer, and prompt line render with zero vertical scrollbars.
+
+- **Dynamic Daemon Title** (`src/ai/drl/talos_service.py`): the hardcoded `TALOS v5.22.1` console title is replaced with `TALOS v{TALOS_VERSION} | Autonomous Research Service [{active_profile}]` using the imported `TALOS_VERSION` (zero emojis).
+
+- **Phantom CPU Edge Server Retirement** (`talos_service.py`, `daemon_autostart.py`): the legacy self-hosted `llama_cpp.server` CPU edge server (port 11435) and its `CPU_SERVER_PORT` boot-batch launch are removed; local inference is bound strictly to the unified local AI runtime (port 11434).
+
+- **Universal Sub-Menu Harmonization** (`talos.py`): the daemon autostart profile/strategy selectors and the PRISMA appraisal-mode picker are converted from duplicate `questionary.select` lists to the 3-tier `RichSubmenuRenderer` + `prompt_choice`, and `_run_model_discovery()` adopts a `(v5.25.3)` title with compact model names.
+
+### Verification
+
+- `python -m compileall src config tests talos.py` (0 errors); `pytest tests/test_system_integrity.py -q`; `pytest tests/test_multi_tier.py -k test_talos_version` (5.25.3); `pytest tests/test_console_dashboard.py tests/test_intelligence_reporter.py tests/test_resilient_gateway.py -q` (35 hermetic); port 11435 audit (0 in active code); `python src/utils/verify_dependency_map.py --ci` (0/0/0); `bash -n run_talos.sh`; strict UTF-8 scan (0 U+FFFD); README [1]-[20] citations intact.
+
+---
+
 ## [v5.25.2] - 2026-10-04 -- Preserve All Information, Hierarchical 3-Tier AI Model Management & Interactive Candidate Selector (ISO/IEC 25010)
 
 ### Added

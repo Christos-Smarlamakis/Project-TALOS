@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: submenu_renderer.py
-Project: TALOS v5.23.0
+Project: TALOS v5.25.3
 Description:
     Universal 3-Tier Sub-Menu renderer for the TALOS Scientific Terminal
     Dashboard, implementing the ISO/IEC 25010 Usability layout. The renderer

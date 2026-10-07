@@ -2,8 +2,8 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.25.2 (Preserve All Information, Hierarchical 3-Tier AI Model Management & Interactive Candidate Selector) — Complete, 2026-10-04
-> **Last Updated:** 2026-10-04
+> **Current Version:** v5.25.3 (Universal 3-Tier Sub-Menu Harmonization, Fixed 120x34 Geometry & Actionable Model Hyperlinks) — Complete, 2026-10-07
+> **Last Updated:** 2026-10-07
 
 ---
 

@@ -1,17 +1,24 @@
 # -*- coding: utf-8 -*-
 """
 Module: settings.py
-Project: TALOS v5.25.2
+Project: TALOS v5.25.3
 Description:
-    Canonical configuration hub for TALOS v5.25.2. Defines all environment-variable
+    Canonical configuration hub for TALOS v5.25.3. Defines all environment-variable
     driven settings for multi-tier LLM routing, provider endpoints, cloud LLM
     configuration, system execution mode, and system-wide constants. This module
     is the single source of truth for configuration derived from .env and config.json.
 
+    v5.25.3: Universal 3-Tier Sub-Menu Harmonization, Fixed 120x34 Geometry
+    & Actionable Model Hyperlinks (ISO/IEC 25010) -- the console geometry is
+    fixed to 120 columns x 34 lines, the daemon title is dynamically bound to
+    TALOS v{TALOS_VERSION}, the phantom self-hosted CPU edge server is retired
+    (unified local execution on 11434), and the Model Scout reports gain
+    canonical clickable hyperlinks (Hugging Face / OpenRouter / Ollama).
+
     v5.25.2: Preserve All Information, Hierarchical 3-Tier AI Model Management
     & Interactive Candidate Selector (ISO/IEC 25010) -- Option 6 renders a
     clean 3-tier Rich panel with hierarchical cloud-provider and strategy child
-    submenus, the phantom port 11435 is permanently purged (unified local
+    submenus, the legacy CPU edge port is permanently retired (unified local
     execution on 11434 with threading.Semaphore(2) concurrency), and Option 10
     gains a step-by-step interactive model candidate selector across the four
     role slots.
@@ -114,7 +121,7 @@ FAST_EDGE_MODEL = os.getenv(
 
 # Canonical fast edge inference URL (v5.16.1). The fast tier now routes
 # directly to the verified universal local AI runtime on port 11434, retiring
-# the phantom CPU edge port 11435.
+# the legacy CPU edge port.
 FAST_EDGE_URL = os.getenv(
     "FAST_EDGE_URL",
     "http://127.0.0.1:11434/v1"
@@ -311,7 +318,7 @@ TALOS_HARDWARE_STRATEGY = os.getenv("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
 TALOS_EXECUTION_MODE = os.getenv("TALOS_EXECUTION_MODE", "local")
 
 # Project version string -- updated with each release.
-TALOS_VERSION = "5.25.2"
+TALOS_VERSION = "5.25.3"
 
 # -- v5.9.1: Per-Tier Routing Configuration --
 # Controls where each tier routes its inference requests.

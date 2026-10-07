@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: talos_service.py (v2.1 — Profile-Aware, Dynamic N Sources)
-Project: TALOS v5.22.1
+Project: TALOS v5.25.3
 Description:
     24/7 autonomous research service. Runs continuously on weak hardware
     (Raspberry Pi, old laptop, etc.) using the trained DRL agent to
@@ -127,71 +127,9 @@ _DIGEST_SENTINEL = os.path.join(
     'data', '.last_digest_date'
 )
 
-# -- Fast Edge CPU server (Fermion) subprocess handle for self-hosting --
-_FERMION_PROCESS = None
-
-
-def _spawn_fermion_cpu_server(strategy):
-    """
-    Start the Fast Edge CPU server (Fermion) in the background.
-
-    The daemon self-hosts its local CPU inference dependency on port 11435
-    when the global hardware strategy requires CPU compute. The subprocess
-    is spawned with subprocess.Popen so it runs in the background without
-    blocking the daemon's main loop. This removes the dependency on the
-    external .bat launcher.
-
-    Args:
-        strategy (str): The active TALOS_HARDWARE_STRATEGY value.
-
-    Returns:
-        subprocess.Popen or None: The spawned process, or None when the
-            strategy does not require CPU compute or spawning fails.
-    """
-    global _FERMION_PROCESS
-    if strategy not in ("cpu_gpu_split", "cpu_only"):
-        return None
-    try:
-        _FERMION_PROCESS = subprocess.Popen(
-            [sys.executable, "-m", "llama_cpp.server", "--port", "11435"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-        # -- Register cleanup via atexit so the child is terminated even on
-        #    abnormal exit paths (SIGKILL, os._exit, unhandled crash). --
-        atexit.register(_terminate_fermion_cpu_server)
-        console.print(
-            f"  [INIT] Hardware Strategy: {strategy}. "
-            f"Auto-started Fast Edge CPU server (Port 11435)."
-        )
-        return _FERMION_PROCESS
-    except Exception as e:
-        console.print(
-            f"  [WARN] Could not auto-start Fast Edge CPU server: {e}"
-        )
-        return None
-
-
-def _terminate_fermion_cpu_server():
-    """
-    Stop the background Fermion CPU server during graceful shutdown.
-
-    Terminates the self-hosted Fast Edge CPU server so the daemon does not
-    leave an orphaned zombie process holding port 11435.
-    """
-    global _FERMION_PROCESS
-    if _FERMION_PROCESS is not None:
-        try:
-            _FERMION_PROCESS.terminate()
-            console.print(
-                "  [SHUTDOWN] Fast Edge CPU server (Port 11435) terminated."
-            )
-        except Exception as e:
-            console.print(
-                f"  [WARN] Could not terminate Fast Edge CPU server: {e}"
-            )
-        finally:
-            _FERMION_PROCESS = None
-
+# -- v5.25.3: The phantom self-hosted Fast Edge CPU server has been retired.
+# -- Local inference is now unified strictly on the universal local AI runtime
+# -- (port 11434 / Ollama); no separate CPU-edge server remains.
 def build_paper_alert(paper_data, source):
     """
     Build the paper metadata dict shared by all notification channels.
@@ -746,7 +684,7 @@ def main():
         try:
             import ctypes
             ctypes.windll.kernel32.SetConsoleTitleW(
-                f"TALOS v5.22.1 | Autonomous Research Service [{active_profile}]"
+                f"TALOS v{TALOS_VERSION} | Autonomous Research Service [{active_profile}]"
             )
         except Exception:
             pass
@@ -793,12 +731,8 @@ def main():
     # ══════════════════════════════════════════════════════════════════════════
 
     # ── Create environment first (to get dimensions) ────────────────────────
-    # -- Self-host the Fast Edge CPU server (Fermion, port 11435) --
-    # The daemon auto-starts its local CPU inference dependency in the
-    # background when the global hardware strategy requires CPU compute.
-    # This removes the dependency on external .bat launchers.
-    _hardware_strategy = os.environ.get("TALOS_HARDWARE_STRATEGY", "cpu_gpu_split")
-    _spawn_fermion_cpu_server(_hardware_strategy)
+    # -- v5.25.3: Fast Edge CPU server self-hosting retired; local inference is
+    # -- unified strictly on the universal local AI runtime (port 11434). --
     # -- v5.22.1: resolve the active-profile DB and ensure the schema exists. --
     # The daemon binds STRICTLY to the SSOT active-profile database; there is no
     # silent fallback to the legacy data/talos_research.db path. --
@@ -925,8 +859,6 @@ def main():
     # ══════════════════════════════════════════════════════════════════════════
     # SHUTDOWN
     # ══════════════════════════════════════════════════════════════════════════
-
-    _terminate_fermion_cpu_server()
 
     console.print("[bold #006699]TALOS Autonomous Daemon - Shutdown Complete[/]")
     console.print(f"  Total high-score papers discovered: {high_score_count}")

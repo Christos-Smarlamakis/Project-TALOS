@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_ai_strategy_candidates.py
-Project: TALOS v5.25.2
+Project: TALOS v5.25.3
 Description:
     Hermetic unit tests for the interactive model candidate selector in
-    src/utils/ai_strategy_selector.py (v5.25.2). Verifies the pure candidate
+    src/utils/ai_strategy_selector.py (v5.25.3). Verifies the pure candidate
     discovery, VRAM estimation, rigor banding, and strategy-key mapping helpers
     that power the four step-by-step role-slot child menus in Option 10.
 

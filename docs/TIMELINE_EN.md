@@ -4,7 +4,27 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-10-04 (v5.25.2 -- Preserve All Information, Hierarchical 3-Tier AI Model Management & Interactive Candidate Selector)
+> **Last Updated:** 2026-10-07 (v5.25.3 -- Universal 3-Tier Sub-Menu Harmonization, Fixed 120x34 Geometry & Actionable Model Hyperlinks)
+
+---
+
+## Phase 89: Universal 3-Tier Sub-Menu Harmonization, Fixed 120x34 Geometry & Actionable Model Hyperlinks (v5.25.3)
+
+- [x] **Status:** COMPLETED (2026-10-07).
+
+- [x] **Fixed 120x34 Console Geometry** -- `run_talos.bat` (`mode con: cols=120 lines=34`) + `talos.py` programmatic init pin the Windows console for a zero-scroll HUD/body/footer/prompt render.
+
+- [x] **Dynamic Daemon Title** -- `talos_service.py` binds `SetConsoleTitleW` to `TALOS v{TALOS_VERSION} | Autonomous Research Service [{active_profile}]` (imported `TALOS_VERSION`, zero emojis), retiring the hardcoded `v5.22.1`.
+
+- [x] **Phantom CPU Edge Server Retirement** -- the self-hosted `llama_cpp.server` (port 11435) and `CPU_SERVER_PORT` boot-batch launch are removed; local execution is bound strictly to 11434.
+
+- [x] **Canonical Model Hyperlinks** -- `reporter.py` gains `_get_model_canonical_url()` (HF/OpenRouter/Ollama); HTML cards wrap titles in `<a class="model-title-link" target="_blank" rel="noopener noreferrer">` with `.card-badges` flex-wrap and full-width block titles; Markdown champion table uses `[model](url)`.
+
+- [x] **Universal Sub-Menu Harmonization** -- daemon autostart + PRISMA appraisal-mode `questionary.select` lists converted to 3-tier `RichSubmenuRenderer` + `prompt_choice`; `_run_model_discovery()` title `(v5.25.3)` + compact names.
+
+- [x] **Version sync** -- `config/settings.py` (`TALOS_VERSION = "5.25.3"`), `main_api.py`, `server.py`, `talos.py`, launchers, `docker-compose.yml` (`talos:5.25.3`), `CITATION.cff` (5.25.3, 2026-10-07), `tests/test_multi_tier.py`, and all 21 canonical docs to v5.25.3 (2026-10-07).
+
+- [x] **Verification gates passed** -- compileall (0 errors), test_system_integrity, test_talos_version (5.25.3), test_console_dashboard/intelligence_reporter/resilient_gateway (35), port 11435 audit (0), verify_dependency_map --ci (0/0/0), bash -n, UTF-8 scan (0 U+FFFD), README [1]-[20] intact.
 
 ---
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_console_dashboard.py
-Project: TALOS v5.25.2
+Project: TALOS v5.25.3
 Description:
     Unit tests for the modular console dashboard subsystem
     (src/utils/console_dashboard/). Verifies the segmented 3-column HUD panel
@@ -53,7 +53,7 @@ class TestHudRenderer:
         assert panel.title is not None
         title_text = str(panel.title)
         assert "TALOS TELEMETRY & SYSTEM COCKPIT" in title_text
-        assert "v5.25.2" in title_text
+        assert "v5.25.3" in title_text
 
     def test_build_hud_no_truncation(self):
         from rich.console import Console

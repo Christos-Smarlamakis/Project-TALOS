@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: layout_builder.py
-Project: TALOS v5.25.2
+Project: TALOS v5.25.3
 Description:
     Builds the responsive two-column, four-panel terminal grid for the TALOS
     Scientific Terminal Dashboard using rich.layout.Layout. The layout is
@@ -117,7 +117,7 @@ class DashboardLayoutBuilder:
         return Panel(
             Align.center(
                 Text(
-                    "TALOS v5.25.2 -- Scientific Terminal Dashboard",
+                    "TALOS v5.25.3 -- Scientific Terminal Dashboard",
                     style="bold bright_cyan",
                 )
             ),

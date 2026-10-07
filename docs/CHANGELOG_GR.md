@@ -2,6 +2,28 @@
 
 Όλες οι σημαντικές αλλαγές στο έργο TALOS καταγράφονται σε αυτό το αρχείο. Το έργο τηρεί το [Σημασιολογικό Versioning](https://semver.org/).
 
+## [v5.25.3] - 2026-10-07 -- Καθολική Εναρμόνιση Υπομενού 3 Επιπέδων, Σταθερή Γεωμετρία 120x34 & Ενεργοί Σύνδεσμοι Μοντέλων (ISO/IEC 25010)
+
+### Προστέθηκαν
+
+- **Κανονικοί Σύνδεσμοι Μοντέλων** (`src/services/cognitive_mesh/reporter.py`): η νέα `_get_model_canonical_url()` αντιστοιχίζει κάθε μοντέλο στον έγκυρο κατάλογό του (Hugging Face -> `https://huggingface.co/{model_id}`, OpenRouter -> `https://openrouter.ai/models/{model_id}`, Ollama -> `https://ollama.com/library/{base_name}`). Κάθε τίτλος κάρτας HTML τυλίγεται σε ενεργό `<a class="model-title-link" target="_blank" rel="noopener noreferrer">`, και ο πίνακας πρωταθλητών Markdown αποδίδει τη στήλη μοντέλου ως `[model_id](canonical_url)`.
+
+### Άλλαξαν
+
+- **Σταθερή Γεωμετρία Κονσόλας 120x34** (`run_talos.bat`, `talos.py`): η κονσόλα Windows καρφιτσώνεται σε `mode con: cols=120 lines=34`, εγγυώμενη ότι το HUD 3 στηλών, το πλέγμα 4 πάνελ, το υποσέλιδο και η γραμμή προτροπής αποδίδονται χωρίς κάθετες γραμμές κύλισης.
+
+- **Δυναμικός Τίτλος Δαίμονα** (`src/ai/drl/talos_service.py`): ο σκληροκωδικοποιημένος τίτλος `TALOS v5.22.1` αντικαθίσταται από `TALOS v{TALOS_VERSION} | Autonomous Research Service [{active_profile}]` (μηδέν emoji).
+
+- **Απόσυρση Φανταστικού Διακομιστή CPU Edge** (`talos_service.py`, `daemon_autostart.py`): ο παλαιός αυτοφιλοξενούμενος διακομιστής `llama_cpp.server` CPU edge (θύρα 11435) και η εκκίνηση `CPU_SERVER_PORT` στο boot batch αφαιρούνται· η τοπική εκτέλεση δεσμεύεται αυστηρά στο ενοποιημένο τοπικό runtime ΤΝ (θύρα 11434).
+
+- **Καθολική Εναρμόνιση Υπομενού** (`talos.py`): οι επιλογείς προφίλ/στρατηγικής autostart και ο επιλογέας τρόπου αξιολόγησης PRISMA μετατρέπονται από διπλές λίστες `questionary.select` στο `RichSubmenuRenderer` + `prompt_choice`, και η `_run_model_discovery()` αποκτά τίτλο `(v5.25.3)` με συμπαγή ονόματα μοντέλων.
+
+### Επαλήθευση
+
+- `python -m compileall src config tests talos.py` (0 σφάλματα)· `pytest tests/test_system_integrity.py -q`· `pytest tests/test_multi_tier.py -k test_talos_version` (5.25.3)· `pytest tests/test_console_dashboard.py tests/test_intelligence_reporter.py tests/test_resilient_gateway.py -q` (35 ερμητικές)· έλεγχος θύρας 11435 (0 σε ενεργό κώδικα)· `python src/utils/verify_dependency_map.py --ci` (0/0/0)· `bash -n run_talos.sh`· αυστηρή σάρωση UTF-8 (0 U+FFFD)· αναφορές README [1]-[20] ανέπαφες.
+
+---
+
 ## [v5.25.2] - 2026-10-04 -- Διατήρηση Όλης της Πληροφορίας, Ιεραρχική Διαχείριση Μοντέλων ΤΝ 3 Επιπέδων & Διαδραστικός Επιλογέας Υποψηφίων (ISO/IEC 25010)
 
 ### Προστέθηκαν

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.25.0</title>
+<title>TALOS/ALEXANDRIA -- System Capabilities Master Reference v5.25.3</title>
 <style>
   /* ===========================================================================
      Dark Academic Theme -- Slate/Zinc palette, monospace code, sticky ToC
@@ -288,7 +288,7 @@
 
 <main>
 
-<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.22.0</h1>
+<h1>TALOS/ALEXANDRIA<br>System Capabilities Master Reference v5.25.3</h1>
 
 <div style="text-align:center; margin: 1rem 0 1.5rem;">
   <a href="https://www.computer.org/volunteering/awards/scholarships/weigd-student-fund/weigd-recipients#summer-2026" target="_blank" rel="noopener" style="display:inline-block; text-decoration:none;">
@@ -302,8 +302,8 @@
   <strong>Document ID:</strong> TALOS-SYS-CAP-001 &nbsp;|&nbsp;
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
-  <strong>Last Updated:</strong> 2026-10-04 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.25.2 -- Preserve All Information, Hierarchical 3-Tier AI Model Management &amp; Interactive Candidate Selector
+  <strong>Last Updated:</strong> 2026-10-07 &nbsp;|&nbsp;
+  <strong>Version:</strong> v5.25.3 -- Universal 3-Tier Sub-Menu Harmonization, Fixed 120x34 Geometry &amp; Actionable Model Hyperlinks
 </div>
 
 <!-- ===================================================================== -->
@@ -361,7 +361,7 @@
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
-    <tr><td>FAST_EDGE_BASE_URL</td><td>http://127.0.0.1:11435/v1</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>FAST_EDGE_BASE_URL</td><td>http://127.0.0.1:11434/v1</td><td><code>config/settings.py</code></td></tr>
     <tr><td>HEAVY_REASONING_MODEL</td><td>qwen2.5:14b</td><td><code>config/settings.py</code></td></tr>
     <tr><td>OLLAMA_BASE_URL</td><td>http://127.0.0.1:11434</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_NETWORK_STRATEGY</td><td>strict_local</td><td><code>config/settings.py</code></td></tr>
@@ -463,7 +463,7 @@
 <table>
   <thead><tr><th>Tier</th><th>Default Model</th><th>Default Endpoint</th><th>Routing Env Var</th></tr></thead>
   <tbody>
-    <tr><td><strong>Fast Edge</strong></td><td>fermionresearch/Neutrino-8B</td><td>http://127.0.0.1:11435/v1</td><td>TALOS_FAST_ROUTING</td></tr>
+    <tr><td><strong>Fast Edge</strong></td><td>fermionresearch/Neutrino-8B</td><td>http://127.0.0.1:11434/v1</td><td>TALOS_FAST_ROUTING</td></tr>
     <tr><td><strong>Heavy Reasoning</strong></td><td>qwen2.5:14b</td><td>http://127.0.0.1:11434</td><td>TALOS_HEAVY_ROUTING</td></tr>
     <tr><td><strong>Cloud Provider</strong></td><td>Universal Cloud Mesh (9 providers)</td><td>API endpoints</td><td>TALOS_CLOUD_PROVIDER</td></tr>
   </tbody>
@@ -492,9 +492,9 @@
 <table>
   <thead><tr><th>Strategy</th><th>Fast Tier Endpoint</th><th>Heavy Tier Endpoint</th></tr></thead>
   <tbody>
-    <tr><td><strong>cpu_only</strong></td><td>Port 11435 (CPU)</td><td>Port 11435 (CPU) -- GPU endpoint unused</td></tr>
+    <tr><td><strong>cpu_only</strong></td><td>Port 11434 (CPU)</td><td>Port 11434 (CPU) -- GPU endpoint unused</td></tr>
     <tr><td><strong>gpu_only</strong></td><td>Port 11434 (GPU)</td><td>Port 11434 (GPU) -- CPU endpoint unused</td></tr>
-    <tr><td><strong>cpu_gpu_split</strong></td><td>Port 11435 (CPU, Neutrino-8B)</td><td>Port 11434 (GPU, Qwen-14B)</td></tr>
+    <tr><td><strong>cpu_gpu_split</strong></td><td>Port 11434 (CPU, Neutrino-8B)</td><td>Port 11434 (GPU, Qwen-14B)</td></tr>
   </tbody>
 </table>
 
@@ -909,7 +909,7 @@
     <tr><td>TALOS_HEAVY_ROUTING</td><td>local</td><td>Heavy tier routing: "local" or "cloud"</td></tr>
     <tr><td>TALOS_CLOUD_PROVIDER</td><td>gemini</td><td>Default cloud provider</td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td>Fast edge model name</td></tr>
-    <tr><td>FAST_EDGE_BASE_URL</td><td>http://127.0.0.1:11435/v1</td><td>Fast edge endpoint</td></tr>
+    <tr><td>FAST_EDGE_BASE_URL</td><td>http://127.0.0.1:11434/v1</td><td>Fast edge endpoint</td></tr>
     <tr><td>HEAVY_REASONING_MODEL</td><td>qwen2.5:14b</td><td>Heavy reasoning model name</td></tr>
     <tr><td>OLLAMA_BASE_URL</td><td>http://127.0.0.1:11434</td><td>Standard Ollama GPU endpoint</td></tr>
     <tr><td>GEMINI_API_KEY</td><td>(unset)</td><td>Gemini API key</td></tr>
@@ -1624,6 +1624,22 @@
 
 <hr>
 
+<h3 id="s15-62">15.62 Universal 3-Tier Sub-Menu Harmonization, Fixed 120x34 Geometry &amp; Actionable Model Hyperlinks (v5.25.3)</h3>
+
+<p><strong>Overview:</strong> v5.25.3 harmonizes every menu and nested child menu to the strict 3-tier standard, pins the Windows console to a fixed 120x34 geometry, binds the daemon title dynamically to <code>TALOS_VERSION</code>, retires the phantom self-hosted CPU edge server, and adds canonical clickable hyperlinks to every Model Scout report card.</p>
+
+<ul>
+  <li><strong>Fixed 120x34 Console Geometry</strong> (<code>run_talos.bat</code>, <code>talos.py</code>): <code>mode con: cols=120 lines=34</code> at launcher and programmatic-initialization time guarantees the 3-column HUD, 4-panel body grid, footer, and prompt line render with zero vertical scrollbars.</li>
+  <li><strong>Dynamic Daemon Title</strong> (<code>src/ai/drl/talos_service.py</code>): <code>SetConsoleTitleW</code> binds to <code>TALOS v{TALOS_VERSION} | Autonomous Research Service [{active_profile}]</code> (imported <code>TALOS_VERSION</code>, zero emojis), retiring the hardcoded <code>v5.22.1</code>.</li>
+  <li><strong>Phantom CPU Edge Server Retirement</strong> (<code>talos_service.py</code>, <code>daemon_autostart.py</code>): the legacy self-hosted <code>llama_cpp.server</code> CPU edge server and its <code>CPU_SERVER_PORT</code> boot-batch launch are removed; local execution is bound strictly to the unified local AI runtime (11434).</li>
+  <li><strong>Canonical Model Hyperlinks</strong> (<code>src/services/cognitive_mesh/reporter.py</code>): <code>_get_model_canonical_url()</code> maps Hugging Face / OpenRouter / Ollama models to their catalog URLs; HTML cards wrap titles in <code>&lt;a class="model-title-link" target="_blank" rel="noopener noreferrer"&gt;</code> with <code>.card-badges</code> flex-wrap and full-width block titles; the Markdown champion table uses <code>[model](url)</code>.</li>
+  <li><strong>Universal Sub-Menu Harmonization</strong> (<code>talos.py</code>): daemon autostart profile/strategy selectors and the PRISMA appraisal-mode picker are converted from duplicate <code>questionary.select</code> lists to the 3-tier <code>RichSubmenuRenderer</code> + <code>prompt_choice</code>; <code>_run_model_discovery()</code> adopts a <code>(v5.25.3)</code> title with compact model names.</li>
+</ul>
+
+<p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.25.3), <code>test_console_dashboard.py</code> + <code>test_intelligence_reporter.py</code> + <code>test_resilient_gateway.py</code> (35 hermetic), port 11435 audit (0 in active code), <code>verify_dependency_map.py --ci</code> (0/0/0), <code>bash -n run_talos.sh</code>, strict UTF-8 scan (0 U+FFFD), README [1]-[20] citations intact.</p>
+
+<hr>
+
 <h3 id="s15-61">15.61 Preserve All Information, Hierarchical 3-Tier AI Model Management &amp; Interactive Candidate Selector (v5.25.2)</h3>
 
 <p><strong>Overview:</strong> v5.25.2 refactors the Option 6 AI Model Management menu into a hierarchical 3-tier Rich panel preserving 100% of the live status snapshot, purges the phantom port 11435 (unifying local execution on 11434 with <code>threading.Semaphore(2)</code>), and introduces an interactive model candidate selector for Option 10.</p>
@@ -1670,7 +1686,7 @@
 <p><strong>Verification surface:</strong> <code>compileall</code> (0 errors), <code>test_system_integrity.py -q</code>, <code>test_talos_version</code> (5.22.1), scavenger + reporter + console dashboard (42 hermetic), <code>python talos.py --scout-models --all --report-only</code> (exit 0), <code>verify_dependency_map.py --ci</code> (0/0/0), <code>bash -n run_talos.sh</code>, strict UTF-8 scan (0 U+FFFD).</p>
 
 <hr>
-<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.25.2</em></p>
+<p style="text-align:center;color:var(--text-muted);font-size:0.85rem;"><em>End of System Capabilities Master Reference -- TALOS v5.25.3</em></p>
 <p style="text-align:center;color:var(--text-muted);font-size:0.8rem;">Project TALOS -- From Aggregator to Autonomous Research Architect. Built in Kalamata, Greece. (C) 2026 Christos Smarlamakis. All rights reserved.</p>
 
 </main>

@@ -1,4 +1,4 @@
-# Project TALOS (v5.25.2)
+# Project TALOS (v5.25.3)
 
 ### Tactical Agentic Literature Orchestration System
 
@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/License-AGPLv3-red?style=flat-square)](LICENSE)
 [![DOI](https://zenodo.org/badge/1191928488.svg)](https://doi.org/10.5281/zenodo.19224912)
 [![Docker](https://img.shields.io/badge/Docker-Supported-2496ED?style=flat-square&logo=docker)](docs/DOCKER.md)
-![Version](https://img.shields.io/badge/Version-v5.25.2-006699?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v5.25.3-006699?style=flat-square)
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=flat-square)
 [![FastAPI](https://img.shields.io/badge/FastAPI-25_REST_Endpoints-009688?style=flat-square&logo=fastapi&logoColor=white)](src/api/main_api.py)
 [![Architecture](https://img.shields.io/badge/Architecture-100%25_Air--Gapped_%26_Local--First-111827?style=flat-square)](config/settings.py)

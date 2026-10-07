@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: reporter.py
-Project: TALOS v5.23.0
+Project: TALOS v5.25.3
 Description:
     Dual Intelligence Reporter for the Cognitive Mesh in-tree microservice. It
     renders a MarketIntelligenceReport into two deliverables under
@@ -131,8 +131,12 @@ class IntelligenceReporter:
         )
         lines.append("| --- | --- | --- | --- | --- | --- | --- | --- |")
         for champ in self._select_champions(report):
+            model_cell = (
+                f"[{self._md_cell(champ['model'])}]({champ['url']})"
+                if champ.get("url") else self._md_cell(champ["model"])
+            )
             lines.append(
-                f"| {self._md_cell(champ['budget'])} | {self._md_cell(champ['model'])} "
+                f"| {self._md_cell(champ['budget'])} | {model_cell} "
                 f"| {self._md_cell(champ['developer'])} | {self._md_cell(champ['role'])} "
                 f"| {champ['params']} | {champ['mmlu_pro'] or '-'} | "
                 f"${champ['screening_cost_1k']:.2f} | ${champ['audit_cost_1k']:.2f} |"
@@ -289,7 +293,7 @@ class IntelligenceReporter:
                     "budget": budget, "model": "-", "developer": "-", "role": "-",
                     "params": "-", "mmlu_pro": 0.0, "prompt_usd": 0.0,
                     "completion_usd": 0.0, "screening_cost_1k": 0.0,
-                    "audit_cost_1k": 0.0,
+                    "audit_cost_1k": 0.0, "source": "", "url": "",
                 }
             prompt_usd = model.pricing_prompt_per_1m_usd or 0.0
             completion_usd = model.pricing_completion_per_1m_usd or 0.0
@@ -306,6 +310,8 @@ class IntelligenceReporter:
                 "audit_cost_1k": cls._finops_cost(
                     prompt_usd, completion_usd, False
                 ),
+                "source": model.source or "",
+                "url": cls._get_model_canonical_url(model),
             }
 
         return [
@@ -391,6 +397,34 @@ class IntelligenceReporter:
         )
 
     @staticmethod
+    def _get_model_canonical_url(model: ScavengedModel) -> str:
+        """Resolve the canonical external catalog URL for a scavenged model.
+
+        Maps the discovery ``source`` to its authoritative model-catalog entry so
+        every model card and Markdown row can link directly to the upstream
+        record in a new browser tab.
+
+        Args:
+            model (ScavengedModel): The scavenged model record.
+
+        Returns:
+            str: The canonical URL, or an empty string when the source is not a
+                supported external catalog (e.g. internal benchmark records).
+        """
+        model_id = (model.model or "").strip()
+        source = (model.source or "").strip().lower()
+        if not model_id:
+            return ""
+        if source == "huggingface":
+            return f"https://huggingface.co/{model_id}"
+        if source == "openrouter":
+            return f"https://openrouter.ai/models/{model_id}"
+        if source == "ollama":
+            base_name = model_id.split(":")[0]
+            return f"https://ollama.com/library/{base_name}"
+        return ""
+
+    @staticmethod
     def _render_card(model: ScavengedModel) -> str:
         label, cls = _badge(model.vram_class)
         tier_label, tier_cls = _tier_badge(model.access_tier)
@@ -401,14 +435,25 @@ class IntelligenceReporter:
         searchable = _html.escape(
             f"{model.model or ''} {model.developer or ''}".lower(), quote=True
         )
+        url = IntelligenceReporter._get_model_canonical_url(model)
+        if url:
+            model_title = (
+                f'<a href="{_html.escape(url, quote=True)}" target="_blank" '
+                f'rel="noopener noreferrer" class="model-title-link">'
+                f"{_html.escape(model.model or 'Unnamed')}</a>"
+            )
+        else:
+            model_title = f'<h3>{_html.escape(model.model or "Unnamed")}</h3>'
         return (
             f'<article class="card" data-vram="{model.vram_class}" '
             f'data-tier="{model.access_tier}" '
             f'data-search="{searchable}">\n'
             '<div class="card-head">\n'
-            f"<h3>{_html.escape(model.model or 'Unnamed')}</h3>\n"
+            f"{model_title}\n"
+            '<div class="card-badges">\n'
             f'<span class="badge {cls}">{label}</span>\n'
             f'<span class="badge {tier_cls}">{tier_label}</span>\n'
+            "</div>\n"
             "</div>\n"
             f'<p class="dev">{_html.escape(model.developer or "Unknown")}</p>\n'
             "<ul>\n"
@@ -529,8 +574,15 @@ body {
   padding: 1.2rem; transition: transform 0.15s ease, border-color 0.15s ease;
 }
 .card:hover { transform: translateY(-3px); border-color: #7fd1ff; }
-.card-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.card-head { display: block; width: 100%; }
 .card-head h3 { font-size: 1.05rem; color: #e6ebf4; word-break: break-word; }
+.model-title-link {
+  display: block; width: 100%; word-break: break-word; overflow-wrap: break-word;
+  line-height: 1.35; font-size: 1.05rem; font-weight: 700; color: #38bdf8;
+  text-decoration: none; margin-bottom: 8px;
+}
+.model-title-link:hover { text-decoration: underline; color: #7fd1ff; }
+.card-badges { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
 .dev { color: #8a97b0; font-size: 0.85rem; margin: 0.4rem 0 0.8rem; }
 .card ul { list-style: none; font-size: 0.9rem; color: #c4cde0; }
 .card li { padding: 0.15rem 0; }

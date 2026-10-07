@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: ai_strategy_selector.py
-Project: TALOS v5.23.0
+Project: TALOS v5.25.3
 Description:
     Lightweight interactive and headless switcher for the TALOS 5-strategy AI
     execution matrix. It exposes the canonical strategy hierarchy
@@ -147,7 +147,7 @@ def _active_provider_names() -> list:
 
 
 # ---------------------------------------------------------------------------
-# -- Interactive Model Candidate Selector (v5.25.2) --
+# -- Interactive Model Candidate Selector (v5.25.3) --
 # ---------------------------------------------------------------------------
 
 _VRAM_LOOKUP = {

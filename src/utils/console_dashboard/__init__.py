@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: __init__.py
-Project: TALOS v5.25.2
+Project: TALOS v5.25.3
 Description:
     Public entry point for the modular console dashboard subsystem that powers
     the TALOS Scientific Terminal Dashboard (HMI). Re-exports the five

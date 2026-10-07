@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Module: test_intelligence_reporter.py
-Project: TALOS v5.21.1
+Project: TALOS v5.25.3
 Description:
     Unit tests for the Dual Intelligence Reporter
     (src/services/cognitive_mesh/reporter.py). Verifies that both the Markdown
@@ -70,7 +70,30 @@ class TestIntelligenceReporter:
         assert "<script src=" not in content
         assert '<link rel="stylesheet"' not in content
         assert "http://" not in content
-        assert "https://" not in content
+        # v5.25.3: canonical model-catalog hyperlinks are a deliberate feature
+        # (new-tab links, never runtime dependencies). Assert they are present
+        # while confirming no external script/stylesheet is ever loaded.
+        assert "https://ollama.com/library/" in content
+        assert "https://openrouter.ai/models/" in content
+        assert 'target="_blank"' in content
+        assert 'rel="noopener noreferrer"' in content
+
+    def test_model_canonical_url_mapping(self):
+        reporter = IntelligenceReporter()
+        hf = ScavengedModel(model="meta-llama/Llama-3.1-8B", source="huggingface")
+        assert reporter._get_model_canonical_url(hf) == (
+            "https://huggingface.co/meta-llama/Llama-3.1-8B"
+        )
+        orm = ScavengedModel(model="deepseek/deepseek-chat", source="openrouter")
+        assert reporter._get_model_canonical_url(orm) == (
+            "https://openrouter.ai/models/deepseek/deepseek-chat"
+        )
+        oll = ScavengedModel(model="qwen2.5:14b", source="ollama")
+        assert reporter._get_model_canonical_url(oll) == (
+            "https://ollama.com/library/qwen2.5"
+        )
+        unknown = ScavengedModel(model="bench-x", source="benchmarks")
+        assert reporter._get_model_canonical_url(unknown) == ""
 
     def test_html_contains_filters_and_badges(self, tmp_path):
         reporter = IntelligenceReporter()

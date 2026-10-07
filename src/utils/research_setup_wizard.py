@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: research_setup_wizard.py
-Project: TALOS v5.20.0
+Project: TALOS v5.25.3
 Description:
     Structured, step-by-step research onboarding wizard for TALOS. Guides the
     researcher through four plain-English steps: (1) research topic capture
@@ -95,7 +95,7 @@ console = Console()
 
 # -- Runtime probing constants -------------------------------------------------
 OLLAMA_PORT = 11434          # Universal local AI runtime (GPU/CPU)
-EDGE_PORT = 11434            # Unified fast tier endpoint (v5.16.1: retired 11435)
+EDGE_PORT = 11434            # Unified fast tier endpoint (v5.16.1: legacy CPU edge retired)
 PROBE_TIMEOUT = 0.8          # seconds per port probe
 BOOTSTRAP_WAIT = 2.0         # seconds of bounded polling after spawn attempt
 LLM_SCOPE_TIMEOUT = 2.0      # seconds for the Fast Edge scope validation

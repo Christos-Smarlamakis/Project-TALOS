@@ -1,8 +1,8 @@
 # TALOS Functional Architecture Map
 
-> **Project:** TALOS v5.25.2 -- Preserve All Information, Hierarchical 3-Tier AI Model Management & Interactive Candidate Selector (ISO/IEC 25010 Compliant)
+> **Project:** TALOS v5.25.3 -- Universal 3-Tier Sub-Menu Harmonization, Fixed 120x34 Geometry & Actionable Model Hyperlinks (ISO/IEC 25010 Compliant)
 > **Classification:** Public Technical Reference
-> **Last Updated:** 2026-10-04
+> **Last Updated:** 2026-10-07
 > **Standard:** ISO/IEC 25010 (Functional Suitability, Performance Efficiency, Maintainability)
 
 ---

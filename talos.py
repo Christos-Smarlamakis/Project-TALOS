@@ -10,7 +10,7 @@
 #  For commercial licensing, please contact the author.
 """
 Module: talos.py
-Project: TALOS v5.25.2
+Project: TALOS v5.25.3
 Description:
     Main entry point for the TALOS Scientific Terminal Dashboard (HMI).
     Provides a Rich-powered, two-column, four-panel interactive console
@@ -24,10 +24,17 @@ Description:
     Agents/Daemons & GWO Swarm, Database Maintenance & Data Tools, and
     System Health, Diagnostics & CI/CD.
 
+    v5.25.3: Universal 3-Tier Sub-Menu Harmonization, Fixed 120x34 Geometry
+    & Actionable Model Hyperlinks (ISO/IEC 25010) -- the console geometry is
+    fixed to 120 columns x 34 lines, the daemon title is dynamically bound to
+    TALOS v{TALOS_VERSION}, every sub-menu adheres to the 3-tier standard with
+    zero truncation, and the Model Scout reports gain canonical clickable
+    hyperlinks (Hugging Face / OpenRouter / Ollama).
+
     v5.25.2: Preserve All Information, Hierarchical 3-Tier AI Model
     Management & Interactive Candidate Selector (ISO/IEC 25010) -- Option 6
     renders a clean 3-tier Rich panel with hierarchical cloud-provider and
-    strategy child submenus, the phantom port 11435 is permanently purged
+    strategy child submenus, the legacy CPU edge port is permanently retired
     (unified local execution on 11434), and Option 10 gains a step-by-step
     interactive model candidate selector across the four role slots.
 
@@ -1560,29 +1567,42 @@ def _configure_daemon_autostart(project_root):
         open(env_path, 'w', encoding='utf-8').close()
 
     # -- 0. Target research profile (first mandatory prompt) --
-    profiles = ProfileManager().list_profiles()
+    profiles = ProfileManager().list_profiles() or ["default"]
     active = ProfileManager().get_active_profile_name()
-    target_profile = questionary.select(
-        "Select target research profile for the 24/7 background daemon:",
-        choices=profiles,
-        default=active if active in profiles else (profiles[0] if profiles else "default"),
-        style=TALOS_QUESTIONARY_STYLE,
-    ).ask()
-    if not target_profile:
+    from src.utils.console_dashboard import RichSubmenuRenderer
+    p_renderer = RichSubmenuRenderer(
+        "Select Target Research Profile",
+        "Choose the isolated workspace for the 24/7 background daemon.",
+        border_style="cyan",
+        domain="Daemon Autostart Configuration",
+    )
+    console.print(p_renderer.build(entries=[(p, None) for p in profiles]))
+    default_profile = active if active in profiles else profiles[0]
+    default_num = profiles.index(default_profile) + 1 if default_profile in profiles else 1
+    p_choice = p_renderer.prompt_choice((1, len(profiles)), default=f"{default_num:02d}")
+    if p_choice in ("00", "q"):
         console.print("[yellow]Autostart configuration cancelled.[/yellow]")
         return
+    target_profile = profiles[int(p_choice) - 1]
 
     # -- 1. Network strategy --
-    strategy = questionary.select(
-        "Select Daemon Network Strategy (Redundancy):",
-        choices=[
-            questionary.Choice("local_first (Recommended) -- local primary, auto-fallback to cloud", "local_first"),
-            questionary.Choice("strict_local -- air-gapped, never cloud", "strict_local"),
-            questionary.Choice("cloud_first -- cloud primary, auto-fallback to local", "cloud_first"),
-            questionary.Choice("strict_cloud -- cloud only, never local", "strict_cloud"),
-        ],
-        style=TALOS_QUESTIONARY_STYLE,
-    ).ask()
+    s_renderer = RichSubmenuRenderer(
+        "Select Daemon Network Strategy",
+        "Redundancy routing between local and cloud inference tiers.",
+        border_style="blue",
+        domain="Daemon Autostart Configuration",
+    )
+    console.print(s_renderer.build(entries=[
+        ("local_first (Recommended)", None),
+        ("strict_local (air-gapped)", None),
+        ("cloud_first", None),
+        ("strict_cloud", None),
+    ]))
+    s_choice = s_renderer.prompt_choice((1, 4), default="01")
+    if s_choice in ("00", "q"):
+        strategy = None
+    else:
+        strategy = ("local_first", "strict_local", "cloud_first", "strict_cloud")[int(s_choice) - 1]
     if strategy:
         try:
             set_key(env_path, "TALOS_NETWORK_STRATEGY", strategy)
@@ -2029,7 +2049,7 @@ def _run_model_discovery():
         summary = Text(f"Discovery mode: {mode} | Active models: {len(active)}", style="bright_cyan")
         console.print(Panel(
             Align.center(summary),
-            title="[bold]Model Discovery[/bold]",
+            title="[bold]Model Discovery (v5.25.3)[/bold]",
             border_style="cyan",
             box=box.ROUNDED,
         ))
@@ -2042,8 +2062,11 @@ def _run_model_discovery():
             t.add_column("Context", style="dim")
             t.add_column("Pricing", style="magenta")
             for m in active:
+                _name = str(m.get("name") or "-")
+                if len(_name) > 42:
+                    _name = _name[:41] + "~"
                 t.add_row(
-                    str(m.get("name")),
+                    _name,
                     str(m.get("provider", "unknown")),
                     f"{m.get('swe_bench_score')}" if m.get("swe_bench_score") is not None else "-",
                     f"{m.get('mmlu_pro_score')}" if m.get("mmlu_pro_score") is not None else "-",
@@ -2395,17 +2418,21 @@ def analysis_visualization_menu(python_exe):
             border_style="cyan",
         ))
         # -- v5.17.0: Two-Tier appraisal mode selection. --
-        mode_choice = questionary.select(
-            "Select Appraisal Mode:",
-            choices=[
-                "1. Fast Single Screener (one structured prompt per paper)",
-                "2. Forensic Multi-Skill Quality Swarm (4 Auditors + S_qual)",
-            ],
-            style=TALOS_QUESTIONARY_STYLE, instruction=NAV_TEXT,
-        ).ask()
-        if not mode_choice:
+        from src.utils.console_dashboard import RichSubmenuRenderer
+        a_renderer = RichSubmenuRenderer(
+            "Select Appraisal Mode",
+            "Choose between a fast single screener and the forensic swarm.",
+            border_style="cyan",
+            domain="PRISMA Quality Appraisal",
+        )
+        console.print(a_renderer.build(entries=[
+            ("Fast Single Screener", None),
+            ("Forensic Multi-Skill Quality Swarm (4 Auditors)", None),
+        ]))
+        a_choice = a_renderer.prompt_choice((1, 2), default="01")
+        if a_choice in ("00", "q"):
             return
-        appraisal_mode = "swarm" if mode_choice.startswith("2.") else "single"
+        appraisal_mode = "swarm" if int(a_choice) == 2 else "single"
         min_raw = questionary.text(
             "Minimum relevance threshold (overall_score, default 7.0):",
             default="7.0",
@@ -2548,6 +2575,16 @@ def drl_gwo_menu(python_exe):
 def main_menu():
     python_exe = sys.executable or "python"
     project_root = os.path.dirname(os.path.abspath(__file__))
+
+    # -- v5.25.3: Fixed console geometry (120 columns x 34 lines) on Windows.
+    # Enforces the zero-scroll bounding so the full HUD, 4-panel body grid,
+    # HMI footer, and prompt line render without vertical scrollbars. --
+    if os.name == "nt":
+        try:
+            os.system("mode con: cols=120 lines=34")
+        except Exception:
+            pass
+
     check_first_run(python_exe)
     time.sleep(1)
     global USE_LOCAL_MODEL
