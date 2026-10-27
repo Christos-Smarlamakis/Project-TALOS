@@ -2,8 +2,8 @@
 
 This document serves as both the **development compass** and the **architectural narrative** of Project TALOS. It chronicles the evolution from a research aggregator to a fully autonomous, DRL-driven research intelligence platform -- and maps the path forward toward Project ALEXANDRIA.
 
-> **Current Version:** v5.10.8 (Enterprise TUI Overhaul & Academic Aesthetics)
-> **Last Updated:** 2026-08-22
+> **Current Version:** v5.10.9 (Comprehensive TUI Feature Audit & Profile Management Restoration)
+> **Last Updated:** 2026-08-23
 
 ---
 
@@ -128,8 +128,6 @@ The v5.10.x series transitions Project TALOS from an aggregator to a fully adapt
 | **v5.10.6** | Daemon OS Autostart & Orchestrator | Added `src/utils/daemon_autostart.py` (Windows Startup shortcut), interactive daemon pre-flight in `talos.py`, and `daemon_target_sources` injection into `talos_live_agent.py`. | Complete |
 | **v5.10.7** | OPTICA Bridge Integration | Added `src/integration/optica_client.py` (`OpticaClient`) REST client to offload cnsplots/PyVis graphics to Project OPTICA (port 8002); new "Data Visualizations (via OPTICA)" TUI menu option. | Complete |
 | **v5.10.8** | Enterprise TUI Overhaul & Academic Aesthetics | Unified questionary prompt style (Cyan/Teal #00ced1 selection colors, bright-white separators, IEEE blue #4a9eff question mark) canonicalized in `src/utils/ui_theme.py` and applied to every CLI prompt. | Complete |
-| **v5.10.9** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline (`src/ai/dspy_prisma_pipeline.py`) leveraging PlanEval architecture (Fast Edge Planner/Evaluator + Heavy Reasoning Executor). | Next |
-| **v5.10.10** | CORTEX & n8n Gateway | Live arXiv RSS & text evaluation Discord Bot (`src/integration/discord_evaluator.py`) and SYNAPSE n8n Workflow Gateway templates (`templates/n8n_workflows/`). | Upcoming |
 
 ---
 
@@ -171,8 +169,10 @@ Project ALEXANDRIA marks the full desktop and distributed release of the platfor
 | **v5.10.6** | Daemon OS Autostart & Orchestrator | Windows Startup shortcut, daemon pre-flight, source injection | Complete |
 | **v5.10.7** | OPTICA Bridge Integration | `OpticaClient` REST client offloading cnsplots/PyVis to OPTICA (8002), TUI plot menu | Complete |
 | **v5.10.8** | Enterprise TUI Overhaul & Academic Aesthetics | Unified Cyan/Teal questionary style applied to every CLI prompt | Complete |
-| **v5.10.9** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline via PlanEval architecture | Next |
-| **v5.10.10** | CORTEX & n8n Gateway | Discord evaluation bot, SYNAPSE n8n workflow templates | Upcoming |
+| **v5.10.9** | Comprehensive TUI Feature Audit & Profile Management | 16-option hierarchical TUI, 15 sub-menus, full Profile Manager restoration, GWO Suite | Complete |
+| **v5.10.10** | Live Foraging Knowledge Labyrinth | 3D foraging path visualizer with Three.js/PyVista, Synapse telemetry, conference demo | Next |
+| **v5.10.11** | DSPy PRISMA Pipeline | Automated 4-stage PRISMA 2020 Systematic Literature Review pipeline via PlanEval | Upcoming |
+| **v5.10.12** | CORTEX & n8n Gateway | Discord evaluation bot, SYNAPSE n8n workflow templates | Upcoming |
 | **v6.0.0+** | Project ALEXANDRIA | Tauri Desktop App, PostgreSQL+pgvector, 3D Knowledge Graphs, Kimi K3 C-Engine | Future |
 
 ---

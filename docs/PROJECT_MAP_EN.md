@@ -1,10 +1,10 @@
-﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.8
+﻿# PROJECT_MAP_EN.md -- Complete Project TALOS Map v5.10.9
 
 > **Purpose:** This file is the "memory" of the project. It is mandatory reading for every new chat so the AI agent knows exactly what exists, where, and how it connects -- without re-reading all files.
 >
 > **Rule:** After ANY code change (new function, modified signature, new/deleted file), this file MUST be updated.
 >
-> **Last Updated:** 2026-08-22 (v5.10.8 -- Enterprise TUI Overhaul & Academic Aesthetics)
+> **Last Updated:** 2026-08-23 (v5.10.9 -- Comprehensive TUI Feature Audit & Profile Management Restoration)
 
 ---
 
@@ -519,8 +519,8 @@ src/utils/daemon_autostart.py (Daemon OS Autostart)
 
 ---
 
-> **Last Updated:** 2026-08-22 (v5.10.8 -- Enterprise TUI Overhaul & Academic Aesthetics)
-> **Project Version:** v5.10.8
+> **Last Updated:** 2026-08-23 (v5.10.9 -- Comprehensive TUI Feature Audit & Profile Management Restoration & Academic Aesthetics)
+> **Project Version:** v5.10.9
 > **Total Files Covered:** 75+ (62 src/ + 4 integration/ + 10 root entry/config/docs/tests + 1 testing/)
 >
 > ### New in v5.9.9: Report Path Consolidation

@@ -2,6 +2,42 @@
 
 All notable changes to the TALOS project will be documented in this file. The project adheres to [Semantic Versioning](https://semver.org/).
 
+## [v5.10.9] - 2026-08-23 -- Comprehensive TUI Feature Audit & Profile Management Restoration
+
+### Added
+- **Hierarchical 16-Option TUI** (`talos.py`): Complete refactoring of the main menu into 6 progressive-disclosure categories with dedicated handler sub-menus. Categories: (1) CORE CONFIGURATION & PROFILES, (2) SEARCH & INGESTION PIPELINES, (3) ADVANCED ANALYSIS & INSIGHTS, (4) REINFORCEMENT LEARNING & DAEMONS, (5) SYSTEM, DATABASE & DIAGNOSTICS, (6) EXIT. Every sub-menu includes a "Back to Main Menu" option and handles Ctrl+C gracefully via `safe_pause()` / `safe_select()`.
+- **Profile Management Restoration** (`talos.py` -> `_manage_profiles()`): Full integration of `src.core.profile_manager.ProfileManager` into the TUI. Users can now switch active profiles from `_profiles/`, create new profiles with isolated database and config, clone existing profiles, and view active profile metadata (name, DB path, paper count) -- all from a dedicated sub-menu with unified Cyan/Teal aesthetics.
+- **Research Focus & Query Translation Sub-Menu**: Dedicated sub-menu for (a) View/Translate Queries via `src.ai.llm.query_translator` (PYTHIA), and (b) 5-Step Research Pivot Wizard via `src.ai.llm.research_pivot`, both styled with `TALOS_QUESTIONARY_STYLE`.
+- **Search & Ingestion Hub Sub-Menu**: Consolidated sub-menu for (a) Daily Search (16 APIs), (b) Historical Archive Search, (c) Grey Literature Miner (`src.ingestion.grey_literature_miner`), (d) Batch PDF Downloader (`src.ingestion.pdf_downloader`), each launched with a Rich informational panel.
+- **Literature & Scientometric Analysis Sub-Menu**: Restored and consolidated sub-menu for (a) Citation Network Analyzer / ORPHEUS (`src.analysis.citation_analyzer`), (b) Knowledge Path Generator / CHIRON (`src.analysis.knowledge_path_generator`), (c) Strategic Reading Recommender (`src.analysis.recommender`), (d) Author & Trend Profiler (`src.analysis.author_profiler` / `trend_analyzer`). All prompts use `TALOS_QUESTIONARY_STYLE`.
+- **Codebase Architecture Graphs Sub-Menu**: Sub-menu for (a) Advanced AST Knowledge Graph via vendored Graphify adapter (`src.analysis.graphify_adapter`), and (b) Legacy Architecture Graph (D3.js HTML via `templates/architecture_graph.html`).
+- **Data Visualizations (via OPTICA)** retained as standalone option under ADVANCED ANALYSIS & INSIGHTS, calling `src.integration.optica_client.OpticaClient`.
+- **RL & Daemons Category** with dedicated sub-menu for GWO Swarm Optimization: (a) Foraging Hyperparameter Tuner (`src.ai.optimizers.gwo_foraging_hyperparameter_tuner`), (b) LLM Router Reward Shaper (`src.ai.optimizers.gwo_llm_router_reward_shaper`), (c) 3D Live Dashboard (`src.ai.optimizers.gwo_live_dashboard`). Autonomous Research Daemon, Live DRL Agent, and Autonomous Red Tester each have standalone entries.
+- **Database Maintenance & Enrichment Sub-Menu**: Consolidated sub-menu for (a) Metadata Enrichment / APOLLO (`src.ingestion.metadata_enricher`), (b) Recalculate Overall Scores (`src.utils.recalculate_scores`), (c) Re-evaluate Database (`src.utils.reevaluate_database`), (d) Database Health & Vector Stats (`src.utils.db_stats`). All operations use profile-aware database paths.
+- **Baseline Reports Sub-Menu**: Options for Standard text reports and Academic 600 DPI publication-quality reports.
+- **System Diagnostics & Docs Generator Sub-Menu**: Sub-menu for (a) DRL Agent Status, (b) Generate Codebase Docs (18 languages via `src.utils.generate_docs`), (c) API Health Check (`src.utils.api_health_check`).
+- **Daemon & OS Autostart Configuration**: Retained as standalone option with interactive pre-flight prompts for network strategy, target sources, and Windows autostart hook.
+
+### Changed
+- **All 15 sub-menu handlers** import and pass `TALOS_QUESTIONARY_STYLE` from `src.utils.ui_theme` to every `questionary.select`, `questionary.checkbox`, `questionary.text`, and `questionary.confirm` prompt, ensuring unified Cyan/Teal (#00ced1) aesthetics across the entire TUI surface.
+- **PROJECT_MAP.md & PROJECT_MAP_EN.md**: Updated architecture ASCII diagram to reflect the 16-option hierarchical TUI structure and restored sub-menu entries.
+- **DSPy PRISMA pipeline** postponed to v5.10.11; CORTEX & n8n Gateway postponed to v5.10.12.
+- **Version strings synced** across 6 code files and the 15 canonical documentation files to v5.10.9.
+
+### Fixed
+- **Profile Manager database path resolution**: `_manage_profiles()` now correctly resolves the active profile database path from `_profiles/<name>/talos_research.db` before launching any analysis sub-module, preventing "database not found" errors when operating under a non-default profile.
+- **Sub-menu Ctrl+C handling**: All sub-menu loops now catch `KeyboardInterrupt` and gracefully return to the parent menu instead of crashing the TUI.
+
+## [v5.10.10] - 2026-08-24 -- Live Foraging Knowledge Labyrinth Visualizer (Conference Demo)
+
+### Added
+- **Live 3D Knowledge Labyrinth Visualizer** (`src/visualization/knowledge_labyrinth.py`): Real-time 3D visualization of the DRL agent's foraging paths across the 16-source academic landscape. Renders the agent's exploration trajectory as a navigable 3D labyrinth using Three.js / PyVista, with color-coded source nodes, edge weights representing paper quality scores, and live Synapse event telemetry. Conference-demo-ready with IEEE-compliant dark academic theme, interactive camera controls, and export to static HTML for publication figures.
+- **TUI Entry** (`talos.py`): New "Live Foraging Knowledge Labyrinth" menu option under REINFORCEMENT LEARNING & DAEMONS, launching the 3D visualizer in a local web server.
+
+### Changed
+- **CORTEX & n8n Gateway** postponed to v5.10.12 in favor of the Conference Demo visualizer.
+- Version strings synced across 6 code files and the 15 canonical documentation files to v5.10.10.
+
 ## [v5.10.8] - 2026-08-22 -- Enterprise TUI Overhaul & Academic Aesthetics
 
 ### Added
