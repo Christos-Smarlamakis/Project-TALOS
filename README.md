@@ -1,4 +1,4 @@
-# Project TALOS (v5.10.9)
+﻿# Project TALOS (v5.10.8)
 
 ### **Tactical Agentic Literature Orchestration System**
 
@@ -137,7 +137,7 @@ Requires **Ollama** for running locally the `gemma4` model.
 This software is part of ongoing research. If you use **TALOS** in your work, please cite it as follows:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v1010.9, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.8, August 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -146,7 +146,7 @@ This software is part of ongoing research. If you use **TALOS** in your work, pl
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.10.9},
+  version = {v5.10.8},
   year = {2026}
 }
 ```
@@ -289,7 +289,7 @@ python src/utils/generate_docs.py
 Αυτό το λογισμικό αποτελεί μέρος εν εξελίξει έρευνας. Εάν χρησιμοποιήσετε το **TALOS** στην εργασία σας, παρακαλούμε να το αναφέρετε ως εξής:
 
 **IEEE Style:**
-> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.10, Αύγουστος 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
+> C. Smarlamakis and E. Georgopoulos, "Project TALOS: Tactical Agentic Literature Orchestration System," v5.10.8, Αύγουστος 2026. [Online]. Available: https://github.com/Christos-Smarlamakis/Project-TALOS. doi: 10.5281/zenodo.19224912
 
 **BibTeX:**
 ```bibtex
@@ -298,7 +298,7 @@ python src/utils/generate_docs.py
   title = {{Project TALOS: Tactical Agentic Literature Orchestration System}},
   url = {https://github.com/Christos-Smarlamakis/Project-TALOS},
   doi = {10.5281/zenodo.19224912},
-  version = {v5.10.9},
+  version = {v5.10.8},
   year = {2026}
 }
 ```

@@ -3,8 +3,8 @@
 > **Document ID:** TALOS-SYS-CAP-001
 > **Classification:** Public Reference
 > **Scope:** TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence)
-> **Last Updated:** 2026-08-23
-> **Version:** v5.10.8 -- Comprehensive TUI Feature Audit & Profile Management Restoration
+> **Last Updated:** 2026-08-22
+> **Version:** v5.10.8 -- Enterprise TUI Overhaul & Academic Aesthetics
 
 [![IEEE Computer Society WEIGD Fund 2026](https://img.shields.io/badge/IEEE_Computer_Society-WEIGD_Fund_Recipient_2026-006699?style=flat-square&logo=ieee&logoColor=white)](https://www.computer.org/)
 
@@ -48,7 +48,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 - **Production:** Headless FastAPI listener on port 8001, React frontend consuming the API
 - **Development:** `uvicorn src.api.main_api:app --reload --port 8001`
 - **Background Services:** Scraping pipeline, GWO optimizer, DRL training, Autonomous Red Tester -- all via FastAPI BackgroundTasks
-- **CLI:** `talos.py` (Rich-powered TUI, 11 options) retains full terminal-mode access for maintenance, diagnostics, and Graphify AST generation
+- **CLI:** `talos.py` (Rich-powered TUI, 15-option menu in 5 visual categories) retains full terminal-mode access for maintenance, diagnostics, and Graphify AST generation
 - **SYNAPSE Webhook:** `POST /api/v1/synapse/webhook` receives external commands from other ALEXANDRIA microservices
 - **MCP Server:** `src/mcp_server.py` exposes 4 tools (system_status, semantic_search, paper_details, trigger_scrape) to MCP-compatible clients like Cherry Studio
 - **Graphify AST Pipeline:** `src/analysis/graphify_adapter.py` generates interactive D3.js AST knowledge graphs from the TALOS codebase via vendored Graphify engine, with academic print theme toggle
@@ -57,7 +57,7 @@ User (React UI) --> FastAPI (:8001) --> src/core/*.py --> src/ingestion/*.py -->
 
 | Constant | Value | Source File |
 |----------|-------|-------------|
-| TALOS_VERSION | "5.10.5" | `config/settings.py` |
+| TALOS_VERSION | "5.10.8" | `config/settings.py` |
 | TALOS_API_PORT | 8001 | `config/settings.py` |
 | SYNAPSE_BUS_URL | http://localhost:8000/api/v1/events | `config/settings.py` |
 | FAST_EDGE_MODEL | fermionresearch/Neutrino-8B | `config/settings.py` |
@@ -535,7 +535,7 @@ For each evaluated paper, the AI generates:
 
 | Entry Point | File | Type |
 |-------------|------|------|
-| TUI Dashboard | `talos.py` | Rich-powered interactive terminal (11 options) |
+| TUI Dashboard | `talos.py` | Rich-powered interactive terminal (15-option menu in 5 visual categories) |
 | Batch Launcher (Win) | `run_talos.bat` | 10-option batch menu with auto-Conda detection |
 | Batch Launcher (POSIX) | `run_talos.sh` | 10-option bash menu with virtualenv/Conda detection |
 

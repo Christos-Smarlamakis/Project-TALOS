@@ -303,7 +303,7 @@
   <strong>Classification:</strong> Public Reference &nbsp;|&nbsp;
   <strong>Scope:</strong> TALOS Research Intelligence Platform (Headless FastAPI Backend + React Frontend + SYNAPSE Protocol + Graphify AST Intelligence) &nbsp;|&nbsp;
   <strong>Last Updated:</strong> 2026-08-22 &nbsp;|&nbsp;
-  <strong>Version:</strong> v5.10.8 -- Comprehensive TUI Feature Audit & Profile Management Restoration
+  <strong>Version:</strong> v5.10.8 -- Enterprise TUI Overhaul & Academic Aesthetics
 </div>
 
 <!-- ===================================================================== -->
@@ -346,7 +346,7 @@
   <li><strong>Production:</strong> Headless FastAPI listener on port 8001, React frontend consuming the API</li>
   <li><strong>Development:</strong> <code>uvicorn src.api.main_api:app --reload --port 8001</code></li>
   <li><strong>Background Services:</strong> Scraping pipeline, GWO optimizer, DRL training, Autonomous Red Tester -- all via FastAPI BackgroundTasks</li>
-  <li><strong>CLI:</strong> <code>talos.py</code> (Rich-powered TUI, 11 options) retains full terminal-mode access for maintenance, diagnostics, and Graphify AST generation</li>
+  <li><strong>CLI:</strong> <code>talos.py</code> (Rich-powered TUI, 15-option menu in 5 visual categories) retains full terminal-mode access for maintenance, diagnostics, and Graphify AST generation</li>
   <li><strong>SYNAPSE Webhook:</strong> <code>POST /api/v1/synapse/webhook</code> receives external commands from other ALEXANDRIA microservices</li>
   <li><strong>MCP Server:</strong> <code>src/mcp_server.py</code> exposes 4 tools to MCP-compatible clients like Cherry Studio</li>
   <li><strong>Graphify AST Pipeline:</strong> Generates interactive D3.js AST knowledge graphs from the TALOS codebase with academic print theme toggle</li>
@@ -357,7 +357,7 @@
 <table>
   <thead><tr><th>Constant</th><th>Value</th><th>Source File</th></tr></thead>
   <tbody>
-    <tr><td>TALOS_VERSION</td><td>"5.9.13"</td><td><code>config/settings.py</code></td></tr>
+    <tr><td>TALOS_VERSION</td><td>"5.10.8"</td><td><code>config/settings.py</code></td></tr>
     <tr><td>TALOS_API_PORT</td><td>8001</td><td><code>config/settings.py</code></td></tr>
     <tr><td>SYNAPSE_BUS_URL</td><td>http://localhost:8000/api/v1/events</td><td><code>config/settings.py</code></td></tr>
     <tr><td>FAST_EDGE_MODEL</td><td>fermionresearch/Neutrino-8B</td><td><code>config/settings.py</code></td></tr>
@@ -841,7 +841,7 @@
 <table>
   <thead><tr><th>Entry Point</th><th>File</th><th>Type</th></tr></thead>
   <tbody>
-    <tr><td>TUI Dashboard</td><td><code>talos.py</code></td><td>Rich-powered interactive terminal (11 options)</td></tr>
+    <tr><td>TUI Dashboard</td><td><code>talos.py</code></td><td>Rich-powered interactive terminal (15-option menu in 5 visual categories)</td></tr>
     <tr><td>Batch Launcher (Win)</td><td><code>run_talos.bat</code></td><td>10-option batch menu with auto-Conda detection</td></tr>
     <tr><td>Batch Launcher (POSIX)</td><td><code>run_talos.sh</code></td><td>10-option bash menu with virtualenv/Conda detection</td></tr>
   </tbody>

@@ -4,31 +4,9 @@
 >
 > **Rule:** After EVERY version bump, this file MUST be updated with the new milestone and its status.
 >
-> **Last Updated:** 2026-08-23 (v5.10.9 -- Comprehensive TUI Feature Audit & Profile Management Restoration)
+> **Last Updated:** 2026-08-22 (v5.10.8 -- Enterprise TUI Overhaul & Academic Aesthetics)
 
 ---
-
-## Phase 40: Live Foraging Knowledge Labyrinth Visualizer (v5.10.10)
-
-### Status: COMPLETED (2026-08-24)
-
-- [x] **Live 3D Knowledge Labyrinth** -- Real-time 3D visualizer (`src/visualization/knowledge_labyrinth.py`) rendering DRL agent foraging paths with Three.js/PyVista, color-coded source nodes, and Synapse telemetry.
-- [x] **Conference Demo Package** -- IEEE-compliant dark academic theme, interactive camera controls, static HTML export for publication figures.
-- [x] **TUI Entry** -- "Live Foraging Knowledge Labyrinth" menu option under RL & DAEMONS.
-- [x] **CORTEX & n8n Gateway** postponed to v5.10.12; DSPy PRISMA postponed to v5.10.11.
-- [x] **Version & Documentation Sync** -- v5.10.10 synced across 6 code files and 15 documentation files.
-
-## Phase 39: Comprehensive TUI Feature Audit & Profile Management Restoration (v5.10.9)
-
-### Status: COMPLETED (2026-08-23)
-
-- [x] **Hierarchical 16-Option TUI** -- Complete refactoring into 6 progressive-disclosure categories (Core Config, Search & Ingestion, Advanced Analysis, RL & Daemons, System & DB, Exit) with dedicated handler sub-menus.
-- [x] **Profile Management Restoration** -- Full integration of `src.core.profile_manager.ProfileManager` with switch/create/clone/view operations from a dedicated sub-menu.
-- [x] **15 Sub-Menus Restored** -- Research Focus (PYTHIA/Pivot), Search & Ingestion Hub (Daily/Historic/GreyLit/PDF), Literature & Scientometric Analysis (ORPHEUS/CHIRON/Recommender/AuthorProfiler), Architecture Graphs (Graphify/D3.js), GWO Suite (Foraging Tuner/Reward Shaper/3D Dashboard), DB Maintenance (APOLLO/Recalculate/Re-evaluate/DB Stats), Baseline Reports, System Diagnostics (DRL Status/Docs Generator/API Health).
-- [x] **Unified Aesthetics** -- All sub-menu handlers import `TALOS_QUESTIONARY_STYLE` from `src.utils.ui_theme`, ensuring 100% Cyan/Teal (#00ced1) coverage.
-- [x] **Ctrl+C Graceful Handling** -- `safe_pause()` / `safe_select()` in all sub-menu loops.
-- [x] **DSPy PRISMA** postponed to v5.10.11; CORTEX & n8n Gateway postponed to v5.10.12.
-- [x] **Version & Documentation Sync** -- v5.10.9 synced across 6 code files and 15 documentation files.
 
 ## Phase 38: Enterprise TUI Overhaul & Academic Aesthetics (v5.10.8)
 
